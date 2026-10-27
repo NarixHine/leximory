@@ -594,6 +594,7 @@ final class ReaderUITests: XCTestCase {
 
     @MainActor func testPDFNavigation() {
         let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
         app.launchArguments = ["--fixtures", "--ebook-fixtures"]
         app.launch()
         app.buttons["library-fixture-ebooks"].tap()
@@ -610,6 +611,21 @@ final class ReaderUITests: XCTestCase {
         }
         XCTAssertEqual(app.staticTexts["ebook-page-position"].value as? String, "第2页，共2页")
         app.buttons["ebook-contents"].tap()
+        let generate = app.buttons["pdf-outline-generate"]
+        XCTAssertTrue(generate.waitForExistence(timeout: 5))
+        XCTAssertFalse(generate.isEnabled)
+        let navigation = app.navigationBars["目录"]
+        let sheetScale = navigation.frame.width / app.frame.width
+        XCTContext.runActivity(named: "Contents control dimensions") { activity in
+            let dimensions = XCTAttachment(string: "screen=\(app.frame), navigation=\(navigation.frame), generation=\(generate.frame), chapter=\(app.buttons["1"].frame)")
+            dimensions.lifetime = .keepAlways
+            activity.add(dimensions)
+        }
+        XCTAssertGreaterThan(sheetScale, 0)
+        // The native sheet scales its contents; measure the target in its layout coordinates.
+        XCTAssertGreaterThanOrEqual(generate.frame.height / sheetScale, 43.9)
+        XCTAssertFalse(app.cells.containing(.button, identifier: "pdf-outline-generate").firstMatch.exists)
+        capture(app, name: "PDF contents with separate action header")
         XCTAssertTrue(app.buttons["1"].waitForExistence(timeout: 10)); app.buttons["1"].tap()
         app.buttons["ebook-contents"].tap()
         app.buttons["2"].tap()

@@ -112,7 +112,7 @@ struct BrowserWorkspaceView: View {
                     }
                 })
             }
-            .ignoresSafeArea(workspace.current.isReviewLawn && !editingAddress ? .keyboard : [], edges: .bottom)
+            .ignoresSafeArea(keepsReadingViewport || (workspace.current.isReviewLawn && !editingAddress) ? .keyboard : [], edges: .bottom)
             .background(LeximoryPalette.paper)
             .overlay(alignment: .top) {
                 if completionNotice || clipboardNotice != nil {
@@ -601,31 +601,20 @@ private struct BrowserVocabularyView: View {
     }
 }
 
-@MainActor private final class BrowserFindDismissal: NSObject, UIGestureRecognizerDelegate {
-    private weak var interaction: UIFindInteraction?
-    private weak var window: UIWindow?
-    private lazy var tap = UITapGestureRecognizer(target: self, action: #selector(dismiss))
+@MainActor private final class BrowserFindDismissal {
+    private let backdrop = UIControl()
 
     init(interaction: UIFindInteraction) {
-        self.interaction = interaction
-        super.init()
-        window = interaction.view?.window
-        tap.cancelsTouchesInView = false
-        tap.delegate = self
-        window?.addGestureRecognizer(tap)
+        guard let window = interaction.view?.window else { return }
+        backdrop.frame = window.bounds
+        backdrop.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        backdrop.backgroundColor = UIColor.black.withAlphaComponent(0.18)
+        backdrop.isAccessibilityElement = true
+        backdrop.accessibilityTraits = .button
+        backdrop.accessibilityLabel = "关闭查找"
+        backdrop.accessibilityIdentifier = "browser-find-backdrop"
+        backdrop.addAction(UIAction { [weak interaction] _ in interaction?.dismissFindNavigator() }, for: .touchUpInside)
+        window.addSubview(backdrop)
     }
-    func stop() { window?.removeGestureRecognizer(tap) }
-    @objc private func dismiss() { interaction?.dismissFindNavigator() }
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        guard interaction?.isFindNavigatorVisible == true, let content = interaction?.view,
-              content.bounds.contains(touch.location(in: content)) else { return false }
-        var view = touch.view
-        while let current = view {
-            if current is UIControl || current is UITextInput { return false }
-            view = current.superview
-        }
-        return true
-    }
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
-                           shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool { true }
+    func stop() { backdrop.removeFromSuperview() }
 }

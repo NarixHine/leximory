@@ -82,11 +82,36 @@ export const ebookSchema = z
         url: z.url(),
         format: z.enum(['pdf', 'epub']),
         sourceVersion: z.string().min(1).max(256).optional(),
+        outlineRevision: z.string().max(256).optional(),
         expiresAt: z.iso.datetime(),
         location: z.string().nullable(),
         bookmarks: z.array(ebookBookmarkSchema),
     })
     .strict()
+export const pdfOutlineEntrySchema = z
+    .object({
+        title: z.string().trim().min(1).max(512),
+        page: z.int().positive().max(100000),
+        depth: z.int().min(0).max(8),
+    })
+    .strict()
+export const pdfOutlineGenerationSchema = z
+    .object({
+        requestId: z.uuid(),
+        sourceVersion: z.string().min(1).max(256),
+        pages: z.array(z.string().max(12000)).min(1).max(10000),
+    })
+    .strict()
+export const pdfOutlineSaveSchema = z
+    .object({
+        requestId: z.uuid(),
+        sourceVersion: z.string().min(1).max(256),
+        baseRevision: z.string().max(256).nullable(),
+        generationId: z.uuid().nullable(),
+        pdfDigest: z.string().regex(/^[a-f0-9]{64}$/),
+    })
+    .strict()
+export const pdfOutlineResultSchema = z.object({ entries: z.array(pdfOutlineEntrySchema).min(1).max(1000) }).strict()
 export const pdfVersionSchema = z.string().min(1).max(256)
 export const pdfPageDrawingSchema = z
     .object({
@@ -459,6 +484,14 @@ export const mobileContract = {
         .route({ method: 'GET', path: '/texts/{textId}/ebook' })
         .input(z.object({ textId: resourceID }))
         .output(ebookSchema),
+    generatePDFOutline: oc
+        .route({ method: 'POST', path: '/texts/{textId}/pdf-outline-generate' })
+        .input(pdfOutlineGenerationSchema.extend({ textId: resourceID }))
+        .output(pdfOutlineResultSchema),
+    savePDFOutline: oc
+        .route({ method: 'POST', path: '/texts/{textId}/pdf-outline' })
+        .input(pdfOutlineSaveSchema.extend({ textId: resourceID }))
+        .output(z.object({ revision: z.string(), url: z.url() }).strict()),
     ebookPosition: oc
         .route({ method: 'POST', path: '/texts/{textId}/ebook-position' })
         .input(z.object({ textId: resourceID, location: z.string().min(1).max(2048) }))

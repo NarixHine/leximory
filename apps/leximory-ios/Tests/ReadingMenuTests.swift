@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 import UIKit
+import PDFKit
 import LeximoryCore
 @testable import Leximory
 
@@ -34,7 +35,7 @@ import LeximoryCore
         if offline { #expect((bookmark as? UIAction)?.attributes.contains(.disabled) == true) }
     }
     @Test(arguments: EbookHighlightColor.allCases)
-    func pdfRetainedSelectionUsesSavedHighlightActionsAfterCreatingAndRecoloring(color: EbookHighlightColor) throws {
+    func pdfHighlightActionsUseSavedBookmarkAfterCreatingAndRecoloring(color: EbookHighlightColor) throws {
         let reader = EbookReaderState()
         reader.format = "pdf"; reader.canBookmark = true
         let selection = EbookSelection(quote: "river", context: "The river flows.", offset: 4, location: "3")
@@ -44,11 +45,11 @@ import LeximoryCore
         let action = try #require(reader.selectionAction)
         guard case .bookmark = action.kind else { Issue.record("Expected a highlight action"); return }
         let pending = reader.beginBookmark(action.selection)
-        #expect(reader.selection == selection)
+        #expect(reader.selection == nil)
+        #expect(reader.menuSelection == nil)
         let saved = EbookBookmark(id: 42, quote: "river", chapter: nil, location: "3")
         reader.finishBookmark(pending, saved: saved)
-        // PDFKit can rebuild its own menu while retaining the same native selection.
-        reader.selection = nil
+        reader.menuSelection = selection
         let menu = EbookLearningMenu.actions(reader: reader)
         #expect(menu.contains { $0.title == "🖍️荧光笔" } == false)
         let palette = try #require(menu.first as? UIMenu)
@@ -75,6 +76,7 @@ import LeximoryCore
         let selection = EbookSelection(quote: "river", context: "river", offset: 0, location: "1")
         reader.selection = selection
         let pending = reader.beginBookmark(selection)
+        reader.menuSelection = selection
         func removeAction() throws -> UIAction {
             try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "移除" } as? UIAction)
         }
@@ -94,6 +96,40 @@ import LeximoryCore
         let action = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "🖍️荧光笔" } as? UIAction)
         #expect(action.attributes.contains(.disabled))
     }
+    @Test func tappingAndReopeningPDFHighlightDoesNotCreateANativeTextSelection() throws {
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { context in
+            context.beginPage()
+            ("A river flows." as NSString).draw(at: CGPoint(x: 30, y: 80), withAttributes: [.font: UIFont.systemFont(ofSize: 20)])
+        }
+        let reader = EbookReaderState()
+        reader.format = "pdf"; reader.canBookmark = true
+        reader.bookmarks = [EbookBookmark(id: 42, quote: "river", chapter: nil, location: "1")]
+        let pdf = LearningPDFView(frame: CGRect(x: 0, y: 0, width: 400, height: 600))
+        pdf.reader = reader; pdf.document = PDFDocument(data: data)
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController(); host.view = pdf
+        window.rootViewController = host; window.makeKeyAndVisible()
+        defer { pdf.dismissSelection(); window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        pdf.layoutIfNeeded()
+        let coordinator = PDFReaderView.Coordinator(reader: reader)
+        let page = try #require(pdf.document?.page(at: 0))
+        for color in [EbookHighlightColor.sage, .blue, .pink] {
+            reader.bookmarks = [EbookBookmark(id: 42, quote: "river", chapter: nil, location: "1", color: color)]
+            coordinator.updateBookmarks(in: pdf)
+            let marker = try #require(page.annotations.first as? EbookPDFHighlight)
+            let point = pdf.convert(CGPoint(x: marker.bounds.midX, y: marker.bounds.midY), from: page)
+            #expect(pdf.presentHighlightMenu(at: point))
+            #expect(pdf.currentSelection == nil)
+            #expect(reader.menuSelection?.quote == "river")
+            #expect(reader.menuSelection?.context == "A river flows.")
+            #expect(reader.menuSelection?.offset == 2)
+            pdf.dismissSelection()
+            #expect(pdf.currentSelection == nil)
+        }
+    }
+
     @Test func browserFilteringPreservesNativeDefineAndItsOriginalAction() throws {
         let native = UIAction(title: "Define") { _ in }
         let extras = ["查找所选内容", "翻译", "搜索网页"].map { UIAction(title: $0) { _ in } }

@@ -100,7 +100,10 @@ struct EbookThemePicker: View {
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .define, selection: selection) }
         }
         let bookmark = UIAction(title: "🖍️荧光笔", image: UIImage(systemName: "highlighter"), attributes: reader.canBookmark && !reader.readOnly ? [] : .disabled) { _ in
-            if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .bookmark(reader.format == "pdf" ? reader.lastHighlightColor : .sage), selection: selection) }
+            if let selection = selection ?? reader.menuSelection {
+                reader.selectionAction = EbookSelectionAction(kind: .bookmark(reader.format == "pdf" ? reader.lastHighlightColor : .sage), selection: selection)
+                if reader.format == "pdf" { reader.dismissPDFSelection?() }
+            }
         }
         return (reader.readOnly ? [] : [define]) + (includeBookmark ? [bookmark] : []) + (includeSearch ? [searchAction(reader: reader)] : [])
     }
@@ -119,7 +122,7 @@ struct EbookThemePicker: View {
                 guard let current = self.bookmark(reader: reader, selection: selection), current.id > 0,
                       !reader.readOnly, reader.canBookmark, !reader.pendingBookmarkColors.contains(current.id) else { return }
                 reader.bookmarkColorRequest = EbookBookmarkColorRequest(bookmarkID: current.id, color: color)
-                dismiss?()
+                if let dismiss { dismiss() } else { reader.dismissPDFSelection?() }
             }
             action.accessibilityLabel = color.title
             return action
@@ -131,7 +134,7 @@ struct EbookThemePicker: View {
             guard let current = self.bookmark(reader: reader, selection: selection), current.id > 0,
                   !reader.readOnly, reader.canBookmark, !reader.pendingBookmarkColors.contains(current.id) else { return }
             reader.bookmarkRemovalRequest = current.id
-            dismiss?()
+            if let dismiss { dismiss() } else { reader.dismissPDFSelection?() }
         }
         return [palette] + actions(reader: reader, includeBookmark: false, includeSearch: includeSearch) + [remove]
     }
@@ -226,7 +229,7 @@ final class EbookPDFHighlight: PDFAnnotation {
 final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
     var reader: EbookReaderState?
     var highlightAtTouchDown: EbookPDFHighlight?
-    private var activeHighlight: (selection: EbookSelection, page: PDFPage, bounds: CGRect)?
+    private var activeHighlight: (id: UUID, selection: EbookSelection, page: PDFPage, bounds: CGRect)?
     private lazy var highlightMenu = UIEditMenuInteraction(delegate: self)
     func highlight(at point: CGPoint) -> EbookPDFHighlight? {
         guard let page = page(for: point, nearest: false) else { return nil }
@@ -237,13 +240,18 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
         guard let highlight = highlight(at: point) ?? highlightAtTouchDown, let page = highlight.page,
               let reader, let bookmark = reader.bookmarks.first(where: { $0.id == highlight.bookmarkID }) else { return false }
         dismissSelection()
-        activeHighlight = (EbookSelection(quote: bookmark.quote, context: bookmark.quote, offset: 0,
-            location: bookmark.location), page, highlight.bounds)
-        if let text = page.string, let range = text.range(of: bookmark.quote), let selection = page.selection(for: NSRange(range, in: text)) {
-            setCurrentSelection(selection, animate: false)
-        }
+        let text = (page.string ?? bookmark.quote) as NSString
+        let range = text.range(of: bookmark.quote)
+        let start = range.location == NSNotFound ? 0 : max(0, range.location - 1400)
+        let end = range.location == NSNotFound ? 0 : min(text.length, NSMaxRange(range) + 1400)
+        let selection = EbookSelection(quote: bookmark.quote,
+            context: range.location == NSNotFound ? bookmark.quote : text.substring(with: NSRange(location: start, length: end - start)),
+            offset: range.location == NSNotFound ? 0 : range.location - start, location: bookmark.location)
+        let menuID = UUID()
+        activeHighlight = (menuID, selection, page, highlight.bounds)
+        reader.menuSelection = selection
         if highlightMenu.view == nil { addInteraction(highlightMenu) }
-        highlightMenu.presentEditMenu(with: UIEditMenuConfiguration(identifier: nil, sourcePoint: point))
+        highlightMenu.presentEditMenu(with: UIEditMenuConfiguration(identifier: menuID as NSUUID, sourcePoint: point))
         return true
     }
     func editMenuInteraction(_ interaction: UIEditMenuInteraction, menuFor configuration: UIEditMenuConfiguration, suggestedActions: [UIMenuElement]) -> UIMenu? {
@@ -251,7 +259,16 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
         return UIMenu(children: EbookLearningMenu.highlightActions(reader: reader, selection: highlight.selection,
             dismiss: { [weak self] in self?.dismissSelection() }) + ReadingSelectionMenu.nativeLookupMenus(in: suggestedActions))
     }
-    func refreshHighlightMenu() { highlightMenu.reloadVisibleMenu() }
+    func refreshHighlightMenu() {
+        guard activeHighlight != nil else { return }
+        highlightMenu.reloadVisibleMenu()
+    }
+    func editMenuInteraction(_ interaction: UIEditMenuInteraction, willDismissMenuFor configuration: UIEditMenuConfiguration,
+                             animator: UIEditMenuInteractionAnimating) {
+        guard let activeHighlight, configuration.identifier as? UUID == activeHighlight.id else { return }
+        self.activeHighlight = nil
+        if reader?.menuSelection == activeHighlight.selection { reader?.menuSelection = nil }
+    }
 
     func editMenuInteraction(_ interaction: UIEditMenuInteraction, targetRectFor configuration: UIEditMenuConfiguration) -> CGRect {
         guard let activeHighlight else { return .zero }

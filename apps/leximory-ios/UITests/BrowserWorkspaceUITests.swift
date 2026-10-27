@@ -237,6 +237,10 @@ final class BrowserWorkspaceUITests: XCTestCase {
             XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 5))
         }
         beginFind()
+        let backdrop = app.buttons["browser-find-backdrop"]
+        XCTAssertTrue(backdrop.waitForExistence(timeout: 5))
+        XCTAssertEqual(backdrop.frame.minY, app.frame.minY, accuracy: 1)
+        XCTAssertEqual(backdrop.frame.height, app.frame.height, accuracy: 1)
         XCTAssertEqual(drawing.label, "手写笔记")
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Full-height PDF Find after handwriting"; screenshot.lifetime = .keepAlways; add(screenshot)

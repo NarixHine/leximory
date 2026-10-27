@@ -7,7 +7,7 @@ struct EbookChapter: Identifiable {
     let title: String
     let location: String
     var depth = 0
-    var id: String { location }
+    let id = UUID()
 }
 
 struct EbookBookmarkColorRequest: Equatable {
@@ -17,6 +17,7 @@ struct EbookBookmarkColorRequest: Equatable {
 
 @MainActor @Observable final class EbookReaderState {
     var chapters: [EbookChapter] = []
+    var pdfOutline: PDFOutlineModel?
     var positionSaver: EbookPositionSaver?
     var bookmarks: [EbookBookmark] = []
     var location: String?
@@ -35,6 +36,7 @@ struct EbookBookmarkColorRequest: Equatable {
     var canFind = false
     @ObservationIgnored var search: ((String) -> Void)?
     @ObservationIgnored weak var findInteraction: UIFindInteraction?
+    @ObservationIgnored var dismissPDFSelection: (() -> Void)?
     @ObservationIgnored var prepareForFind: (() async -> Void)?
     private var nextPendingBookmarkID = -1
     var bookmarkNotice: UUID?
@@ -97,7 +99,7 @@ struct EbookBookmarkColorRequest: Equatable {
         let bookmark = EbookBookmark(id: nextPendingBookmarkID, quote: selection.quote, chapter: chapter, location: selection.location ?? location, color: color)
         nextPendingBookmarkID -= 1
         bookmarks.append(bookmark)
-        if format != "pdf" { self.selection = nil; menuSelection = nil }
+        self.selection = nil; menuSelection = nil
         return bookmark
     }
     func finishBookmark(_ pending: EbookBookmark, saved: EbookBookmark?) {
@@ -217,6 +219,11 @@ struct EbookScreen: View {
     private var readerLifecycle: some View {
         readerPresentation
         .onChange(of: sync?.online) { _, _ in reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only") }
+        .task(id: reader.pdfOutline?.textID) { await reader.pdfOutline?.refreshAllowance() }
+        .onChange(of: reader.readOnly) { _, readOnly in
+            reader.pdfOutline?.online = !readOnly
+            if !readOnly { Task { await reader.pdfOutline?.refreshAllowance() } }
+        }
         .task(id: notes?.document) { await notes?.run() }
         .onChange(of: notes?.drawing) { _, drawing in
             reader.drawingEnabled = drawing == true
@@ -296,23 +303,32 @@ struct EbookScreen: View {
         return format == "epub" ? "epub已打开，\(reader.chapter ?? "")，章节第\(reader.chapterPage)页" : "pdf已打开"
     }
     private var contentsTray: some View {
-            NavigationStack {
-                List {
-                    Section {
-                        ForEach(reader.chapters) { chapter in
-                            Button { reader.navigate("display", value: chapter.location); tray = nil } label: {
-                                Text(chapter.title).foregroundStyle(LeximoryPalette.ink)
-                                    .padding(.leading, CGFloat(chapter.depth) * 16)
-                            }
-                        }
+        NavigationStack {
+            VStack(spacing: 0) {
+                if format == "pdf" {
+                    PDFOutlineControls(model: reader.pdfOutline, readOnly: reader.readOnly) {
+                        tray = nil
+                        workspace?.visit(.account)
                     }
-                }.listStyle(.plain)
-                    .scrollContentBackground(.hidden).background(LeximoryPalette.paper)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                }
+                List(reader.chapters) { chapter in
+                    Button { reader.navigate("display", value: chapter.location); tray = nil } label: {
+                        Text(chapter.title).foregroundStyle(LeximoryPalette.ink)
+                            .padding(.leading, CGFloat(chapter.depth) * 16)
+                    }
                     .listRowBackground(LeximoryPalette.paper)
-                    .navigationTitle("目录").navigationBarTitleDisplayMode(.inline)
-            }.frame(minWidth: sizeClass == .regular ? 360 : nil, idealHeight: min(540, CGFloat(reader.chapters.count) * 48 + 100))
-                .presentationCompactAdaptation(.sheet).presentationDetents([.medium, .large])
-                .presentationBackground(LeximoryPalette.paper)
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+            }
+            .background(LeximoryPalette.paper)
+            .navigationTitle("目录").navigationBarTitleDisplayMode(.inline)
+        }
+        .frame(minWidth: sizeClass == .regular ? 360 : nil, idealHeight: min(540, CGFloat(reader.chapters.count) * 48 + (format == "pdf" ? 164 : 100)))
+        .presentationCompactAdaptation(.sheet).presentationDetents([.medium, .large])
+        .presentationBackground(LeximoryPalette.paper)
     }
     private var bookmarksTray: some View {
         NavigationStack {
@@ -472,6 +488,7 @@ struct EbookScreen: View {
     }
     private func load() async {
         notes?.deactivate(); notes = nil; reader.drawingEnabled = false
+        reader.pdfOutline = nil
         positionSaver?.flush()
         positionSaver = client.map { client in
             EbookPositionSaver { location in
@@ -498,6 +515,10 @@ struct EbookScreen: View {
                     notes = PDFNotesModel(book: book, store: store, sync: sync)
                 }
                 reader.location = book.location; reader.bookmarks = book.descriptor.bookmarks
+                if book.descriptor.format == "pdf" {
+                    reader.pdfOutline = PDFOutlineModel(book: book, client: client)
+                    reader.pdfOutline?.online = !reader.readOnly
+                }
                 reader.format = book.descriptor.format; data = book.data
                 loadedBook = book
                 if cached != nil { await refreshBook(book, client: client) }
@@ -530,13 +551,20 @@ struct EbookScreen: View {
         }
     }
     private func refreshBook(_ book: LocalEbook, client: MobileClient) async {
-        guard sync?.online != false else { return }
+        guard sync?.online != false, reader.pdfOutline?.busy != true, reader.pdfOutline?.hasPendingSave != true else { return }
         let request = UUID(); bookRequest = request
         let bookmarks = reader.bookmarks
         do {
             let refreshed = try await client.downloadEbook(textID: article.id.rawValue)
             try Task.checkCancellation()
-            guard bookRequest == request else { return }
+            guard bookRequest == request, reader.pdfOutline?.busy != true, reader.pdfOutline?.hasPendingSave != true else { return }
+            if let outline = reader.pdfOutline,
+               refreshed.descriptor.pdfSourceVersion == book.descriptor.pdfSourceVersion,
+               refreshed.descriptor.outlineRevision == outline.revision {
+                if reader.bookmarks == bookmarks { reader.bookmarks = refreshed.descriptor.bookmarks }
+                loadedBook = refreshed
+                return
+            }
             if refreshed.data != book.data || refreshed.descriptor.format != book.descriptor.format {
                 await positionSaver?.suspend()
                 guard bookRequest == request, !Task.isCancelled else { positionSaver?.resume(); return }
@@ -547,6 +575,8 @@ struct EbookScreen: View {
                 if refreshed.descriptor.format == "pdf", refreshed.descriptor.pdfSourceVersion != nil, let store = client.notesStore {
                     notes = PDFNotesModel(book: refreshed, store: store, sync: sync)
                 }
+                reader.pdfOutline = refreshed.descriptor.format == "pdf" ? PDFOutlineModel(book: refreshed, client: client) : nil
+                reader.pdfOutline?.online = !reader.readOnly
                 data = refreshed.data; contentID = UUID()
                 positionSaver?.resume()
             } else if reader.bookmarks == bookmarks {
@@ -837,22 +867,10 @@ struct PDFReaderView: UIViewRepresentable {
         }
         reader.totalPages = document.pageCount
         view.initialPageNumber = Int(reader.location ?? "")
-        if let document = view.document {
-            func chapters(_ outline: PDFOutline, depth: Int = 0) -> [EbookChapter] {
-                (0..<outline.numberOfChildren).flatMap { index -> [EbookChapter] in
-                    guard let child = outline.child(at: index) else { return [] }
-                    let own: [EbookChapter]
-                    if let title = child.label, let page = child.destination?.page {
-                        own = [EbookChapter(title: title, location: String(document.index(for: page) + 1), depth: depth)]
-                    } else { own = [] }
-                    return own + chapters(child, depth: depth + 1)
-                }
-            }
-            reader.chapters = document.outlineRoot.map { chapters($0) } ?? []
-            if reader.chapters.isEmpty { reader.chapters = (0..<document.pageCount).map { EbookChapter(title: "\($0 + 1)", location: "\($0 + 1)") } }
-
-        }
+        if let outline = reader.pdfOutline { outline.attach(document, reader: reader) }
+        else { reader.chapters = PDFOutlineModel.chapters(document) }
         reader.findInteraction = view.findInteraction
+        reader.dismissPDFSelection = { [weak view] in view?.dismissSelection() }
         reader.prepareForFind = { [weak view, weak coordinator = context.coordinator] in
             view?.dismissSelection()
             await coordinator?.drawingOverlays?.finishDrawing()
@@ -894,7 +912,6 @@ struct PDFReaderView: UIViewRepresentable {
             let menuChanged = pendingBookmarkColors != reader.pendingBookmarkColors || reader.bookmarks != appliedBookmarks
             pendingBookmarkColors = reader.pendingBookmarkColors
             if menuChanged {
-                UIMenuSystem.context.setNeedsRebuild()
                 (view as? LearningPDFView)?.refreshHighlightMenu()
             }
             guard reader.bookmarks != appliedBookmarks, let document = view.document else { return }

@@ -13,7 +13,7 @@ struct ArticleAudioTransport: ClientTransport {
         generation = URLSessionTransport(configuration: .init(session: URLSession(configuration: configuration)))
     }
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
-        let transport = operationID == "generateArticleAudio" ? generation : standard
+        let transport = ["generateArticleAudio", "generatePDFOutline", "savePDFOutline"].contains(operationID) ? generation : standard
         return try await transport.send(request, body: body, baseURL: baseURL, operationID: operationID)
     }
 }

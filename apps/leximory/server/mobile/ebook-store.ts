@@ -1,4 +1,5 @@
 import 'server-only'
+import { readPDFOutlinePointer } from './pdf-outline-storage'
 import { z } from 'zod'
 import { checkedResponse } from './http'
 import { supabase } from '@repo/supabase'
@@ -26,6 +27,16 @@ export const ebookStore: EbookStore = {
                     z.object({ version: z.string().min(1).max(256) }),
                     metadata.data,
                 ).version
+                if (format === 'pdf') {
+                    const outline = await readPDFOutlinePointer(id, sourceVersion)
+                    if (outline) {
+                        const signed = await bucket.createSignedUrl(outline.path, 3600)
+                        if (signed.error) throw signed.error
+                        const outlinedURL = new URL(signed.data.signedUrl)
+                        outlinedURL.searchParams.set('v', sourceVersion + ':' + outline.revision)
+                        return { url: outlinedURL.href, format, sourceVersion, outlineRevision: outline.revision }
+                    }
+                }
                 url.searchParams.set('v', sourceVersion)
                 return { url: url.href, format, sourceVersion }
             }

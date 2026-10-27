@@ -7,6 +7,7 @@ struct AccountView: View {
     let session: AccountSession
     let playback: PlaybackController
     @State private var details: AccountSettings?
+    @State private var quotaObservedAt: Date?
     @State private var loading = false
     @State private var busy = false
     @State private var notice: String?
@@ -27,6 +28,7 @@ struct AccountView: View {
     init(session: AccountSession, playback: PlaybackController, preview: AccountSettings? = nil) {
         self.session = session; self.playback = playback
         _details = State(initialValue: preview); fixtureMode = preview != nil
+        _quotaObservedAt = State(initialValue: preview == nil ? nil : Date())
         _previewPurchaseStore = State(initialValue: MembershipStore(preview: preview != nil))
         _showsPlans = State(initialValue: preview != nil && ProcessInfo.processInfo.arguments.contains("--account-plans-preview"))
         _editor = State(initialValue: preview != nil && ProcessInfo.processInfo.arguments.contains("--account-editor-preview") ? .username : nil)
@@ -70,6 +72,7 @@ struct AccountView: View {
             .tint(.primary)
             .refreshable { await load() }
             .task { await load() }
+            .onReceive(NotificationCenter.default.publisher(for: .pdfOutlineUsageChanged)) { _ in Task { await load() } }
             .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await load() } } }
             .onChange(of: photo) { _, item in
                 guard let item else { return }
@@ -153,10 +156,7 @@ struct AccountView: View {
     private func stats(_ value: AccountSettings) -> some View {
         VStack(spacing: 12) {
             subscriptionCard(value)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: typeSize.isAccessibilitySize ? 1 : 2), spacing: 12) {
-                AccountQuotaCard(title: "AI 词点额度", allowance: value.definitions)
-                AccountQuotaCard(title: "AI 语点额度", allowance: value.audio)
-            }
+            AccountQuotaTable(definitions: value.definitions, audio: value.audio, observedAt: quotaObservedAt)
         }
     }
     private func preferences(_ value: AccountSettings) -> some View {
@@ -210,11 +210,13 @@ struct AccountView: View {
         defer { loading = false }
         if details == nil, let cached = await session.client.localStore?.value(AccountSettings.self, for: "account-settings"), cached.userId == session.state.accountID {
             details = cached
+            quotaObservedAt = await session.client.localStore?.value(Date.self, for: "account-settings-observed-at")
         }
         do {
             let result = try await session.client.accountSettings()
             guard !Task.isCancelled, result.userId == session.state.accountID else { return }
             details = result
+            quotaObservedAt = Date()
         } catch { }
     }
     private func perform(_ action: @escaping @MainActor () async throws -> Void) {
@@ -344,32 +346,45 @@ private struct MembershipEntryButtonStyle: ButtonStyle {
     }
 }
 
-private struct AccountQuotaCard: View {
-    let title: String
-    let allowance: Account.Allowance
-    private var fraction: Double { allowance.limit > 0 ? min(max(allowance.used / allowance.limit, 0), 1) : 0 }
+private struct AccountQuotaTable: View {
+    let definitions: Account.Allowance
+    let audio: Account.Allowance
+    let observedAt: Date?
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top) {
-                Text(title).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
-                Spacer(minLength: 4)
-                ZStack {
-                    Circle().stroke(LeximoryPalette.secondaryBorder.opacity(0.5), lineWidth: 3)
-                    Circle().trim(from: 0, to: fraction).stroke(LeximoryPalette.ink, style: StrokeStyle(lineWidth: 3, lineCap: .round)).rotationEffect(.degrees(-90))
-                    Text("\(Int(fraction * 100))%").font(LeximoryTypography.interface(10, style: .caption2))
-                }.frame(width: 40, height: 40).accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 16) {
+            Text("AI 额度").font(LeximoryTypography.interface(17, style: .headline))
+            row("AI 词点额度", id: "definitions", allowance: definitions)
+            Divider()
+            row("AI 语点额度", id: "audio", allowance: audio, cost: "每次生成消耗 1 额度")
+            Divider()
+            row("PDF 目录生成", id: "pdf-outline", allowance: definitions, cost: "每次生成消耗 1 额度")
+            Text("PDF 目录生成与 AI 词点共用额度。撤销和重做不消耗额度。")
+                .font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
+        }
+        .padding(20).background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
+    }
+    private func row(_ title: String, id: String, allowance: Account.Allowance, cost: String? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).font(LeximoryTypography.interface(15, style: .subheadline))
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 16) { values(allowance) }.fixedSize(horizontal: true, vertical: false)
+                VStack(alignment: .leading, spacing: 8) { values(allowance) }
             }
-            Spacer(minLength: 12)
-            VStack(alignment: .leading, spacing: 6) {
-                Text("\(Int(allowance.used)) / \(Int(allowance.limit))").font(LeximoryTypography.interface(22, style: .title2)).monospacedDigit()
-                if allowance.resetsIn > 0 {
-                    Text("\(Duration.seconds(allowance.resetsIn).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated)))后重置")
-                        .font(LeximoryTypography.interface(12, style: .caption1)).foregroundStyle(.secondary)
-                }
-            }
-        }.frame(maxWidth: .infinity, minHeight: 116, alignment: .leading).padding(16)
-            .background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
-            .accessibilityElement(children: .combine)
+            if let cost { Text(cost).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary) }
+            Text(resetText(allowance))
+                .font(LeximoryTypography.interface(12, style: .caption1)).foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("account-quota-\(id)")
+    }
+    private func resetText(_ allowance: Account.Allowance) -> String {
+        guard allowance.resetsIn > 0, let observedAt else { return "使用后开始计期，30 天后重置。" }
+        return "重置时间：" + observedAt.addingTimeInterval(TimeInterval(allowance.resetsIn)).formatted(date: .abbreviated, time: .shortened)
+    }
+    @ViewBuilder private func values(_ allowance: Account.Allowance) -> some View {
+        Text("总额 \(Int(allowance.limit))")
+        Text("已用 \(Int(allowance.used))")
+        Text("剩余 \(max(0, Int(allowance.limit - allowance.used)))")
     }
 }
 

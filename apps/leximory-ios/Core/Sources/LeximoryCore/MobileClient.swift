@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 import OpenAPIRuntime
 import OpenAPIURLSession
 import HTTPTypes
@@ -31,6 +32,9 @@ public struct Account: Codable, Sendable {
         public let used: Double
         public let limit: Double
         public let resetsIn: Int
+        public init(used: Double, limit: Double, resetsIn: Int) {
+            self.used = used; self.limit = limit; self.resetsIn = resetsIn
+        }
     }
     public let userId: String
     public let plan: String
@@ -152,6 +156,7 @@ public struct EbookDescriptor: Codable, Sendable {
     public let expiresAt: Date
     public let location: String?
     public let bookmarks: [EbookBookmark]
+    public var outlineRevision: String? = nil
     public var sourceVersion: String? = nil
     public var pdfSourceVersion: String? {
         sourceVersion ?? URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first { $0.name == "v" }?.value
@@ -185,7 +190,7 @@ private struct BearerMiddleware: ClientMiddleware {
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         try await store?.requireOnline()
         // These operations recover transient failures themselves; keep their next attempt available.
-        let recoversFailures = ["generateArticleAudio", "saveShortcutWord", "vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "editableText", "editText", "removeText", "removeWord", "removeEbook", "replaceEbook", "definitions", "ebookDefinitions", "browserDefinitions", "pdfNotes", "savePDFNote"].contains(operationID)
+        let recoversFailures = ["generateArticleAudio", "saveShortcutWord", "vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "editableText", "editText", "removeText", "removeWord", "removeEbook", "replaceEbook", "definitions", "ebookDefinitions", "browserDefinitions", "pdfNotes", "savePDFNote", "generatePDFOutline", "savePDFOutline"].contains(operationID)
         var request = request
         let diagnosticID = UUID().uuidString
         request.headerFields[HTTPField.Name("X-Leximory-Request-ID")!] = diagnosticID
@@ -210,7 +215,8 @@ private struct BearerMiddleware: ClientMiddleware {
             await unauthorized(request.headerFields[.authorization]?.replacingOccurrences(of: "Bearer ", with: "") ?? original)
         }
         let noteOperation = operationID == "pdfNotes" || operationID == "savePDFNote"
-        if !noteOperation, [403, 404].contains(result.0.status.code), let path = request.path {
+        let outlineOperation = operationID == "generatePDFOutline" || operationID == "savePDFOutline"
+        if !noteOperation, !outlineOperation, [403, 404].contains(result.0.status.code), let path = request.path {
             let parts = path.split(separator: "?")[0].split(separator: "/")
             if parts.first == "texts", parts.count > 1 {
                 await store?.removeText(String(parts[1]))
@@ -308,6 +314,7 @@ public struct MobileClient: Sendable {
     public func accountSettings() async throws -> AccountSettings {
         let settings = try mapped(try await client.accountSettings().ok.body.json, to: AccountSettings.self)
         await localStore?.save(settings, for: "account-settings")
+        await localStore?.save(Date(), for: "account-settings-observed-at")
         return settings
     }
     public func setAccountAccent(_ accent: String) async throws {
@@ -519,6 +526,33 @@ public struct MobileClient: Sendable {
     public func audio(textID: String, audioID: String) async throws -> AudioDescriptor {
         try mapped(try await client.audio(path: .init(textId: textID, audioId: audioID)).ok.body.json, to: AudioDescriptor.self)
     }
+    public func generatePDFOutline(textID: String, sourceVersion: String, pages: [String], requestID: UUID) async throws -> [PDFOutlineEntry] {
+        let result = try await MutationRetry.run {
+            try await client.generatePDFOutline(path: .init(textId: textID), body: .json(.init(requestId: requestID.uuidString, sourceVersion: sourceVersion, pages: pages))).ok.body.json
+        }
+        return try mapped(result.entries, to: [PDFOutlineEntry].self)
+    }
+    public func savePDFOutline(textID: String, sourceVersion: String, baseRevision: String?, generationID: UUID?, requestID: UUID, data: Data) async throws -> SavedPDFOutline {
+        let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        let result = try await MutationRetry.run {
+            try await client.savePDFOutline(path: .init(textId: textID), body: .json(.init(requestId: requestID.uuidString, sourceVersion: sourceVersion, baseRevision: baseRevision, generationId: generationID?.uuidString, pdfDigest: digest))).ok.body.json
+        }
+        guard let publishedURL = URL(string: result.url) else { throw URLError(.badServerResponse) }
+        let published: Data
+        if generationID == nil { published = data }
+        else { published = try await MutationRetry.run { try await LocalAssetDownloads.shared.load(publishedURL, limit: 80 * 1024 * 1024) } }
+        // Cache the exact published file under its new URL while retaining the PDF note source identity.
+        if let previous = await localStore?.value(EbookDescriptor.self, for: "ebook/\(textID)"), let url = URL(string: result.url) {
+            let descriptor = EbookDescriptor(text: previous.text, library: previous.library, url: url, format: previous.format,
+                expiresAt: Date().addingTimeInterval(3600), location: previous.location, bookmarks: previous.bookmarks,
+                outlineRevision: result.revision, sourceVersion: sourceVersion)
+            await localStore?.save(descriptor, for: "ebook/\(textID)")
+            let version = await localStore?.version(for: "book/\(textID)") ?? 0
+            try? await localStore?.saveBook(published, source: Self.bookSource(url), textID: textID, ifUnchanged: version)
+            try? await notesStore?.retain(LocalEbook(descriptor: descriptor, data: published, location: descriptor.location))
+        }
+        return SavedPDFOutline(data: published, revision: result.revision)
+    }
     public func ebook(textID: String) async throws -> EbookDescriptor {
         let version = await localStore?.version(for: "ebook/\(textID)") ?? 0
         let descriptor = try mapped(try await client.ebook(path: .init(textId: textID)).ok.body.json, to: EbookDescriptor.self)
@@ -658,7 +692,8 @@ public struct MobileClient: Sendable {
             return LocalEbook(descriptor: descriptor, data: data, location: descriptor.location)
         }
         if let retained = try? await notesStore?.retainedBook(textID: textID),
-           retained.descriptor.pdfSourceVersion == descriptor.pdfSourceVersion {
+           retained.descriptor.pdfSourceVersion == descriptor.pdfSourceVersion,
+           retained.descriptor.outlineRevision == descriptor.outlineRevision {
             return LocalEbook(descriptor: descriptor, data: retained.data, location: descriptor.location)
         }
         let data = try await LocalAssetDownloads.shared.load(descriptor.url, limit: 80 * 1024 * 1024)

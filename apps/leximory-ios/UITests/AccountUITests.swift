@@ -23,8 +23,15 @@ final class AccountUITests: XCTestCase {
         app.launchArguments = ["--account-fixtures"]
         app.launch()
         XCTAssertTrue(app.staticTexts["猫忆读者"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["3 / 20"].exists)
-        XCTAssertTrue(app.staticTexts["1 / 3"].exists)
+        let definitions = app.staticTexts["account-quota-definitions"]
+        for _ in 0..<4 where !definitions.isHittable { app.swipeUp() }
+        XCTAssertTrue(definitions.waitForExistence(timeout: 5))
+        XCTAssertTrue(definitions.label.contains("总额 20"))
+        XCTAssertTrue(definitions.label.contains("已用 3"))
+        let audio = app.staticTexts["account-quota-audio"]
+        XCTAssertTrue(audio.label.contains("总额 3"))
+        XCTAssertTrue(audio.label.contains("已用 1"))
+        app.swipeDown()
         let subscription = app.buttons["account-subscription"]
         XCTAssertTrue(subscription.isHittable)
         let attachment = XCTAttachment(screenshot: app.screenshot())
@@ -47,6 +54,24 @@ final class AccountUITests: XCTestCase {
         signOut.tap()
         XCTAssertTrue(app.buttons["取消"].waitForExistence(timeout: 5))
         app.buttons["取消"].tap()
+    }
+
+    @MainActor func testQuotaTableAtAccessibilitySize() throws {
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--account-fixtures", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
+        let row = app.staticTexts["account-quota-pdf-outline"]
+        for _ in 0..<8 where !row.isHittable { app.swipeUp() }
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertTrue(row.label.contains("PDF 目录生成"))
+        XCTAssertTrue(row.label.contains("总额 20"))
+        XCTAssertTrue(row.label.contains("已用 3"))
+        XCTAssertTrue(row.label.contains("剩余"))
+        XCTAssertTrue(row.label.contains("每次生成消耗 1 额度"))
+        XCTAssertTrue(row.label.contains("重置时间"))
+        XCTAssertLessThanOrEqual(row.frame.maxX, app.frame.maxX)
+        capture("Accessible PDF quota table")
     }
 
     @MainActor func testActivePlanLeadsWithoutRoutineStatus() throws {
