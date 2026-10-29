@@ -441,9 +441,11 @@ public struct MobileClient: Sendable {
         await localStore?.upsertWord(word)
         return word
     }
-    public func importArticle(libraryID: String, title: String, content: String, annotate: Bool, onlyComments: Bool, generateTitle: Bool) async throws -> CatalogText {
-        let text = try mapped(try await client.importArticle(path: .init(libraryId: libraryID), body: .json(.init(
-            title: title, content: content, annotate: annotate, onlyComments: onlyComments, generateTitle: generateTitle))).ok.body.json, to: CatalogText.self)
+    public func importArticle(libraryID: String, title: String, content: String, annotate: Bool, onlyComments: Bool, generateTitle: Bool, requestID: String = UUID().uuidString) async throws -> CatalogText {
+        let text = try await MutationRetry.run {
+            try mapped(try await client.importArticle(path: .init(libraryId: libraryID), body: .json(.init(
+                requestId: requestID, title: title, content: content, annotate: annotate, onlyComments: onlyComments, generateTitle: generateTitle))).ok.body.json, to: CatalogText.self)
+        }
         await localStore?.upsertText(text)
         return text
     }

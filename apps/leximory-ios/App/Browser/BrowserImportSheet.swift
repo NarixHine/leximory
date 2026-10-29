@@ -171,18 +171,18 @@ struct BrowserImportSheet: View {
             let text: CatalogText
             if let file { text = try await workspace.client.uploadEbook(libraryID: folder.id, title: title, filename: file.name, data: file.data) }
             else if fullText {
-                text = try await workspace.client.importArticle(libraryID: folder.id, title: title, content: content, annotate: true, onlyComments: false, generateTitle: false)
+                text = try await workspace.client.importArticle(libraryID: folder.id, title: title, content: content, annotate: true, onlyComments: false, generateTitle: false, requestID: requestID)
             } else if let draft {
                 text = try await workspace.client.createBookmark(libraryID: folder.id, url: draft.url.absoluteString, requestID: requestID, title: title)
             } else { return }
             imported(text, file == nil && fullText); dismiss()
         } catch {
             if let failure = MobileClient.cause(of: error) as? MobileFailure {
-                uncertain = importStarted && (file != nil || fullText) && failure.error.code == "service_unavailable"
-                self.error = uncertain ? "未能确认导入结果，请先查看我的书签，避免重复导入。" : failure.error.message
+                uncertain = importStarted && file != nil && failure.error.code == "service_unavailable"
+                self.error = uncertain ? "未能确认导入结果，请先查看我的书签，避免重复导入。" : importStarted && fullText && failure.error.retryable ? "导入尚未完成，请重试。" : failure.error.message
             } else {
-                uncertain = importStarted && (file != nil || fullText)
-                self.error = uncertain ? "未能确认导入结果，请先查看我的书签，避免重复导入。" : !importStarted ? "网站文件夹设置未能保存，请重试。" : "链接未能保存，请重试。"
+                uncertain = importStarted && file != nil
+                self.error = uncertain ? "未能确认导入结果，请先查看我的书签，避免重复导入。" : !importStarted ? "网站文件夹设置未能保存，请重试。" : fullText ? "导入尚未完成，请重试。" : "链接未能保存，请重试。"
             }
         }
     }

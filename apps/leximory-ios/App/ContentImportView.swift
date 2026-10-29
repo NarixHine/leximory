@@ -20,6 +20,7 @@ struct ContentImportView: View {
     @State private var error: String?
     @State private var uncertain = false
     @State private var bookmarkRequestID = UUID().uuidString
+    @State private var articleRequestID = UUID().uuidString
     @State private var savingBookmark = false
     @FocusState private var focusedField: String?
     private struct ImportedFile { let name: String; let data: Data }
@@ -174,7 +175,7 @@ struct ContentImportView: View {
             }
             if kind != 1 {
                 text = try await client.importArticle(libraryID: library.id.rawValue, title: title, content: content,
-                    annotate: annotate, onlyComments: onlyComments, generateTitle: generateTitle)
+                    annotate: annotate, onlyComments: onlyComments, generateTitle: generateTitle, requestID: articleRequestID)
             } else {
                 guard let ebook else { return }
                 text = try await client.uploadEbook(libraryID: library.id.rawValue, title: title, filename: ebook.name, data: ebook.data)
@@ -182,11 +183,14 @@ struct ContentImportView: View {
             imported(text); dismiss()
         } catch {
             if let failure = MobileClient.cause(of: error) as? MobileFailure {
-                uncertain = !(kind == 2 && !extracted) && failure.error.code == "service_unavailable"
-                self.error = uncertain ? "未能确认导入结果，请先查看文库，避免重复导入。" : failure.error.message
+                uncertain = kind == 1 && failure.error.code == "service_unavailable"
+                self.error = uncertain ? "未能确认导入结果，请先查看文库，避免重复导入。" : isText && failure.error.retryable ? "导入尚未完成，请重试。" : failure.error.message
             }
             else if kind == 2 && !extracted { self.error = "文章解析失败，请手动录入" }
-            else { uncertain = true; self.error = "未能确认导入结果，请先查看文库，避免重复导入。" }
+            else {
+                uncertain = kind == 1
+                self.error = uncertain ? "未能确认导入结果，请先查看文库，避免重复导入。" : "导入尚未完成，请重试。"
+            }
         }
     }
     private enum ImportError: Error { case message(String)

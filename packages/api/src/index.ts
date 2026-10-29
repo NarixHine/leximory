@@ -174,6 +174,7 @@ export const savedWordSchema = z
     .strict()
 export const articleImportSchema = z
     .object({
+        requestId: resourceID.optional(),
         title: z.string().trim().min(1).max(512),
         content: z.string().min(1).max(30000),
         annotate: z.boolean(),

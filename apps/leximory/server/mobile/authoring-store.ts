@@ -5,6 +5,7 @@ import { extractArticleFromUrl } from '@repo/scrape'
 import { languageWelcomeWords } from '@repo/languages'
 import { assertPublicArticleURL } from './article-url'
 import { supabase } from '@repo/supabase'
+import { redis } from '@repo/kv/redis'
 import { revalidateTag } from 'next/cache'
 import { PLAN_COMMENTARY_QUOTA, ACTION_QUOTA_COST } from '@repo/env/config'
 import { createText, deleteText, uploadEbook, updateText, setTextAnnotationProgress } from '@/server/db/text'
@@ -14,6 +15,22 @@ import { inngest } from '@/server/inngest/client'
 import { MobileError } from './errors'
 import type { AuthoringStore } from './authoring'
 import { serializeWord } from './word-format'
+import { createArticleImporter } from './article-import-store'
+
+const importArticle = createArticleImporter({
+    database: supabase,
+    charge: (userId, requestId) => charge({ userId }, ACTION_QUOTA_COST.articleAnnotation, requestId),
+    accepted: {
+        get: (id) => redis.get('mobile:article-import:' + id),
+        set: async (id) => {
+            await redis.set('mobile:article-import:' + id, id, { ex: 604800 })
+        },
+    },
+    markPending: (id) => setTextAnnotationProgress({ id, progress: 'annotating' }),
+    enqueue: async (event) => {
+        await inngest.send({ ...event, name: 'app/article.imported' })
+    },
+})
 
 function expireWords(library: string) {
     revalidateTag(`words:${library}`, { expire: 0 })
@@ -78,38 +95,9 @@ export const authoringStore: AuthoringStore = {
         revalidateTag(id, { expire: 0 })
     },
     async article(subject, library, input) {
-        if (input.annotate) {
-            await charge(subject, ACTION_QUOTA_COST.articleAnnotation)
-        }
-        const id = await createText({ lib: library.id, title: input.title, content: input.content })
-        try {
-            if (input.annotate) {
-                await setTextAnnotationProgress({ id, progress: 'annotating' })
-                await inngest.send({
-                    name: 'app/article.imported',
-                    data: {
-                        article: input.content,
-                        userId: subject.userId,
-                        textId: id,
-                        onlyComments: input.onlyComments,
-                        generateTitle: input.generateTitle,
-                    },
-                })
-            }
-        } catch (error) {
-            await deleteText({ id })
-            throw error
-        }
+        const text = await importArticle(subject, library, input)
         revalidateTag(`texts:${library.id}`, { expire: 0 })
-        return {
-            id,
-            libraryId: library.id,
-            title: input.title,
-            topics: [],
-            emoji: null,
-            createdAt: new Date().toISOString(),
-            format: 'article',
-        }
+        return text
     },
     async ebook(library, title, file) {
         const id = await createText({ lib: library.id, title })
@@ -143,9 +131,9 @@ export const authoringStore: AuthoringStore = {
     },
 }
 
-async function charge(subject: { userId: string }, cost: number) {
+async function charge(subject: { userId: string }, cost: number, requestId?: string) {
     const { plan } = await getMembership(subject.userId)
     const limit = PLAN_COMMENTARY_QUOTA[plan]
-    const allowed = await chargeCommentaryQuota({ userId: subject.userId, cost, limit })
+    const allowed = await chargeCommentaryQuota({ userId: subject.userId, cost, limit, requestId })
     if (!allowed) throw new MobileError('quota_exceeded')
 }
