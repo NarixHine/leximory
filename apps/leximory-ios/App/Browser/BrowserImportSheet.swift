@@ -57,10 +57,14 @@ struct BrowserImportSheet: View {
         switch request.source { case .ebook(let file), .pdf(let file): file; case .article: nil }
     }
     private var folder: CatalogLibrary? { workspace.writableFolders.first { $0.id == folderID } }
-    private var limit: Int { switch folder?.language { case "en", "fr": 30000; case "zh": 5000; default: 10000 } }
+    private var limit: Int? {
+        guard let folder else { return nil }
+        switch folder.language { case "en", "fr": return 30000; case "zh": return 5000; default: return 10000 }
+    }
+    private var contentTooLong: Bool { limit.map { content.utf16.count > $0 } ?? false }
     private var valid: Bool {
         folder != nil && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && title.count <= 512 &&
-        (file != nil || !fullText || !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && content.utf16.count <= limit)
+        (file != nil || !fullText || !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !contentTooLong)
     }
     init(request: BrowserImportRequest, workspace: BrowserWorkspaceModel, imported: @escaping (CatalogText, Bool) -> Void) {
         self.request = request; self.workspace = workspace; self.imported = imported
@@ -102,7 +106,7 @@ struct BrowserImportSheet: View {
                     Section {
                         ArticleMarkdownPreview(content: content, language: folder?.preview.language ?? "English")
                         Button("编辑全文", systemImage: "pencil") { path.append(.content) }
-                        if content.utf16.count > limit { Text("全文超过此文件夹的 \(limit) 字符上限，请编辑后重试。").foregroundStyle(.secondary) }
+                        if contentTooLong, let limit { Text("全文共 \(content.utf16.count) 字符，超过此文件夹的 \(limit) 字符上限。请编辑后重试。").foregroundStyle(.secondary) }
                         if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { Text("未能提取正文。可以存为链接，或手动编辑全文。").foregroundStyle(.secondary) }
                     } header: {
                         sectionHeading("全文预览")

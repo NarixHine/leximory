@@ -203,19 +203,22 @@ struct BrowserHomeView: View {
     }
     private func shortcutLabel<Icon: View>(_ title: String, isPin: Bool = false, cutout: Bool = true, background: Color = .white, label: Color = .primary, @ViewBuilder icon: () -> Icon) -> some View {
         VStack(spacing: 10) {
-            Circle().fill(background.opacity(0.94))
-                .overlay {
-                    icon().frame(width: 24, height: 24)
-                        .blendMode(cutout ? .destinationOut : .normal)
-                }
-                .compositingGroup()
-                .frame(width: 40, height: 40)
-                .background {
-                    if isPin && cutout && colorScheme == .light {
-                        Circle().fill(tone(0x285F5D, 0x285F5D).opacity(0.80))
+            if isPin {
+                icon().frame(width: 24, height: 24)
+                    .frame(width: 40, height: 40)
+                    .background { insetBackground(cornerRadius: 20) }
+                    .clipShape(.circle)
+                    .accessibilityHidden(true)
+            } else {
+                Circle().fill(background.opacity(0.94))
+                    .overlay {
+                        icon().frame(width: 24, height: 24)
+                            .blendMode(cutout ? .destinationOut : .normal)
                     }
-                }
-                .accessibilityHidden(true)
+                    .compositingGroup()
+                    .frame(width: 40, height: 40)
+                    .accessibilityHidden(true)
+            }
             Text(title).font(LeximoryTypography.interface(13, style: .footnote))
                 .foregroundStyle(label)
                 .multilineTextAlignment(.center)
@@ -231,7 +234,7 @@ struct BrowserHomeView: View {
             BrowserHomeShortcutLayout(accessibility: typeSize.isAccessibilitySize) {
                 ForEach(pins) { pin in
                         Button { openPin(pin) } label: {
-                            shortcutLabel(pin.title, isPin: true, cutout: pin.iconURL.flatMap { pinImages[$0] } == nil) {
+                            shortcutLabel(pin.title, isPin: true) {
                                 Group {
                                     if let url = pin.iconURL, let image = pinImages[url] {
                                         Image(uiImage: image).resizable().scaledToFit()
@@ -291,16 +294,20 @@ struct BrowserHomeView: View {
                 }
                 .padding(.vertical, 12)
                 .background {
-                    if reduceTransparency {
-                        RoundedRectangle(cornerRadius: 28).fill(innerFill)
-                    } else {
-                        HomeWallpaperGlassBackdrop(cornerRadius: 28, blurRadius: 6, showsGlassEdge: false)
-                            .overlay(innerFill.opacity(0.60))
-                            .clipShape(.rect(cornerRadius: 28))
-                    }
+                    insetBackground(cornerRadius: 28)
                 }
             }
         }.padding(12).modifier(BrowserHomeGlass())
+    }
+
+    @ViewBuilder private func insetBackground(cornerRadius: CGFloat) -> some View {
+        if reduceTransparency {
+            RoundedRectangle(cornerRadius: cornerRadius).fill(innerFill)
+        } else {
+            HomeWallpaperGlassBackdrop(cornerRadius: cornerRadius, blurRadius: 6, showsGlassEdge: false)
+                .overlay(innerFill.opacity(0.60))
+                .clipShape(.rect(cornerRadius: cornerRadius))
+        }
     }
 
     private var pinDeleteIcon: UIImage {

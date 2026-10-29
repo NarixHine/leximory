@@ -197,7 +197,7 @@ final class TextBrowserUITests: XCTestCase {
 final class BrowserPageServer {
     let listener: NWListener
     let url: String
-    init(pdfData: Data? = nil, artwork: Bool = false) throws {
+    init(pdfData: Data? = nil, artwork: Bool = false, extraArticleContent: String = "") throws {
         let listener = try NWListener(using: .tcp, on: .any)
         self.listener = listener
         let metadata = artwork ? "<meta property=\"og:image\" content=\"https://fixtures.leximory.invalid/forest.png\"><link rel=\"icon\" href=\"https://fixtures.leximory.invalid/forest.png\">" : ""
@@ -207,7 +207,7 @@ final class BrowserPageServer {
         </head><body><main><small>FIELD NOTES</small><h1>A quiet forest</h1>
         <p>The morning light fell across the winding river. We walked slowly beneath the trees, noticing the small things along the bank.</p>
         <p>A bird called from somewhere beyond the path. For a moment, the forest seemed to hold its breath.</p>
-        <p>There was no need to hurry. Every turn offered another reason to look a little closer.</p><a href="/next">Continue walking</a></main></body></html>
+        <p>There was no need to hurry. Every turn offered another reason to look a little closer.</p>\(extraArticleContent)<a href="/next">Continue walking</a></main></body></html>
         """
         let response = Data(("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: \(html.utf8.count)\r\nConnection: close\r\n\r\n" + html).utf8)
         let pdfResponse = pdfData.map { data in

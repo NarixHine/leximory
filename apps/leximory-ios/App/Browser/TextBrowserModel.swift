@@ -416,7 +416,7 @@ extension TextBrowserModel {
         """
         let value = try await web.callAsyncJavaScript(script, arguments: [:], in: nil, contentWorld: .world(name: "LeximoryArticleExtraction"))
         guard navigation == navigationID, let payload = value as? [String: String], let content = payload["content"] else { throw URLError(.cancelled) }
-        return BrowserArticleDraft(url: url, title: payload["title"] ?? title, content: content)
+        return BrowserArticleDraft(url: url, title: payload["title"] ?? title, content: ArticleMarkdownDocument.strippingLinks(content))
     }
 }
 

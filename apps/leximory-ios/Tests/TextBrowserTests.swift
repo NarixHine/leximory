@@ -5,6 +5,24 @@ import SwiftUI
 @testable import Leximory
 
 @MainActor @Suite(.serialized) struct TextBrowserTests {
+    @Test func extractedArticleCountsReadableLinkTextRatherThanHiddenAddresses() async throws {
+        let model = TextBrowserModel(websiteDataStore: .nonPersistent())
+        defer { model.web.stopLoading() }
+        let address = "https://example.com/read?tracking=" + String(repeating: "x", count: 2000)
+        let paragraph = "A quiet river runs through the garden. Take time to notice the words in their context."
+        let html = "<html><head><title>A river journey</title></head><body><article><h1>A river journey</h1>" +
+            (0..<10).map { _ in "<p>\(paragraph) <a href='\(address)'>Read more</a>.</p>" }.joined() + "</article></body></html>"
+        model.web.loadHTMLString(html, baseURL: URL(string: "https://example.com/article"))
+        for _ in 0..<200 {
+            if model.url != nil, !model.web.isLoading { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        let draft = try await model.extractArticle()
+        #expect(draft.content.contains(paragraph))
+        #expect(draft.content.contains("Read more"))
+        #expect(!draft.content.contains("tracking="))
+        #expect(draft.content.utf16.count < 10000)
+    }
     @Test func addressEditingKeepsTheDraftAndCompositionAcrossViewUpdates() async throws {
         let editor = BrowserAddressEditor()
         var submitted: String?

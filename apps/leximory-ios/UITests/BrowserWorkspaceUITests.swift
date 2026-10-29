@@ -2,6 +2,91 @@ import XCTest
 import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
+    @MainActor func testEbookAddressEditingRestoresTransparentControls() {
+        for dark in [false, true] {
+            let app = launch(extraArguments: dark ? ["--dark-appearance"] : [])
+            defer { restore(app) }
+            app.buttons["我的书签"].tap()
+            let book = app.buttons["browser-resource-workspace-epub"]
+            if !book.exists {
+                app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch.tap()
+            }
+            XCTAssertTrue(book.waitForExistence(timeout: 10)); book.tap()
+            let reader = app.otherElements["ebook-reader"]
+            XCTAssertTrue(reader.waitForExistence(timeout: 15))
+            expectation(for: NSPredicate(format: "value CONTAINS %@", "epub已打开"), evaluatedWith: reader)
+            waitForExpectations(timeout: 30)
+            let position = app.staticTexts["ebook-page-position"].value as? String
+            for editing in [true, false] {
+                app.buttons[editing ? "browser-address" : "后退"].tap()
+                let input = app.textFields["browser-address-input"]
+                expectation(for: NSPredicate(format: "exists == %@", NSNumber(value: editing)), evaluatedWith: input)
+                waitForExpectations(timeout: 5)
+                if editing {
+                    XCTAssertTrue(input.isHittable)
+                    XCTAssertFalse(app.buttons["browser-more"].exists)
+                } else {
+                    XCTAssertTrue(app.buttons["browser-address"].isHittable)
+                    XCTAssertTrue(app.buttons["browser-more"].isHittable)
+                    XCTAssertEqual(app.staticTexts["ebook-page-position"].value as? String, position)
+                }
+                let capture = XCTAttachment(screenshot: app.screenshot())
+                capture.name = "EPUB controls \(editing ? "editing" : "reading") \(dark ? "dark" : "light")"
+                capture.lifetime = .keepAlways; add(capture)
+            }
+        }
+    }
+    @MainActor func testImportUsesTheSelectedFoldersLanguageLimit() throws {
+        let page = try BrowserPageServer(extraArticleContent: "<p>" + String(repeating: "A quiet river flows beside the forest. ", count: 350) + "</p>")
+        defer { page.listener.cancel() }
+        let app = launch(extraArguments: ["--workspace-webpage-url", page.url]); defer { restore(app) }
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 15))
+        app.buttons["browser-magic-save"].tap()
+        let choose = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "选择文件夹")).firstMatch
+        XCTAssertTrue(choose.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["browser-import-submit"].isEnabled)
+        choose.tap()
+        app.buttons.matching(identifier: "browser-select-folder-workspace-folder").matching(NSPredicate(format: "label == %@", "选择")).firstMatch.tap()
+        XCTAssertTrue(app.buttons["browser-import-submit"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["browser-import-submit"].isEnabled)
+        app.buttons.containing(NSPredicate(format: "label CONTAINS %@ AND label BEGINSWITH %@", "Field notes", "文件夹")).firstMatch.tap()
+        app.buttons.matching(identifier: "browser-select-folder-workspace-japanese-folder").matching(NSPredicate(format: "label == %@", "选择")).firstMatch.tap()
+        XCTAssertFalse(app.buttons["browser-import-submit"].isEnabled)
+    }
+    @MainActor func testEbookAddressControlsAcrossReadingThemes() {
+        for dark in [false, true] {
+            let app = launch(extraArguments: dark ? ["--dark-appearance"] : [])
+            defer { restore(app) }
+            app.buttons["我的书签"].tap()
+            let book = app.buttons["browser-resource-workspace-epub"]
+            if !book.exists {
+                app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch.tap()
+            }
+            XCTAssertTrue(book.waitForExistence(timeout: 10)); book.tap()
+            let reader = app.otherElements["ebook-reader"]
+            XCTAssertTrue(reader.waitForExistence(timeout: 15))
+            expectation(for: NSPredicate(format: "value CONTAINS %@", "epub已打开"), evaluatedWith: reader)
+            waitForExpectations(timeout: 30)
+            for theme in ["paper", "gray", "sepia", "cream"] {
+                let settings = app.buttons["ebook-settings"]
+                if !settings.isHittable { reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.48)).tap() }
+                XCTAssertTrue(settings.waitForExistence(timeout: 5)); settings.tap()
+                let choice = app.buttons["ebook-theme-\(theme)"]
+                XCTAssertTrue(choice.waitForExistence(timeout: 5)); choice.tap()
+                XCTAssertTrue(choice.isSelected)
+                app.navigationBars["阅读选项"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+                    .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))
+                expectation(for: NSPredicate(format: "hittable == true"), evaluatedWith: app.buttons["browser-address"])
+                waitForExpectations(timeout: 10)
+                XCTAssertTrue(app.buttons["browser-address"].isHittable)
+                XCTAssertTrue(app.buttons["首页"].isHittable)
+                XCTAssertTrue(app.buttons["browser-more"].isHittable)
+                let capture = XCTAttachment(screenshot: app.screenshot())
+                capture.name = "Ebook address controls \(theme) \(dark ? "dark" : "light")"
+                capture.lifetime = .keepAlways; add(capture)
+            }
+        }
+    }
     @MainActor func testEbookExportOpensNativeShareSheet() {
         for (format, title) in [("pdf", "River pages"), ("epub", "A river journey")] {
             let app = launch(); defer { restore(app) }

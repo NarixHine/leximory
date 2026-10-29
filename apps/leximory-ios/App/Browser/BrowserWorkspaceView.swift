@@ -180,8 +180,8 @@ struct BrowserWorkspaceView: View {
             }
             Button("取消", role: .cancel) {}
         } message: { Text("将清除浏览记录、Cookie 和网站数据，并退出网站登录。书签和词汇会保留。") }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            if editingAddress { finishEditing() }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
+            if editingAddress, addressEditor.field?.isFirstResponder != true { finishEditing() }
         }
         .task(id: [scenePhase == .active ? "active" : "inactive", sync?.online == false ? "offline" : "online"]
             + workspace.homePins.map { $0.id.uuidString + ($0.iconURL?.absoluteString ?? "") }) {
