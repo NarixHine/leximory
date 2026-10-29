@@ -183,6 +183,7 @@ struct HomeWallpaper: Sendable {
 private struct HomeWallpaperContext {
     let wallpaper: HomeWallpaper
     let bounds: CGRect
+    let coordinateSpace: Namespace.ID
 }
 private extension EnvironmentValues {
     @Entry var homeWallpaperContext: HomeWallpaperContext? = nil
@@ -196,22 +197,60 @@ struct HomeWallpaperSurface<Content: View>: View {
     var usesSystemBackground = false
     @ViewBuilder let content: Content
     @State private var bounds = CGRect.zero
+    @Namespace private var wallpaperCoordinates
     var body: some View {
-        content
-            .environment(\.homeWallpaperContext, wallpaper.map { .init(wallpaper: $0, bounds: bounds) })
+        let coordinates = wallpaperCoordinates
+        return content
+            .environment(\.homeWallpaperContext, wallpaper.map { .init(wallpaper: $0, bounds: bounds, coordinateSpace: coordinates) })
             .background {
                 if let wallpaper {
                     GeometryReader { geometry in
                         Image(uiImage: wallpaper.image).resizable().scaledToFill()
                             .frame(width: geometry.size.width, height: geometry.size.height).clipped()
                     }
-                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { bounds = $0 }
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(coordinates)) } action: { bounds = $0 }
                     .ignoresSafeArea()
                     .accessibilityHidden(true)
                 } else {
                     (usesSystemBackground ? Color(uiColor: .systemBackground) : LeximoryPalette.paper).ignoresSafeArea()
                 }
             }
+            .coordinateSpace(name: coordinates)
+    }
+}
+
+struct HomeWallpaperGlassBackdrop: View {
+    let cornerRadius: CGFloat
+    var blurRadius: CGFloat = 3
+    var showsGlassEdge = true
+    @Environment(\.homeWallpaperContext) private var context
+
+    var body: some View {
+        GeometryReader { geometry in
+            if let context, context.bounds.width > 0, context.bounds.height > 0 {
+                let frame = geometry.frame(in: .named(context.coordinateSpace))
+                Image(uiImage: context.wallpaper.image)
+                    .resizable().scaledToFill()
+                    .frame(width: context.bounds.width, height: context.bounds.height)
+                    .clipped()
+                    .offset(x: context.bounds.minX - frame.minX, y: context.bounds.minY - frame.minY)
+                    .blur(radius: blurRadius, opaque: true)
+            } else {
+                Rectangle().fill(.ultraThinMaterial)
+            }
+        }
+        .clipShape(.rect(cornerRadius: cornerRadius))
+        .overlay {
+            if showsGlassEdge {
+                RoundedRectangle(cornerRadius: cornerRadius).fill(.clear)
+                    .glassEffect(.clear, in: .rect(cornerRadius: cornerRadius))
+                    .mask {
+                        RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(lineWidth: 1)
+                    }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
@@ -226,7 +265,7 @@ private struct WallpaperInk: ViewModifier {
             let light = context.wallpaper.usesLightInk(in: frame, canvas: context.bounds)
             content.foregroundStyle(light ? Color.white : Color.black)
                 .shadow(color: (light ? Color.black : Color.white).opacity(shadow ? 0.28 : 0), radius: 1.5, y: 1)
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame = $0 }
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(context.coordinateSpace)) } action: { frame = $0 }
         } else {
             content.foregroundStyle(secondary ? Color.secondary : Color.primary)
                 .shadow(color: (colorScheme == .dark ? Color.black : Color.white).opacity(shadow ? 0.18 : 0), radius: 1.5, y: 1)

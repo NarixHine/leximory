@@ -8,6 +8,7 @@ struct FolderEditorRequest: Identifiable {
 
 struct BrowserFoldersView: View {
     @Bindable var workspace: BrowserWorkspaceModel
+    let editText: (CatalogText) -> Void
     @Environment(\.nativeSync) private var sync
     @Environment(\.browserChromeHeight) private var chromeHeight
     @State private var archiveExpanded = false
@@ -86,17 +87,16 @@ struct BrowserFoldersView: View {
             if expanded { workspace.expandedFolders.insert(library.id) }
             else { workspace.expandedFolders.remove(library.id) }
         })) {
-            BrowserFolderContents(workspace: workspace, library: library)
+            BrowserFolderContents(workspace: workspace, library: library, editText: editText)
         } label: {
             BrowserFolderLabel(library: library).frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("browser-folder-toggle-\(library.id)")
-        }
-
-        .contextMenu {
-            if library.owned {
-                Button("重新命名", systemImage: "pencil") { editor = FolderEditorRequest(library: library) }.disabled(sync?.online == false)
-            }
-            Button(library.archived ? "取消归档" : "归档", systemImage: "archivebox") { Task { await workspace.setArchived(library) } }.disabled(sync?.online == false)
+                .contextMenu {
+                    if library.owned {
+                        Button("重新命名", systemImage: "pencil") { editor = FolderEditorRequest(library: library) }.disabled(sync?.online == false)
+                    }
+                    Button(library.archived ? "取消归档" : "归档", systemImage: "archivebox") { Task { await workspace.setArchived(library) } }.disabled(sync?.online == false)
+                }
         }
     }
 }
@@ -104,12 +104,22 @@ struct BrowserFoldersView: View {
 private struct BrowserFolderContents: View {
     let workspace: BrowserWorkspaceModel
     let library: CatalogLibrary
+    let editText: (CatalogText) -> Void
     @Environment(\.nativeSync) private var sync
     @State private var loaded = false
     var body: some View {
         Group {
             if let texts = workspace.texts[library.id] {
-                ForEach(texts) { text in BrowserResourceRow(text: text) { Task { await workspace.open(text) } }.padding(.leading, 16) }
+                ForEach(texts) { text in
+                    BrowserResourceRow(text: text) { Task { await workspace.open(text) } }
+                        .contextMenu {
+                            if library.owned && !library.shadow && text.format != "bookmark" {
+                                Button("编辑", systemImage: "pencil") { editText(text) }
+                                    .disabled(sync?.online == false)
+                            }
+                        }
+                        .padding(.leading, 16)
+                }
                 if texts.isEmpty && !workspace.folderFailures.contains(library.id) { Text("还没有书签").foregroundStyle(.secondary).padding(.leading, 16) }
                 if workspace.folderFailures.contains(library.id) {
                     Button("未能更新此文件夹，重试") { Task { await workspace.loadFolder(library, online: sync?.online != false, refresh: true) } }
@@ -215,6 +225,7 @@ struct FolderEditorSheet: View {
     @State private var busy = false
     @State private var error: String?
     @State private var requestID = UUID().uuidString
+    @ScaledMetric(relativeTo: .body) private var compactHeight = 210.0
     private let languages = [("en", "英语"), ("fr", "法语"), ("ja", "日语"), ("zh", "古汉语"), ("nl", "其他")]
     var body: some View {
         NavigationStack {
@@ -235,7 +246,8 @@ struct FolderEditorSheet: View {
             }
             .onAppear { if let library { name = library.name; language = library.language } }
             .interactiveDismissDisabled(busy)
-        }.leximorySheetStyle().presentationDetents([.medium, .large])
+        }.leximorySheetStyle()
+            .presentationDetents([.height(compactHeight + (library == nil ? 60 : 0) + (error == nil ? 0 : 60)), .large])
     }
     private func save() async {
         busy = true; error = nil

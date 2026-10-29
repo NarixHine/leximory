@@ -811,3 +811,109 @@ private final class ScrollHistoryServer: Sendable {
         }
     }
 }
+
+@MainActor struct ReviewLoadingTests {
+    private func model(_ transport: LoadingTransport, store: LocalReadingStore? = nil) -> ReviewModel {
+        ReviewModel(client: MobileClient(baseURL: URL(string: "https://review.test")!, transport: transport, token: { _ in "verified" }, localStore: store),
+                    selection: ReviewSelection(date: "2026-10-12", language: "en"))
+    }
+
+    @Test func repeatedFailuresRecoverWithoutAbandoningTheReview() async {
+        let transport = LoadingTransport(mode: .failure)
+        let review = model(transport)
+        review.drafts["translation-0"] = "My answer"
+        await review.observe(pause: { _ in
+            if await transport.reads == 4 { await transport.setMode(.complete) }
+            if await transport.reads == 5 { throw CancellationError() }
+        })
+        #expect(await transport.reads == 5)
+        #expect(review.snapshot?.translations?.first?.keyword == "hello")
+        #expect(review.drafts["translation-0"] == "My answer")
+        #expect(review.error == nil)
+    }
+
+    @Test func cachedExercisesRemainAvailableDuringRepeatedFailures() async {
+        let transport = LoadingTransport(mode: .complete)
+        let review = model(transport)
+        await review.observe(pause: { _ in throw CancellationError() })
+        await transport.setMode(.failure)
+        await review.observe(pause: { _ in
+            if await transport.reads >= 5 { throw CancellationError() }
+        })
+        #expect(review.snapshot?.translations?.first?.keyword == "hello")
+        #expect(review.error == nil)
+    }
+
+    @Test func transientReadFailureRecoversWithoutNotifying() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://review.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
+        let transport = LoadingTransport(mode: .transient)
+        let review = model(transport, store: store)
+        await review.observe(pause: { _ in
+            if await transport.reads >= 2 { throw CancellationError() }
+        })
+        #expect(review.error == nil)
+        #expect(review.snapshot?.translations?.first?.keyword == "hello")
+    }
+
+    @Test func vanishedGenerationIsStartedAgainAndBecomesUsable() async {
+        let transport = LoadingTransport(mode: .vanished)
+        let review = model(transport)
+        await review.observe(pause: { _ in
+            if await transport.reads >= 3 { throw CancellationError() }
+        })
+        #expect(await transport.starts == 2)
+        #expect(review.snapshot?.translations?.first?.keyword == "hello")
+        #expect(review.error == nil)
+    }
+
+    @Test func delayedGenerationStillArrivesAfterNinetyPolls() async {
+        let transport = LoadingTransport(mode: .stalled)
+        let review = model(transport)
+        await review.observe(pause: { _ in
+            if await transport.reads == 90 { await transport.setMode(.complete) }
+            if await transport.reads == 91 { throw CancellationError() }
+        })
+        #expect(await transport.reads == 91)
+        #expect(review.snapshot?.translations?.first?.keyword == "hello")
+        #expect(review.error == nil)
+    }
+
+    @Test func partialExercisesAreAvailableBeforeGenerationCompletes() async {
+        let transport = LoadingTransport(mode: .partial)
+        let review = model(transport)
+        await review.observe(pause: { _ in throw CancellationError() })
+        #expect(review.snapshot?.exists == false)
+        #expect(review.snapshot?.translations?.first?.keyword == "hello")
+        #expect(review.error == nil)
+    }
+
+    private actor LoadingTransport: ClientTransport {
+        enum Mode { case failure, transient, complete, vanished, stalled, partial }
+        var mode: Mode
+        private(set) var reads = 0
+        private(set) var starts = 0
+        init(mode: Mode) { self.mode = mode }
+        func setMode(_ mode: Mode) { self.mode = mode }
+        func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+            if request.method == .post {
+                starts += 1
+                return (HTTPResponse(status: .ok), HTTPBody(#"{"success":true}"#))
+            }
+            reads += 1
+            if mode == .failure || (mode == .transient && reads == 1) { throw URLError(.networkConnectionLost) }
+            if mode == .stalled {
+                return (HTTPResponse(status: .ok), HTTPBody(#"{"exists":false,"inProgress":true}"#))
+            }
+            if mode == .vanished && reads < 3 {
+                return (HTTPResponse(status: .ok), HTTPBody(#"{"exists":false,"inProgress":false}"#))
+            }
+            let complete = mode == .partial ? "false" : "true"
+            return (HTTPResponse(status: .ok), HTTPBody("""
+                {"exists":\(complete),"inProgress":\(mode == .partial),"translations":[{"prompt":"翻译","answer":"Hello","keyword":"hello","status":"idle"}]}
+                """))
+        }
+    }
+}

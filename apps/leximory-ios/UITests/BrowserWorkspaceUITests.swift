@@ -124,10 +124,10 @@ final class BrowserWorkspaceUITests: XCTestCase {
     }
     @MainActor func testAddressMatchesOpenAssetsWithoutExpandingFolders() {
         let app = launch(); defer { restore(app) }
-        app.buttons["浏览网页"].tap()
+        app.buttons["browser-address"].tap()
         let input = app.textFields["browser-address-input"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
-        input.typeText("river")
+        input.typeText("A river journey")
         let match = app.buttons["browser-address-match-workspace-epub"]
         XCTAssertTrue(match.waitForExistence(timeout: 10))
         XCTAssertEqual(match.label, "A river journey")
@@ -138,7 +138,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
         let cardFrames = cards.map(\.frame)
         let inputFrame = input.frame
         let matches = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-address-match-"))
-        for query in ["r", "no matches here", "river"] {
+        for query in ["r", "no matches here", "A river journey"] {
             input.buttons.firstMatch.tap()
             input.typeText(query)
             XCTAssertEqual(input.value as? String, query)
@@ -161,7 +161,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["ebook-reader"].waitForExistence(timeout: 15))
         XCTAssertFalse(input.exists)
         app.buttons["后退"].tap()
-        XCTAssertTrue(app.buttons["浏览网页"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["browser-bookmarks"].waitForExistence(timeout: 5))
     }
     @MainActor func testAddressMatchesReopenEarlierWebpagesByTitleAndURL() throws {
         try verifyHistorySuggestions(appearance: "Light")
@@ -183,7 +183,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
         input.typeText(laterURL + "\n")
         XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 15))
         app.buttons["首页"].tap()
-        app.buttons["浏览网页"].tap()
+        app.buttons["browser-address"].tap()
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.typeText("quiet")
         let titleMatch = app.buttons["browser-address-match-webpage:" + laterURL]
@@ -200,13 +200,13 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 15))
         XCTAssertFalse(input.exists)
         app.buttons["后退"].tap()
-        XCTAssertTrue(app.buttons["浏览网页"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["browser-bookmarks"].waitForExistence(timeout: 5))
     }
 
     @MainActor func testFindIsAvailableForWebpagesAndSearchablePDFs() throws {
         let page = try BrowserPageServer(); defer { page.listener.cancel() }
         let app = launch(); defer { restore(app) }
-        app.buttons["浏览网页"].tap()
+        app.buttons["browser-address"].tap()
         let input = app.textFields["browser-address-input"]
         XCTAssertTrue(input.waitForExistence(timeout: 5)); input.typeText(page.url + "\n")
         XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 15))
@@ -331,9 +331,12 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertFalse(app.buttons["前进"].exists)
         XCTAssertTrue(app.buttons["我的书签"].isHittable)
         XCTAssertTrue(app.buttons["打开电子书"].isHittable)
+        XCTAssertFalse(app.buttons["browser-account"].exists)
+        XCTAssertFalse(app.staticTexts["Leximory Browser"].exists)
+        XCTAssertTrue(app.buttons["browser-browse"].isHittable)
         let address = app.buttons["browser-address"]
         XCTAssertGreaterThan(address.frame.midY, app.frame.height * 0.75)
-        app.buttons["浏览网页"].tap()
+        app.buttons["browser-address"].tap()
         XCTAssertTrue(app.textFields["browser-address-input"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["我的书签"].isHittable)
         XCTAssertTrue(app.buttons["打开电子书"].isHittable)
@@ -341,6 +344,65 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertTrue(address.waitForExistence(timeout: 5))
         let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "Browser-first Home"; screenshot.lifetime = .keepAlways; add(screenshot)
     }
+    @MainActor func testHomeShortcutsReflowForLargeTextAndLandscape() {
+        let app = launch(extraArguments: ["--workspace-recent-card-fixtures",
+            "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        defer { XCUIDevice.shared.orientation = .portrait; restore(app) }
+        let bookmarks = app.buttons["browser-bookmarks"]
+        let lastCard = app.buttons["browser-review"]
+        XCTAssertGreaterThanOrEqual(lastCard.frame.minY, bookmarks.frame.maxY)
+        for _ in 0..<5 where !lastCard.isHittable { app.swipeUp() }
+        XCTAssertTrue(lastCard.isHittable)
+        XCTAssertGreaterThanOrEqual(lastCard.frame.width, 44)
+        let large = XCTAttachment(screenshot: app.screenshot())
+        large.name = "Home at accessibility text size"; large.lifetime = .keepAlways; add(large)
+        app.terminate()
+        app.launchArguments = ["--browser-workspace-fixtures", "--workspace-recent-card-fixtures"]
+        XCUIDevice.shared.orientation = .landscapeLeft
+        app.launch()
+        XCTAssertTrue(bookmarks.waitForExistence(timeout: 15))
+        XCTAssertTrue(bookmarks.isHittable)
+        XCTAssertEqual(bookmarks.frame.width, bookmarks.frame.height, accuracy: 1)
+        for _ in 0..<5 where !lastCard.isHittable { app.swipeUp() }
+        XCTAssertTrue(lastCard.isHittable)
+        let landscape = XCTAttachment(screenshot: app.screenshot())
+        landscape.name = "Home in narrow landscape"; landscape.lifetime = .keepAlways; add(landscape)
+    }
+
+    @MainActor func testAccountIsAvailableFromTheMoreMenu() {
+        let app = launch(); defer { restore(app) }
+        XCTAssertFalse(app.buttons["browser-account"].exists)
+        app.buttons["browser-more"].tap()
+        let account = app.buttons["账号"]
+        XCTAssertTrue(account.waitForExistence(timeout: 5))
+        account.tap()
+        XCTAssertTrue(app.buttons["后退"].waitForExistence(timeout: 5))
+        app.buttons["后退"].tap()
+        XCTAssertTrue(app.buttons["browser-browse"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor func testIPadHomeRestoresOriginalCards() throws {
+        let app = launch(extraArguments: ["--workspace-recent-card-fixtures", "--workspace-multiple-pins"])
+        defer { restore(app) }
+        try XCTSkipIf(app.frame.width < 760, "Verify this layout on iPad.")
+        let cards = ["browser-browse", "browser-bookmarks", "browser-ebook", "browser-review"].map { app.buttons[$0] }
+        for card in cards { XCTAssertTrue(card.isHittable) }
+        let frames = cards.map(\.frame)
+        XCTAssertGreaterThan(frames[0].width, 180)
+        for pair in zip(frames, frames.dropFirst()) {
+            XCTAssertLessThan(pair.1.minX, pair.0.maxX)
+            XCTAssertEqual(pair.0.midY, pair.1.midY, accuracy: 2)
+        }
+        let pins = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-pin-")).allElementsBoundByIndex.sorted { $0.frame.minX < $1.frame.minX }
+        XCTAssertEqual(pins.count, 3)
+        for pair in zip(pins, pins.dropFirst()) {
+            XCTAssertEqual(pair.1.frame.midX - pair.0.frame.midX, 76, accuracy: 1)
+        }
+        XCTAssertFalse(app.staticTexts["继续浏览"].exists)
+        let image = XCTAttachment(screenshot: app.screenshot())
+        image.name = "iPad original Home cards"; image.lifetime = .keepAlways; add(image)
+    }
+
     @MainActor func testInlineFoldersAndArticleHistory() {
         let app = launch(); defer { restore(app) }
         app.buttons["我的书签"].tap()
@@ -355,9 +417,9 @@ final class BrowserWorkspaceUITests: XCTestCase {
         app.buttons["前进"].tap()
         XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 5))
     }
-    @MainActor func testRecentCoverCardsInLightAppearance() throws { try verifyRecentCoverCards(dark: false) }
-    @MainActor func testRecentCoverCardsInDarkAppearance() throws { try verifyRecentCoverCards(dark: true) }
-    @MainActor private func verifyRecentCoverCards(dark: Bool) throws {
+    @MainActor func testRecentListInLightAppearance() throws { try verifyRecentList(dark: false) }
+    @MainActor func testRecentListInDarkAppearance() throws { try verifyRecentList(dark: true) }
+    @MainActor private func verifyRecentList(dark: Bool) throws {
         let page = try BrowserPageServer(artwork: !dark); defer { page.listener.cancel() }
         let app = launch(extraArguments: ["--workspace-recent-card-fixtures", "--workspace-webpage-url", page.url] + (dark ? ["--dark-appearance"] : []))
         defer { restore(app) }
@@ -373,11 +435,11 @@ final class BrowserWorkspaceUITests: XCTestCase {
             }
         }
         revealCards()
-        XCTAssertEqual(card.frame.width / card.frame.height, 16.0 / 9, accuracy: 0.03)
+        XCTAssertGreaterThan(card.frame.width, card.frame.height * 2)
         XCTAssertGreaterThan(card.frame.width, 100)
         XCTAssertEqual(card.value as? String, URL(string: page.url)?.host)
         let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = dark ? "Dark recent cover cards" : "Light recent cover cards"
+        screenshot.name = dark ? "Dark recent list" : "Light recent list"
         screenshot.lifetime = .keepAlways; add(screenshot)
         card.tap()
         XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 10))
@@ -386,11 +448,11 @@ final class BrowserWorkspaceUITests: XCTestCase {
         let book = app.buttons["browser-resume-workspace-epub"]
         XCTAssertTrue(book.waitForExistence(timeout: 5))
         XCTAssertEqual(book.value as? String, "Field notes")
-        XCTAssertEqual(book.frame.width / book.frame.height, 16.0 / 9, accuracy: 0.03)
+        XCTAssertGreaterThan(book.frame.width, book.frame.height * 2)
         XCTAssertEqual(card.frame.width, book.frame.width, accuracy: 1)
-        XCTAssertEqual(card.frame.minY, book.frame.minY, accuracy: 1)
+        XCTAssertLessThanOrEqual(card.frame.maxY, book.frame.minY)
         let covers = XCTAttachment(screenshot: app.screenshot())
-        covers.name = dark ? "Dark emoji cover cards" : "Light emoji cover cards"
+        covers.name = dark ? "Dark recent resources" : "Light recent resources"
         covers.lifetime = .keepAlways; add(covers)
         book.tap()
         XCTAssertTrue(app.otherElements["ebook-reader"].waitForExistence(timeout: 15))
@@ -400,9 +462,9 @@ final class BrowserWorkspaceUITests: XCTestCase {
         app.buttons["从主页隐藏"].tap()
         let last = app.buttons["browser-resume-fixture-reader"]
         XCTAssertEqual(last.frame.midX, app.frame.midX, accuracy: 1)
-        XCTAssertEqual(app.staticTexts["继续浏览"].frame.midX, app.frame.midX, accuracy: 1)
+        XCTAssertFalse(app.staticTexts["继续浏览"].exists)
         let centered = XCTAttachment(screenshot: app.screenshot())
-        centered.name = "Centered heading and incomplete card row"
+        centered.name = "Recent list after hiding a resource"
         centered.lifetime = .keepAlways; add(centered)
     }
 

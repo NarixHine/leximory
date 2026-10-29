@@ -1,7 +1,8 @@
 import 'server-only'
 import { randomUUID } from 'node:crypto'
 import { redis } from '@repo/kv/redis'
-import { changeEbookFile, type EbookFiles } from './ebook-file-change'
+import { changeEbookFile } from './ebook-file-change'
+import { ebookFiles } from './ebook-storage'
 import { supabase } from '@repo/supabase'
 import { revalidateTag } from 'next/cache'
 import { editTextRecord } from './text-edit-store'
@@ -15,31 +16,6 @@ async function resetLocations(id: string) {
     await supabase.from('reads').update({ location: null }).eq('text', id).throwOnError()
     // Keep the user's excerpts, but discard locations from the previous file.
     await supabase.from('bookmarks').update({ location: null }).eq('text', id).throwOnError()
-}
-function filesFor(id: string): EbookFiles {
-    const bucket = supabase.storage.from('user-files')
-    return {
-        async read(extension) {
-            const { data, error } = await bucket.download(`ebooks/${id}.${extension}`)
-            if (error) {
-                if ('statusCode' in error && String(error.statusCode) === '404') return null
-                throw error
-            }
-            return data
-        },
-        async write(extension, file) {
-            const { error } = await bucket.upload(`ebooks/${id}.${extension}`, file, {
-                contentType: extension === 'pdf' ? 'application/pdf' : 'application/epub+zip',
-                upsert: true,
-                cacheControl: '0',
-            })
-            if (error) throw error
-        },
-        async remove(extension) {
-            const { error } = await bucket.remove([`ebooks/${id}.${extension}`])
-            if (error) throw error
-        },
-    }
 }
 async function withTextMutation<T>(id: string, operation: () => Promise<T>): Promise<T> {
     const key = `mobile:text-mutation:${id}`
@@ -71,13 +47,13 @@ const operations: ManagementStore = {
                 .is('bookmark_url', null)
                 .throwOnError()
         }
-        if (text.has_ebook) await changeEbookFile(filesFor(text.id), null, removeRecord)
+        if (text.has_ebook) await changeEbookFile(ebookFiles(supabase, text.id), null, removeRecord)
         else await removeRecord()
         expireText(text.lib!)
     },
     async replaceEbook(text, file) {
         await changeEbookFile(
-            filesFor(text.id),
+            ebookFiles(supabase, text.id),
             { extension: file.type === 'application/pdf' ? 'pdf' : 'epub', file },
             async () => {
                 await resetLocations(text.id)
@@ -95,7 +71,7 @@ const operations: ManagementStore = {
         expireText(text.lib!)
     },
     async removeEbook(text) {
-        await changeEbookFile(filesFor(text.id), null, async () => {
+        await changeEbookFile(ebookFiles(supabase, text.id), null, async () => {
             await resetLocations(text.id)
             await supabase
                 .from('texts')

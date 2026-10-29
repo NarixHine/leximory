@@ -15,10 +15,9 @@ enum ReviewExercise: Hashable {
     private var pendingSubmission: (index: Int?, text: String, sentAt: Date)?
     var drafts: [String: String] = [:]
     var exercise: ReviewExercise?
-    private var started = false
     init(client: MobileClient, selection: ReviewSelection) { self.client = client; self.selection = selection }
 
-    func observe() async {
+    func observe(pause: @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) async {
         if snapshot == nil { snapshot = await client.localStore?.value(ReviewSnapshot.self, for: "review/" + selection.id) }
         while !Task.isCancelled {
             do {
@@ -26,17 +25,17 @@ enum ReviewExercise: Hashable {
                 try Task.checkCancellation()
                 accept(value)
                 await client.localStore?.save(value, for: "review/" + selection.id)
-                if !value.exists && !value.inProgress && !started {
+                if !value.exists && !value.inProgress {
                     try await client.startReview(selection)
-                    started = true
+                    try Task.checkCancellation()
                 }
-                if snapshot != nil { error = nil }
+                error = nil
             } catch {
                 if Task.isCancelled { return }
             }
             let idle = snapshot?.exists == true && snapshot?.needsRefresh == false && !awaitingConfirmation
             for _ in 0..<(idle ? 15 : 1) {
-                do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                do { try await pause(.seconds(2)) } catch { return }
                 if snapshot?.needsRefresh == true || awaitingConfirmation { break }
             }
         }

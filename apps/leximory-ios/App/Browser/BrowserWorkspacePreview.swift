@@ -57,6 +57,13 @@ struct BrowserWorkspacePreview: View {
                     if let text = page.items.first {
                         workspace.savePin(BrowserHomePin(id: UUID(), title: text.title, destination: .document(text)))
                     }
+                    if arguments.contains("--workspace-multiple-pins") {
+                        for id in ["fixture-forest", "workspace-epub"] {
+                            if let text = page.items.first(where: { $0.id == id }) {
+                                workspace.savePin(BrowserHomePin(id: UUID(), title: text.title, destination: .document(text)))
+                            }
+                        }
+                    }
                     workspace.visit(.home)
                 }
                 if let index = arguments.firstIndex(of: "--workspace-webpage-url"), arguments.indices.contains(index + 1),

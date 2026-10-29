@@ -271,6 +271,71 @@ test('file replacement and removal restore original bytes after upload, cleanup,
         assert.equal(values.has('pdf'), false)
     }
 })
+test('ebook replacement and deletion accept an absent alternate format through the installed Storage SDK', async () => {
+    const { createClient } = await import('@supabase/supabase-js')
+    const { ebookFiles } = await import('../server/mobile/ebook-storage')
+    const { changeEbookFile } = await import('../server/mobile/ebook-file-change')
+    for (const original of ['pdf', 'epub']) {
+        for (const extension of ['pdf', 'epub', null] as const) {
+            for (const status of [400, 404]) {
+                const requests: string[] = []
+                const database = createClient('https://storage.test', 'test-key', {
+                    auth: { persistSession: false, autoRefreshToken: false },
+                    global: {
+                        fetch: async (input, init) => {
+                            const url = new URL(String(input))
+                            const method = init?.method ?? 'GET'
+                            requests.push(method)
+                            if (method !== 'GET') return Response.json({})
+                            if (url.pathname.endsWith('.' + original)) return new Response('original book')
+                            return Response.json(
+                                { statusCode: String(status), error: 'not_found', message: 'Object not found' },
+                                { status },
+                            )
+                        },
+                    },
+                })
+                let committed = false
+                await changeEbookFile(
+                    ebookFiles(database, 'book'),
+                    extension === null ? null : { extension, file: new Blob(['replacement']) },
+                    async () => {
+                        committed = true
+                    },
+                )
+                assert.equal(committed, true)
+                assert.deepEqual(
+                    requests,
+                    extension === null ? ['GET', 'GET', 'DELETE', 'DELETE'] : ['GET', 'GET', 'POST', 'DELETE'],
+                )
+            }
+        }
+    }
+})
+test('ebook file changes stop before writing when Storage fails for reasons other than a missing object', async () => {
+    const { createClient } = await import('@supabase/supabase-js')
+    const { ebookFiles } = await import('../server/mobile/ebook-storage')
+    const { changeEbookFile } = await import('../server/mobile/ebook-file-change')
+    for (const status of [400, 401, 403, 500]) {
+        const requests: string[] = []
+        const database = createClient('https://storage.test', 'test-key', {
+            auth: { persistSession: false, autoRefreshToken: false },
+            global: {
+                fetch: async (_input, init) => {
+                    requests.push(init?.method ?? 'GET')
+                    return Response.json(
+                        { statusCode: String(status), message: 'Access denied or unavailable' },
+                        { status },
+                    )
+                },
+            },
+        })
+        await assert.rejects(
+            changeEbookFile(ebookFiles(database, 'book'), null, async () => assert.fail('must not commit')),
+        )
+        assert.deepEqual(requests, ['GET'])
+    }
+})
 test('removing a missing text remains scoped to an owned folder and accepts replay after a lost response', async () => {
     const { handler, writes } = harness()
     assert.equal((await handler(request('texts/article/remove', {}))).status, 200)

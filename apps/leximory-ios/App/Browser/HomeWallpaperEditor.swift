@@ -98,7 +98,7 @@ struct HomeWallpaperEditor: View {
     private var preview: some View {
         HomeWallpaperSurface(wallpaper: store[appearance], usesSystemBackground: store.choice(for: appearance) == .solid) {
             BrowserHomeView(compact: false, recent: [], browse: {}, paste: {}, recentWebpages: [],
-                openWebpage: { _ in }, bookmarks: {}, ebook: {}, account: {}, resume: { _ in })
+                openWebpage: { _ in }, bookmarks: {}, ebook: {}, resume: { _ in })
                 .frame(width: 360, height: 560)
         }
         .environment(\.colorScheme, appearance.colorScheme)

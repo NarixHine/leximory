@@ -46,6 +46,30 @@ struct ReviewTests {
         #expect(await transport.paths == ["/review/conversation"])
     }
 
+    @Test func interruptedReviewReadCanReachTheServerOnItsNextPoll() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://review.example"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
+        let transport = InterruptedReviewTransport()
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "fresh" }, localStore: store)
+        let selection = ReviewSelection(date: "2026-10-12", language: "en")
+        await #expect(throws: URLError.self) { try await client.reviewSnapshot(selection) }
+        let snapshot = try await client.reviewSnapshot(selection)
+        #expect(snapshot.exists)
+        #expect(await transport.calls == 2)
+        #expect(await store.status().online)
+    }
+
+    private actor InterruptedReviewTransport: ClientTransport {
+        private(set) var calls = 0
+        func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+            calls += 1
+            if calls == 1 { throw URLError(.networkConnectionLost) }
+            return (HTTPResponse(status: .ok), HTTPBody(#"{"exists":true,"inProgress":false,"translations":[]}"#))
+        }
+    }
+
     private actor ReviewTransport: ClientTransport {
         struct Input: Decodable { let date: String; let lang: String; let index: Int?; let submission: String? }
         let failSubmission: Bool

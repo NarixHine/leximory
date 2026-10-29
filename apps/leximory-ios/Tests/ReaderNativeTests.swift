@@ -462,8 +462,8 @@ import LeximoryCore
             let font = value as! CTFont
             #expect(CTFontCopyPostScriptName(font) as String == "ChillDuanHeiSongBold")
         }
-        #expect(LeximoryTypography.interfaceUI(17).fontName == "RalewayRoman-Regular")
-        #expect(LeximoryTypography.interfaceUI(17, semibold: true).fontName == "RalewayRoman-SemiBold")
+        #expect(LeximoryTypography.interfaceUI(17).fontName == "Urbanist-Regular")
+        #expect(LeximoryTypography.interfaceUI(17, semibold: true).fontName == "Urbanist-SemiBold")
     }
     @Test func definitionRubyPreservesBaselineMarkdownAndCanonicalText() throws {
         let layout = AnnotationMarkdownLayout(content: "**［名］（<ruby>かいしょ<rt>楷書</rt></ruby>／楷书）** 漢字の書体。", size: 17, language: "Japanese")
@@ -541,8 +541,8 @@ import LeximoryCore
         #expect(LeximoryTypography.proseUI(20).fontName == "LibreBaskerville-Regular")
         #expect(UIFont(name: "SpaceMono-Regular", size: 12) != nil)
         #expect(UIFont(name: "SourceCodePro-Medium", size: 17) != nil)
-        #expect(UIFont(name: "RalewayRoman-Regular", size: 17) != nil)
-        #expect(UIFont(name: "RalewayRoman-SemiBold", size: 17) != nil)
+        #expect(UIFont(name: "Urbanist-Regular", size: 17) != nil)
+        #expect(UIFont(name: "Urbanist-SemiBold", size: 17) != nil)
         #expect(UIFont(name: "EBGaramond-Regular", size: 36) != nil)
         #expect(LeximoryTypography.editorialUI(38).fontName == "EBGaramond-Regular")
         #expect(UIFont(name: "EBGaramondItalic-Italic", size: 20) != nil)

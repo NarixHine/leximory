@@ -123,7 +123,7 @@ enum LeximoryTypography {
         Font(UIFontMetrics(forTextStyle: .body).scaledFont(for: proseUI(size, language: language, bold: bold)))
     }
     static func interfaceUI(_ size: CGFloat, semibold: Bool = false) -> UIFont {
-        let latin = face(semibold ? "RalewayRoman-SemiBold" : "RalewayRoman-Regular", size: size)
+        let latin = face(semibold ? "Urbanist-SemiBold" : "Urbanist-Regular", size: size)
         return UIFont(descriptor: latin.fontDescriptor.addingAttributes([
             .cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size),
                            UIFontDescriptor(name: semibold ? "ChillDuanHeiSongBold" : "ChillDuanHeiSongRegular", size: size)]

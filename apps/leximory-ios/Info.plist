@@ -55,8 +55,8 @@
 		<string>ChillDuanHeiSongProJP_Regular.otf</string>
 		<string>ChillDuanHeiSongRegular.otf</string>
 		<string>ChillDuanHeiSongBold.otf</string>
-		<string>Raleway-Regular.ttf</string>
-		<string>Raleway-SemiBold.ttf</string>
+		<string>Urbanist-Regular.ttf</string>
+		<string>Urbanist-SemiBold.ttf</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

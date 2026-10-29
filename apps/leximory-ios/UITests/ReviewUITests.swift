@@ -188,3 +188,25 @@ extension ReviewUITests {
         XCTAssertFalse(app.buttons["browser-review"].exists)
     }
 }
+
+
+extension ReviewUITests {
+    @MainActor func testLawnOpensImmediatelyAndSurvivesRepeatedRequestFailures() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--browser-workspace-fixtures", "--review-recovery-fixture"]
+        app.launch()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        let card = app.buttons["browser-review"]
+        XCTAssertTrue(card.waitForExistence(timeout: 15)); card.tap()
+        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "复习进度 24%")).firstMatch
+        XCTAssertTrue(day.waitForExistence(timeout: 10)); day.tap()
+        XCTAssertTrue(app.otherElements["review-lawn"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.buttons["browser-address"].isHittable)
+        XCTAssertFalse(app.otherElements["reading-loading-scene"].exists)
+        XCTAssertFalse(app.staticTexts["复习暂时无法打开"].exists)
+        XCTAssertTrue(app.buttons["review-task-discover"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["复习暂时无法打开"].exists)
+        app.buttons["review-task-discover"].tap()
+        XCTAssertTrue(app.textViews["你的翻译"].waitForExistence(timeout: 5))
+    }
+}

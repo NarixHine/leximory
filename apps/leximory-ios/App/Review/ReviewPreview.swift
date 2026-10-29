@@ -13,6 +13,7 @@ actor ReviewFixtureTransport: ClientTransport {
     private var pendingIndex: Int?
     private var pendingConversation = false
     private var reads = 0
+    private var initialFailuresRemaining = ProcessInfo.processInfo.arguments.contains("--review-recovery-fixture") ? 4 : 0
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
         let path = (request.path ?? "").components(separatedBy: "?")[0]
         var payload: [String: Any]
@@ -29,6 +30,10 @@ actor ReviewFixtureTransport: ClientTransport {
             }
             payload = ["success": true]
         } else if path == "/review/check" {
+            if initialFailuresRemaining > 0 {
+                initialFailuresRemaining -= 1
+                throw URLError(.timedOut)
+            }
             reads += 1
             if reads > 2 {
                 if let index = pendingIndex {

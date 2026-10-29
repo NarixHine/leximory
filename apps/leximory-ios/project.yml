@@ -60,8 +60,8 @@ targets:
                         ChillDuanHeiSongProJP_Regular.otf,
                         ChillDuanHeiSongRegular.otf,
                         ChillDuanHeiSongBold.otf,
-                        Raleway-Regular.ttf,
-                        Raleway-SemiBold.ttf,
+                        Urbanist-Regular.ttf,
+                        Urbanist-SemiBold.ttf,
                     ]
                 UILaunchScreen: {}
                 UIApplicationSceneManifest:

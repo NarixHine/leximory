@@ -424,8 +424,6 @@ private struct AccountActionCostTable: View {
                     }
                 }
             }
-            Text("PDF 目录的撤销和重做不消耗额度。")
-                .font(LeximoryTypography.interface(12, style: .caption1)).foregroundStyle(.secondary)
         }
         .font(LeximoryTypography.interface(15, style: .subheadline))
         .padding(16).background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))

@@ -28,8 +28,6 @@ struct BrowserWorkspaceView: View {
     @State private var address = ""
     @State private var addressQuery = ""
     @AppStorage("browser.searchEngine") private var searchEngine = BrowserSearchEngine.bing
-    @State private var avatarURL: URL?
-    @State private var avatarImage: UIImage?
     @State private var editingAddress = false
     @State private var addressEditor = BrowserAddressEditor()
     @State private var choosingFile = false
@@ -89,7 +87,7 @@ struct BrowserWorkspaceView: View {
                                 hideRecentText: workspace.hideRecentText, hideRecentWebpage: workspace.hideRecentWebpage,
                                 compact: editingAddress, recent: workspace.recentTexts, recentImages: workspace.recentImages, libraryName: workspace.recentLibraryName,
                                 browse: beginEditing, paste: openClipboard, recentWebpages: workspace.recentWebpages, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
-                                ebook: { finishEditing(); choosingFile = true }, account: { finishEditing(); workspace.visit(.account) }, review: { finishEditing(); workspace.visit(.review) }, avatarImage: avatarImage,
+                                ebook: { finishEditing(); choosingFile = true }, review: { finishEditing(); workspace.visit(.review) },
                                 addressQuery: addressQuery, addressMatches: { workspace.addressMatches($0, limit: $1) },
                                 openAddressMatch: { match in finishEditing(); Task { await workspace.openAddressMatch(match) } },
                                 resume: { text in finishEditing(); Task { await workspace.open(text) } })
@@ -185,16 +183,6 @@ struct BrowserWorkspaceView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
             if editingAddress { finishEditing() }
         }
-        .task(id: [isHome ? "home" : "away", scenePhase == .active ? "active" : "inactive",
-                   sync?.online == false ? "offline" : "online", String(session?.avatarRevision ?? 0)]) {
-            guard isHome, scenePhase == .active, session != nil else { return }
-            if let cached = await client.localStore?.value(AccountSettings.self, for: "account-settings") {
-                await updateAvatar(cached)
-            }
-            if let settings = try? await client.accountSettings() {
-                await updateAvatar(settings)
-            }
-        }
         .task(id: [scenePhase == .active ? "active" : "inactive", sync?.online == false ? "offline" : "online"]
             + workspace.homePins.map { $0.id.uuidString + ($0.iconURL?.absoluteString ?? "") }) {
             guard scenePhase == .active else { return }
@@ -251,6 +239,7 @@ struct BrowserWorkspaceView: View {
             do { try await Task.sleep(for: .seconds(2)) } catch { return }
             withAnimation(motion) { completionNotice = false }
         }
+
         .task(id: clipboardNotice) {
             guard let notice = clipboardNotice else { return }
             do { try await Task.sleep(for: .seconds(2)) } catch { return }
@@ -296,17 +285,6 @@ struct BrowserWorkspaceView: View {
         findRequest = UUID()
     }
     private var isHome: Bool { if case .home = workspace.current.resource { true } else { false } }
-    private func updateAvatar(_ settings: AccountSettings) async {
-        guard !Task.isCancelled, settings.userId == session?.state.accountID else { return }
-        guard let url = settings.image.flatMap(URL.init(string:)) else {
-            avatarURL = nil; avatarImage = nil
-            return
-        }
-        guard avatarURL != url || avatarImage == nil else { return }
-        if let image = try? await ReaderImage.load(url, store: client.localStore), !Task.isCancelled {
-            avatarURL = url; avatarImage = image
-        }
-    }
     private var retainedEntries: [BrowserEntry] {
         var ids = Set<String>()
         return workspace.history.entries.filter { entry in
@@ -337,7 +315,7 @@ struct BrowserWorkspaceView: View {
     }
     @ViewBuilder private func resource(_ entry: BrowserEntry) -> some View {
         switch entry.resource {
-        case .bookmarks: BrowserFoldersView(workspace: workspace)
+        case .bookmarks: BrowserFoldersView(workspace: workspace, editText: { editingText = $0 })
         case .account:
             if let session { AccountView(session: session, playback: playback).safeAreaPadding(.bottom, chromeHeight) }
             else { LeximoryUnavailableView("账号", systemImage: "person.crop.circle") }
@@ -474,6 +452,8 @@ struct BrowserWorkspaceView: View {
                 }
             }
             Section {
+                Button("账号", systemImage: "person.crop.circle") { finishEditing(); workspace.visit(.account) }
+                    .accessibilityIdentifier("browser-account")
                 Button("文章注释队列", systemImage: "sparkles") { activitySheet = true }
                 Button("广告拦截", systemImage: "hand.raised") { adBlockingSettings = true }
                     .accessibilityIdentifier("browser-ad-blocking")

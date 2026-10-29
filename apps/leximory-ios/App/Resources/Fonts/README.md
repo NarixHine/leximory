@@ -9,7 +9,7 @@ Font roles follow `apps/leximory/lib/fonts/index.ts` and the web components, rat
 | Chinese serif and Chinese UI fallback | ChillDuanHeiSongPro Regular | User-supplied OTF, SIL OFL 1.1 |
 | Japanese serif and ruby | ChillDuanHeiSongProJP Regular | User-supplied OTF, SIL OFL 1.1 |
 | Library page heading, hero slogan, topic pills | LXGW WenKai Screen | Converted from the repository's `lib/fonts/kaiti.woff2` |
-| Latin interface labels | Raleway Regular and SemiBold | Google Fonts `ofl/raleway` |
+| Latin interface labels | Urbanist Regular and SemiBold | [Urbanist upstream](https://github.com/coreyhu/Urbanist/tree/main/fonts/ttf) |
 | Libraries eyebrow | Space Mono Regular | Google Fonts `ofl/spacemono` |
 | Text cover emoji | Noto Emoji regular outlines, renamed | Google Fonts `ofl/notoemoji`, SIL OFL 1.1 |
 | IPA and code | Source Code Pro Medium | Google Fonts `ofl/sourcecodepro` |

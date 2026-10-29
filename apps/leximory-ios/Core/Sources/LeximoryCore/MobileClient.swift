@@ -190,7 +190,7 @@ private struct BearerMiddleware: ClientMiddleware {
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         try await store?.requireOnline()
         // These operations recover transient failures themselves; keep their next attempt available.
-        let recoversFailures = ["generateArticleAudio", "saveShortcutWord", "vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "editableText", "editText", "removeText", "removeWord", "removeEbook", "replaceEbook", "definitions", "ebookDefinitions", "browserDefinitions", "pdfNotes", "savePDFNote", "generatePDFOutline", "savePDFOutline"].contains(operationID)
+        let recoversFailures = ["review", "generateArticleAudio", "saveShortcutWord", "vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "editableText", "editText", "removeText", "removeWord", "removeEbook", "replaceEbook", "definitions", "ebookDefinitions", "browserDefinitions", "pdfNotes", "savePDFNote", "generatePDFOutline", "savePDFOutline"].contains(operationID)
         var request = request
         let diagnosticID = UUID().uuidString
         request.headerFields[HTTPField.Name("X-Leximory-Request-ID")!] = diagnosticID

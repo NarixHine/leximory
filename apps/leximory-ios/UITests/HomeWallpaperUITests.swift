@@ -1,6 +1,27 @@
 import XCTest
 
 final class HomeWallpaperUITests: XCTestCase {
+    @MainActor func testWallpaperPreviewKeepsBlurAlignedInBothAppearances() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--browser-workspace-fixtures", "--workspace-recent-card-fixtures", "--workspace-multiple-pins"]
+        app.launch()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        XCTAssertTrue(app.buttons["browser-more"].waitForExistence(timeout: 15))
+        let home = XCTAttachment(screenshot: app.screenshot())
+        home.name = "Restored Home"; home.lifetime = .keepAlways; add(home)
+        app.buttons["browser-more"].tap()
+        app.buttons["主页壁纸"].tap()
+        XCTAssertTrue(app.otherElements["wallpaper-preview"].waitForExistence(timeout: 5))
+        let light = XCTAttachment(screenshot: app.screenshot())
+        light.name = "Light wallpaper preview"; light.lifetime = .keepAlways; add(light)
+        let picker = app.segmentedControls["wallpaper-appearance"]
+        picker.buttons["深色"].tap()
+        XCTAssertTrue(picker.buttons["深色"].isSelected)
+        let dark = XCTAttachment(screenshot: app.screenshot())
+        dark.name = "Dark wallpaper preview"; dark.lifetime = .keepAlways; add(dark)
+        app.buttons["wallpaper-close"].tap()
+    }
+
     @MainActor func testWallpaperSelectionPersistsBothAppearancesAndResetsIndependently() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--browser-workspace-fixtures"]

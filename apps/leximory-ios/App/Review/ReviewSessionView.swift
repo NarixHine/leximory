@@ -6,7 +6,6 @@ struct ReviewSessionView: View {
     let onProgress: () -> Void
     @State private var cat = ReviewCatDriver()
     @State private var taskPoints: [String: CGPoint] = [:]
-    @State private var retryID = UUID()
     @State private var keyboardTop: CGFloat?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -19,13 +18,8 @@ struct ReviewSessionView: View {
         GeometryReader { geometry in
             ZStack(alignment: .top) {
                 ScrollView {
-                    VStack(spacing: 20) {
-                        if model.error != nil && model.snapshot?.exists != true && model.snapshot?.inProgress != true {
-                            LeximoryUnavailableView("复习暂时无法打开", systemImage: "leaf", message: model.error) { Button("重试") { retryID = UUID() } }
-                        } else {
-                            lawn(width: min(896, max(0, geometry.size.width - 24)), availableHeight: geometry.size.height - chromeHeight - 96)
-                        }
-                    }.padding(.horizontal, 12).padding(.top, 88).padding(.bottom, chromeHeight + 16)
+                    lawn(width: min(896, max(0, geometry.size.width - 24)), availableHeight: geometry.size.height - chromeHeight - 96)
+                        .padding(.horizontal, 12).padding(.top, 88).padding(.bottom, chromeHeight + 16)
                         .frame(maxWidth: 920).frame(maxWidth: .infinity)
                 }.scrollBounceBehavior(.basedOnSize).accessibilityIdentifier("review-session-scroll")
                 Text(learningLanguageName(model.selection.language)).font(LeximoryTypography.interface(16)).padding(.top, 12)
@@ -44,7 +38,7 @@ struct ReviewSessionView: View {
                 if !active { model.exercise = nil; cat.stop(); onProgress() }
             }
             .onChange(of: scenePhase) { _, phase in if phase != .active { cat.stop() } }
-            .task(id: "\(retryID):\(scenePhase == .active && resourceActive)") { if scenePhase == .active && resourceActive { await model.observe() } }
+            .task(id: scenePhase == .active && resourceActive) { if scenePhase == .active && resourceActive { await model.observe() } }
     }
 
     private func lawn(width: CGFloat, availableHeight: CGFloat) -> some View {
@@ -76,10 +70,6 @@ struct ReviewSessionView: View {
                 }
             }.frame(width: width, height: height)
             ReviewMovingCat(driver: cat)
-            if model.snapshot?.exists != true && model.error == nil {
-                HStack(spacing: 10) { ProgressView(); Text("正在准备你的复习").font(LeximoryTypography.interface(14)).foregroundStyle(.secondary) }
-                    .padding(16).background(LeximoryPalette.paper.opacity(0.92), in: .capsule)
-            }
         }.frame(width: width, height: height).clipped().coordinateSpace(name: "review-lawn")
             .accessibilityElement(children: .contain).accessibilityIdentifier("review-lawn")
             .onGeometryChange(for: CGSize.self) { $0.size } action: { if resourceActive { cat.resize($0) } }
