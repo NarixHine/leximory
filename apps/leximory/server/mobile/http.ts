@@ -14,6 +14,17 @@ export interface MobileContext {
 }
 export type MobileOperation = (context: MobileContext) => Promise<unknown>
 
+const upstreamFailure = z.object({
+    code: z
+        .string()
+        .regex(/^[A-Z0-9_]{1,32}$/)
+        .optional(),
+    name: z
+        .string()
+        .regex(/^[A-Za-z][A-Za-z0-9]{0,63}$/)
+        .optional(),
+})
+
 export function mobileEndpoint(verify: BearerVerifier, operation: MobileOperation, timeout = 20000) {
     return async (request: Request, context: { params?: Promise<Record<string, string>> } = {}): Promise<Response> => {
         const supplied = request.headers.get('X-Leximory-Request-ID')
@@ -31,6 +42,16 @@ export function mobileEndpoint(verify: BearerVerifier, operation: MobileOperatio
             return response
         } catch (error) {
             const response = mobileErrorResponse(error)
+            if (response.status >= 500 && !request.signal.aborted) {
+                const upstream = upstreamFailure.safeParse(error)
+                console.error('mobile.request.failed', {
+                    traceId,
+                    operation: operation.name || 'anonymous',
+                    method: request.method,
+                    status: response.status,
+                    ...(upstream.success ? { upstreamCode: upstream.data.code, errorType: upstream.data.name } : {}),
+                })
+            }
             response.headers.set('X-Leximory-Request-ID', traceId)
             return response
         }

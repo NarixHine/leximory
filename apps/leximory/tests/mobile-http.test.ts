@@ -71,3 +71,50 @@ test('aborted work never reaches the operation and error responses keep a diagno
     assert.equal(response.headers.get('X-Leximory-Request-ID'), 'known-request')
     assert.equal(calls, 0)
 })
+
+test('server failures log their response identity and provider code without credentials or content', async (t) => {
+    const logs: unknown[][] = []
+    t.mock.method(console, 'error', (...values: unknown[]) => {
+        logs.push(values)
+    })
+    const endpoint = mobileEndpoint(verify, async function libraryArchive() {
+        throw { code: '42501', message: 'secret SQL with user content', details: 'private', hint: 'private' }
+    })
+    const response = await endpoint(request('{}', { 'X-Leximory-Request-ID': 'archive-trace' }))
+    assert.equal(response.status, 503)
+    assert.equal(response.headers.get('X-Leximory-Request-ID'), 'archive-trace')
+    assert.deepEqual(logs, [
+        [
+            'mobile.request.failed',
+            {
+                traceId: 'archive-trace',
+                operation: 'libraryArchive',
+                method: 'POST',
+                status: 503,
+                upstreamCode: '42501',
+                errorType: undefined,
+            },
+        ],
+    ])
+    assert.doesNotMatch(JSON.stringify(logs), /secret|private|verified/)
+})
+
+test('client errors and abandoned requests do not produce server failure diagnostics', async (t) => {
+    const logs: unknown[][] = []
+    t.mock.method(console, 'error', (...values: unknown[]) => {
+        logs.push(values)
+    })
+    const endpoint = mobileEndpoint(verify, async () => {
+        throw Error('must not reach')
+    })
+    assert.equal((await endpoint(new Request('https://leximory.test'))).status, 401)
+    const controller = new AbortController()
+    controller.abort()
+    await endpoint(
+        new Request('https://leximory.test', {
+            signal: controller.signal,
+            headers: { authorization: 'Bearer verified' },
+        }),
+    )
+    assert.deepEqual(logs, [])
+})

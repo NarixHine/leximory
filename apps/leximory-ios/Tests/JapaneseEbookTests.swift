@@ -4,6 +4,87 @@ import UIKit
 import WebKit
 @testable import Leximory
 
+@MainActor struct EPUBNavigationTests {
+    @Test(arguments: ["turn", "displayFailure", "turnFailure", "reflow", "highlightedBookmark", "legacyBookmark"], [false, true])
+    func bookmarkJumpDoesNotDiscardNavigationOrBlockLaterTurns(scenario: String, japanese: Bool) async throws {
+        let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
+        let book = try #require(Bundle.main.url(forResource: japanese ? "japanese-fixture" : "reader-fixture", withExtension: "epub"))
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: config)
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene); window.frame = web.frame
+        window.rootViewController = UIViewController(); window.rootViewController?.view.addSubview(web); window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey(); config.userContentController.removeScriptMessageHandler(forName: "reader") }
+        web.navigationDelegate = probe; try await probe.load(web, url: page)
+        _ = try await web.callAsyncJavaScript("await window.openBook(bytes, '', {}, theme, [])", arguments: [
+            "bytes": try Data(contentsOf: book).base64EncodedString(),
+            "theme": ["paper":"#ffffff", "ink":"#192024", "size":"20", "leading":"1.6", "weight":"400", "writing":japanese ? "vertical-rl" : "horizontal-tb"]
+        ], in: nil, contentWorld: .page)
+        let result = try #require(try await web.callAsyncJavaScript("""
+            const last = book.spine.last().href;
+            await rendition.display(last); await chapterPainted();
+            let target = rendition.currentLocation().start.cfi, quote = null;
+            if (scenario === 'highlightedBookmark' || scenario === 'legacyBookmark') {
+              const contents = rendition.getContents()[0], doc = contents.document;
+              const walker = doc.createTreeWalker(doc.querySelector('p'), NodeFilter.SHOW_TEXT);
+              let node;
+              while ((node = walker.nextNode())) {
+                if (!node.parentElement.closest('rt,rp') && node.textContent.trim().length >= 5) break;
+              }
+              const range = doc.createRange(); range.selectNodeContents(node);
+              quote = range.toString(); target = contents.cfiFromRange(range);
+              window.readerBookmarks([quote]); await painted();
+              if (scenario === 'legacyBookmark') {
+                const legacyRange = doc.createRange(); legacyRange.selectNodeContents(doc.querySelector('[data-leximory-bookmark]'));
+                target = contents.cfiFromRange(legacyRange);
+              }
+            }
+            await rendition.display(book.spine.first().href); await chapterPainted();
+            const deadline = promise => Promise.race([promise, new Promise(resolve => setTimeout(() => resolve('hung'), 1000))]);
+            let failure = null;
+            if (scenario === 'turn') {
+              await window.readerTurn('next');
+              setTimeout(() => window.readerTurn('commit'), 60);
+            } else if (scenario === 'turnFailure') {
+              const next = rendition.next.bind(rendition), display = rendition.display.bind(rendition);
+              rendition.next = () => Promise.reject(new Error('failed page turn'));
+              rendition.display = () => Promise.reject(new Error('failed turn restoration'));
+              failure = await deadline(window.readerTurn('next').then(() => 'resolved', () => 'rejected'));
+              rendition.next = next; rendition.display = display;
+            } else if (scenario === 'reflow') {
+              rendition.resize(300, 500);
+            } else if (scenario === 'displayFailure') {
+              const display = rendition.manager.display.bind(rendition.manager);
+              let fail = true;
+              rendition.manager.display = (...args) => {
+                if (fail) { fail = false; return Promise.reject(new Error('temporary display failure')); }
+                return display(...args);
+              };
+              failure = await deadline(window.readerCommand('display', target).then(() => 'resolved', () => 'rejected'));
+            }
+            let jumpError = '';
+            const jump = await deadline(window.readerCommand('display', target, scenario === 'legacyBookmark' ? quote : '').then(() => 'resolved', error => { jumpError = String(error); return 'rejected'; }));
+            await chapterPainted();
+            const arrived = rendition.currentLocation().start.href === last;
+            const contents = rendition.getContents()[0];
+            const mark = contents.document.querySelector('[data-leximory-bookmark]');
+            const quoteResolved = !quote || (scenario === 'legacyBookmark'
+              ? !!mark && [...mark.getClientRects()].some(rect => rect.right > 0 && rect.left < contents.window.innerWidth && rect.bottom > 0 && rect.top < contents.window.innerHeight)
+              : contents.range(target, rendition.settings.ignoreClass).toString() === quote);
+            const turn = await deadline(window.readerTap(['previous']).then(() => 'resolved', () => 'rejected'));
+            return {failure:failure || '', jump, jumpError, arrived, quoteResolved, turn, turning:!!pageTurn};
+            """, arguments: ["scenario":scenario], in: nil, contentWorld: .page) as? [String: Any])
+        if scenario == "displayFailure" || scenario == "turnFailure" { #expect(result["failure"] as? String == "rejected") }
+        #expect(result["jump"] as? String == "resolved", "\(result)")
+        #expect(result["arrived"] as? Bool == true)
+        #expect(result["quoteResolved"] as? Bool == true)
+        #expect(result["turn"] as? String == "resolved")
+        #expect(result["turning"] as? Bool == false)
+    }
+}
+
 @MainActor struct JapaneseEbookTests {
     @Test func pageNumbersCountVisibleSpreadsForTapsSwipesAndResize() async throws {
         let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))

@@ -43,6 +43,52 @@ test('real Next.js invokes authenticated static and dynamic mobile handlers', { 
             await mkdir(directory, { recursive: true })
             await writeFile(join(directory, 'route.ts'), handler)
         }
+        const archiveDirectory = join(root, 'app/api/libraries/[libraryId]/archive')
+        await mkdir(archiveDirectory, { recursive: true })
+        await writeFile(
+            join(archiveDirectory, 'route.ts'),
+            `
+            import { revalidateTag } from 'next/cache'
+            import { createClient } from '@supabase/supabase-js'
+            import { mobileEndpoint } from ${JSON.stringify(fileURLToPath(new URL('../server/mobile/http.ts', import.meta.url)))}
+            import { createLibraryArchiveOperations } from ${JSON.stringify(fileURLToPath(new URL('../server/mobile/library-preferences.ts', import.meta.url)))}
+            import { createLibraryPreferenceStore } from ${JSON.stringify(fileURLToPath(new URL('../server/mobile/library-preference-store.ts', import.meta.url)))}
+            const subject = { userId: 'runtime-reader' }
+            const verify = async token => token === 'runtime-test'
+                ? { kind: 'authenticated', subject } : { kind: 'unauthenticated' }
+            let profile = null
+            const database = createClient('https://database.fixture.invalid', 'fixture', {
+                auth: { persistSession: false, autoRefreshToken: false },
+                global: { fetch: async (input, init) => {
+                    const url = new URL(String(input))
+                    if (url.pathname !== '/rest/v1/users') throw Error('unexpected service')
+                    if (init.method === 'POST') {
+                        profile ??= { archived_libs: null }
+                        return new Response(null, { status: 201 })
+                    }
+                    if (url.searchParams.get('id') !== 'eq.runtime-reader') throw Error('wrong account')
+                    if (init.method === 'PATCH') {
+                        profile = JSON.parse(init.body)
+                        return Response.json([{ id: subject.userId }])
+                    }
+                    return Response.json(profile)
+                } },
+            })
+            const preferences = createLibraryPreferenceStore(database)
+            const operations = createLibraryArchiveOperations({
+                catalog: { library: async id => ({ id, name: 'Books', lang: 'en', owner: subject.userId,
+                    access: 0, starred_by: null, shadow: false }) },
+                setArchived: async (...input) => {
+                    await preferences.setArchived(...input)
+                    revalidateTag('libraries', { expire: 0 })
+                },
+            })
+            export const POST = mobileEndpoint(verify, operations.libraryArchive)
+            export const GET = mobileEndpoint(verify, async ({ signal }) => ({
+                archived: await preferences.archived(subject.userId, signal),
+            }))
+        `,
+        )
         server = spawn(
             process.execPath,
             [
@@ -89,6 +135,19 @@ test('real Next.js invokes authenticated static and dynamic mobile handlers', { 
         const dynamic = await fetch(origin + '/api/dynamic/library-123', { headers })
         assert.equal(dynamic.status, 200, output)
         assert.deepEqual(await dynamic.json(), { params: { libraryId: 'library-123' }, userId: 'runtime-reader' })
+        const archiveURL = origin + '/api/libraries/folder/archive'
+        for (const archived of [true, true, false]) {
+            const response = await fetch(archiveURL, {
+                method: 'POST',
+                headers: { ...headers, 'content-type': 'application/json' },
+                body: JSON.stringify({ archived }),
+            })
+            assert.equal(response.status, 200, output + '\n' + (await response.clone().text()))
+            assert.deepEqual(await response.json(), { archived })
+            assert.equal(response.headers.get('cache-control'), 'private, no-store')
+            const saved = await fetch(archiveURL, { headers })
+            assert.deepEqual(await saved.json(), { archived: archived ? ['folder'] : [] })
+        }
         const denied = await fetch(origin + '/api/static')
         assert.equal(denied.status, 401)
         assert.equal((await denied.json()).error.code, 'unauthenticated')

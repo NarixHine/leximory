@@ -95,7 +95,7 @@ struct BrowserFoldersView: View {
                     if library.owned {
                         Button("重新命名", systemImage: "pencil") { editor = FolderEditorRequest(library: library) }.disabled(sync?.online == false)
                     }
-                    Button(library.archived ? "取消归档" : "归档", systemImage: "archivebox") { Task { await workspace.setArchived(library) } }.disabled(sync?.online == false)
+                    Button(library.archived ? "取消归档" : "归档", systemImage: "archivebox") { Task { await workspace.setArchived(library) } }.disabled(sync?.online == false || workspace.archivingLibraries.contains(library.id))
                 }
         }
     }

@@ -158,6 +158,7 @@ struct AnnotationActivity: Identifiable, Codable {
     private var recentReading = RecentReading()
     private(set) var history = ResourceHistory(home: BrowserEntry(resource: .home))
     private(set) var libraries: [CatalogLibrary] = []
+    private(set) var archivingLibraries: Set<String> = []
     private(set) var texts: [String: [CatalogText]] = [:]
     var folderFailures: Set<String> = []
     private(set) var activities: [AnnotationActivity] = []
@@ -765,11 +766,18 @@ struct AnnotationActivity: Identifiable, Codable {
         }
     }
     func setArchived(_ library: CatalogLibrary) async {
+        guard archivingLibraries.insert(library.id).inserted else { return }
+        defer { archivingLibraries.remove(library.id) }
+        let archived = !library.archived
         do {
-            try await client.setLibraryArchived(libraryID: library.id, archived: !library.archived)
+            try await client.setLibraryArchived(libraryID: library.id, archived: archived)
             catalogMutation += 1
-            if let index = libraries.firstIndex(where: { $0.id == library.id }) { libraries[index].archived.toggle() }
-        } catch { self.error = "文件夹未能更新，请重试。" }
+            if let index = libraries.firstIndex(where: { $0.id == library.id }) { libraries[index].archived = archived }
+        } catch {
+            let cause = MobileClient.cause(of: error)
+            guard !Task.isCancelled, !(cause is CancellationError), (cause as? URLError)?.code != .cancelled else { return }
+            self.error = "文件夹未能更新，请重试。"
+        }
     }
     func upsertFolder(_ library: CatalogLibrary) {
         catalogMutation += 1

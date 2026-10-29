@@ -355,7 +355,9 @@ public struct MobileClient: Sendable {
         try mapped(try await client.libraries(query: .init(cursor: cursor)).ok.body.json, to: CatalogPage<CatalogLibrary>.self)
     }
     public func setLibraryArchived(libraryID: String, archived: Bool) async throws {
-        _ = try await client.libraryArchive(path: .init(libraryId: libraryID), body: .json(.init(archived: archived))).ok.body.json
+        _ = try await MutationRetry.run {
+            try await client.libraryArchive(path: .init(libraryId: libraryID), body: .json(.init(archived: archived))).ok.body.json
+        }
         await localStore?.setArchived(libraryID: libraryID, archived: archived)
     }
     public func texts(libraryID: String, cursor: String? = nil) async throws -> CatalogPage<CatalogText> {

@@ -4,15 +4,14 @@ import { mobileEndpoint } from '../http'
 import { verify } from './verify'
 import { createFolderOperations } from '../folders'
 import { createLibraryArchiveOperations } from '../library-preferences'
-import { catalogStore } from '../store'
+import { catalogStore, libraryPreferences } from '../store'
 import { folderStore } from '../folder-store'
-import { setLibraryArchived } from '../library-preference-store'
 
 const folders = createFolderOperations({ catalog: catalogStore, folders: folderStore })
 const archive = createLibraryArchiveOperations({
     catalog: catalogStore,
     setArchived: async (...input) => {
-        await setLibraryArchived(...input)
+        await libraryPreferences.setArchived(...input)
         revalidateTag('libraries', { expire: 0 })
     },
 })

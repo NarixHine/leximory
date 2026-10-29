@@ -7,6 +7,25 @@
 <body><div id="book"></div><script>
 let book, rendition, selected, ready = false, currentTheme, pageTurn, reportLocation, pendingTheme, bookmarkQuotes = [], reflowing = false;
 const send = (kind, payload = {}) => window.webkit.messageHandlers.reader.postMessage({kind,...payload});
+let commandQueue = Promise.resolve(), navigationWaiters = [];
+const bookmarkIgnoreClass = 'leximory-bookmark';
+function navigationSettled() {
+  if (pageTurn || reflowing) return;
+  const waiters = navigationWaiters; navigationWaiters = [];
+  waiters.forEach(resolve => resolve());
+}
+async function navigationIdle() {
+  while (pageTurn || reflowing) await new Promise(resolve => navigationWaiters.push(resolve));
+}
+async function finishPageTurn() {
+  pageTurn = null;
+  try {
+    if (pendingTheme) { const theme = pendingTheme; pendingTheme = null; await window.readerTheme(theme); }
+    resizeBook();
+    await painted();
+  } finally { navigationSettled(); }
+}
+
 // Check the live DOM at the tap, including overflowing publisher content.
 // Fractions map native view coordinates to the actual WebKit viewport.
 window.readerGutter = (fractionX, fractionY) => {
@@ -136,7 +155,7 @@ function highlightBookmarks() {
       const range=doc.createRange();range.setStart(start[0],start[1]);range.setEnd(end[0],end[1]+1);
       const firstRuby=start[0].parentElement.closest('ruby'), lastRuby=end[0].parentElement.closest('ruby');
       if(firstRuby) range.setStartBefore(firstRuby); if(lastRuby) range.setEndAfter(lastRuby);
-      const mark=doc.createElement('span');mark.dataset.leximoryBookmark='true';mark.dataset.quote=target;
+      const mark=doc.createElement('span');mark.classList.add(bookmarkIgnoreClass);mark.dataset.leximoryBookmark='true';mark.dataset.quote=target;
       mark.style.setProperty('background-color',isDarkTheme(currentTheme) ? 'rgb(105 170 78 / .45)' : 'rgb(183 224 143 / .45)','important');
       mark.style.setProperty('color','inherit','important');mark.style.setProperty('-webkit-box-decoration-break','clone');
       try {mark.appendChild(range.extractContents());range.insertNode(mark);} catch (_) {}
@@ -217,7 +236,14 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     const initial = document.getElementById('book').getBoundingClientRect();
     // Fixed dimensions keep epub.js's own window-resize listener from also firing
     // and clearing the view; every reflow goes through resizeBook.
-    rendition = book.renderTo('book', {width:Math.round(initial.width),height:Math.round(initial.height),spread:theme.writing === 'vertical-rl' ? 'none' : 'auto',minSpreadWidth:672,flow:'paginated',allowScriptedContent:true});
+    rendition = book.renderTo('book', {width:Math.round(initial.width),height:Math.round(initial.height),spread:theme.writing === 'vertical-rl' ? 'none' : 'auto',minSpreadWidth:672,flow:'paginated',allowScriptedContent:true,ignoreClass:bookmarkIgnoreClass});
+    // epub.js 0.3.93 emits displayerror without rejecting its display promise.
+    // Settle that promise so its render queue can accept the next navigation.
+    rendition.on('displayerror', error => {
+      const displaying = rendition.displaying;
+      rendition.displaying = undefined;
+      if (displaying) displaying.reject(error);
+    });
     // epub.js re-displays the current CFI from inside its resize handler while the
     // resized section is still re-rendering. That display snaps on the wrong axis
     // for paginated vertical writing, so the reader lands pages (often a whole
@@ -234,7 +260,7 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
       requestAnimationFrame(() => requestAnimationFrame(() => restorePosition(anchor).then(() => {
         reflowing = false;
         if (reportLocation) reportLocation(rendition.currentLocation());
-      }, () => { reflowing = false; })));
+      }, () => { reflowing = false; }).finally(navigationSettled)));
     };
     rendition.themes.default({'@font-face':[
       {'font-family':'LeximoryProse','font-weight':fonts.bold ? '100 500' : '100 900','src':`url('${fonts.regular}')`},
@@ -261,6 +287,7 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
         const bounds=range.getBoundingClientRect();
         const view=rendition.views().all().find(v=>v.contents===contents);
         const frame=view?.iframe.getBoundingClientRect() || {x:0,y:0};
+        send('selectionLocation', {location:contents.cfiFromRange(range, bookmarkIgnoreClass)});
         selected = {...context,rect:{x:bounds.x+frame.x,y:bounds.y+frame.y,width:bounds.width,height:bounds.height}};
         send('selected', selected);
         } catch(error) { send('diagnostic', {message:String(error)}); }
@@ -269,7 +296,6 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     rendition.on('rendered', retryHighlights);
     rendition.on('displayed', retryHighlights);
     rendition.on('relocated', retryHighlights);
-    rendition.on('selected', (cfi) => send('selectionLocation', {location:cfi}));
     const relocated = location => {
       const cfi=location.start.cfi,href=location.start.href;
       const chapter=flatten(navigation.toc).find(item=>item.href.split('#')[0]===href)?.title||null;
@@ -352,6 +378,7 @@ window.readerTap = async actions => {
   if (!rendition) return false;
   const location = rendition.location;
   if (!pageTurn) pageTurn = {origin: location.start.cfi};
+  const origin = pageTurn.origin;
   let compacted = actions.length > 1 ? compactTapActions(actions, rendition.currentLocation()) : [...actions];
   try {
     while (compacted.length) {
@@ -370,17 +397,13 @@ window.readerTap = async actions => {
       }
     }
     rendition.location = rendition.currentLocation();
-    pageTurn = null;
     reportLocation(rendition.location);
-    if (pendingTheme) {const theme=pendingTheme;pendingTheme=null;await window.readerTheme(theme);}
-    resizeBook();
     return true;
   } catch (error) {
-    await rendition.display(pageTurn.origin);
+    await rendition.display(origin);
     await painted();
-    pageTurn = null;
     throw error;
-  }
+  } finally { await finishPageTurn(); }
 };
 window.readerPreloadState = () => ({href:rendition.currentLocation().start.href,
   left:rendition.manager.container.scrollLeft, top:rendition.manager.container.scrollTop,
@@ -418,30 +441,64 @@ window.readerTurn = async action => {
       await chapterPainted();
       return true;
     } catch (error) {
-      await rendition.display(pageTurn.origin);
-      await chapterPainted();
-      pageTurn = null;
+      try {
+        await rendition.display(pageTurn.origin);
+        await chapterPainted();
+      } finally { await finishPageTurn(); }
       throw error;
     }
   }
   if (!pageTurn) return false;
-  if (action === 'cancel') {
-    await rendition.display(pageTurn.origin);
-    await chapterPainted();
-    pageTurn = null;
-  } else if (action === 'commit') {
-    pageTurn = null;
-    reportLocation(rendition.currentLocation());
-  }
-  if (pendingTheme) {const theme=pendingTheme;pendingTheme=null;await window.readerTheme(theme);}
-  resizeBook();
+  try {
+    if (action === 'cancel') {
+      await rendition.display(pageTurn.origin);
+      await chapterPainted();
+    } else if (action === 'commit') {
+      reportLocation(rendition.currentLocation());
+    }
+  } finally { await finishPageTurn(); }
   return true;
 };
-window.readerCommand = async (command,value) => {
-  if (!rendition || pageTurn) return;
-  if (command==='next') await rendition.next();
-  if (command==='previous') await rendition.prev();
-  if (command==='display') await rendition.display(value);
+async function bookmarkTarget(location, quote) {
+  const section = book.spine.get(location);
+  if (!section) throw new Error('Bookmark chapter is unavailable');
+  await rendition.display(section.href);
+  await chapterPainted();
+  const contents = rendition.getContents().find(item => item.sectionIndex === section.index);
+  if (!contents) throw new Error('Bookmark chapter did not load');
+  const normalize = text => text.replace(/\s+/g, ' ').trim();
+  try {
+    const range = contents.range(location, bookmarkIgnoreClass);
+    if (range && normalize(textWithoutRuby(range.cloneContents())) === normalize(quote)) return location;
+  } catch (_) {}
+  highlightBookmarks();
+  const mark = [...contents.document.querySelectorAll('[data-leximory-bookmark]')].find(item => item.dataset.quote === normalize(quote));
+  if (!mark) throw new Error('Bookmark quote is unavailable');
+  const walker = contents.document.createTreeWalker(mark, NodeFilter.SHOW_TEXT);
+  const nodes = []; let node;
+  while ((node = walker.nextNode())) { if (node.data.length) nodes.push(node); }
+  if (!nodes.length) throw new Error('Bookmark text is unavailable');
+  const range = contents.document.createRange();
+  range.setStart(nodes[0], 0); range.setEnd(nodes[nodes.length - 1], nodes[nodes.length - 1].data.length);
+  return contents.cfiFromRange(range, bookmarkIgnoreClass);
+}
+window.readerCommand = (command,value,quote) => {
+  const operation = commandQueue.then(async () => {
+    await navigationIdle();
+    if (!rendition) return;
+    if (command === 'next') await rendition.next();
+    if (command === 'previous') await rendition.prev();
+    if (command === 'display') {
+      const origin = rendition.currentLocation()?.start?.cfi;
+      try { await rendition.display(quote ? await bookmarkTarget(value, quote) : value); }
+      catch (error) {
+        if (origin) { try { await rendition.display(origin); } catch (_) {} }
+        throw error;
+      }
+    }
+  });
+  commandQueue = operation.catch(() => {});
+  return operation;
 };
 let resizeFrame, resizeRetry, viewportSize = '';
 const resizeBook = () => {

@@ -4,6 +4,9 @@ import { supabase } from '@repo/supabase'
 import { z } from 'zod'
 import { getTextAnnotationProgress } from '@/server/db/text'
 import { libraryRowSchema, textRowSchema, PAGE_SIZE, type CatalogStore, type TextCursor } from './catalog'
+import { createLibraryPreferenceStore } from './library-preference-store'
+
+export const libraryPreferences = createLibraryPreferenceStore(supabase)
 
 // Equal sort keys continue by ID; null manual positions precede numbered texts.
 export function textContinuation(cursor: TextCursor): string {
@@ -64,14 +67,7 @@ export const catalogStore: CatalogStore = {
         return checkedResponse(z.array(textRowSchema), data)
     },
     async archived(subject, signal) {
-        const { data } = await supabase
-            .from('users')
-            .select('archived_libs')
-            .eq('id', subject.userId)
-            .abortSignal(signal)
-            .maybeSingle()
-            .throwOnError()
-        return checkedResponse(z.array(z.string()).nullable(), data?.archived_libs ?? null) ?? []
+        return libraryPreferences.archived(subject.userId, signal)
     },
     async progress(id) {
         return getTextAnnotationProgress({ id })

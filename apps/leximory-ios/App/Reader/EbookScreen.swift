@@ -699,9 +699,19 @@ private struct NativeEPUBReader: UIViewRepresentable {
                 coordinator?.pageTurn?.prepare()
             }
         }
-        if let command, command.id != context.coordinator.commandID {
+        if reader.ready, let command, command.id != context.coordinator.commandID {
             context.coordinator.commandID = command.id
-            Task { _ = try? await web.callAsyncJavaScript("window.readerCommand(action, value)", arguments: ["action": command.action, "value": command.value ?? ""], in: nil, contentWorld: .page) }
+            context.coordinator.pageTurn?.invalidateSnapshot()
+            let quote = command.action == "display" ? reader.bookmarks.first { $0.location == command.value }?.quote : nil
+            Task { [weak coordinator = context.coordinator] in
+                do {
+                    _ = try await web.callAsyncJavaScript("return await window.readerCommand(action, value, quote)", arguments: ["action": command.action, "value": command.value ?? "", "quote": quote ?? ""], in: nil, contentWorld: .page)
+                } catch {
+                    reader.bookmarkErrorMessage = command.action == "display" ? "未能跳转到所选位置，请重试。" : "未能翻页，请重试。"
+                    reader.bookmarkNotice = UUID()
+                }
+                coordinator?.pageTurn?.prepare()
+            }
         }
     }
     static func dismantleUIView(_ web: WKWebView, coordinator: Coordinator) {
