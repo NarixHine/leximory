@@ -7,6 +7,7 @@ import { createArticleImporter } from '../server/mobile/article-import-store'
 import { createAuthoringOperations, type AuthoringStore } from '../server/mobile/authoring'
 import { textRowSchema, type CatalogStore, type LibraryRow, type TextRow } from '../server/mobile/catalog'
 import { testMobileHandler } from './helpers/mobile'
+import { createMutationEffects } from '../server/mobile/mutation-effects'
 
 const subject = mobileSubjectSchema.parse({ userId: 'reader' })
 const library: LibraryRow = {
@@ -26,7 +27,7 @@ const input = {
     onlyComments: false,
     generateTitle: false,
 }
-type Stage = 'save-response' | 'queue-response' | 'receipt-write' | 'progress'
+type Stage = 'save-response' | 'queue-response' | 'receipt-read' | 'receipt-write' | 'progress'
 function harness(failingStage?: Stage) {
     const rows = new Map<string, TextRow>()
     const accepted = new Map<string, string>()
@@ -34,6 +35,14 @@ function harness(failingStage?: Stage) {
     const jobs = new Map<string, unknown>()
     const jobAttempts: string[] = []
     const quotaAttempts: string[] = []
+    const background: (() => Promise<void>)[] = []
+    const effects = createMutationEffects({
+        defer: (work) => {
+            background.push(work)
+        },
+        report: () => {},
+        pause: async () => {},
+    })
     let failed = false
     function fail(stage: Stage) {
         if (stage === failingStage && !failed) {
@@ -74,6 +83,7 @@ function harness(failingStage?: Stage) {
         },
     })
     const article = createArticleImporter({
+        effects,
         database,
         charge: async (userId, id) => {
             assert.equal(userId, 'reader')
@@ -81,7 +91,10 @@ function harness(failingStage?: Stage) {
             charges.add(id)
         },
         accepted: {
-            get: async (id) => accepted.get(id) ?? null,
+            get: async (id) => {
+                fail('receipt-read')
+                return accepted.get(id) ?? null
+            },
             set: async (id) => {
                 fail('receipt-write')
                 accepted.set(id, id)
@@ -123,14 +136,17 @@ function harness(failingStage?: Stage) {
         jobs,
         jobAttempts,
         quotaAttempts,
-        submit: (body: unknown = input) =>
-            handler(
+        submit: async (body: unknown = input) => {
+            const response = await handler(
                 new Request('https://leximory.test/api/mobile/v1/libraries/library/articles', {
                     method: 'POST',
                     headers: { authorization: 'Bearer verified' },
                     body: JSON.stringify(body),
                 }),
-            ),
+            )
+            for (const work of background.splice(0)) await work()
+            return response
+        },
     }
 }
 
@@ -150,7 +166,7 @@ test('replaying an accepted annotated import returns the saved article without a
     assert.equal(h.jobAttempts.length, 1)
 })
 
-for (const stage of ['save-response', 'queue-response', 'receipt-write', 'progress'] satisfies Stage[]) {
+for (const stage of ['save-response', 'queue-response'] satisfies Stage[]) {
     test(`retry after ${stage} recovers the same text, charge identity, and annotation job`, async () => {
         const h = harness(stage)
         assert.equal((await h.submit()).status, 503)
@@ -214,3 +230,13 @@ test('a replay cannot recreate an accepted article after it was deleted', async 
     assert.equal(h.jobAttempts.length, 1)
     assert.equal(h.quotaAttempts.length, 1)
 })
+
+for (const stage of ['receipt-read', 'receipt-write', 'progress'] satisfies Stage[]) {
+    test(`accepted imports remain successful when ${stage} metadata fails`, async () => {
+        const h = harness(stage)
+        const response = await h.submit()
+        assert.equal(response.status, 200, await response.clone().text())
+        assert.equal(h.rows.size, 1)
+        assert.equal(h.jobs.size, 1)
+    })
+}

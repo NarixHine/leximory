@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { resourceID } from '@repo/api'
 import type { MobileSubject } from '@repo/schema/mobile'
 import { requireMobileSubject, type BearerVerifier } from './auth'
-import { MobileError, mobileErrorResponse } from './errors'
+import { MobileError, MobileDependencyError, mobileErrorResponse } from './errors'
 
 export interface MobileContext {
     request: Request
@@ -43,12 +43,15 @@ export function mobileEndpoint(verify: BearerVerifier, operation: MobileOperatio
         } catch (error) {
             const response = mobileErrorResponse(error)
             if (response.status >= 500 && !request.signal.aborted) {
-                const upstream = upstreamFailure.safeParse(error)
+                let cause = error
+                while (cause instanceof MobileError && cause.cause !== undefined) cause = cause.cause
+                const upstream = upstreamFailure.safeParse(cause)
                 console.error('mobile.request.failed', {
                     traceId,
                     operation: operation.name || 'anonymous',
                     method: request.method,
                     status: response.status,
+                    ...(error instanceof MobileDependencyError ? { step: error.step } : {}),
                     ...(upstream.success ? { upstreamCode: upstream.data.code, errorType: upstream.data.name } : {}),
                 })
             }
@@ -115,6 +118,6 @@ export function query(request: Request, allowed: string[]): Record<string, strin
 
 export function checkedResponse<T>(schema: z.ZodType<T>, value: unknown): T {
     const parsed = schema.safeParse(value)
-    if (!parsed.success) throw new MobileError('service_unavailable')
+    if (!parsed.success) throw new MobileError('service_unavailable', { cause: parsed.error })
     return parsed.data
 }

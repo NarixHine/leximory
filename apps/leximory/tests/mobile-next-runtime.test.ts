@@ -48,7 +48,7 @@ test('real Next.js invokes authenticated static and dynamic mobile handlers', { 
         await writeFile(
             join(archiveDirectory, 'route.ts'),
             `
-            import { revalidateTag } from 'next/cache'
+            import { invalidateMutationCaches } from ${JSON.stringify(fileURLToPath(new URL('../server/mobile/mutation-effects.ts', import.meta.url)))}
             import { createClient } from '@supabase/supabase-js'
             import { mobileEndpoint } from ${JSON.stringify(fileURLToPath(new URL('../server/mobile/http.ts', import.meta.url)))}
             import { createLibraryArchiveOperations } from ${JSON.stringify(fileURLToPath(new URL('../server/mobile/library-preferences.ts', import.meta.url)))}
@@ -80,7 +80,7 @@ test('real Next.js invokes authenticated static and dynamic mobile handlers', { 
                     access: 0, starred_by: null, shadow: false }) },
                 setArchived: async (...input) => {
                     await preferences.setArchived(...input)
-                    revalidateTag('libraries', { expire: 0 })
+                    invalidateMutationCaches('libraries')
                 },
             })
             export const POST = mobileEndpoint(verify, operations.libraryArchive)
@@ -151,6 +151,8 @@ test('real Next.js invokes authenticated static and dynamic mobile handlers', { 
         const denied = await fetch(origin + '/api/static')
         assert.equal(denied.status, 401)
         assert.equal((await denied.json()).error.code, 'unauthenticated')
+        await delay(1000)
+        assert.doesNotMatch(output, /mobile\.mutation\.effect_failed/, output)
     } finally {
         if (server && server.exitCode === null) {
             const child = server

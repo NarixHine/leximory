@@ -189,8 +189,6 @@ private struct BearerMiddleware: ClientMiddleware {
     func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
                    next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
         try await store?.requireOnline()
-        // These operations recover transient failures themselves; keep their next attempt available.
-        let recoversFailures = ["review", "generateArticleAudio", "saveShortcutWord", "vocabulary", "ebookVocabulary", "browserSelection", "browserVocabulary", "createBookmark", "createFolder", "browserRule", "editWord", "savedWord", "editableText", "editText", "removeText", "removeWord", "removeEbook", "replaceEbook", "definitions", "ebookDefinitions", "browserDefinitions", "pdfNotes", "savePDFNote", "generatePDFOutline", "savePDFOutline"].contains(operationID)
         var request = request
         let diagnosticID = UUID().uuidString
         request.headerFields[HTTPField.Name("X-Leximory-Request-ID")!] = diagnosticID
@@ -203,7 +201,6 @@ private struct BearerMiddleware: ClientMiddleware {
             result = try await next(request, body, baseURL)
         } catch {
             logger.error("Request failed: operation=\(operationID, privacy: .public) id=\(diagnosticID, privacy: .public) code=\((error as NSError).code)")
-            if !recoversFailures && MobileClient.isConnectionFailure(error) { await store?.setOnline(false) }
             throw error
         }
         if result.0.status.code == 401 && request.method == .get {

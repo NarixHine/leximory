@@ -4,7 +4,7 @@ import { getMembership } from '@repo/user/membership'
 import { redis } from '@repo/kv/redis'
 import { supabase } from '@repo/supabase'
 import { PLAN_AUDIO_QUOTA } from '@repo/env/config'
-import { revalidateTag } from 'next/cache'
+import { invalidateMutationCaches } from './mutation-effects'
 import { speak } from '@/server/ai/speak'
 import { uploadAudio } from '@/server/db/audio'
 import { MobileError } from './errors'
@@ -41,7 +41,7 @@ export const articleAudioStore: ArticleAudioStore = {
                 [PLAN_AUDIO_QUOTA[plan]],
             )
             if (allowed !== 1 && allowed !== 2) throw new MobileError('quota_exceeded')
-            if (allowed === 1) revalidateTag(`quota:${userId}:audio`, { expire: 0 })
+            if (allowed === 1) invalidateMutationCaches(`quota:${userId}:audio`)
             const audio = await speak({ text, lang, userId, signal })
             signal.throwIfAborted()
             await uploadAudio({ id, audio })

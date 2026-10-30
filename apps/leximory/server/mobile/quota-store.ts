@@ -1,6 +1,6 @@
 import 'server-only'
 import { redis } from '@repo/kv/redis'
-import { revalidateTag } from 'next/cache'
+import { invalidateMutationCaches } from './mutation-effects'
 import { mobileMutationID } from './vocabulary-save'
 
 export async function chargeCommentaryQuota(input: {
@@ -23,6 +23,6 @@ export async function chargeCommentaryQuota(input: {
         keys,
         [input.cost, input.limit],
     )
-    if (allowed === 1) revalidateTag(`quota:${input.userId}:commentary`, { expire: 0 })
+    if (allowed === 1) invalidateMutationCaches(`quota:${input.userId}:commentary`)
     return allowed === 1 || allowed === 2
 }

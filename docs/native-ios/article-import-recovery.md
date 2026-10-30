@@ -1,13 +1,31 @@
-# Article import recovery
+# Article import and mutation recovery
 
-The native message `未能确认导入结果` was a catch-all for a failed or undecodable import response. It did not establish whether the text was saved. Both import sheets then disabled retry and asked the user to inspect their folders manually.
+An annotated import succeeds when its source text is saved and the annotation job is accepted. Generation completes later. Annotation acceptance must not be confused with the finished generated article.
 
-Text imports previously generated a new text ID per request. If annotation scheduling failed, the backend deleted the text even though the scheduler might already have accepted its job. Retrying the original operation could create another text or charge annotation quota again.
+## Confirmed shared failures
 
-Text import requests now carry a stable request ID. The server derives the saved text identity from the account, folder, request ID, and canonical import fields. It inserts without overwriting an existing text, returns the stored metadata on replay, and uses the same identities for quota charging and annotation scheduling. It keeps saved source text if an acknowledgement fails. Confirmed annotation submissions have a seven-day receipt. Inngest's event ID deduplication covers 24 hours, as described in its [idempotency documentation](https://www.inngest.com/docs/durable-execution/guides-and-advanced/idempotency). These are bounded retry protections, not a permanent exactly-once guarantee.
+A connection error in `BearerMiddleware` marked the entire account's `LocalReadingStore` offline unless the endpoint appeared in a hardcoded allowlist. Imports and archive mutations were absent from that list. The next retry therefore failed in `requireOnline()` before it reached the transport. Earlier retry tests omitted the account store and could not catch this.
 
-The native client retries temporary failures three times with one identity. After exhaustion, both text import sheets retain the draft and allow retry with that identity. Editing the content or import options represents a separate import intent. Ebook upload behavior remains separate.
+The regression `aConnectionFailureCannotDisableAccountRequests` failed before the fix for article import, library archive, and a subsequent account read. It now passes with the real account store attached. Explicit offline mode still blocks requests. Network-path observation now owns connectivity; server/request failures do not change account connectivity.
 
-The regression `articleImportRecoversWithOneRequestIdentity` failed before the client change with the first temporary service error. It now passes. The production database adapter tests use the installed Supabase client with fixture I/O and cover lost database responses, lost scheduler acknowledgements, receipt failures, progress failures, concurrent requests, replay after completion, and rejected replay after deletion. They verify that saved source text survives these failures.
+The backend also rejected saved, accepted imports when optional progress or receipt work failed. The new regression initially returned 503 instead of 200 for both. Optional effects now use a shared boundary. Receipt and cache work run after the response with bounded recovery; progress writes cannot stop job submission. Required database, quota, and queue-acceptance failures continue to reject the operation.
 
-Verification passed for all 272 mobile backend tests, all 104 Swift Core tests, the required type check, contract and route checks, and the iOS Simulator build. The Simulator check compiled the app without installing or launching it. No live account data or database schema was changed. The backend and native changes require deployment and an updated app; the outcome of the user's previously reported import remains unknown.
+All mobile mutation adapters use this cache invalidation boundary. The real Next.js runtime test invokes it from an authenticated archive route and checks that deferred invalidation succeeds. `check:mobile-boundaries` prevents direct cache mutation imports outside the shared helper and account-connectivity mutation in the client middleware. Both type checks and the mobile suite run this guard.
+
+## Import identity and diagnostics
+
+Import requests carry a stable request ID. The saved identity includes the account, folder, request ID, and canonical import fields. A replay returns existing stored text instead of overwriting it. Quota and annotation jobs use stable identities, and saved source text survives a failed acknowledgement.
+
+Receipt bookkeeping is an optimization, not proof of generation completion. Receipts last seven days. Inngest event IDs suppress duplicate starts within its [24-hour deduplication window](https://www.inngest.com/docs/durable-execution/guides-and-advanced/idempotency). This is bounded recovery, not a permanent exactly-once guarantee.
+
+Required dependency failures retain their cause and named step for server logs, along with the response's request ID. Logs omit request content, credentials, and raw database/provider messages.
+
+## Read-only runtime census
+
+`apps/leximory/scripts/diagnose-mobile-backend.ts` reads the bundled preview origin and checks unauthenticated HTTP behavior, Inngest function/key presence, database schema metadata, and Redis PING. It never signs in, reads account rows, writes data, or sends jobs. Load the app's environment file before running the script.
+
+The October 30, 2026 census found the preview reachable, five annotation/billing/notification functions configured in cloud mode, the expected tables present, and Redis responding. These health checks do not establish the outcome or triggering error of the user's particular authenticated import.
+
+No database schema or live account data was changed. Native checks compile and test fixture transports without installing or launching the app on a user's device.
+
+The final checks passed 280 mobile backend tests, including the real Next.js runtime test, 106 Swift Core tests, type checks, contract/route checks, and the Simulator build. A negative control confirmed that the boundary checker rejects an aliased direct cache mutation. The exact production request remains unmatched because the existing browser session did not permit computer-use access to Vercel's runtime logs.

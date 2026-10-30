@@ -10,7 +10,7 @@ import { redis } from '@repo/kv/redis'
 import { supabase } from '@repo/supabase'
 import { getMembership } from '@repo/user/membership'
 import { PLAN_COMMENTARY_QUOTA } from '@repo/env/config'
-import { revalidateTag } from 'next/cache'
+import { invalidateMutationCaches } from './mutation-effects'
 import { miniAI } from '@/server/ai/config'
 import { MobileError } from './errors'
 import { mobileMutationID } from './vocabulary-save'
@@ -157,7 +157,7 @@ export const pdfOutlineStore: PDFOutlineStore = {
             if (result === 0) throw new MobileError('quota_exceeded')
             if (result === -1) throw new MobileError('stale_revision')
             if (result !== 1 && result !== 2) throw new MobileError('service_unavailable')
-            revalidateTag(`quota:${scope.userId}:commentary`, { expire: 0 })
+            invalidateMutationCaches(`quota:${scope.userId}:commentary`)
             return signedResult(scope, revision, path)
         })
     },

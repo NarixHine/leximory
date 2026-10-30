@@ -29,6 +29,54 @@ struct MobileClientTests {
         #expect(await transport.count == 1)
         #expect(await rejected.values == ["original"])
     }
+    @Test(arguments: ["importArticle", "libraryArchive", "me"])
+    func aConnectionFailureCannotDisableAccountRequests(operation: String) async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://account.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
+        let transport = InterruptedAccountTransport()
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        switch operation {
+        case "importArticle":
+            let text = try await client.importArticle(libraryID: "library", title: "Article", content: "Along the river.", annotate: true, onlyComments: false, generateTitle: false)
+            #expect(text.id == "article")
+        case "libraryArchive":
+            try await client.setLibraryArchived(libraryID: "library", archived: true)
+        default:
+            await #expect(throws: (any Error).self) { try await client.account() }
+            let account = try await client.account()
+            #expect(account.userId == "reader")
+        }
+        #expect(await transport.calls == 2)
+        #expect(await store.status().online)
+        try await store.requireOnline()
+    }
+    @Test func anExplicitlyOfflineAccountDoesNotSendRequests() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://account.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
+        await store.setOnline(false)
+        let transport = InterruptedAccountTransport()
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        await #expect(throws: (any Error).self) { try await client.account() }
+        #expect(await transport.calls == 0)
+    }
+    private actor InterruptedAccountTransport: ClientTransport {
+        var calls = 0
+        func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+            calls += 1
+            if calls == 1 { throw URLError(.networkConnectionLost) }
+            let payload: String
+            switch operationID {
+            case "importArticle": payload = #"{"id":"article","libraryId":"library","title":"Article","topics":[],"emoji":null,"createdAt":null,"format":"article"}"#
+            case "libraryArchive": payload = #"{"archived":true}"#
+            default: payload = #"{"userId":"reader","plan":"beginner","definitions":{"used":0,"limit":20,"resetsIn":30}}"#
+            }
+            return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(payload))
+        }
+    }
     private actor RejectedTokens {
         var values: [String] = []
         func record(_ token: String) { values.append(token) }

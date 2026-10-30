@@ -22,8 +22,11 @@ const failures = {
 } satisfies Record<MobileErrorCode, { status: number; message: string; retryable: boolean }>
 
 export class MobileError extends Error {
-    constructor(readonly code: MobileErrorCode) {
-        super(failures[code].message)
+    constructor(
+        readonly code: MobileErrorCode,
+        options?: ErrorOptions,
+    ) {
+        super(failures[code].message, options)
         this.name = 'MobileError'
     }
     get status(): number {
@@ -32,6 +35,29 @@ export class MobileError extends Error {
     get body(): MobileErrorBody {
         const { message, retryable } = failures[this.code]
         return { error: { code: this.code, message, retryable } }
+    }
+}
+
+type MobileDependencyStep =
+    | 'article.lookup'
+    | 'article.persist'
+    | 'article.confirm'
+    | 'annotation.quota'
+    | 'annotation.enqueue'
+export class MobileDependencyError extends MobileError {
+    constructor(
+        readonly step: MobileDependencyStep,
+        cause: unknown,
+    ) {
+        super(cause instanceof MobileError ? cause.code : 'service_unavailable', { cause })
+    }
+}
+
+export async function mobileDependency<T>(step: MobileDependencyStep, operation: () => PromiseLike<T>): Promise<T> {
+    try {
+        return await operation()
+    } catch (error) {
+        throw new MobileDependencyError(step, error)
     }
 }
 

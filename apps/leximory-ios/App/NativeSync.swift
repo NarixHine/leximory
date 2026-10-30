@@ -52,28 +52,17 @@ import LeximoryCore
         let id = UUID(); runID = id; active = true
         defer { if runID == id { active = false; runID = nil } }
         await loadCatalogIfNeeded()
-        var recoveryAttempts = 0
         while !Task.isCancelled && !stopped && runID == id {
-            if online { recoveryAttempts = 0 }
-            if pathAvailable && !online && recoveryAttempts < MutationRetry.maxAttempts {
-                recoveryAttempts += 1
-                await store.setOnline(true)
-                do {
-                    _ = try await client.account()
-                    await loadCatalogIfNeeded()
-                } catch { await store.setOnline(false) }
-            }
             await syncNotes()
             do { try await waitForNextPass() } catch { return }
         }
     }
     func loadCatalogIfNeeded() async {
         guard !stopped, pathAvailable, !Task.isCancelled else { return }
-        await store.setOnline(true)
+        await store.setOnline(pathAvailable)
         guard await client.cachedLibraries() == nil else { return }
         for attempt in 0..<MutationRetry.maxAttempts {
             do {
-                await store.setOnline(true)
                 _ = try await client.allLibraries()
                 try Task.checkCancellation()
                 catalogFailed = false
@@ -95,8 +84,7 @@ import LeximoryCore
         let task = Task { [self] in
             for attempt in 0..<MutationRetry.maxAttempts {
                 guard !Task.isCancelled, !stopped, pathAvailable else { return false }
-                // Probe again after a connection failure instead of trusting the stale offline flag.
-                await store.setOnline(true)
+                await store.setOnline(pathAvailable)
                 do {
                     let libraries = try await client.allLibraries()
                     try Task.checkCancellation()

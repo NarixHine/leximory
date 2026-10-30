@@ -9,7 +9,7 @@ import { supabase } from '@repo/supabase'
 import { redis } from '@repo/kv/redis'
 import { definitionSchema } from '@repo/api'
 import { PLAN_COMMENTARY_QUOTA, ACTION_QUOTA_COST } from '@repo/env/config'
-import { revalidateTag } from 'next/cache'
+import { invalidateMutationCaches } from './mutation-effects'
 import { mobileWordGuide } from '@/lib/prompt'
 import { wordAI } from '@/server/ai/config'
 import { receiptSchema, type DefinitionServices } from './definitions'
@@ -94,8 +94,8 @@ export const definitionServices: DefinitionServices = {
                 },
             },
         )
-        revalidateTag(`words:${saved.libraryId}`, { expire: 0 })
-        revalidateTag('words', { expire: 0 })
+        invalidateMutationCaches(`words:${saved.libraryId}`)
+        invalidateMutationCaches('words')
         return saved
     },
 }

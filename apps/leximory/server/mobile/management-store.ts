@@ -4,13 +4,13 @@ import { redis } from '@repo/kv/redis'
 import { changeEbookFile } from './ebook-file-change'
 import { ebookFiles } from './ebook-storage'
 import { supabase } from '@repo/supabase'
-import { revalidateTag } from 'next/cache'
+import { invalidateMutationCaches } from './mutation-effects'
 import { editTextRecord } from './text-edit-store'
 import { MobileError } from './errors'
 import type { ManagementStore } from './management'
 
 function expireText(library: string) {
-    revalidateTag(`texts:${library}`, { expire: 0 })
+    invalidateMutationCaches(`texts:${library}`)
 }
 async function resetLocations(id: string) {
     await supabase.from('reads').update({ location: null }).eq('text', id).throwOnError()
@@ -87,9 +87,9 @@ const operations: ManagementStore = {
     },
     async removeWord(id, library) {
         await supabase.from('lexicon').delete().eq('id', id).eq('lib', library).throwOnError()
-        revalidateTag(`words:${library}`, { expire: 0 })
-        revalidateTag('words', { expire: 0 })
-        revalidateTag(id, { expire: 0 })
+        invalidateMutationCaches(`words:${library}`)
+        invalidateMutationCaches('words')
+        invalidateMutationCaches(id)
     },
 }
 export const managementStore: ManagementStore = {

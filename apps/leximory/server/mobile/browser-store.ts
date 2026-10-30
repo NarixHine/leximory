@@ -6,7 +6,7 @@ import { generateText } from 'ai'
 import { Parser } from 'htmlparser2'
 import { supabase } from '@repo/supabase'
 import { redis } from '@repo/kv/redis'
-import { revalidateTag } from 'next/cache'
+import { invalidateMutationCaches } from './mutation-effects'
 import { emojiPrompt } from '@/server/ai/text-metadata'
 import { isValidEmoji } from '@/lib/utils'
 import { assertPublicArticleURL } from './article-url'
@@ -146,8 +146,8 @@ export const browserStore: BrowserStore = {
             .throwOnError()
         const { data } = await supabase.from('texts').select('*').eq('id', id).single().throwOnError()
         if (data.lib !== library.id || data.bookmark_url !== input.url) throw new MobileError('invalid_input')
-        revalidateTag('texts:' + library.id, { expire: 0 })
-        revalidateTag('lib:' + library.id, { expire: 0 })
+        invalidateMutationCaches('texts:' + library.id)
+        invalidateMutationCaches('lib:' + library.id)
         return summarizeText(checkedResponse(textRowSchema, data))
     },
 }

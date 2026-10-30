@@ -2,7 +2,7 @@ import { checkedResponse } from './http'
 import 'server-only'
 import { supabase } from '@repo/supabase'
 import { LIB_ACCESS_STATUS } from '@repo/env/config'
-import { revalidateTag } from 'next/cache'
+import { invalidateMutationCaches } from './mutation-effects'
 import { getLanguageStrategy } from '@/lib/languages'
 import { libraryRowSchema } from './catalog'
 import { mobileMutationID } from './vocabulary-save'
@@ -49,7 +49,7 @@ export const folderStore: FolderStore = {
             )
             .abortSignal(signal)
             .throwOnError()
-        revalidateTag('libraries', { expire: 0 })
+        invalidateMutationCaches('libraries')
         return library
     },
     async rename(library, name, signal) {
@@ -62,8 +62,8 @@ export const folderStore: FolderStore = {
             .abortSignal(signal)
             .single()
             .throwOnError()
-        revalidateTag('libraries', { expire: 0 })
-        revalidateTag('lib:' + library.id, { expire: 0 })
+        invalidateMutationCaches('libraries')
+        invalidateMutationCaches('lib:' + library.id)
         return checkedResponse(libraryRowSchema, data)
     },
 }

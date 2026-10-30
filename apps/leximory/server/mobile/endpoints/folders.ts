@@ -1,5 +1,5 @@
 import 'server-only'
-import { revalidateTag } from 'next/cache'
+import { invalidateMutationCaches } from '../mutation-effects'
 import { mobileEndpoint } from '../http'
 import { verify } from './verify'
 import { createFolderOperations } from '../folders'
@@ -12,7 +12,7 @@ const archive = createLibraryArchiveOperations({
     catalog: catalogStore,
     setArchived: async (...input) => {
         await libraryPreferences.setArchived(...input)
-        revalidateTag('libraries', { expire: 0 })
+        invalidateMutationCaches('libraries')
     },
 })
 export const createFolder = mobileEndpoint(verify, folders.createFolder)

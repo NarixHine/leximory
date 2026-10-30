@@ -6,7 +6,7 @@ import { languageWelcomeWords } from '@repo/languages'
 import { assertPublicArticleURL } from './article-url'
 import { supabase } from '@repo/supabase'
 import { redis } from '@repo/kv/redis'
-import { revalidateTag } from 'next/cache'
+import { invalidateMutationCaches, mutationEffects } from './mutation-effects'
 import { PLAN_COMMENTARY_QUOTA, ACTION_QUOTA_COST } from '@repo/env/config'
 import { createText, deleteText, uploadEbook, updateText, setTextAnnotationProgress } from '@/server/db/text'
 import { emojiChoice } from '@/server/ai/emoji'
@@ -18,6 +18,7 @@ import { serializeWord } from './word-format'
 import { createArticleImporter } from './article-import-store'
 
 const importArticle = createArticleImporter({
+    effects: mutationEffects,
     database: supabase,
     charge: (userId, requestId) => charge({ userId }, ACTION_QUOTA_COST.articleAnnotation, requestId),
     accepted: {
@@ -33,8 +34,8 @@ const importArticle = createArticleImporter({
 })
 
 function expireWords(library: string) {
-    revalidateTag(`words:${library}`, { expire: 0 })
-    revalidateTag('words', { expire: 0 })
+    invalidateMutationCaches(`words:${library}`)
+    invalidateMutationCaches('words')
 }
 function parseWord(data: { id: string; lib: string | null; word: string; created_at?: string | null }) {
     if (!data.lib) throw new MobileError('inaccessible')
@@ -92,11 +93,11 @@ export const authoringStore: AuthoringStore = {
             .single()
             .throwOnError()
         expireWords(library)
-        revalidateTag(id, { expire: 0 })
+        invalidateMutationCaches(id)
     },
     async article(subject, library, input) {
         const text = await importArticle(subject, library, input)
-        revalidateTag(`texts:${library.id}`, { expire: 0 })
+        invalidateMutationCaches(`texts:${library.id}`)
         return text
     },
     async ebook(library, title, file) {
@@ -108,7 +109,7 @@ export const authoringStore: AuthoringStore = {
             await deleteText({ id })
             throw error
         }
-        revalidateTag(`texts:${library.id}`, { expire: 0 })
+        invalidateMutationCaches(`texts:${library.id}`)
         return {
             id,
             libraryId: library.id,
@@ -126,8 +127,8 @@ export const authoringStore: AuthoringStore = {
     },
     async setEbookEmoji(id, emoji) {
         const libraryId = await updateText({ id, emoji })
-        revalidateTag(`texts:${libraryId}`, { expire: 0 })
-        revalidateTag(id, { expire: 0 })
+        invalidateMutationCaches(`texts:${libraryId}`)
+        invalidateMutationCaches(id)
     },
 }
 

@@ -14,7 +14,7 @@ import {
     CREEM_PRODUCT_ID,
     prefixUrl,
 } from '@repo/env/config'
-import { revalidateTag } from 'next/cache'
+import { invalidateMutationCaches } from './mutation-effects'
 import { momentSH } from '@/lib/moment'
 import { listLibs } from '@/server/db/lib'
 import { aggrWordHistogram } from '@/server/db/word'
@@ -124,7 +124,7 @@ export const accountStore: AccountStore = {
     },
     async accent({ subject, signal }, accent) {
         await supabase.from('users').update({ accent }).eq('id', subject.userId).abortSignal(signal).throwOnError()
-        revalidateTag('accent', { expire: 0 })
+        invalidateMutationCaches('accent')
     },
     async claim(context) {
         const { user, plan, hasClaimed } = await loadAccount(context)
@@ -142,7 +142,7 @@ export const accountStore: AccountStore = {
             : update.is('last_daily_claim', null)
         const { data } = await update.select('id').abortSignal(context.signal).throwOnError()
         if (!data.length) throw new MobileError('stale_revision')
-        revalidateTag('lexicoin', { expire: 0 })
+        invalidateMutationCaches('lexicoin')
         return `领取成功，LexiCoin + ${PLAN_DAILY_LEXICOIN[plan]}`
     },
     async token({ subject }) {
