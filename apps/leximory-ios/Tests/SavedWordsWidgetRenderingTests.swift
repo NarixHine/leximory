@@ -4,6 +4,18 @@ import WidgetKit
 @testable import Leximory
 
 @MainActor struct SavedWordsWidgetRenderingTests {
+    @Test func meshFitsWidgetKitArchiveLimitsAtRetinaScale() throws {
+        for name in ["WidgetMeshLight", "WidgetMeshDark"] {
+            let small = try #require(LeximoryWidgetMesh.raster(named: name, size: CGSize(width: 164, height: 164), scale: 3).cgImage)
+            #expect(small.width == 492)
+            #expect(small.height == 492)
+            #expect(small.width < 1084 && small.height < 986)
+            let medium = try #require(LeximoryWidgetMesh.raster(named: name, size: CGSize(width: 350, height: 164), scale: 3).cgImage)
+            #expect(medium.width == 1050)
+            #expect(medium.height == 492)
+        }
+    }
+
     @Test(arguments: [DynamicTypeSize.large, .xxxLarge])
     func exportDesignPreviews(typeSize: DynamicTypeSize) throws {
         for dark in [false, true] {

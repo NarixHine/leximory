@@ -109,3 +109,11 @@ struct SavedWordsWidgetStore {
         defaults?.set(data, forKey: Self.key)
     }
 }
+
+enum SavedWordsWidgetLink {
+    static let home = URL(string: "leximory://home")!
+
+    static func opensHome(_ url: URL) -> Bool {
+        url.scheme == "leximory" && (url.host == "home" || url.host == "account")
+    }
+}

@@ -3,6 +3,14 @@ import Testing
 @testable import Leximory
 
 struct SavedWordsWidgetTests {
+    @Test func widgetLinksOpenHomeIncludingPreviouslyArchivedAccountLinks() throws {
+        #expect(SavedWordsWidgetLink.home.absoluteString == "leximory://home")
+        #expect(SavedWordsWidgetLink.opensHome(SavedWordsWidgetLink.home))
+        #expect(SavedWordsWidgetLink.opensHome(try #require(URL(string: "leximory://account"))))
+        #expect(!SavedWordsWidgetLink.opensHome(try #require(URL(string: "leximory://read/article"))))
+        #expect(!SavedWordsWidgetLink.opensHome(try #require(URL(string: "https://example.test/home"))))
+    }
+
     @Test func todayAndRollingPeriodAdvanceAtShanghaiMidnight() throws {
         let snapshot = SavedWordsSnapshot(activity: [("2026-10-01", 5), ("2026-10-30", 12)], endingOn: "2026-10-30")
         let midnight = try #require(ISO8601DateFormatter().date(from: "2026-10-30T16:00:00Z"))

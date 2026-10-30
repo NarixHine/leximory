@@ -25,7 +25,7 @@ struct SavedWordsWidgetView: View {
                         numeral(today, size: min(numberSize, 66))
                         Text(snapshot == nil ? "Open Leximory" : "Words today")
                             .font(LeximoryTypography.interface(11, style: .caption1))
-                            .foregroundStyle(LeximoryPalette.muted)
+                            .foregroundStyle(Color(uiColor: .secondaryLabel))
                             .lineLimit(1).minimumScaleFactor(0.75)
                     }
                     .padding(16)
@@ -64,7 +64,7 @@ struct SavedWordsWidgetView: View {
                                 numeral(snapshot?.total, size: min(numberSize, typeSize.isAccessibilitySize ? 52 : 66))
                                 Text(snapshot == nil ? "Open Leximory" : "Words saved over 30 days")
                                     .font(LeximoryTypography.interface(11, style: .caption1))
-                                    .foregroundStyle(LeximoryPalette.muted)
+                                    .foregroundStyle(Color(uiColor: .secondaryLabel))
                                     .lineLimit(1).minimumScaleFactor(0.65)
                             }
                         }
@@ -77,7 +77,7 @@ struct SavedWordsWidgetView: View {
         }
         .environment(\.locale, Locale(identifier: "en_US"))
         .containerBackground(for: .widget) { LeximoryWidgetMesh() }
-        .widgetURL(URL(string: "leximory://account"))
+        .widgetURL(SavedWordsWidgetLink.home)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilitySummary)
     }
