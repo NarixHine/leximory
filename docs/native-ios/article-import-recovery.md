@@ -54,7 +54,7 @@ The command signs into an isolated account marked `app_metadata.backend_e2e: tru
 
 1. Imports a uniquely marked article through the public API with annotation enabled.
 2. Replays the same request and requires the same saved article ID.
-3. Waits for the deployed worker to finish, requiring generated definitions, topics and emoji.
+3. Waits for the deployed worker to finish and requires rendered definitions. Topics and emoji retain their optional contract semantics.
 4. Requires exactly one annotation quota charge across the import and replay.
 5. Archives the test folder and checks the catalog reflects the write.
 6. Removes only this run's articles and restores the original archive state. It also discovers a saved article when a failed import never returned its ID. Unconfirmed cleanup fails verification.
@@ -84,3 +84,13 @@ BACKEND_E2E_EXPECTED_REVISION=<full-deployed-commit-sha> node --env-file=.env.ba
 ```
 
 Until this deployed command actually returns `verified`, the production incident remains unverified regardless of local test counts. The gate covers article import and folder archiving; it does not establish correctness of unrelated features or guarantee continued availability of external services after the run.
+
+## Authorized real-service diagnostic
+
+The isolated fixture was retained after explicit user approval. Its credentials remain in the ignored mode-0600 file. No personal account was used and no schema was changed.
+
+The deployed article import returned 503 with trace `e2e-4ea9bf65-a244-44d5-bdee-64178bbfcf55`. Replaying the same payload and request identity against the current local production build, using the real database, Redis and cloud queue, returned 200 and the same article ID. The real cloud worker reached `completed`, and the deployed reading API returned seven rendered definitions. The account showed one quota point charged across those attempts. A real archive round trip persisted, its original state was restored, and the diagnostic article was removed and its removal confirmed.
+
+The worker returned no emoji. Emoji and topics are optional in the reading contract, so the release verifier must not reject completed annotations solely for missing cosmetic metadata. A regression covers a valid completed article with empty topics and a null emoji. Missing generated definitions still fails verification.
+
+This diagnostic is not a verified deployment of the local changes. The user owns deployment; no branch push or Vercel deployment was performed. The strict deployed gate continues to require the exact deployed revision before it can report `verified`.

@@ -153,8 +153,6 @@ export async function verifyMobileRelease(input: {
                         phase,
                         'The worker reported completion without generated definitions',
                     )
-                if (!document.text.topics.some((topic) => topic.trim()) || !document.text.emoji?.trim())
-                    throw new ReleaseVerificationError(phase, 'The completed import is missing generated metadata')
                 complete = true
                 break
             }

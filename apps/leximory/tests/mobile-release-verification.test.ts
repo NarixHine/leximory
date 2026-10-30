@@ -24,6 +24,7 @@ function fixture(
         doubleCharge?: boolean
         archiveIgnored?: boolean
         cleanupRejected?: boolean
+        noMetadata?: boolean
     } = {},
 ) {
     let archived = false
@@ -36,8 +37,8 @@ function fixture(
         id: 'fixture-article',
         libraryId: config.libraryId,
         title,
-        topics: ['Reading'],
-        emoji: '🌿',
+        topics: options.noMetadata ? [] : ['Reading'],
+        emoji: options.noMetadata ? null : '🌿',
         createdAt: null,
         format: 'article',
     })
@@ -219,3 +220,11 @@ for (const [name, options, reason] of [
         assert.equal(f.archived(), false, 'archive state must be restored even if cleanup fails')
     })
 }
+
+test('optional topics and emoji cannot reject an otherwise completed annotated import', async () => {
+    const f = fixture({ noMetadata: true })
+    const result = await verifyMobileRelease({ config, accessToken: 'fixture', fetcher: f.fetcher })
+    assert.equal(result.status, 'verified')
+    assert.equal(f.exists(), false)
+    assert.equal(f.archived(), false)
+})
