@@ -39,7 +39,7 @@ test('a committed mutation responds before failed cache work and retries it with
         })
         return { saved: true }
     })
-    const response = await endpoint(request())
+    const response = await endpoint(request(), { params: Promise.resolve({}) })
     assert.equal(response.status, 200)
     assert.deepEqual(await response.json(), { saved: true })
     assert.equal(invalidations, 0)
@@ -89,7 +89,7 @@ test('failed scheduling cannot reject a committed response', async () => {
         effects.schedule({ name: 'cache.invalidate', run: () => assert.fail('not scheduled') })
         return { saved: true }
     })
-    assert.equal((await endpoint(request())).status, 200)
+    assert.equal((await endpoint(request(), { params: Promise.resolve({}) })).status, 200)
     assert.deepEqual(failures, ['cache.invalidate'])
 })
 
@@ -120,7 +120,7 @@ test('required quota and persistence failures still reject the mutation with the
         writes++
         return { saved: true }
     })
-    const response = await endpoint(request())
+    const response = await endpoint(request(), { params: Promise.resolve({}) })
     assert.equal(response.status, 429)
     assert.equal(writes, 0)
 })
@@ -155,6 +155,7 @@ test('dependency failures log their request and failing step without exposing pr
             method: 'POST',
             headers: { authorization: 'Bearer verified', 'X-Leximory-Request-ID': 'failed-import' },
         }),
+        { params: Promise.resolve({}) },
     )
     assert.equal(response.status, 503)
     assert.equal(response.headers.get('X-Leximory-Request-ID'), 'failed-import')

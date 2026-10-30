@@ -1,0 +1,41 @@
+name: Mobile deployed verification
+on:
+    workflow_dispatch:
+    deployment_status:
+permissions:
+    contents: read
+concurrency:
+    group: mobile-deployed-verification
+    cancel-in-progress: false
+jobs:
+    deployed:
+        if: github.event_name == 'workflow_dispatch' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Preview')
+        runs-on: ubuntu-latest
+        environment: mobile-preview
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.repository.default_branch }}
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 10.8.1
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile --ignore-scripts
+            # A protected, fixed origin prevents deployment metadata from receiving credentials.
+            # Missing settings must fail this job, never skip verification or report success.
+            - name: Verify the complete deployed import and archive workflow
+              run: pnpm --dir apps/leximory run verify:mobile-release
+              env:
+                  BACKEND_E2E_ORIGIN: ${{ vars.BACKEND_E2E_ORIGIN }}
+                  BACKEND_E2E_SUPABASE_URL: ${{ vars.BACKEND_E2E_SUPABASE_URL }}
+                  BACKEND_E2E_ANON_KEY: ${{ secrets.BACKEND_E2E_ANON_KEY }}
+                  BACKEND_E2E_EMAIL: ${{ secrets.BACKEND_E2E_EMAIL }}
+                  BACKEND_E2E_PASSWORD: ${{ secrets.BACKEND_E2E_PASSWORD }}
+                  BACKEND_E2E_USER_ID: ${{ vars.BACKEND_E2E_USER_ID }}
+                  BACKEND_E2E_LIBRARY_ID: ${{ vars.BACKEND_E2E_LIBRARY_ID }}
+                  BACKEND_E2E_ALLOW_WRITES: ${{ vars.BACKEND_E2E_ALLOW_WRITES }}
+                  BACKEND_E2E_EXPECTED_REVISION: ${{ github.event.deployment.sha || github.sha }}

@@ -11,7 +11,7 @@ import { PLAN_COMMENTARY_QUOTA, ACTION_QUOTA_COST } from '@repo/env/config'
 import { createText, deleteText, uploadEbook, updateText, setTextAnnotationProgress } from '@/server/db/text'
 import { emojiChoice } from '@/server/ai/emoji'
 import { runEvaluation } from '@/server/ai/evaluate'
-import { inngest } from '@/server/inngest/client'
+import { publishArticleImport } from '@/server/inngest/client'
 import { MobileError } from './errors'
 import type { AuthoringStore } from './authoring'
 import { serializeWord } from './word-format'
@@ -29,7 +29,7 @@ const importArticle = createArticleImporter({
     },
     markPending: (id) => setTextAnnotationProgress({ id, progress: 'annotating' }),
     enqueue: async (event) => {
-        await inngest.send({ ...event, name: 'app/article.imported' })
+        await publishArticleImport(event)
     },
 })
 

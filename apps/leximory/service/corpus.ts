@@ -4,7 +4,7 @@ import { Kilpi } from '@repo/service/kilpi'
 import { loadWords, retrieveWordsWithRange } from '@/server/db/word'
 import { getUserOrThrow } from '@repo/user'
 import incrCommentaryQuota, { maxCommentaryQuota } from '@repo/user/quota'
-import { inngest } from '@/server/inngest/client'
+import { publishEvent } from '@/server/inngest/client'
 import { ACTION_QUOTA_COST } from '@repo/env/config'
 import { getLib } from '@/server/db/lib'
 
@@ -52,7 +52,7 @@ export async function generateCorpusStory({
         }
     }
 
-    await inngest.send({
+    await publishEvent({
         name: 'app/story.requested',
         data: {
             comments,

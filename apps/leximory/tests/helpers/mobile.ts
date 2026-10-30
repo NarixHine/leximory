@@ -51,7 +51,13 @@ export function testMobileHandler(operations: Record<string, MobileOperation>, v
             const operation = operations[id]
             if (!operation) return new Response(null, { status: 404 })
             const context = { params: Object.keys(params).length ? Promise.resolve(params) : undefined }
-            return mobileEndpoint(verify, operation, 60000)(request, context)
+            // Next's runtime passes undefined static params despite its generated handler type.
+            const response: unknown = await Reflect.apply(mobileEndpoint(verify, operation, 60000), undefined, [
+                request,
+                context,
+            ])
+            if (!(response instanceof Response)) throw new Error('The mobile endpoint did not return an HTTP response')
+            return response
         }
         return new Response(null, { status: 404 })
     }

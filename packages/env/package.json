@@ -9,7 +9,8 @@
         "./config": "./src/config.ts",
         "./access": "./src/access.ts",
         "./content": "./src/content.ts",
-        "./billing": "./src/billing.ts"
+        "./billing": "./src/billing.ts",
+        "./deployment": "./src/deployment.ts"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:^",

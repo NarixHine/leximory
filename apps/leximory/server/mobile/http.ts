@@ -1,9 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 import { resourceID } from '@repo/api'
+import { deploymentRevision } from '@repo/env/deployment'
 import type { MobileSubject } from '@repo/schema/mobile'
 import { requireMobileSubject, type BearerVerifier } from './auth'
 import { MobileError, MobileDependencyError, mobileErrorResponse } from './errors'
+import { ExternalServiceError } from '../errors/external-service'
 
 export interface MobileContext {
     request: Request
@@ -26,7 +28,7 @@ const upstreamFailure = z.object({
 })
 
 export function mobileEndpoint(verify: BearerVerifier, operation: MobileOperation, timeout = 20000) {
-    return async (request: Request, context: { params?: Promise<Record<string, string>> } = {}): Promise<Response> => {
+    return async (request: Request, context: { params: Promise<Record<string, string>> }): Promise<Response> => {
         const supplied = request.headers.get('X-Leximory-Request-ID')
         const traceId = supplied && /^[a-zA-Z0-9-]{1,64}$/.test(supplied) ? supplied : randomUUID()
         try {
@@ -39,6 +41,7 @@ export function mobileEndpoint(verify: BearerVerifier, operation: MobileOperatio
             const response = result instanceof Response ? result : Response.json(result)
             response.headers.set('Cache-Control', 'private, no-store')
             response.headers.set('X-Leximory-Request-ID', traceId)
+            if (deploymentRevision) response.headers.set('X-Leximory-Revision', deploymentRevision)
             return response
         } catch (error) {
             const response = mobileErrorResponse(error)
@@ -52,10 +55,14 @@ export function mobileEndpoint(verify: BearerVerifier, operation: MobileOperatio
                     method: request.method,
                     status: response.status,
                     ...(error instanceof MobileDependencyError ? { step: error.step } : {}),
+                    ...(cause instanceof ExternalServiceError
+                        ? { upstreamStatus: cause.status, service: cause.service }
+                        : {}),
                     ...(upstream.success ? { upstreamCode: upstream.data.code, errorType: upstream.data.name } : {}),
                 })
             }
             response.headers.set('X-Leximory-Request-ID', traceId)
+            if (deploymentRevision) response.headers.set('X-Leximory-Revision', deploymentRevision)
             return response
         }
     }

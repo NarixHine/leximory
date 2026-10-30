@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { MobileErrorBody, MobileErrorCode } from '@repo/schema/mobile'
+import { ExternalServiceError } from '../errors/external-service'
 
 const failures = {
     purchase_account_mismatch: {
@@ -24,7 +25,7 @@ const failures = {
 export class MobileError extends Error {
     constructor(
         readonly code: MobileErrorCode,
-        options?: ErrorOptions,
+        private readonly options?: ErrorOptions & { retryable?: boolean },
     ) {
         super(failures[code].message, options)
         this.name = 'MobileError'
@@ -34,11 +35,12 @@ export class MobileError extends Error {
     }
     get body(): MobileErrorBody {
         const { message, retryable } = failures[this.code]
-        return { error: { code: this.code, message, retryable } }
+        return { error: { code: this.code, message, retryable: this.options?.retryable ?? retryable } }
     }
 }
 
 type MobileDependencyStep =
+    | 'account.initialize'
     | 'article.lookup'
     | 'article.persist'
     | 'article.confirm'
@@ -49,7 +51,10 @@ export class MobileDependencyError extends MobileError {
         readonly step: MobileDependencyStep,
         cause: unknown,
     ) {
-        super(cause instanceof MobileError ? cause.code : 'service_unavailable', { cause })
+        super(cause instanceof MobileError ? cause.code : 'service_unavailable', {
+            cause,
+            ...(cause instanceof ExternalServiceError ? { retryable: cause.retryable } : {}),
+        })
     }
 }
 

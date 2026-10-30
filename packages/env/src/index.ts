@@ -31,8 +31,12 @@ const env = createEnv({
         QSTASH_TOKEN: z.string().min(1),
         QSTASH_CURRENT_SIGNING_KEY: z.string().min(1),
         QSTASH_NEXT_SIGNING_KEY: z.string().min(1),
-        INNGEST_EVENT_KEY: z.string().min(1),
-        INNGEST_SIGNING_KEY: z.string().min(1),
+        INNGEST_EVENT_KEY: z.string().trim().min(1),
+        INNGEST_SIGNING_KEY: z.string().trim().min(1),
+        INNGEST_ENV: z.string().trim().min(1).optional(),
+        INNGEST_DEV: z.union([z.enum(['0', '1', 'true', 'false']), z.url()]).optional(),
+        INNGEST_BASE_URL: z.url().optional(),
+        VERCEL_ENV: z.enum(['development', 'preview', 'production']).optional(),
     },
 
     client: {
@@ -82,6 +86,10 @@ const env = createEnv({
         QSTASH_NEXT_SIGNING_KEY: process.env.QSTASH_NEXT_SIGNING_KEY,
         INNGEST_EVENT_KEY: process.env.INNGEST_EVENT_KEY,
         INNGEST_SIGNING_KEY: process.env.INNGEST_SIGNING_KEY,
+        INNGEST_ENV: process.env.INNGEST_ENV,
+        INNGEST_DEV: process.env.INNGEST_DEV,
+        INNGEST_BASE_URL: process.env.INNGEST_BASE_URL,
+        VERCEL_ENV: process.env.VERCEL_ENV,
     },
 })
 

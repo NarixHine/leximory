@@ -1,41 +1,8 @@
-import { Inngest, eventType, staticSchema } from 'inngest'
+import 'server-only'
+import env from '@repo/env'
+import { createInngestClient } from './runtime'
+import { createArticlePublisher, createEventPublisher } from './publish'
 
-type NotifyUser =
-    | {
-          title: string
-          body: string
-          url: string
-          subscription: string
-          uid: string
-      }
-    | {
-          title: string
-          body: string
-          url: string
-          subscription: null
-          uid: string
-      }
-
-type ArticleImported = {
-    article: string
-    textId: string
-    onlyComments: boolean
-    userId: string
-    generateTitle?: boolean
-}
-
-export const notifyEvent = eventType('app/notify', {
-    schema: staticSchema<NotifyUser>(),
-})
-
-export const articleImported = eventType('app/article.imported', {
-    schema: staticSchema<ArticleImported>(),
-})
-
-export const inngest = new Inngest({
-    id: 'leximory',
-})
-
-export const appleSubscriptionChanged = eventType('app/apple.subscription.changed', {
-    schema: staticSchema<{ environment: 'Production' | 'Sandbox'; chain: string }>(),
-})
+export const inngest = createInngestClient(env)
+export const publishArticleImport = createArticlePublisher(inngest)
+export const publishEvent = createEventPublisher(inngest)
