@@ -10,7 +10,8 @@ struct SavedWordsWidgetView: View {
     @Environment(\.widgetRenderingMode) private var renderingMode
     @Environment(\.dynamicTypeSize) private var typeSize
     @ScaledMetric(relativeTo: .largeTitle) private var numberSize: CGFloat = 60
-    @ScaledMetric(relativeTo: .title2) private var brandSize: CGFloat = 23
+    @ScaledMetric(relativeTo: .title3) private var titleSize: CGFloat = 20
+    @ScaledMetric(relativeTo: .largeTitle) private var todaySize: CGFloat = 44
 
     private var compact: Bool { family == .systemSmall }
     private var today: Int? { snapshot?.count(on: date) }
@@ -20,13 +21,9 @@ struct SavedWordsWidgetView: View {
             if compact {
                 paperPanel {
                     VStack(alignment: .leading, spacing: 0) {
-                        wordmark
+                        title
                         Spacer(minLength: 0)
-                        numeral(today, size: min(numberSize, 66))
-                        Text(snapshot == nil ? "Open Leximory" : "Words today")
-                            .font(LeximoryTypography.interface(11, style: .caption1))
-                            .foregroundStyle(Color(uiColor: .secondaryLabel))
-                            .lineLimit(1).minimumScaleFactor(0.75)
+                        numeral(snapshot?.total, size: min(numberSize, typeSize.isAccessibilitySize ? 52 : 66))
                     }
                     .padding(16)
                 }
@@ -37,16 +34,18 @@ struct SavedWordsWidgetView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         HStack(alignment: .firstTextBaseline, spacing: 5) {
                             Text(today.map { "+\($0)" } ?? "—")
-                                .font(.custom("EBGaramond-Regular", fixedSize: 31))
+                                .font(.custom("EBGaramond-Regular", fixedSize: min(todaySize, 48)))
+                                .lineLimit(1).minimumScaleFactor(0.6)
                                 .contentTransition(.numericText(value: Double(today ?? 0)))
                                 .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: today)
-                            Text("today").font(LeximoryTypography.interface(12, style: .caption1))
+                            Text("today").font(LeximoryTypography.interface(22, style: .title3))
+                                .fixedSize()
                             Spacer(minLength: 0)
                         }
-                        .padding(.top, 9)
+                        .padding(.top, 13)
                         if let snapshot {
                             SavedWordsAreaChart(snapshot: snapshot)
-                                .padding(.top, 13).padding(.bottom, 10)
+                                .padding(.top, 8).padding(.bottom, 10)
                                 .padding(.horizontal, -17)
                         } else {
                             Spacer(minLength: 0)
@@ -58,15 +57,9 @@ struct SavedWordsWidgetView: View {
 
                     paperPanel {
                         VStack(alignment: .leading, spacing: 0) {
-                            wordmark
+                            title
                             Spacer(minLength: 0)
-                            VStack(alignment: .leading, spacing: 2) {
-                                numeral(snapshot?.total, size: min(numberSize, typeSize.isAccessibilitySize ? 52 : 66))
-                                Text(snapshot == nil ? "Open Leximory" : "Words saved over 30 days")
-                                    .font(LeximoryTypography.interface(11, style: .caption1))
-                                    .foregroundStyle(Color(uiColor: .secondaryLabel))
-                                    .lineLimit(1).minimumScaleFactor(0.65)
-                            }
+                            numeral(snapshot?.total, size: min(numberSize, typeSize.isAccessibilitySize ? 52 : 66))
                         }
                         .padding(16)
                     }
@@ -82,9 +75,15 @@ struct SavedWordsWidgetView: View {
         .accessibilityLabel(accessibilitySummary)
     }
 
-    private var wordmark: some View {
-        Text("Leximory").font(.custom("EBGaramond-Regular", fixedSize: min(brandSize, 26)))
+    private var title: some View {
+        VStack(alignment: .leading, spacing: -10) {
+            Text("Words saved")
+            Text("over 30 days")
+        }
+            .font(.custom("EBGaramond-Regular", fixedSize: min(titleSize, 23)))
             .lineLimit(1).minimumScaleFactor(0.8)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
     }
 
     private func numeral(_ count: Int?, size: CGFloat) -> some View {
@@ -105,7 +104,6 @@ struct SavedWordsWidgetView: View {
 
     private var accessibilitySummary: String {
         guard let snapshot else { return "Leximory. Open the app to see your saved words." }
-        if compact { return "Leximory. \(today ?? 0) words saved today." }
         return "Leximory. \(snapshot.total) words saved in 30 days. \(today ?? 0) saved today."
     }
 }
