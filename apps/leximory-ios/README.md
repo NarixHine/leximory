@@ -149,3 +149,11 @@ More → 广告拦截 opens the shared browser settings sheet. Blocking starts e
 The app bundles native WebKit rules converted from pinned EasyList and EasyPrivacy snapshots. No runtime rule download or executable filter engine is included. Filter attribution and the CC BY-SA 3.0 license are in `App/Resources/Browser/AdBlocking/`.
 
 Check source and artifact hashes offline with `python3 apps/leximory-ios/scripts/prepare-browser-ad-rules.py --check`. To reproduce conversion, build `ConverterTool` from SafariConverterLib commit `7a2e93f0afa70479cc59985f332025236c3f0c39` using its committed package resolution, then pass `--check --converter /absolute/path/to/ConverterTool`. The release's standalone binary omits its PublicSuffixList resource, so use the source-built executable with its adjacent resource bundle. `--refresh --converter ...` explicitly downloads new source snapshots and regenerates the bundle; review the manifest, licenses, and native tests before shipping changed rules.
+
+## Home Screen widgets
+
+Generate the project with `scripts/generate-project.sh`; the app embeds the `LeximoryWidgets` extension. Both targets use the `group.com.leximory.reader` App Group. For device builds, enable that group for both app identifiers under the selected development team. The extension includes its own bundled fonts and licenses.
+
+Add Leximory → Saved words from the iOS widget gallery. Widget interface copy is English. EB Garamond and Urbanist match the native app. The widget uses the supplied light and dark mesh image assets. The square Saved words widget shows today's count; the medium widget groups the 30-day total and its caption on paper, with today's count and a white area chart on the colored field. Numeric transitions respect Reduce Motion. The Shanghai calendar day and 30-day window advance at midnight. Open the app while signed in to populate it. Counts refresh on foreground, reconnection and confirmed vocabulary changes. Widgets retain cached data without storing account credentials. Tapping Saved words opens the account activity screen.
+
+`SavedWordsWidgetTests` covers calendar boundaries, midnight rollover and account isolation. `AnnotationPhoneticsTests` covers bracketed phonetics and ruby offsets. `SavedWordsWidgetRenderingTests` exports the production components in light, dark, narrow and larger-text layouts as test attachments.

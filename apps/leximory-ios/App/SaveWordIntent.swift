@@ -35,6 +35,7 @@ struct SaveWordIntent: AppIntent, ProgressReportingIntent {
         })
         do {
             let target = try await client.saveShortcutWord(value)
+            await SavedWordsWidgetSync.refresh(client: client)
             progress.totalUnitCount = 1
             progress.completedUnitCount = 1
             return .result(value: target.markdown, view: ShortcutAnnotationView(result: target))
@@ -100,7 +101,7 @@ private struct ShortcutMarkdownText: View {
     @ScaledMetric(relativeTo: .body) private var size: CGFloat = 17
 
     var body: some View {
-        let document = ArticleMarkdownDocument(content: content, size: size, language: "", typography: .system)
+        let document = ArticleMarkdownDocument(content: content, size: size, language: "", typography: .system, bracketsInlineCode: true)
         VStack(alignment: .leading, spacing: 6) {
             ForEach(document.blocks) { block in
                 HStack(alignment: .top, spacing: 8) {

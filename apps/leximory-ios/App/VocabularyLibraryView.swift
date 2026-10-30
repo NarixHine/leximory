@@ -174,7 +174,11 @@ struct CorpusWordTray: View {
                     deleting = true; deletionError = nil
                     Task {
                         defer { deleting = false }
-                        do { try await client.removeWord(target); deleted?(target.id); dismiss() }
+                        do {
+                            try await client.removeWord(target)
+                            SavedWordsWidgetSync.schedule(client: client)
+                            deleted?(target.id); dismiss()
+                        }
                         catch { deletionError = "删除未能完成，请重试。" }
                     }
                 }

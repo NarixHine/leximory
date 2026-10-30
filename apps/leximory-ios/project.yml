@@ -21,14 +21,17 @@ targets:
     Leximory:
         type: application
         platform: iOS
-        sources: [App]
+        sources: [App, Shared]
         dependencies:
+            - target: LeximoryWidgets
+              embed: true
             - package: LeximoryCore
             - package: Supabase
               product: Auth
         settings:
             base:
                 PRODUCT_BUNDLE_IDENTIFIER: com.leximory.reader
+                CODE_SIGN_ENTITLEMENTS: Leximory.entitlements
                 'PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]': com.leximory.reader.mac
                 'CODE_SIGN_ENTITLEMENTS[sdk=macosx*]': LeximoryMac.entitlements
                 MARKETING_VERSION: 0.1.0
@@ -80,6 +83,44 @@ targets:
                         UIInterfaceOrientationLandscapeLeft,
                         UIInterfaceOrientationLandscapeRight,
                     ]
+    LeximoryWidgets:
+        type: app-extension
+        platform: iOS
+        sources:
+            - path: Widgets
+            - path: Shared
+            - path: App/Resources/Assets.xcassets
+              buildPhase: resources
+            - path: App/Resources/Fonts/EBGaramond.ttf
+              buildPhase: resources
+            - path: App/Resources/Fonts/OFL-EBGaramond.txt
+              buildPhase: resources
+            - path: App/Resources/Fonts/Urbanist-Regular.ttf
+              buildPhase: resources
+            - path: App/Resources/Fonts/ChillDuanHeiSongRegular.otf
+              buildPhase: resources
+            - path: App/Resources/Fonts/OFL-Urbanist.txt
+              buildPhase: resources
+            - path: App/Resources/Fonts/OFL-ChillDuanHeiSongPro.txt
+              buildPhase: resources
+        settings:
+            base:
+                PRODUCT_BUNDLE_IDENTIFIER: com.leximory.reader.widgets
+                'PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]': com.leximory.reader.mac.widgets
+                CODE_SIGN_ENTITLEMENTS: Leximory.entitlements
+                APPLICATION_EXTENSION_API_ONLY: YES
+                SKIP_INSTALL: YES
+                MARKETING_VERSION: 0.1.0
+                CURRENT_PROJECT_VERSION: 1
+        info:
+            path: Widgets/Info.plist
+            properties:
+                CFBundleDisplayName: Leximory
+                CFBundleDevelopmentRegion: en
+                CFBundleLocalizations: [en]
+                UIAppFonts: [EBGaramond.ttf, Urbanist-Regular.ttf, ChillDuanHeiSongRegular.otf]
+                NSExtension:
+                    NSExtensionPointIdentifier: com.apple.widgetkit-extension
     LeximoryTests:
         type: bundle.unit-test
         platform: iOS
