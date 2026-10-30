@@ -226,14 +226,16 @@ struct SignInFailure: LocalizedError {
         avatarRevision += 1
     }
     private func openStore(accountID: String) async throws {
-        await clearStore()
+        await clearStore(clearWidget: false)
         let store = try LocalReadingStore(root: LocalReadingStore.applicationRoot(), origin: configuration.apiURL, accountID: accountID.lowercased())
         let notes = try PDFNotesStore(root: PDFNotesStore.applicationRoot(), origin: configuration.apiURL, accountID: accountID)
         let scoped = makeClient(store: store, notesStore: notes)
         scopedClient = scoped
         sync = NativeSync(store: store, client: scoped)
+        SavedWordsWidgetSync.activate(origin: configuration.apiURL, accountID: accountID)
     }
-    private func clearStore() async {
+    private func clearStore(clearWidget: Bool = true) async {
+        if clearWidget { SavedWordsWidgetSync.clear() }
         let previous = sync
         sync = nil; scopedClient = nil
         await previous?.stop()

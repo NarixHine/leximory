@@ -92,6 +92,7 @@ private struct AccountRoot: View {
     let session: AccountSession
     let playback: PlaybackController
     @State private var pendingText: TextID?
+    @State private var pendingAccount = false
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasOpenedLeximory") private var hasOpened = false
     var body: some View {
@@ -101,7 +102,7 @@ private struct AccountRoot: View {
             case .signedOut:
                 if hasOpened { SignInView(session: session) } else { WelcomeGate(session: session) }
             case .expired: SignInView(session: session, notice: "登录已过期，请重新登录。")
-            case .signedIn: BrowserWorkspaceView(client: session.client, namespace: session.state.accountID ?? "", playback: playback, session: session, pendingText: $pendingText).id(session.generation)
+            case .signedIn: BrowserWorkspaceView(client: session.client, namespace: session.state.accountID ?? "", playback: playback, session: session, pendingText: $pendingText, pendingAccount: $pendingAccount).id(session.generation)
             case .unavailable(let message):
                 LeximoryUnavailableView("暂时无法连接", systemImage: "wifi.exclamationmark", message: message) {
                     Button("重试") { Task { await session.restore() } }
@@ -123,9 +124,16 @@ private struct AccountRoot: View {
             guard session.state.isSignedIn, scenePhase == .active else { session.sync?.pause(); return }
             await session.sync?.run()
         }
+        .task(id: "widget/\(session.generation)/\(session.state.accountID ?? "")/\(scenePhase == .active)/\(session.sync?.online != false)") {
+            guard session.state.isSignedIn, scenePhase == .active, session.sync?.online != false else { return }
+            await SavedWordsWidgetSync.refresh(client: session.client)
+        }
         .onChange(of: session.state.isSignedIn) { _, signedIn in if signedIn { hasOpened = true } }
         .onChange(of: session.generation) { _, _ in playback.stop(); pendingText = nil }
-        .onOpenURL { url in pendingText = TextLink.textID(from: url, webURL: session.client.webURL) }
+        .onOpenURL { url in
+            if url.scheme == "leximory", url.host == "account" { pendingAccount = true }
+            else { pendingText = TextLink.textID(from: url, webURL: session.client.webURL) }
+        }
     }
 }
 

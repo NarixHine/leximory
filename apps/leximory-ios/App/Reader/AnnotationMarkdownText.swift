@@ -36,7 +36,9 @@ struct AnnotationMarkdownText: View {
         let baseFont = LeximoryTypography.proseUI(size, language: language)
         for run in parsed.runs {
             let intent = run.inlinePresentationIntent ?? []
-            for segment in Self.scriptSegments(String(parsed[run.range].characters)) {
+            let text = String(parsed[run.range].characters)
+            let displayed = intent.contains(.code) ? "[\(text)]" : text
+            for segment in Self.scriptSegments(displayed) {
                 let chineseBold = segment.cjk && language != "Japanese" && intent.contains(.stronglyEmphasized)
                 var font = segment.cjk ? LeximoryTypography.proseUI(size, language: language == "Japanese" ? "Japanese" : "Chinese", bold: chineseBold) : baseFont
                 var traits: UIFontDescriptor.SymbolicTraits = []

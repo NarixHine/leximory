@@ -90,7 +90,11 @@ enum DefinitionSource {
         }
     }
     @discardableResult func save(client: MobileClient, source: DefinitionSource) -> Task<Void, Never>? {
-        save { completionID in try await source.save(client: client, completionID: completionID) }
+        save { completionID in
+            let receipt = try await source.save(client: client, completionID: completionID)
+            SavedWordsWidgetSync.schedule(client: client)
+            return receipt
+        }
     }
     @discardableResult func save(operation: @escaping @MainActor (String?) async throws -> SavedVocabulary) -> Task<Void, Never>? {
         guard case .ready(let definition, let completionID) = state, case .idle = saveState else { return nil }

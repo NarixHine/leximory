@@ -21,7 +21,7 @@ import LeximoryCore
         content.replacingOccurrences(of: #"(?<!!)\[([^\[]+)\]\(([^)]+)\)"#, with: "$1", options: .regularExpression)
     }
 
-    init(content: String, size: CGFloat, language: String, typography: Typography = .editorial) {
+    init(content: String, size: CGFloat, language: String, typography: Typography = .editorial, bracketsInlineCode: Bool = false) {
         let source = Self.strippingLinks(content)
         let parsed = (try? AttributedString(markdown: source, options: .init(interpretedSyntax: .full))) ?? AttributedString(source)
         var output: [Block] = []
@@ -50,7 +50,7 @@ import LeximoryCore
             let last = output.count - 1
             if intents.contains(where: { $0.kind == .tableHeaderRow }) { inline.insert(.stronglyEmphasized) }
             let text = String(parsed[run.range].characters)
-            var rendered = AttributedString(text)
+            var rendered = AttributedString(bracketsInlineCode && inline.contains(.code) ? "[\(text)]" : text)
             switch typography {
             case .editorial:
                 rendered.font = Font(Self.font(kind: kind, inline: inline, size: size, language: language))

@@ -21,6 +21,7 @@ struct BrowserWorkspaceView: View {
     let playback: PlaybackController
     var session: AccountSession?
     @Binding var pendingText: TextID?
+    @Binding var pendingAccount: Bool
     @State private var workspace: BrowserWorkspaceModel
     @State private var wallpapers: HomeWallpaperStore
     @State private var editingWallpaper = false
@@ -55,8 +56,8 @@ struct BrowserWorkspaceView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Namespace private var chromeNamespace
 
-    init(client: MobileClient, namespace: String, playback: PlaybackController, session: AccountSession? = nil, pendingText: Binding<TextID?>, initialWorkspace: BrowserWorkspaceModel? = nil) {
-        self.client = client; self.playback = playback; self.session = session; _pendingText = pendingText
+    init(client: MobileClient, namespace: String, playback: PlaybackController, session: AccountSession? = nil, pendingText: Binding<TextID?>, pendingAccount: Binding<Bool> = .constant(false), initialWorkspace: BrowserWorkspaceModel? = nil) {
+        self.client = client; self.playback = playback; self.session = session; _pendingText = pendingText; _pendingAccount = pendingAccount
         _workspace = State(initialValue: initialWorkspace ?? BrowserWorkspaceModel(client: client, namespace: namespace))
         _wallpapers = State(initialValue: HomeWallpaperStore(namespace: namespace))
     }
@@ -212,6 +213,12 @@ struct BrowserWorkspaceView: View {
                 pendingText = nil
                 await workspace.open(document.text)
             } catch { workspace.error = "暂时无法打开文章，请稍后重试。"; pendingText = nil }
+        }
+        .task(id: pendingAccount) {
+            guard pendingAccount else { return }
+            finishEditing()
+            workspace.visit(.account)
+            pendingAccount = false
         }
         .task(id: findRequest) {
             guard let request = findRequest, let interaction = findInteraction else { return }
