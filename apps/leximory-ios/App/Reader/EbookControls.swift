@@ -92,16 +92,16 @@ struct EbookThemePicker: View {
     }
     static func actions(reader: EbookReaderState, includeBookmark: Bool = true, includeSearch: Bool = true) -> [UIMenuElement] {
         let selection = reader.selection ?? reader.menuSelection
-        if includeBookmark, reader.format == "pdf", let selection,
+        if includeBookmark, let selection,
            bookmark(reader: reader, selection: selection) != nil {
             return highlightActions(reader: reader, selection: selection, includeSearch: includeSearch)
         }
         let define = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage, attributes: reader.readOnly ? .disabled : []) { _ in
             if let selection = selection ?? reader.menuSelection { reader.selectionAction = EbookSelectionAction(kind: .define, selection: selection) }
         }
-        let bookmark = UIAction(title: "🖍️荧光笔", image: UIImage(systemName: "highlighter"), attributes: reader.canBookmark && !reader.readOnly ? [] : .disabled) { _ in
+        let bookmark = UIAction(title: "🖍️荧光笔", image: UIImage(systemName: "highlighter"), attributes: reader.canEditHighlights ? [] : .disabled) { _ in
             if let selection = selection ?? reader.menuSelection {
-                reader.selectionAction = EbookSelectionAction(kind: .bookmark(reader.format == "pdf" ? reader.lastHighlightColor : .sage), selection: selection)
+                reader.selectionAction = EbookSelectionAction(kind: .bookmark(reader.lastHighlightColor), selection: selection)
                 if reader.format == "pdf" { reader.dismissPDFSelection?() }
             }
         }
@@ -113,14 +113,13 @@ struct EbookThemePicker: View {
     static func highlightActions(reader: EbookReaderState, selection: EbookSelection,
                                  includeSearch: Bool = true, dismiss: (() -> Void)? = nil) -> [UIMenuElement] {
         let bookmark = bookmark(reader: reader, selection: selection)
-        let canEdit = !reader.readOnly && reader.canBookmark && (bookmark?.id ?? 0) > 0
-            && !reader.pendingBookmarkColors.contains(bookmark?.id ?? 0)
+        let canEdit = reader.canEditHighlights && bookmark != nil
         let colors = EbookHighlightColor.allCases.map { color in
             let action = UIAction(title: "", image: color.swatch(selected: bookmark?.color == color),
                                   discoverabilityTitle: color.title, attributes: canEdit ? [] : .disabled,
                                   state: bookmark?.color == color ? .on : .off) { _ in
-                guard let current = self.bookmark(reader: reader, selection: selection), current.id > 0,
-                      !reader.readOnly, reader.canBookmark, !reader.pendingBookmarkColors.contains(current.id) else { return }
+                guard let current = self.bookmark(reader: reader, selection: selection), current.id != 0,
+                      reader.canEditHighlights else { return }
                 reader.bookmarkColorRequest = EbookBookmarkColorRequest(bookmarkID: current.id, color: color)
                 if let dismiss { dismiss() } else { reader.dismissPDFSelection?() }
             }
@@ -131,8 +130,8 @@ struct EbookThemePicker: View {
         palette.preferredElementSize = .small
         let remove = UIAction(title: "移除", image: UIImage(systemName: "trash"),
                               attributes: canEdit ? [.destructive] : [.destructive, .disabled]) { _ in
-            guard let current = self.bookmark(reader: reader, selection: selection), current.id > 0,
-                  !reader.readOnly, reader.canBookmark, !reader.pendingBookmarkColors.contains(current.id) else { return }
+            guard let current = self.bookmark(reader: reader, selection: selection), current.id != 0,
+                  reader.canEditHighlights else { return }
             reader.bookmarkRemovalRequest = current.id
             if let dismiss { dismiss() } else { reader.dismissPDFSelection?() }
         }

@@ -93,7 +93,7 @@ function styleContents(contents) {
   if (!style) { style=contents.document.createElement('style');style.id='leximory-prose';contents.document.head.append(style); }
   style.textContent=proseCSS(currentTheme);
   contents.document.querySelectorAll('[data-leximory-bookmark]').forEach(mark => {
-    mark.style.setProperty('background-color', isDarkTheme(currentTheme) ? 'rgb(105 170 78 / .45)' : 'rgb(183 224 143 / .45)', 'important');
+    mark.style.setProperty('background-color', highlightColor(entry), 'important');
   });
 }
 // Keep pronunciation out of quotes and context, matching the web selection helpers.
@@ -126,18 +126,26 @@ function selectionContext(range) {
   return {quote,context:text.slice(start,end),offset:offset-start};
 }
 // The web highlights text in the iframe DOM; SVG overlays lose their anchor on reflow.
+function highlightColor(mark) {
+  return ({sage:'#BDD98173', yellow:'#FFE06673', green:'#73D99B73', blue:'#80BFFF73', pink:'#FF99BF73', purple:'#BD9BEB73'})[mark?.color || 'sage'];
+}
 function highlightBookmarks() {
   if (!rendition) return;
   for (const contents of rendition.getContents()) {
     const doc = contents.document;
-    // Remove previous marks so an optimistic bookmark can be rolled back.
-    const activeQuotes = new Set(bookmarkQuotes.map(quote => quote.replace(/\s+/g,' ').trim()));
+    // Keep marks in place when their color changes.
+    const activeQuotes = new Set(bookmarkQuotes.map(mark => (typeof mark === 'string' ? mark : mark.quote).replace(/\s+/g,' ').trim()));
     for (const mark of doc.querySelectorAll('[data-leximory-bookmark]')) {
-      if (activeQuotes.has(mark.dataset.quote)) continue;
+      if (activeQuotes.has(mark.dataset.quote)) {
+        const entry = bookmarkQuotes.find(item => (typeof item === 'string' ? item : item.quote).replace(/\s+/g,' ').trim() === mark.dataset.quote);
+        mark.style.setProperty('background-color', highlightColor(entry), 'important');
+        continue;
+      }
       const parent = mark.parentNode;
       mark.replaceWith(...mark.childNodes); parent.normalize();
     }
-    for (const quote of bookmarkQuotes) {
+    for (const entry of bookmarkQuotes) {
+      const quote = typeof entry === 'string' ? entry : entry.quote;
       const target = quote.replace(/\s+/g,' ').trim(); if (!target) continue;
       const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
       let node, text = '', space = false; const positions = [];
@@ -156,7 +164,7 @@ function highlightBookmarks() {
       const firstRuby=start[0].parentElement.closest('ruby'), lastRuby=end[0].parentElement.closest('ruby');
       if(firstRuby) range.setStartBefore(firstRuby); if(lastRuby) range.setEndAfter(lastRuby);
       const mark=doc.createElement('span');mark.classList.add(bookmarkIgnoreClass);mark.dataset.leximoryBookmark='true';mark.dataset.quote=target;
-      mark.style.setProperty('background-color',isDarkTheme(currentTheme) ? 'rgb(105 170 78 / .45)' : 'rgb(183 224 143 / .45)','important');
+      mark.style.setProperty('background-color',highlightColor(entry),'important');
       mark.style.setProperty('color','inherit','important');mark.style.setProperty('-webkit-box-decoration-break','clone');
       try {mark.appendChild(range.extractContents());range.insertNode(mark);} catch (_) {}
     }
@@ -216,7 +224,7 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     const sanitized = await archive.generateAsync({type:'uint8array',compression:'STORE'});
     book = ePub(sanitized.buffer, {replacements:'blobUrl'});
     await book.ready;
-    bookmarkQuotes=(bookmarks || []).map(mark=>mark.quote);
+    bookmarkQuotes=bookmarks || [];
     // Match the web reader: set writing mode before epub.js selects its pagination axis.
     if (theme.writing === 'vertical-rl') book.spine.hooks.content.register(document => {
       for (const element of [document.documentElement, document.body]) {

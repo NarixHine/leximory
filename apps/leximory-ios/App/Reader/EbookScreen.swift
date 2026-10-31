@@ -39,58 +39,35 @@ struct EbookBookmarkColorRequest: Equatable {
     var trayRequest: String?
     var backRequest: UUID?
     var canBookmark = false
+    var offline = false
+    var canEditHighlights: Bool { canBookmark && (!readOnly || offline) }
     var canFind = false
     @ObservationIgnored var search: ((String) -> Void)?
     @ObservationIgnored weak var findInteraction: UIFindInteraction?
     @ObservationIgnored var dismissPDFSelection: (() -> Void)?
     @ObservationIgnored var prepareForFind: (() async -> Void)?
-    private var nextPendingBookmarkID = -1
     var bookmarkNotice: UUID?
     private(set) var bookmarkConfirmation: UUID?
     var bookmarkErrorMessage = "标记未能保存，请重试。"
     var bookmarkColorRequest: EbookBookmarkColorRequest?
-    private(set) var pendingBookmarkColors: Set<Int> = []
     var lastHighlightColor: EbookHighlightColor {
         get { EbookHighlightColor(rawValue: UserDefaults.standard.string(forKey: "pdfHighlightColor") ?? "") ?? .sage }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: "pdfHighlightColor") }
     }
     func beginBookmarkColorChange(_ request: EbookBookmarkColorRequest) -> EbookBookmark? {
-        guard !readOnly, canBookmark, request.bookmarkID > 0,
-              !pendingBookmarkColors.contains(request.bookmarkID),
+        guard canEditHighlights, request.bookmarkID != 0,
               let index = bookmarks.firstIndex(where: { $0.id == request.bookmarkID }) else { return nil }
         lastHighlightColor = request.color
         let previous = bookmarks[index]
         guard previous.color != request.color else { return nil }
-        pendingBookmarkColors.insert(previous.id)
         bookmarks[index] = EbookBookmark(id: previous.id, quote: previous.quote, chapter: previous.chapter,
                                         location: previous.location, createdAt: previous.createdAt, color: request.color)
         return previous
     }
-    func finishBookmarkColorChange(_ previous: EbookBookmark, saved: EbookBookmark?) {
-        pendingBookmarkColors.remove(previous.id)
-        guard let index = bookmarks.firstIndex(where: { $0.id == previous.id }) else { return }
-        bookmarks[index] = saved ?? previous
-        if saved == nil { bookmarkErrorMessage = "颜色未能保存，请重试。"; bookmarkNotice = UUID() }
-    }
     var bookmarkRemovalRequest: Int?
-    private var pendingBookmarkRemovals: [Int: EbookBookmark] = [:]
-    private var bookmarkRemovalOrder: [Int] = []
     func beginBookmarkRemoval(_ id: Int) -> EbookBookmark? {
-        guard !pendingBookmarkColors.contains(id), let index = bookmarks.firstIndex(where: { $0.id == id }) else { return nil }
-        if pendingBookmarkRemovals.isEmpty { bookmarkRemovalOrder = bookmarks.map(\.id) }
-        let bookmark = bookmarks.remove(at: index)
-        pendingBookmarkRemovals[id] = bookmark
-        return bookmark
-    }
-    func finishBookmarkRemoval(_ id: Int, succeeded: Bool) {
-        guard let bookmark = pendingBookmarkRemovals.removeValue(forKey: id) else { return }
-        if !succeeded {
-            let preceding = Set(bookmarkRemovalOrder.prefix { $0 != id })
-            let index = bookmarks.lastIndex { preceding.contains($0.id) }.map { $0 + 1 } ?? 0
-            bookmarks.insert(bookmark, at: index)
-            bookmarkErrorMessage = "标记未能移除，请重试。"; bookmarkNotice = UUID()
-        }
-        if pendingBookmarkRemovals.isEmpty { bookmarkRemovalOrder = [] }
+        guard let index = bookmarks.firstIndex(where: { $0.id == id }) else { return nil }
+        return bookmarks.remove(at: index)
     }
     var pageBounds: CGRect?
     var readOnly = false
@@ -103,16 +80,11 @@ struct EbookBookmarkColorRequest: Equatable {
     var atStart = true
     var atEnd = false
     func beginBookmark(_ selection: EbookSelection, color: EbookHighlightColor = .sage) -> EbookBookmark {
-        let bookmark = EbookBookmark(id: nextPendingBookmarkID, quote: selection.quote, chapter: chapter, location: selection.location ?? location, color: color)
-        nextPendingBookmarkID -= 1
+        let bookmark = EbookBookmark(id: -Int.random(in: 1...Int.max), quote: selection.quote, chapter: chapter, location: selection.location ?? location, color: color)
         bookmarks.append(bookmark)
+        bookmarkConfirmation = UUID()
         self.selection = nil; menuSelection = nil
         return bookmark
-    }
-    func finishBookmark(_ pending: EbookBookmark, saved: EbookBookmark?) {
-        guard let index = bookmarks.firstIndex(where: { $0.id == pending.id }) else { return }
-        if let saved { bookmarks[index] = saved; bookmarkConfirmation = UUID() }
-        else { bookmarks.remove(at: index); bookmarkErrorMessage = "标记未能保存，请重试。"; bookmarkNotice = UUID() }
     }
     func gutterSide(at point: CGPoint) -> Bool? {
         guard let pageBounds, point.y >= pageBounds.minY, point.y <= pageBounds.maxY else { return nil }
@@ -225,7 +197,10 @@ struct EbookScreen: View {
     }
     private var readerLifecycle: some View {
         readerPresentation
-        .onChange(of: sync?.online) { _, _ in reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only") }
+        .onChange(of: sync?.online) { _, _ in
+            reader.offline = sync?.online == false && !ProcessInfo.processInfo.arguments.contains("--ebook-read-only")
+            reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only")
+        }
         .task(id: reader.pdfOutline?.textID) { await reader.pdfOutline?.refreshAllowance() }
         .onChange(of: reader.readOnly) { _, readOnly in
             reader.pdfOutline?.online = !readOnly
@@ -262,30 +237,13 @@ struct EbookScreen: View {
         .onChange(of: reader.bookmarkColorRequest) { _, request in
             reader.bookmarkColorRequest = nil
             guard let request, let previous = reader.beginBookmarkColorChange(request) else { return }
-            Task {
-                do {
-                    let saved: EbookBookmark
-                    if let client {
-                        saved = try await client.saveEbookBookmark(textID: article.id.rawValue, quote: previous.quote,
-                            chapter: previous.chapter, location: previous.location, color: request.color, bookmarkID: previous.id)
-                    } else if ProcessInfo.processInfo.arguments.contains("--ebook-bookmark-fixtures"),
-                              let updated = reader.bookmarks.first(where: { $0.id == previous.id }) {
-                        saved = updated
-                    } else { throw URLError(.unsupportedURL) }
-                    reader.finishBookmarkColorChange(previous, saved: saved)
-                } catch { reader.finishBookmarkColorChange(previous, saved: nil) }
-            }
+            guard let updated = reader.bookmarks.first(where: { $0.id == previous.id }) else { return }
+            Task { await client?.editHighlight(textID: article.id.rawValue, bookmark: updated) }
         }
         .onChange(of: reader.bookmarkRemovalRequest) { _, id in
             reader.bookmarkRemovalRequest = nil
-            guard let id, !reader.readOnly, let bookmark = reader.beginBookmarkRemoval(id) else { return }
-            Task {
-                do {
-                    if let client { try await client.removeEbookBookmark(textID: article.id.rawValue, bookmarkID: bookmark.id) }
-                    else if !ProcessInfo.processInfo.arguments.contains("--ebook-bookmark-fixtures") { throw URLError(.unsupportedURL) }
-                    reader.finishBookmarkRemoval(id, succeeded: true)
-                } catch { reader.finishBookmarkRemoval(id, succeeded: false) }
-            }
+            guard let id, reader.canEditHighlights, let bookmark = reader.beginBookmarkRemoval(id) else { return }
+            Task { await client?.editHighlight(textID: article.id.rawValue, bookmark: bookmark, removed: true) }
         }
         .task(id: article.id) { await load() }
         .task(id: resourceActive) {
@@ -504,6 +462,7 @@ struct EbookScreen: View {
         }
         reader.positionSaver = positionSaver
         reader.canBookmark = client != nil || ProcessInfo.processInfo.arguments.contains("--ebook-bookmark-fixtures")
+        reader.offline = sync?.online == false && !ProcessInfo.processInfo.arguments.contains("--ebook-read-only")
         reader.readOnly = sync?.online == false || ProcessInfo.processInfo.arguments.contains("--ebook-read-only")
         reader.rightToLeft = language == "Japanese"
         bookRequest = UUID(); reader.book = nil
@@ -606,12 +565,9 @@ struct EbookScreen: View {
         }
     }
     private func saveBookmark(_ selection: EbookSelection, color: EbookHighlightColor) async {
-        guard !reader.readOnly, let client else { return }
+        guard reader.canEditHighlights, let client else { return }
         let pending = reader.beginBookmark(selection, color: color)
-        do {
-            let bookmark = try await client.saveEbookBookmark(textID: article.id.rawValue, quote: pending.quote, chapter: pending.chapter, location: pending.location, color: pending.color)
-            reader.finishBookmark(pending, saved: bookmark)
-        } catch { reader.finishBookmark(pending, saved: nil) }
+        await client.editHighlight(textID: article.id.rawValue, bookmark: pending)
     }
 }
 
@@ -642,7 +598,7 @@ struct EbookBookmarkCard: View {
             }
         }.foregroundStyle(LeximoryPalette.ink).padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(LeximoryPalette.shell, in: RoundedRectangle(cornerRadius: 20))
+            .background(Color(bookmark.color.ink.withAlphaComponent(0.18)), in: RoundedRectangle(cornerRadius: 20))
             .contentShape(RoundedRectangle(cornerRadius: 20))
             .accessibilityElement(children: .combine)
     }
@@ -692,7 +648,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
                 coordinator?.pageTurn?.prepare()
             }
         }
-        let bookmarks = reader.bookmarks.map { $0.quote }
+        let bookmarks = reader.bookmarks.map { ["quote": $0.quote, "color": $0.color.rawValue] }
         if reader.ready, bookmarks != context.coordinator.appliedBookmarks {
             context.coordinator.appliedBookmarks = bookmarks
             context.coordinator.pageTurn?.invalidateSnapshot()
@@ -725,7 +681,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
         var parent: NativeEPUBReader
         var commandID: UUID?
         var appliedTheme: [String: String] = [:]
-        var appliedBookmarks: [String] = []
+        var appliedBookmarks: [[String: String]] = []
         weak var web: WKWebView?
         var pageTurn: EPUBPageTurn?
         let gestures: EbookGestures
@@ -751,7 +707,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
             let fontData = Bundle.main.url(forResource: font, withExtension: fontExtension).flatMap { try? Data(contentsOf: $0) } ?? Data()
             let boldData = parent.language == "Chinese" ? Bundle.main.url(forResource: "ChillDuanHeiSongBold", withExtension: "otf").flatMap { try? Data(contentsOf: $0) } : nil
             let italicData = Bundle.main.url(forResource: "LibreBaskerville-Italic", withExtension: "ttf").flatMap { try? Data(contentsOf: $0) } ?? Data()
-            let bookmarks = parent.reader.bookmarks.map { ["location": $0.location ?? "", "quote": $0.quote] }
+            let bookmarks = parent.reader.bookmarks.map { ["location": $0.location ?? "", "quote": $0.quote, "color": $0.color.rawValue] }
             let theme = theme(web)
             appliedTheme = theme
             let displayFont = cjk ? font : "EBGaramond"
@@ -928,12 +884,10 @@ struct PDFReaderView: UIViewRepresentable {
         let reader: EbookReaderState
         var commandID: UUID?
         var drawingOverlays: PDFDrawingOverlays?
-        private var pendingBookmarkColors: Set<Int> = []
         private var appliedBookmarks: [EbookBookmark] = []
         private var bookmarkAnnotations: [(PDFPage, PDFAnnotation)] = []
         func updateBookmarks(in view: PDFView) {
-            let menuChanged = pendingBookmarkColors != reader.pendingBookmarkColors || reader.bookmarks != appliedBookmarks
-            pendingBookmarkColors = reader.pendingBookmarkColors
+            let menuChanged = reader.bookmarks != appliedBookmarks
             if menuChanged {
                 (view as? LearningPDFView)?.refreshHighlightMenu()
             }

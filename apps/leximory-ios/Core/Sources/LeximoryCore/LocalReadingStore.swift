@@ -3,6 +3,7 @@ import CryptoKit
 
 /// One backend/account partition. Closing a partition prevents late requests from recreating it.
 public actor LocalReadingStore {
+    private var syncingHighlights = false
     public struct Status: Sendable {
         public let online: Bool
         public let bytes: Int
@@ -121,7 +122,7 @@ public actor LocalReadingStore {
         versions[key, default: 0] += 1
         manifest.entries[key] = Entry(digest: digest, bytes: data.count, accessed: Date(), readable: readable)
         while manifest.entries.values.reduce(0, { $0 + $1.bytes }) > budget,
-              let oldest = manifest.entries.filter({ $0.key != key && $0.key != "account" }).min(by: {
+              let oldest = manifest.entries.filter({ $0.key != key && $0.key != "account" && $0.key != "highlight-edits" }).min(by: {
                   let left = Self.isCatalog($0.key), right = Self.isCatalog($1.key)
                   return left == right ? $0.value.accessed < $1.value.accessed : !left
               })?.key {
@@ -243,6 +244,77 @@ public actor LocalReadingStore {
         save(EbookDescriptor(text: book.text, library: book.library, url: book.url, format: book.format,
                              expiresAt: book.expiresAt, location: book.location,
                              bookmarks: book.bookmarks.filter { $0.id != bookmarkID }, outlineRevision: book.outlineRevision, sourceVersion: book.sourceVersion), for: "ebook/\(textID)")
+    }
+    private struct HighlightEdit: Codable, Sendable {
+        var textID: String
+        var bookmark: EbookBookmark
+        var remoteID: Int?
+        var removed: Bool
+        var revision = UUID()
+        var dirty = true
+    }
+    private var highlightEdits: [HighlightEdit] {
+        get { value([HighlightEdit].self, for: "highlight-edits") ?? [] }
+        set { save(newValue, for: "highlight-edits") }
+    }
+    public func editHighlight(textID: String, bookmark: EbookBookmark, removed: Bool = false) {
+        guard !closed else { return }
+        var edits = highlightEdits
+        let index = edits.firstIndex { $0.textID == textID && $0.bookmark.id == bookmark.id }
+        let edit = HighlightEdit(textID: textID, bookmark: bookmark,
+                                 remoteID: index.flatMap { edits[$0].remoteID } ?? (bookmark.id > 0 ? bookmark.id : nil), removed: removed)
+        if let index { edits[index] = edit } else { edits.append(edit) }
+        highlightEdits = edits
+        if removed { removeEbookBookmark(textID: textID, bookmarkID: bookmark.id) }
+        else { saveEbookBookmark(textID: textID, bookmark: bookmark) }
+    }
+    public func integrateHighlights(_ remote: EbookDescriptor, textID: String, baseline: Int) -> EbookDescriptor {
+        if version(for: "ebook/\(textID)") != baseline,
+           let cached = value(EbookDescriptor.self, for: "ebook/\(textID)") { return cached }
+        let result = overlayHighlights(remote, textID: textID)
+        save(result, for: "ebook/\(textID)")
+        return result
+    }
+    public func overlayHighlights(_ book: EbookDescriptor, textID: String) -> EbookDescriptor {
+        var bookmarks = book.bookmarks
+        for edit in highlightEdits where edit.textID == textID {
+            bookmarks.removeAll { $0.id == edit.bookmark.id || $0.id == edit.remoteID }
+            if !edit.removed { bookmarks.append(edit.bookmark) }
+        }
+        return EbookDescriptor(text: book.text, library: book.library, url: book.url, format: book.format,
+                               expiresAt: book.expiresAt, location: book.location, bookmarks: bookmarks,
+                               outlineRevision: book.outlineRevision, sourceVersion: book.sourceVersion)
+    }
+    public func syncHighlights(client: MobileClient) async throws {
+        guard !syncingHighlights, !closed else { return }
+        syncingHighlights = true
+        defer { syncingHighlights = false }
+        while let edit = highlightEdits.first(where: { $0.dirty }) {
+            try requireOnline()
+            var remoteID = edit.remoteID
+            if remoteID == nil {
+                // Recover a create whose response was lost before attempting another insert.
+                let remote = try await client.remoteEbook(textID: edit.textID)
+                remoteID = remote.bookmarks.first { $0.quote == edit.bookmark.quote && $0.location == edit.bookmark.location }?.id
+            }
+            if edit.removed {
+                if let remoteID {
+                    let remote = try await client.remoteEbook(textID: edit.textID)
+                    if remote.bookmarks.contains(where: { $0.id == remoteID }) {
+                        try await client.deleteRemoteHighlight(textID: edit.textID, bookmarkID: remoteID)
+                    }
+                }
+            } else {
+                remoteID = try await client.saveRemoteHighlight(textID: edit.textID, bookmark: edit.bookmark, remoteID: remoteID).id
+            }
+            guard !closed else { return }
+            var edits = highlightEdits
+            if let index = edits.firstIndex(where: { $0.textID == edit.textID && $0.bookmark.id == edit.bookmark.id }) {
+                edits[index].remoteID = remoteID
+                if edits[index].revision == edit.revision { edits[index].dirty = false }
+                highlightEdits = edits
+            }
+        }
     }
     public func close() {
         closed = true; online = false; manifest = Manifest()

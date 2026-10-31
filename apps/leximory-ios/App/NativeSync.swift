@@ -127,6 +127,7 @@ import LeximoryCore
     }
     private func syncNotes() async {
         guard active, pathAvailable, !stopped, !Task.isCancelled else { return }
+        do { try await client.synchronizeHighlights() } catch { }
         do { try await notes?.synchronize(document: activePDF) } catch { }
     }
     func pause() { active = false; runID = nil; catalogTask?.cancel(); scheduledNotes?.cancel() }

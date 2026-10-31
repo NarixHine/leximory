@@ -18,7 +18,7 @@ import LeximoryCore
         #expect(actions[1] is UIAction)
         let original = EbookBookmark(id: 42, quote: "river", chapter: "Chapter", location: "3", createdAt: "2026-10-24", color: .sage)
         reader.bookmarks = [original]
-        let previous = try #require(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .blue)))
+        _ = try #require(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .blue)))
         #expect(reader.bookmarks == [EbookBookmark(id: 42, quote: "river", chapter: "Chapter", location: "3", createdAt: "2026-10-24", color: .blue)])
         #expect(EbookReaderState().lastHighlightColor == .blue)
         reader.selection = EbookSelection(quote: "next", context: "the next word", offset: 4)
@@ -29,16 +29,9 @@ import LeximoryCore
             return
         }
         #expect(reader.selectionAction?.selection.quote == "next")
-        #expect(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .pink)) == nil)
-        #expect(reader.beginBookmarkRemoval(42) == nil)
-        reader.finishBookmarkColorChange(previous, saved: nil)
-        #expect(reader.bookmarks == [original])
-        #expect(reader.bookmarkNotice != nil)
-        let retry = try #require(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .pink)))
-        let saved = try #require(reader.bookmarks.first)
-        reader.finishBookmarkColorChange(retry, saved: saved)
+        #expect(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .pink)) != nil)
         #expect(reader.bookmarks.first?.color == .pink)
-        #expect(EbookReaderState().lastHighlightColor == .pink)
+        #expect(reader.bookmarkNotice == nil)
         reader.readOnly = true
         #expect(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .yellow)) == nil)
         #expect(reader.bookmarks.first?.color == .pink)
@@ -152,7 +145,7 @@ import LeximoryCore
     }
 
     @Test(arguments: [[1, 2], [2, 1]])
-    func failedRemovalsRestoreTheOriginalColorOrder(restorationOrder: [Int]) {
+    func removalsRemainLocalWithoutWaitingForTheServer(restorationOrder: [Int]) {
         let reader = EbookReaderState()
         let original = [EbookBookmark(id: 1, quote: "river", chapter: nil, location: "1", color: .sage),
                         EbookBookmark(id: 2, quote: "river", chapter: nil, location: "1", color: .blue),
@@ -160,8 +153,8 @@ import LeximoryCore
         reader.bookmarks = original
         #expect(reader.beginBookmarkRemoval(1)?.color == .sage)
         #expect(reader.beginBookmarkRemoval(2)?.color == .blue)
-        for id in restorationOrder { reader.finishBookmarkRemoval(id, succeeded: false) }
-        #expect(reader.bookmarks == original)
+        _ = restorationOrder
+        #expect(reader.bookmarks == [original[2]])
     }
 
     @Test func pdfInvertsWhenAppearanceChangesWithoutRecreatingTheDocument() async throws {
@@ -251,7 +244,7 @@ import LeximoryCore
         return bytes
     }
 
-    @Test func removingWrappedPDFBookmarkRemovesAllLinesAndFailureRestoresThem() throws {
+    @Test func removingWrappedPDFBookmarkImmediatelyRemovesAllLines() throws {
         let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { context in
             context.beginPage()
             ("First line of the highlight.\nSecond line of the same highlight." as NSString).draw(
@@ -272,14 +265,9 @@ import LeximoryCore
         #expect(reader.beginBookmarkRemoval(42) != nil)
         coordinator.updateBookmarks(in: view)
         #expect(page.annotations.isEmpty)
-        reader.finishBookmarkRemoval(42, succeeded: false)
-        coordinator.updateBookmarks(in: view)
-        #expect(page.annotations.count == lineCount)
-        #expect(reader.bookmarkNotice != nil)
-        #expect(reader.beginBookmarkRemoval(42) != nil)
-        reader.finishBookmarkRemoval(42, succeeded: true)
         coordinator.updateBookmarks(in: view)
         #expect(page.annotations.isEmpty)
+        #expect(reader.bookmarkNotice == nil)
         #expect(reader.bookmarks.isEmpty)
     }
 
@@ -359,7 +347,7 @@ import LeximoryCore
         }
     }
 
-    @Test func concurrentBookmarksReconcileIndependently() {
+    @Test func pendingBookmarksCanBeRecoloredIndependently() {
         let reader = EbookReaderState()
         reader.location = "3"; reader.chapter = "Chapter"
         let first = reader.beginBookmark(EbookSelection(quote: "First", context: "First", offset: 0, location: "2"))
@@ -367,10 +355,9 @@ import LeximoryCore
         #expect(reader.bookmarks.map(\.quote) == ["First", "Second"])
         #expect(first.location == "2"); #expect(second.location == "3")
         #expect(first.id != second.id)
-        reader.finishBookmark(second, saved: EbookBookmark(id: 42, quote: second.quote, chapter: second.chapter, location: second.location))
-        reader.finishBookmark(first, saved: nil)
-        #expect(reader.bookmarks.map(\.id) == [42])
-        #expect(reader.bookmarkNotice != nil)
+        #expect(reader.beginBookmarkColorChange(.init(bookmarkID: first.id, color: .blue)) != nil)
+        #expect(reader.bookmarks.map(\.color) == [.blue, .sage])
+        #expect(reader.bookmarkNotice == nil)
     }
 
     @Test func pageBoundsIdentifyOuterMarginsForChrome() {

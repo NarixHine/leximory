@@ -556,9 +556,22 @@ public struct MobileClient: Sendable {
     }
     public func ebook(textID: String) async throws -> EbookDescriptor {
         let version = await localStore?.version(for: "ebook/\(textID)") ?? 0
-        let descriptor = try mapped(try await client.ebook(path: .init(textId: textID)).ok.body.json, to: EbookDescriptor.self)
-        await localStore?.save(descriptor, for: "ebook/\(textID)", ifUnchanged: version)
-        return descriptor
+        let remote = try await remoteEbook(textID: textID)
+        return await localStore?.integrateHighlights(remote, textID: textID, baseline: version) ?? remote
+    }
+    public func remoteEbook(textID: String) async throws -> EbookDescriptor {
+        try mapped(try await client.ebook(path: .init(textId: textID)).ok.body.json, to: EbookDescriptor.self)
+    }
+    public func editHighlight(textID: String, bookmark: EbookBookmark, removed: Bool = false) async {
+        await localStore?.editHighlight(textID: textID, bookmark: bookmark, removed: removed)
+        try? await synchronizeHighlights()
+    }
+    public func synchronizeHighlights() async throws { try await localStore?.syncHighlights(client: self) }
+    func saveRemoteHighlight(textID: String, bookmark: EbookBookmark, remoteID: Int?) async throws -> EbookBookmark {
+        try mapped(try await client.ebookBookmark(path: .init(textId: textID), body: .json(.init(quote: bookmark.quote, chapter: bookmark.chapter, location: bookmark.location, color: bookmark.color, bookmarkId: remoteID))).ok.body.json, to: EbookBookmark.self)
+    }
+    func deleteRemoteHighlight(textID: String, bookmarkID: Int) async throws {
+        _ = try await client.removeEbookBookmark(path: .init(textId: textID), body: .json(.init(bookmarkId: bookmarkID))).ok
     }
     public func saveEbookPosition(textID: String, location: String) async throws {
         _ = try await client.ebookPosition(path: .init(textId: textID), body: .json(.init(location: location))).ok

@@ -48,8 +48,6 @@ import LeximoryCore
         let pending = reader.beginBookmark(action.selection)
         #expect(reader.selection == nil)
         #expect(reader.menuSelection == nil)
-        let saved = EbookBookmark(id: 42, quote: "river", chapter: nil, location: "3")
-        reader.finishBookmark(pending, saved: saved)
         reader.menuSelection = selection
         let menu = EbookLearningMenu.actions(reader: reader)
         #expect(menu.contains { $0.title == "🖍️荧光笔" } == false)
@@ -58,20 +56,18 @@ import LeximoryCore
         #expect(swatch.attributes.contains(.disabled) == false)
         UIButton(primaryAction: swatch).sendActions(for: .touchUpInside)
         let request = try #require(reader.bookmarkColorRequest)
-        #expect(request.bookmarkID == 42 && request.color == color)
-        if let previous = reader.beginBookmarkColorChange(request) {
-            reader.finishBookmarkColorChange(previous, saved: EbookBookmark(id: 42, quote: "river", chapter: nil, location: "3", color: color))
-        }
+        #expect(request.bookmarkID == pending.id && request.color == color)
+        _ = reader.beginBookmarkColorChange(request)
         let reopened = EbookLearningMenu.actions(reader: reader)
         let reopenedPalette = try #require(reopened.first as? UIMenu)
         #expect(reopenedPalette.children.compactMap { $0 as? UIAction }.allSatisfy { !$0.attributes.contains(.disabled) })
         let remove = try #require(reopened.first { $0.title == "移除" } as? UIAction)
         #expect(remove.attributes.contains(.disabled) == false)
         UIButton(primaryAction: remove).sendActions(for: .touchUpInside)
-        #expect(reader.bookmarkRemovalRequest == 42)
+        #expect(reader.bookmarkRemovalRequest == pending.id)
     }
 
-    @Test func pdfHighlightActionsRespectPendingSavesAndReadOnlyAccess() throws {
+    @Test func pdfHighlightActionsStayEditableWhilePendingAndRespectReadOnlyAccess() throws {
         let reader = EbookReaderState()
         reader.format = "pdf"; reader.canBookmark = true
         let selection = EbookSelection(quote: "river", context: "river", offset: 0, location: "1")
@@ -81,8 +77,8 @@ import LeximoryCore
         func removeAction() throws -> UIAction {
             try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "移除" } as? UIAction)
         }
-        #expect(try removeAction().attributes.contains(.disabled))
-        reader.finishBookmark(pending, saved: EbookBookmark(id: 42, quote: "river", chapter: nil, location: "1"))
+        #expect(pending.id < 0)
+        #expect(try removeAction().attributes.contains(.disabled) == false)
         let savedAction = try removeAction()
         #expect(savedAction.attributes.contains(.disabled) == false)
         reader.readOnly = true
@@ -90,6 +86,20 @@ import LeximoryCore
         UIButton(primaryAction: savedAction).sendActions(for: .touchUpInside)
         #expect(reader.bookmarkRemovalRequest == nil)
     }
+    @Test func offlineHighlightsRemainEditable() throws {
+        let reader = EbookReaderState()
+        reader.format = "pdf"; reader.canBookmark = true
+        reader.readOnly = true; reader.offline = true
+        let selection = EbookSelection(quote: "river", context: "river", offset: 0, location: "1")
+        let pending = reader.beginBookmark(selection)
+        reader.menuSelection = selection
+        let actions = EbookLearningMenu.highlightActions(reader: reader, selection: selection)
+        let palette = try #require(actions.first as? UIMenu)
+        #expect(palette.children.compactMap { $0 as? UIAction }.allSatisfy { !$0.attributes.contains(.disabled) })
+        #expect(reader.beginBookmarkColorChange(.init(bookmarkID: pending.id, color: .pink)) != nil)
+        #expect(reader.bookmarks.first?.color == .pink)
+    }
+
     @Test(arguments: [false, true])
     func pdfKeepsDisabledHighlighterWhenEditingIsUnavailable(offline: Bool) throws {
         let reader = EbookReaderState()
