@@ -141,7 +141,7 @@ private final class AnnotationRubyTextView: UITextView, UITextViewDelegate {
         let search = ReadingSelectionMenu.searchAction(query: text.substring(with: range), perform: workspace.map { workspace in
             { [weak workspace] query in workspace?.search(query) }
         })
-        return ReadingSelectionMenu.menu(children: native + [search])
+        return ReadingGlassMenu.present(from: textView, rect: textView.selectedTextRange.map { textView.firstRect(for: $0) } ?? .zero, elements: native + [search])
     }
     var rubies: [AnnotationMarkdownLayout.Ruby] = []
     var rubyFont = UIFont.systemFont(ofSize: 9)

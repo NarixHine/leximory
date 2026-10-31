@@ -5,6 +5,9 @@ import LeximoryCore
 
 enum BrowserSearchEngine: String, CaseIterable, Identifiable {
     case bing, google, duckDuckGo, baidu
+    static func selected(in defaults: UserDefaults = .standard) -> Self {
+        defaults.string(forKey: "browser.searchEngine").flatMap(Self.init(rawValue:)) ?? .bing
+    }
     var id: String { rawValue }
     var name: String {
         switch self { case .bing: "Bing"; case .google: "Google"; case .duckDuckGo: "DuckDuckGo"; case .baidu: "百度" }
@@ -32,7 +35,7 @@ final class BrowserWebView: WKWebView {
     var lookup: ((BrowserSelection) -> Void)?
     var search: ((String) -> Void)?
     private var selectionRequest = UUID()
-    func invalidateSelection() { selectionRequest = UUID() }
+    func invalidateSelection() { selectionRequest = UUID(); ReadingGlassMenu.dismiss(from: self) }
     private static let world = WKContentWorld.world(name: "LeximoryBrowserSelection")
     static let selectionScript = """
         const selection = window.getSelection();
@@ -110,7 +113,7 @@ final class BrowserWebView: WKWebView {
                 }
             }
         }
-        let searchAction = UIAction(title: "搜索", image: UIImage(systemName: "magnifyingglass"), attributes: search == nil ? .disabled : []) { [weak self] _ in
+        let searchAction = UIAction(title: BrowserSearchEngine.selected().name, image: UIImage(systemName: "magnifyingglass"), identifier: ReadingSelectionMenu.searchIdentifier, attributes: search == nil ? .disabled : []) { [weak self] _ in
             guard let self, selectionRequest == request else { return }
             if let capturedSelection { search?(capturedSelection.quote) }
             else {
@@ -121,6 +124,18 @@ final class BrowserWebView: WKWebView {
             }
         }
         ReadingSelectionMenu.insertLearningActions([action], into: builder, trailingActions: [searchAction])
+        let elements = builder.menu(for: .root)?.children ?? []
+        builder.replaceChildren(ofMenu: .root) { _ in [] }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let script = "const s = getSelection(); if (!s || s.isCollapsed || !s.rangeCount) return null; const r = s.getRangeAt(0).getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height};"
+            guard let value = try? await callAsyncJavaScript(script, arguments: [:], in: nil, contentWorld: Self.world) as? [String: Double],
+                  selectionRequest == request else { return }
+            let scale = scrollView.zoomScale
+            let rect = CGRect(x: value["x", default: 0] * scale, y: value["y", default: 0] * scale,
+                              width: value["width", default: 0] * scale, height: value["height", default: 0] * scale)
+            ReadingGlassMenu.present(from: self, rect: rect, elements: elements)
+        }
     }
     private func capture(_ completion: @escaping (BrowserSelection?) -> Void) {
         Task { @MainActor in
@@ -215,7 +230,7 @@ final class BrowserWebView: WKWebView {
     static func searchURL(_ query: String, engine: BrowserSearchEngine? = nil) -> URL? {
         let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return nil }
-        let engine = engine ?? UserDefaults.standard.string(forKey: "browser.searchEngine").flatMap(BrowserSearchEngine.init(rawValue:)) ?? .bing
+        let engine = engine ?? BrowserSearchEngine.selected()
         var search = URLComponents(string: engine.endpoint)!
         search.queryItems = [URLQueryItem(name: engine.queryParameter, value: query)]
         return search.url

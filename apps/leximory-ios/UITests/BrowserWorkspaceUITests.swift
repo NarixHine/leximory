@@ -2,6 +2,28 @@ import XCTest
 import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
+    @MainActor func testWebSelectionUsesCustomGlassMenu() throws {
+        let page = try BrowserPageServer()
+        defer { page.listener.cancel() }
+        let app = launch(); defer { restore(app) }
+        app.buttons["browser-address"].tap()
+        let input = app.textFields["browser-address-input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        input.typeText(page.url + "\n")
+        let heading = app.webViews.staticTexts["A quiet forest"].firstMatch
+        XCTAssertTrue(heading.waitForExistence(timeout: 15))
+        heading.press(forDuration: 1)
+        let lookup = app.buttons["reading-selection-猫忆查"]
+        XCTAssertTrue(lookup.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.buttons["reading-selection-web-search"].isHittable)
+        XCTAssertFalse(app.buttons["reading-selection-更多"].exists)
+        XCTAssertFalse(app.menuItems["猫忆查"].exists)
+        let image = XCTAttachment(screenshot: app.screenshot())
+        image.name = "Web custom selection menu"; image.lifetime = .keepAlways; add(image)
+        lookup.tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch.waitForExistence(timeout: 10))
+    }
+
     @MainActor func testDynamicDefinitionRecoveryAndSaveStayInPlace() {
         for dark in [false, true] {
             let app = launch(extraArguments: ["--workspace-definition-fixtures"] + (dark ? ["--dark-appearance"] : []))
@@ -13,7 +35,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
             let paragraph = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "A quiet page")).firstMatch
             XCTAssertTrue(paragraph.waitForExistence(timeout: 10))
             paragraph.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)).press(forDuration: 1)
-            let lookup = app.menuItems["🐈 猫忆查"]
+            let lookup = app.buttons["猫忆查"]
             XCTAssertTrue(lookup.waitForExistence(timeout: 5)); lookup.tap()
             XCTAssertTrue(app.staticTexts["正在理解语境"].waitForExistence(timeout: 5))
             let loading = XCTAttachment(screenshot: app.screenshot())

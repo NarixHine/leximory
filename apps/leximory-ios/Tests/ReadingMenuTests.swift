@@ -5,6 +5,7 @@ import PDFKit
 import LeximoryCore
 @testable import Leximory
 
+@Suite(.serialized)
 @MainActor struct ReadingMenuTests {
     @Test(arguments: [false, true]) func articleKeepsNativeDefineAfterLeximoryActions(offline: Bool) throws {
         let document = try JSONDecoder().decode(ReadingDocument.self, from: Data(#"{"version":1,"revision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","source":"bank","blocks":[{"id":"block","kind":"paragraph","sourceRange":{"location":0,"length":4},"displayText":"bank","spans":[]}]}"#.utf8))
@@ -15,23 +16,69 @@ import LeximoryCore
         let define = UIMenu(title: "Define", identifier: .lookup, children: [nativeDefine])
         let menu = try #require(parent.makeCoordinator().textView(UITextView(),
             editMenuForTextIn: NSRange(location: 0, length: 4), suggestedActions: [copy, define]))
-        #expect(menu.children.contains { $0 === copy })
-        #expect(!menu.children.contains { $0 === define })
-        #expect(menu.children.contains { $0 === nativeDefine })
-        #expect(menu.children.contains { $0 is UIMenu } == false)
-        #expect(menu.preferredElementSize == .medium)
-        let actions = menu.children.flatMap { ($0 as? UIMenu)?.children ?? [$0] }
-        #expect(actions.contains { $0.title == ReadingSelectionMenu.lookupTitle } == !offline)
-        if !offline { #expect(actions.first?.title == ReadingSelectionMenu.lookupTitle) }
-        #expect(actions.contains { $0.title == "Define" })
-        #expect(actions.last?.title == "搜索")
+        #expect(menu.children.isEmpty)
     }
+
+    @Test func customMenuRendersPrimaryActionAndDispatchesCapturedAction() async throws {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let source = UIView(frame: window.bounds)
+        window.addSubview(source)
+        var invoked = false
+        let lookup = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage) { _ in invoked = true }
+        let highlight = UIAction(title: "荧光笔", image: UIImage(systemName: "highlighter"), attributes: .disabled) { _ in }
+        let native = ReadingGlassMenu.present(from: source, rect: CGRect(x: 30, y: 200, width: 120, height: 24), elements: [highlight, lookup, UIAction(title: "查询") { _ in }, UIAction(title: "拷贝") { _ in }, UIAction(title: "搜索") { _ in }])
+        #expect(native.children.isEmpty)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        let overlay = try #require(window.subviews.first { $0 is ReadingGlassMenu })
+        func buttons(in view: UIView) -> [UIButton] {
+            (view as? UIButton).map { [$0] } ?? view.subviews.flatMap { buttons(in: $0) }
+        }
+        let controls = buttons(in: overlay)
+        #expect(controls.first?.accessibilityLabel == "猫忆查")
+        #expect(controls.first?.subviews.contains { $0 is UIStackView } == true)
+        overlay.layoutIfNeeded()
+        #expect(controls.first?.bounds.width ?? 0 > 70)
+        #expect(controls.first { $0.accessibilityLabel == "荧光笔" }?.isEnabled == false)
+        controls.first?.sendActions(for: .touchUpInside)
+        #expect(invoked)
+        ReadingGlassMenu.dismiss(from: source)
+    }
+
+    @Test(arguments: [280.0, 600.0]) func fittingActionsStayVisibleAndOverflowExpands(width: Double) async throws {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: width, height: 844))
+        let source = UIView(frame: window.bounds); source.overrideUserInterfaceStyle = .dark; window.addSubview(source)
+        let titles = ["猫忆查", "荧光笔", "拷贝", "查询", "搜索"]
+        ReadingGlassMenu.present(from: source, rect: CGRect(x: 30, y: 300, width: 100, height: 24),
+            elements: titles.map { UIAction(title: $0) { _ in } })
+        await withCheckedContinuation { continuation in DispatchQueue.main.async { continuation.resume() } }
+        let menu = try #require(window.subviews.first { $0 is ReadingGlassMenu })
+        menu.layoutIfNeeded()
+        #expect(menu.traitCollection.userInterfaceStyle == .dark)
+        func controls(_ view: UIView) -> [UIButton] {
+            (view as? UIButton).map { [$0] } ?? view.subviews.flatMap(controls)
+        }
+        let buttons = controls(menu)
+        let more = buttons.first { $0.accessibilityIdentifier == "reading-selection-更多" }
+        if width == 600 {
+            #expect(more == nil)
+            #expect(buttons.map(\.accessibilityLabel).compactMap { $0 } == titles)
+        } else {
+            let expand = try #require(more)
+            expand.sendActions(for: .touchUpInside)
+            #expect(controls(menu).filter { $0.accessibilityLabel == "搜索" }.isEmpty == false)
+
+        }
+        ReadingGlassMenu.dismiss(from: source)
+    }
+
     @Test(arguments: [false, true]) func ebookHidesLookupAndPreservesDisabledBookmarkOffline(offline: Bool) {
         let reader = EbookReaderState()
         reader.readOnly = offline
         let actions = EbookLearningMenu.actions(reader: reader)
         #expect(actions.contains { $0.title == ReadingSelectionMenu.lookupTitle } == !offline)
-        let bookmark = actions.first { $0.title == "🖍️荧光笔" }
+        let bookmark = actions.first { $0.title == "荧光笔" }
         #expect(bookmark != nil)
         if offline { #expect((bookmark as? UIAction)?.attributes.contains(.disabled) == true) }
     }
@@ -41,7 +88,7 @@ import LeximoryCore
         reader.format = "pdf"; reader.canBookmark = true
         let selection = EbookSelection(quote: "river", context: "The river flows.", offset: 4, location: "3")
         reader.selection = selection; reader.menuSelection = selection
-        let highlighter = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "🖍️荧光笔" } as? UIAction)
+        let highlighter = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "荧光笔" } as? UIAction)
         UIButton(primaryAction: highlighter).sendActions(for: .touchUpInside)
         let action = try #require(reader.selectionAction)
         guard case .bookmark = action.kind else { Issue.record("Expected a highlight action"); return }
@@ -50,7 +97,7 @@ import LeximoryCore
         #expect(reader.menuSelection == nil)
         reader.menuSelection = selection
         let menu = EbookLearningMenu.actions(reader: reader)
-        #expect(menu.contains { $0.title == "🖍️荧光笔" } == false)
+        #expect(menu.contains { $0.title == "荧光笔" } == false)
         let palette = try #require(menu.first as? UIMenu)
         let swatch = try #require(palette.children.compactMap { $0 as? UIAction }.first { $0.accessibilityLabel == color.title })
         #expect(swatch.attributes.contains(.disabled) == false)
@@ -94,6 +141,7 @@ import LeximoryCore
         let pending = reader.beginBookmark(selection)
         reader.menuSelection = selection
         let actions = EbookLearningMenu.highlightActions(reader: reader, selection: selection)
+        #expect(!actions.contains { $0.title == ReadingSelectionMenu.lookupTitle })
         let palette = try #require(actions.first as? UIMenu)
         #expect(palette.children.compactMap { $0 as? UIAction }.allSatisfy { !$0.attributes.contains(.disabled) })
         #expect(reader.beginBookmarkColorChange(.init(bookmarkID: pending.id, color: .pink)) != nil)
@@ -104,7 +152,7 @@ import LeximoryCore
     func pdfKeepsDisabledHighlighterWhenEditingIsUnavailable(offline: Bool) throws {
         let reader = EbookReaderState()
         reader.format = "pdf"; reader.readOnly = offline; reader.canBookmark = offline
-        let action = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "🖍️荧光笔" } as? UIAction)
+        let action = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "荧光笔" } as? UIAction)
         #expect(action.attributes.contains(.disabled))
     }
     @Test func tappingAndReopeningPDFHighlightDoesNotCreateANativeTextSelection() throws {
@@ -150,15 +198,31 @@ import LeximoryCore
         let children = ReadingSelectionMenu.copyAndLookupActions([copy, selectAll, lookup])
         #expect(children.count == 2)
         #expect(children.last === native)
+        #expect(native.title == "辞典")
         let nested = UIMenu(children: [lookup])
         let nativeActions = ReadingSelectionMenu.nativeLookupActions(in: [copy, nested])
         #expect(nativeActions.count == 1)
         #expect(nativeActions.first === native)
     }
 
+    @Test(arguments: [(BrowserSearchEngine.bing, "Bing"), (.google, "Google"), (.duckDuckGo, "DuckDuckGo"), (.baidu, "百度")])
+    func selectionSearchUsesConfiguredEngine(engine: BrowserSearchEngine, title: String) throws {
+        let domain = "selection-search-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        defaults.set(engine.rawValue, forKey: "browser.searchEngine")
+        let selected = BrowserSearchEngine.selected(in: defaults)
+        var query: String?
+        let action = ReadingSelectionMenu.searchAction(query: " river ", engine: selected) { query = $0 }
+        #expect(action.title == title)
+        #expect(action.identifier == ReadingSelectionMenu.searchIdentifier)
+        UIButton(primaryAction: action).sendActions(for: .touchUpInside)
+        #expect(query == "river")
+    }
+
     @Test func existingPDFHighlightOmitsAddHighlight() {
         let actions = EbookLearningMenu.actions(reader: EbookReaderState(), includeBookmark: false)
-        #expect(actions.map(\.title) == [ReadingSelectionMenu.lookupTitle, "搜索"])
+        #expect(actions.map(\.title) == [ReadingSelectionMenu.lookupTitle, BrowserSearchEngine.selected().name])
     }
 
 }

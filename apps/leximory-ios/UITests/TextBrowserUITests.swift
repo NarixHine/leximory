@@ -16,7 +16,7 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertTrue(input.waitForExistence(timeout: 5)); input.typeText(page.url + "\n")
         let heading = app.webViews.staticTexts["A quiet forest"].firstMatch
         XCTAssertTrue(heading.waitForExistence(timeout: 15)); heading.press(forDuration: 1)
-        let lookup = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch
+        let lookup = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "猫忆查")).firstMatch
         XCTAssertTrue(lookup.waitForExistence(timeout: 5)); lookup.tap()
         let definition = app.textViews["annotation-markdown"].firstMatch
         XCTAssertTrue(definition.waitForExistence(timeout: 10))
@@ -167,16 +167,16 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertTrue(heading.waitForExistence(timeout: 15), app.debugDescription)
         let browser = XCTAttachment(screenshot: app.screenshot()); browser.name = "Single-page browser"; browser.lifetime = .keepAlways; add(browser)
         heading.press(forDuration: 1)
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "猫忆查")).firstMatch.waitForExistence(timeout: 5), app.debugDescription)
         let menu = XCTAttachment(screenshot: app.screenshot()); menu.name = "Article-matched selection menu"; menu.lifetime = .keepAlways; add(menu)
-        XCTAssertTrue(app.menuItems["拷贝"].exists)
+        XCTAssertTrue(app.buttons["拷贝"].exists)
         for title in ["拷贝高亮标记的链接", "Copy Link with Highlight", "查找所选内容", "翻译", "搜索网页"] {
-            XCTAssertFalse(app.menuItems[title].exists)
+            XCTAssertFalse(app.buttons[title].exists)
         }
         XCTAssertFalse(app.buttons["共享"].exists)
         XCTAssertFalse(app.buttons["全选"].exists)
-        assertNativeDefineAfterLeximory(in: app, actions: ["🐈 猫忆查"])
-        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch.tap()
+        assertNativeDefineAfterLeximory(in: app, actions: ["猫忆查"])
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "猫忆查")).firstMatch.tap()
         XCTAssertTrue(app.staticTexts["正在理解语境"].firstMatch.waitForExistence(timeout: 1))
         let loading = XCTAttachment(screenshot: app.screenshot()); loading.name = "Immediate context loading"; loading.lifetime = .keepAlways; add(loading)
         let definitionText = app.textViews["annotation-markdown"].firstMatch
@@ -231,17 +231,17 @@ final class BrowserPageServer {
 }
 
 @MainActor func assertNativeDefineAfterLeximory(in app: XCUIApplication, actions: [String], file: StaticString = #filePath, line: UInt = #line) {
-    let native = app.menuItems.matching(NSPredicate(format: "label IN %@", ["查询", "Look Up", "Define", "定义"])).firstMatch
+    let native = app.buttons.matching(NSPredicate(format: "label IN %@", ["辞典"])).firstMatch
     var pages = 0
     while !native.isHittable && pages < 3 {
-        let next = app.buttons["下一页"].firstMatch
+        let next = app.buttons["reading-selection-更多"].firstMatch
         guard next.isHittable else { break }
         next.tap(); pages += 1
     }
     XCTAssertTrue(native.isHittable, "Native Define should remain available", file: file, line: line)
     if pages == 0, native.isHittable {
         for title in actions {
-            let action = app.menuItems[title]
+            let action = app.buttons[title]
             if action.isHittable {
                 let comesAfter = native.frame.minY > action.frame.minY + 5 || native.frame.minX > action.frame.minX
                 XCTAssertTrue(comesAfter, "Native Define should follow \(title)", file: file, line: line)
@@ -249,7 +249,7 @@ final class BrowserPageServer {
         }
     }
     for _ in 0..<pages {
-        let previous = app.buttons["上一页"].firstMatch
+        let previous = app.buttons["reading-selection-返回"].firstMatch
         guard previous.isHittable else { break }
         previous.tap()
     }

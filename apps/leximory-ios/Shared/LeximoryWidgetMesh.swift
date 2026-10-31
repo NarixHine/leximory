@@ -31,7 +31,8 @@ struct LeximoryWidgetMesh: View {
         let source = UIImage(named: name)!
         let fill = max(size.width / source.size.width, size.height / source.size.height)
         let renderedSize = CGSize(width: source.size.width * fill, height: source.size.height * fill)
-        let rect = CGRect(x: (size.width - renderedSize.width) / 2, y: (size.height - renderedSize.height) / 2,
+        let cropY: CGFloat = name == "WidgetMeshDark" ? 0 : (size.height - renderedSize.height) / 2
+        let rect = CGRect(x: (size.width - renderedSize.width) / 2, y: cropY,
                           width: renderedSize.width, height: renderedSize.height)
         let format = UIGraphicsImageRendererFormat()
         format.scale = scale
