@@ -33,7 +33,7 @@ struct PDFOutlineControls: View {
                 Text("暂时无法生成目录。").foregroundStyle(.secondary)
             }
         }
-        .font(LeximoryTypography.interface(15, style: .subheadline))
+        .interfaceFont(15, style: .subheadline)
         .buttonStyle(.glass)
         .buttonBorderShape(.capsule)
         .controlSize(.regular)

@@ -2,6 +2,45 @@ import XCTest
 import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
+    @MainActor func testAnnotationDictionaryOpensInWorkspaceAndReturnsToArticle() {
+        let app = launch(); defer { restore(app) }
+        app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+        app.buttons["browser-resource-fixture-reader"].tap()
+        let paragraph = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "We walked along the bank")).firstMatch
+        XCTAssertTrue(paragraph.waitForExistence(timeout: 10))
+        let position = UIDevice.current.userInterfaceIdiom == .pad ? CGVector(dx: 0.61, dy: 0.22) : CGVector(dx: 0.065, dy: 0.75)
+        paragraph.coordinate(withNormalizedOffset: position).tap()
+        let dictionary = app.links["在词典中查看"]
+        XCTAssertTrue(dictionary.waitForExistence(timeout: 5)); dictionary.tap()
+        XCTAssertEqual(app.state, .runningForeground)
+        XCTAssertTrue(app.buttons["browser-magic-save"].waitForExistence(timeout: 10))
+        app.buttons["browser-address"].tap()
+        let input = app.textFields["browser-address-input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        XCTAssertTrue((input.value as? String ?? "").contains("etymonline.com/word/bank"))
+        app.buttons["后退"].tap()
+        app.buttons["后退"].tap()
+        XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor func testChineseInterfaceWithJapanesePreferredLanguage() {
+        for dark in [false, true] {
+            let app = launch(extraArguments: ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"] + (dark ? ["--dark-appearance"] : []))
+            defer { restore(app) }
+            app.buttons["我的书签"].tap()
+            let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+            XCTAssertTrue(folder.waitForExistence(timeout: 10))
+            folder.tap()
+            XCTAssertTrue(app.buttons["browser-resource-fixture-reader"].waitForExistence(timeout: 10))
+            let capture = XCTAttachment(screenshot: app.screenshot())
+            capture.name = "Chinese interface, Japanese system, \(dark ? "dark" : "light")"
+            capture.lifetime = .keepAlways
+            add(capture)
+        }
+    }
+
     @MainActor func testEbookAddressEditingRestoresTransparentControls() {
         for dark in [false, true] {
             let app = launch(extraArguments: dark ? ["--dark-appearance"] : [])
@@ -462,6 +501,13 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertTrue(account.waitForExistence(timeout: 5))
         account.tap()
         XCTAssertTrue(app.buttons["后退"].waitForExistence(timeout: 5))
+        app.buttons["browser-more"].tap()
+        XCTAssertTrue(app.buttons["广告拦截"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["browser-account"].exists)
+        XCTAssertFalse(app.buttons["账号"].exists)
+        app.buttons["广告拦截"].tap()
+        XCTAssertTrue(app.buttons["ad-blocking-cancel"].waitForExistence(timeout: 5))
+        app.buttons["ad-blocking-cancel"].tap()
         app.buttons["后退"].tap()
         XCTAssertTrue(app.buttons["browser-browse"].waitForExistence(timeout: 5))
     }

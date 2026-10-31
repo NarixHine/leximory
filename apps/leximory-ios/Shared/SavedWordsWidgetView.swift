@@ -27,7 +27,7 @@ struct SavedWordsWidgetView: View {
                     }
                     .padding(16)
                 }
-                .padding(3)
+                .padding(5)
             } else {
                 let panelWidth = max(134, geometry.size.width * 0.41)
                 ZStack(alignment: .leading) {
@@ -38,7 +38,7 @@ struct SavedWordsWidgetView: View {
                                 .lineLimit(1).minimumScaleFactor(0.6)
                                 .contentTransition(.numericText(value: Double(today ?? 0)))
                                 .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: today)
-                            Text("today").font(LeximoryTypography.interface(22, style: .title3))
+                            Text("today").interfaceFont(22, style: .title3)
                                 .fixedSize()
                             Spacer(minLength: 0)
                         }
@@ -52,7 +52,7 @@ struct SavedWordsWidgetView: View {
                         }
                     }
                     .padding(.horizontal, 17)
-                    .padding(.leading, panelWidth + 3)
+                    .padding(.leading, panelWidth + 5)
                     .foregroundStyle(renderingMode == .fullColor ? .white : LeximoryPalette.ink)
 
                     paperPanel {
@@ -64,7 +64,7 @@ struct SavedWordsWidgetView: View {
                         .padding(16)
                     }
                     .frame(width: panelWidth)
-                    .padding(3)
+                    .padding(5)
                 }
             }
         }
@@ -76,7 +76,7 @@ struct SavedWordsWidgetView: View {
     }
 
     private var title: some View {
-        VStack(alignment: .leading, spacing: -10) {
+        VStack(alignment: .leading, spacing: -6) {
             Text("Words saved")
             Text("over 30 days")
         }

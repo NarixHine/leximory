@@ -221,11 +221,9 @@ import LeximoryCore
             #expect(abs(before.facingAngle - after.facingAngle) > 179)
         }
     }
-    @Test func darkReadingSurfacesMatchCanonicalWebNeutrals() throws {
+    @Test func darkReadingInkAndEbookPaperRetainTheirAuthoredColors() throws {
         let traits = UITraitCollection(userInterfaceStyle: .dark)
         let surfaces: [(UIColor, UInt32)] = [
-            (LeximoryPalette.paperUI, 0x100F0F), (UIColor(LeximoryPalette.shell), 0x18181B),
-            (UIColor(LeximoryPalette.cover), 0x27272A), (UIColor(LeximoryPalette.border), 0x3F3F46),
             (LeximoryPalette.readingInkUI, 0xCECDC3)
         ]
         for (color, expected) in surfaces {
@@ -546,7 +544,6 @@ import LeximoryCore
         #expect(UIFont(name: "EBGaramond-Regular", size: 36) != nil)
         #expect(LeximoryTypography.editorialUI(38).fontName == "EBGaramond-Regular")
         #expect(UIFont(name: "EBGaramondItalic-Italic", size: 20) != nil)
-        #expect(UIFont(name: "LXGWWenKaiScreen", size: 20) != nil)
         #expect(UIFont(name: "ChillDuanHeiSongProJP_Regular", size: 29) != nil)
         #expect(UIFont(name: "ChillDuanHeiSongRegular", size: 18) != nil)
         #expect(UIFont(name: "ChillDuanHeiSongBold", size: 18) != nil)
@@ -784,4 +781,116 @@ private struct AnnotationLayoutProbeView: View {
             }
             .frame(width: 820, height: 900)
     }
+}
+
+@MainActor struct TypographyTests {
+    @Test(arguments: [CGFloat(16), 28, 36])
+    func chineseDisplayInkMatchesItsNominalRole(size: CGFloat) {
+        func ink(_ string: String, font: UIFont) -> CGRect {
+            CTLineGetImageBounds(CTLineCreateWithAttributedString(NSAttributedString(string: string, attributes: [.font: font])), nil)
+        }
+        let paired = LeximoryTypography.displayUI(size)
+        let chinese = ink("我", font: paired)
+        #expect(chinese.height > size * 0.9)
+        #expect(chinese.height < size * 1.1)
+        #expect(ink("Garamond", font: paired) == ink("Garamond", font: LeximoryTypography.face("EBGaramond-Regular", size: size)))
+        #expect(ink("語", font: LeximoryTypography.editorialUI(size, language: "Japanese")) == ink("語", font: LeximoryTypography.face("ChillDuanHeiSongProJP_Regular", size: size)))
+    }
+
+    @Test func exportOpticalPairingPreview() throws {
+        let preview = VStack(alignment: .leading, spacing: 22) {
+            Text("Display pairing").interfaceFont(17, semibold: true)
+            ForEach([CGFloat(16), 24, 32], id: \.self) { size in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("\(Int(size)) pt").interfaceFont(12, style: .caption1).foregroundStyle(.secondary)
+                    Text("浏览网页 · 我的书签 · Leximory").displayFont(size)
+                    Text(LeximoryTypography.scaledChineseText("字里行间 · 日本語の本 · Field notes", size: size))
+                }
+            }
+        }
+        .padding(24).frame(width: 720, alignment: .leading)
+        .foregroundStyle(.black).background(.white)
+        .environment(\.dynamicTypeSize, .large)
+        let renderer = ImageRenderer(content: preview)
+        renderer.scale = 2
+        Attachment.record(try #require(renderer.uiImage?.pngData()), named: "display-optical-pairing.png")
+    }
+
+    @Test func mixedLabelsRestoreChineseSizingWithoutShrinkingOtherScripts() throws {
+        let text = LeximoryTypography.scaledChineseText("猫，。𠀀 A かな 🙂", size: 20)
+        let context = EnvironmentValues().fontResolutionContext
+        let expected: [(String, CGFloat)] = [
+            ("猫", 17), ("，", 17), ("。", 17), ("𠀀", 17),
+            ("A", 20), ("か", 20), ("な", 20), ("🙂", 20)
+        ]
+        for (glyph, size) in expected {
+            let range = try #require(text.range(of: glyph))
+            let font = try #require(text[range].font)
+            #expect(font.resolve(in: context).pointSize == size)
+        }
+    }
+
+    @Test func removedHandwritingFontIsNotBundledOrRegistered() {
+        #expect(Bundle.main.url(forResource: "LXGWWenKaiScreen", withExtension: "ttf") == nil)
+        #expect(UIFont(name: "LXGWWenKaiScreen", size: 20) == nil)
+    }
+
+    @Test func interfaceTypeUsesTheLocalAccessibilitySize() throws {
+        func height(_ size: DynamicTypeSize, header: Bool) throws -> CGFloat {
+            let content = Text("我的书签 Settings")
+                .interfaceFont(header ? 15 : 17, semibold: header, style: header ? .subheadline : .body)
+                .fixedSize()
+                .environment(\.dynamicTypeSize, size)
+            return try #require(ImageRenderer(content: content).uiImage).size.height
+        }
+        let body = try height(.large, header: false)
+        let accessibleBody = try height(.accessibility5, header: false)
+        #expect(accessibleBody > body * 2)
+        #expect(try height(.large, header: true) < body)
+        #expect(try height(.accessibility5, header: true) < accessibleBody)
+    }
+
+    @Test(arguments: [false, true])
+    func interfaceChineseUsesOriginalSerifWithJapaneseTypesetting(semibold: Bool) {
+        let attributed = NSAttributedString(string: "我的书签 漢語 Urbanist 👋", attributes: [
+            .font: LeximoryTypography.interfaceUI(17, semibold: semibold),
+            NSAttributedString.Key(kCTLanguageAttributeName as String): "ja"
+        ])
+        let line = CTLineCreateWithAttributedString(attributed)
+        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+        let fonts = runs.map { CTRunGetAttributes($0) as NSDictionary }
+            .compactMap { $0[kCTFontAttributeName] as? UIFont }
+        #expect(fonts.contains { $0.fontName == (semibold ? "ChillDuanHeiSongBold" : "ChillDuanHeiSongRegular") })
+        #expect(fonts.contains { $0.fontName == (semibold ? "Urbanist-SemiBold" : "Urbanist-Regular") })
+        #expect(fonts.contains { $0.fontName.contains("AppleColorEmoji") })
+        #expect(fonts.contains { $0.fontName.contains("XinYiJiXiangSong") } == false)
+    }
+
+    @Test(arguments: [String?.none, "Chinese", "Japanese", "English"])
+    func contentTitlesNeverUseJixiangSong(language: String?) {
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: "字里行间 日本語の本 東京 Garamond", attributes: [
+            .font: LeximoryTypography.editorialUI(28, language: language),
+            NSAttributedString.Key(kCTLanguageAttributeName as String): "ja"
+        ]))
+        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+        for run in runs {
+            let font = (CTRunGetAttributes(run) as NSDictionary)[kCTFontAttributeName] as! CTFont
+            #expect((CTFontCopyPostScriptName(font) as String).contains("XinYiJiXiangSong") == false)
+            var glyphs = [CGGlyph](repeating: 0, count: CTRunGetGlyphCount(run))
+            CTRunGetGlyphs(run, CFRange(location: 0, length: 0), &glyphs)
+            #expect(glyphs.contains(0) == false)
+        }
+    }
+
+    @Test func editorialChineseRetainsBundledSerifAlongsideGaramond() {
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: "字里行间 Garamond", attributes: [
+            .font: LeximoryTypography.editorialUI(28, language: "Chinese")
+        ]))
+        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+        let names = runs.compactMap { (CTRunGetAttributes($0) as NSDictionary)[kCTFontAttributeName] as? UIFont }.map(\.fontName)
+        #expect(names.contains("ChillDuanHeiSongRegular"))
+        #expect(names.contains("Fontquan-XinYiJiXiangSong-Regular") == false)
+        #expect(names.contains("EBGaramond-Regular"))
+    }
+
 }

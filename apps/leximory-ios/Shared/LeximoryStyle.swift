@@ -4,11 +4,11 @@ enum LeximoryPalette {
     static let sage = Color(uiColor: adaptive(light: 0x5A715A, dark: 0xA1A1AA))
     static let paperUI = adaptive(light: 0xFFFFFF, dark: 0x100F0F)
     static let paper = Color(uiColor: paperUI)
-    static let ink = Color(uiColor: adaptive(light: 0x192024, dark: 0xCECDC3))
-    static let muted = Color(uiColor: adaptive(light: 0x67787C, dark: 0xA1A1AA))
+    static let ink = Color(uiColor: .label)
+    static let muted = Color(uiColor: .secondaryLabel)
     static let border = Color(uiColor: adaptive(light: 0xD9E8BF, dark: 0x3F3F46))
     static let secondaryBorder = Color(uiColor: adaptive(light: 0xD0D6D8, dark: 0x3F3F46))
-    static let secondaryLabel = Color(uiColor: adaptive(light: 0x9CA8AB, dark: 0xA1A1AA))
+    static let secondaryLabel = Color(uiColor: .secondaryLabel)
     static let cover = Color(uiColor: adaptive(light: 0xF1F5F1, dark: 0x27272A))
     static let shell = Color(uiColor: adaptive(light: 0xF8FAF8, dark: 0x18181B))
     static let annotationSurface = Color(uiColor: adaptive(light: 0xFAFAFA, dark: 0x18181B))
@@ -40,6 +40,7 @@ enum LeximoryPalette {
 enum LeximoryTypography {
     static let addressSize: CGFloat = 18
     static let chineseGlyphScale: CGFloat = 0.85
+    static let chineseDisplayScale: CGFloat = 1.2
     static var addressUI: UIFont {
         UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: editorialUI(addressSize))
     }
@@ -67,9 +68,22 @@ enum LeximoryTypography {
         UIFont(name: name, size: size)!
     }
     static func editorialUI(_ size: CGFloat, language: String? = nil) -> UIFont {
-        let name = language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : language == "Chinese" ? "ChillDuanHeiSongRegular" : "EBGaramond-Regular"
-        let fallback = UIFontDescriptor(name: language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : "ChillDuanHeiSongRegular", size: size)
-        return UIFont(descriptor: face(name, size: size).fontDescriptor.addingAttributes([.cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size), fallback]]), size: size)
+        let fallbacks = language == "Japanese"
+            ? ["ChillDuanHeiSongProJP_Regular", "ChillDuanHeiSongRegular"]
+            : ["ChillDuanHeiSongRegular", "ChillDuanHeiSongProJP_Regular"]
+        return UIFont(descriptor: face("EBGaramond-Regular", size: size).fontDescriptor.addingAttributes([
+            .cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size)]
+                + fallbacks.map { UIFontDescriptor(name: $0, size: size) }
+        ]), size: size)
+    }
+
+    /// Only for fixed Chinese UI display labels, never user or imported content.
+    static func displayUI(_ size: CGFloat) -> UIFont {
+        let chinese = UIFontDescriptor(name: "Fontquan-XinYiJiXiangSong-Regular", size: size)
+            .addingAttributes([.matrix: NSValue(cgAffineTransform: CGAffineTransform(scaleX: chineseDisplayScale, y: chineseDisplayScale))])
+        return UIFont(descriptor: face("EBGaramond-Regular", size: size).fontDescriptor.addingAttributes([
+            .cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size), chinese]
+        ]), size: size)
     }
     static func proseUI(_ size: CGFloat, language: String? = nil, bold: Bool = false) -> UIFont {
         let name = language == "Japanese" ? "ChillDuanHeiSongProJP_Regular" : language == "Chinese" ? (bold ? "ChillDuanHeiSongBold" : "ChillDuanHeiSongRegular") : "LibreBaskerville-Regular"
@@ -89,11 +103,50 @@ enum LeximoryTypography {
         let latin = face(semibold ? "Urbanist-SemiBold" : "Urbanist-Regular", size: size)
         return UIFont(descriptor: latin.fontDescriptor.addingAttributes([
             .cascadeList: [UIFontDescriptor(name: "AppleColorEmoji", size: size),
-                           UIFontDescriptor(name: semibold ? "ChillDuanHeiSongBold" : "ChillDuanHeiSongRegular", size: size)]
+                           UIFontDescriptor(name: semibold ? "ChillDuanHeiSongBold" : "ChillDuanHeiSongRegular", size: size),
+                           UIFontDescriptor(name: "ChillDuanHeiSongProJP_Regular", size: size)]
         ]), size: size)
     }
-    static func interface(_ size: CGFloat, semibold: Bool = false, style: UIFont.TextStyle = .body) -> Font {
-        Font(UIFontMetrics(forTextStyle: style).scaledFont(for: interfaceUI(size, semibold: semibold)))
+    static func textStyle(_ style: UIFont.TextStyle) -> Font.TextStyle {
+        switch style {
+        case .largeTitle: .largeTitle
+        case .title1: .title
+        case .title2: .title2
+        case .title3: .title3
+        case .headline: .headline
+        case .subheadline: .subheadline
+        case .callout: .callout
+        case .footnote: .footnote
+        case .caption1: .caption
+        case .caption2: .caption2
+        default: .body
+        }
+    }
+}
+
+private struct InterfaceTypography: ViewModifier {
+    @ScaledMetric private var size: CGFloat
+    let semibold: Bool
+
+    init(size: CGFloat, semibold: Bool, style: UIFont.TextStyle) {
+        _size = ScaledMetric(wrappedValue: size, relativeTo: LeximoryTypography.textStyle(style))
+        self.semibold = semibold
+    }
+
+    func body(content: Content) -> some View {
+        content.font(Font(LeximoryTypography.interfaceUI(size, semibold: semibold)))
+    }
+}
+
+private struct DisplayTypography: ViewModifier {
+    @ScaledMetric private var size: CGFloat
+
+    init(size: CGFloat, style: Font.TextStyle) {
+        _size = ScaledMetric(wrappedValue: size, relativeTo: style)
+    }
+
+    func body(content: Content) -> some View {
+        content.font(Font(LeximoryTypography.displayUI(size)))
     }
 }
 
@@ -112,11 +165,33 @@ private struct EditorialTypography: ViewModifier {
 }
 
 extension View {
+    /// Fixed Chinese UI headings and action-card labels only.
+    func displayFont(_ size: CGFloat, relativeTo style: Font.TextStyle = .title) -> some View {
+        modifier(DisplayTypography(size: size, style: style))
+    }
+
+    func interfaceFont(_ size: CGFloat, semibold: Bool = false, style: UIFont.TextStyle = .body) -> some View {
+        modifier(InterfaceTypography(size: size, semibold: semibold, style: style))
+    }
+
     func addressFont() -> some View {
         editorialFont(LeximoryTypography.addressSize, relativeTo: .subheadline, language: nil)
     }
 
     func editorialFont(_ size: CGFloat, relativeTo style: Font.TextStyle = .title, language: String? = "Chinese", leading: Font.Leading = .standard) -> some View {
         modifier(EditorialTypography(size: size, style: style, language: language, leading: leading))
+    }
+}
+
+/// Settings-style group titles stay subordinate to the 17-point row labels.
+struct LeximorySectionHeader: View {
+    let title: String
+    init(_ title: String) { self.title = title }
+    var body: some View {
+        Text(title)
+            .interfaceFont(15, semibold: true, style: .subheadline)
+            .foregroundStyle(.secondary)
+            .textCase(nil)
+            .accessibilityAddTraits(.isHeader)
     }
 }

@@ -19,7 +19,7 @@ struct BrowserFoldersView: View {
         List {
             Section {
                 HStack {
-                    Text("我的书签").editorialFont(30, relativeTo: .largeTitle)
+                    Text("我的书签").displayFont(30, relativeTo: .largeTitle)
                     Spacer()
                     Button("新建文件夹", systemImage: "folder.badge.plus") { editor = FolderEditorRequest() }
                         .labelStyle(.iconOnly).disabled(sync?.online == false)
@@ -56,17 +56,16 @@ struct BrowserFoldersView: View {
         }
         .listStyle(.insetGrouped)
         .animation(.default, value: workspace.expandedFolders)
-        .scrollContentBackground(.hidden)
-        .font(LeximoryTypography.interface(17))
+        .interfaceFont(17)
         .frame(maxWidth: LeximoryLayout.libraryMeasure)
         .frame(maxWidth: .infinity)
-        .background(LeximoryPalette.shell)
+        .background(Color(uiColor: .systemGroupedBackground))
         .safeAreaPadding(.bottom, chromeHeight)
         .refreshable { await refreshBookmarks() }
         .sheet(item: $editor) { request in
             FolderEditorSheet(client: workspace.client, library: request.library) { workspace.upsertFolder($0) }
         }
-        .tint(.primary)
+        .tint(.blue)
         .accessibilityIdentifier("browser-bookmarks")
     }
     private func refreshBookmarks() async {
@@ -137,8 +136,8 @@ struct BrowserFolderLabel: View {
     var body: some View {
         Label {
             VStack(alignment: .leading, spacing: 4) {
-                Text(library.name).font(LeximoryTypography.interface(17)).foregroundStyle(.primary)
-                Text(library.preview.localizedLanguage).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
+                Text(library.name).editorialFont(17, relativeTo: .body, language: library.preview.language).foregroundStyle(.primary)
+                Text(library.preview.localizedLanguage).interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
             }
         } icon: { Image(systemName: "folder").foregroundStyle(.secondary) }
         .padding(.vertical, 4)
@@ -156,7 +155,7 @@ struct BrowserResourceRow: View {
                     if !text.topics.isEmpty {
                         HStack(spacing: 12) {
                             ForEach(Array(text.topics.prefix(2)), id: \.self) { topic in Text(topic) }
-                        }.font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary).lineLimit(1)
+                        }.interfaceFont(13, style: .footnote).foregroundStyle(.secondary).lineLimit(1)
                     }
                 }
             } icon: {
@@ -184,14 +183,14 @@ struct BrowserFolderPicker: View {
             }
             Section { Button("新建文件夹", systemImage: "folder.badge.plus") { editor = FolderEditorRequest() }.disabled(sync?.online == false) }
         }
-        .font(LeximoryTypography.interface(17))
+        .interfaceFont(17)
         .navigationTitle("选择文件夹").navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editor) { request in
             FolderEditorSheet(client: workspace.client, library: request.library) { library in
                 workspace.upsertFolder(library); selection = library.id
             }
         }
-        .tint(.primary)
+        .tint(.blue)
     }
     private func row(_ library: CatalogLibrary) -> some View {
         DisclosureGroup(isExpanded: Binding(get: { expanded.contains(library.id) }, set: { value in
@@ -199,7 +198,7 @@ struct BrowserFolderPicker: View {
         })) {
             ForEach(workspace.texts[library.id] ?? []) { text in
                 Label { Text(text.title) } icon: { BrowserTextIcon(text: text) }
-                    .font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.secondary).padding(.leading, 16)
+                    .interfaceFont(15, style: .subheadline).foregroundStyle(.secondary).padding(.leading, 16)
             }
         } label: {
             HStack {

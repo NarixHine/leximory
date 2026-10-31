@@ -128,7 +128,7 @@ struct ArticleMarkdownPreview: View {
         VStack(alignment: .leading, spacing: 18) {
             ForEach(expanded ? document.blocks : Array(document.blocks.prefix(blockLimit ?? document.blocks.count))) { block in
                 HStack(alignment: .top, spacing: 10) {
-                    if block.isList { Text(block.marker ?? "").font(LeximoryTypography.interface(size)).foregroundStyle(.secondary).frame(width: 24, alignment: .trailing) }
+                    if block.isList { Text(block.marker ?? "").interfaceFont(size).foregroundStyle(.secondary).frame(width: 24, alignment: .trailing) }
                     blockContent(block)
                 }.padding(.leading, block.quoted ? 12 : 0)
                     .overlay(alignment: .leading) {
@@ -138,7 +138,7 @@ struct ArticleMarkdownPreview: View {
             }
             if let blockLimit, document.blocks.count > blockLimit {
                 Button(expanded ? "收起全文" : "展开全文") { expanded.toggle() }
-                    .font(LeximoryTypography.interface(15)).buttonStyle(.plain).foregroundStyle(.secondary)
+                    .interfaceFont(15).buttonStyle(.plain).foregroundStyle(.secondary)
             }
         }.frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(.primary)
             .textSelection(.enabled).accessibilityIdentifier("article-markdown-preview")

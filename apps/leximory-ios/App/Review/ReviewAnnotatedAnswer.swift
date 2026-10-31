@@ -14,7 +14,7 @@ struct ReviewAnnotatedAnswer: View {
             .accessibilityIdentifier("review-annotated-answer")
             .popover(item: $selected, attachmentAnchor: .rect(.rect(anchor))) { note in
                 VStack(alignment: .leading, spacing: 14) {
-                    Text(note.title).font(LeximoryTypography.interface(14)).foregroundStyle(.secondary)
+                    Text(note.title).interfaceFont(14).foregroundStyle(.secondary)
                     Text(note.original).font(LeximoryTypography.prose(20, language: language))
                     AnnotationMarkdownText(content: note.content, size: 17, language: language)
                 }.padding(24).frame(idealWidth: 320, maxWidth: 360)

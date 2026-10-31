@@ -12,43 +12,31 @@ The web app defines copy, colors, typography and product actions. Use native nav
 
 ## Appearance
 
-Use the canonical palette in `apps/leximory/tailwind.config.ts` and its native equivalents in `App/LeximoryTheme.swift`.
-
-| Role             | Light                  |
-| ---------------- | ---------------------- |
-| Paper            | `#FFFFFF`              |
-| Shell            | `#F8FAF8`              |
-| Inset            | `#F1F5F1`              |
-| Border           | `#E7ECE7`              |
-| Marker           | `#BDD981`, 45% opacity |
-| Illustration     | `#9CAEA1`              |
-| Secondary label  | `#9CA8AB`              |
-| Secondary border | `#D0D6D8`              |
-| Muted text       | `#67787C`              |
-| Navigation       | `#5A715A`              |
-| Ink              | `#192024`              |
-
-Dark appearance uses neutral paper `#100F0F`, shell `#18181B`, inset `#27272A`, border `#3F3F46` and ink `#CECDC3`. Paper follows the system. Liquid Glass belongs to navigation, playback and controls; reading content stays on paper. Ebook actions use neutral ink.
+Ordinary app UI uses Apple's semantic colors: system backgrounds, grouped backgrounds and rows, primary/secondary labels, separators, and standard blue actions. This includes My Bookmarks, account settings, forms and sheets. Colors follow light/dark appearance and accessibility contrast. Reserve custom colors for reading themes, highlights, covers, membership artwork and Home cards. Preserve the original paper, shell, cover and border tokens for artwork and reading content. Apply native backgrounds explicitly to ordinary UI screens such as My Bookmarks and Account; never neutralize shared artwork tokens to change a settings screen.
 
 Covers retain the web's newspaper rules, artwork and identity-derived paper wash. Draw rules above the wash. Use the bundled monochrome Noto Emoji for cover artwork; prose keeps native emoji.
 
 ## Typography and layout
 
+Chinese UI uses the original bundled ChillDuanHeiSong serif, with explicit Regular/Bold faces, regardless of device language. Latin UI keeps Urbanist. Garamond pairs with Chill for library names, text titles, topics, browser labels and other user/imported content; known Japanese content uses the bundled Japanese serif and other scripts keep native fallbacks. Article body fonts are unchanged.
+
+Reserve 欣意吉祥宋 for fixed Chinese UI display copy: the four Home cards, app page headings and fixed promotional slogans. Its separate `displayFont`/`displayUI` API applies the 120% optical correction. Never use that API or font in library/text titles, user names, imported headings, search results, recents or any text that may contain Japanese or other languages. Home card titles use a closed enum of fixed UI strings. Ordinary `editorialFont` and `interfaceFont` never include 吉祥宋 in their cascades. Browser address labels, recents and autocomplete retain the original per-character Chinese sizing: Han characters and Chinese/full-width punctuation render at 85% of the Garamond size; Latin, kana and emoji keep the requested size. This is separate from the 120% correction for fixed 吉祥宋 display labels. The address input retains Garamond with the original Chinese/Japanese serif cascade, matching its display typography; do not apply the Urbanist interface font to the input.
+
 | Role                      | Face                           | Default                                              |
 | ------------------------- | ------------------------------ | ---------------------------------------------------- |
 | Library eyebrow           | Urbanist                        | 12 pt, 1.2 tracking                                  |
-| 我的文库                  | Bundled Chinese serif          | 30 pt                                                |
-| Library/text titles       | EB Garamond with CJK cascade   | 20–36 pt by role                                     |
+| 我的文库                  | 欣意吉祥宋          | 30 pt                                                |
+| Library/text titles       | EB Garamond with original Chill serif cascade   | 20–36 pt by role                                     |
 | English/French prose      | Libre Baskerville              | 18 pt phone, 20 pt wide                              |
 | Chinese prose             | ChillDuanHeiSong               | Bundled Regular and Bold OTF; choose Bold explicitly |
 | Japanese prose            | ChillDuanHeiSongProJP          | Bundled Regular OTF, with ruby                       |
-| Interface text            | Urbanist with serif CJK cascade | 12–17 pt                                             |
-| Chinese navigation/topics | Bundled Chinese serif          | 12–14 pt topics                                      |
+| Interface text            | Urbanist with original Chill serif cascade | 12–17 pt                                             |
+| Chinese navigation/topics | Original bundled serif          | 12–13 pt topics                                      |
 | IPA/code                  | Source Code Pro                | 85% of prose                                         |
 
-Use real prose italics. Scale with Dynamic Type; titles wrap and containers grow. Garamond is for display titles. English interface labels use Urbanist; Chinese labels use the bundled serif cascade, including controls and dialogs. Keep native label sizes, primary/secondary colors, spacing, and dialog structure. Never apply the green theme to text labels. IPA and code retain their specialized faces.
+Use real prose italics. Scale with Dynamic Type; titles wrap and containers grow. Keep Urbanist for Latin controls, Garamond for Latin content titles, and the original Chinese/Japanese serif for ordinary text. Fixed Chinese display labels opt into 吉祥宋 separately. Keep native label sizes, semantic colors, spacing and dialog structure. IPA and code retain their specialized faces.
 
-Interface hierarchy uses regular weight and primary/secondary label colors. Headings, including empty-state headings such as 选择文库, use primary color. Supporting descriptions, metadata, and library language labels use secondary color. Preserve authored bold prose and dictionary headwords.
+Interface rows use 17 pt body text. Group headers use 15 pt semibold secondary text; footers use 13 pt secondary text. Keep these roles explicit so a container body font cannot override the hierarchy. Interface typography scales in the local Dynamic Type environment. Headings, including empty-state headings such as 选择文库, use primary color. Supporting descriptions, metadata, and library language labels use secondary color. Preserve authored bold prose and dictionary headwords.
 
 `LeximoryLayout` owns measurements: 20 pt page inset, 640 pt article/library measure and 880 pt gallery measure. Library cards use 46 pt outer and 32 pt inner corners. Phones use compact text rows with newspaper thumbnails. Wide galleries show a featured cover and up to five supporting entries in landscape or three in portrait. Archived libraries are compact chips.
 
@@ -70,7 +58,7 @@ Keep a compact translucent bottom bar with resource identity, Back, Forward, Hom
 
 Home restores the original four cards, including the phone grid, iPad overlap and tilt, original card palette and compact address-editing actions. Account is available from More’s app-wide section. Tightly spaced pins remain in the shared glass group below, followed by recent rows with domains or folder names and no heading. Keep the supplied day/night wallpapers, Urbanist English interface type and existing reading fonts. Wallpaper blur uses local coordinates so scaled previews stay aligned. See DESIGN.md for details.
 
-My Bookmarks is capped at the 640 pt article measure. Resource icons use the text’s saved emoji in the bundled monochrome face, with a resource symbol only when no emoji is available. My Bookmarks uses native grouped rows with inline expandable folders and indented resources. Folder headings retain their original 17 pt interface type; child resource titles use 16 pt editorial type, with smaller muted metadata. Keep recent reading, archive categorization, native context menus, and folder creation/renaming. App-authored UI calls libraries 文件夹. Keep folders language-specific, with outlined folder icons and muted, spatially separated metadata. Use native DisclosureGroup appearance and default accordion animation. Do not use dot separators as a substitute for hierarchy. Account is available from More.
+My Bookmarks is capped at the 640 pt article measure. Resource icons use the text’s saved emoji in the bundled monochrome face, with a resource symbol only when no emoji is available. My Bookmarks uses native grouped rows with inline expandable folders and indented resources. Folder and library names use 17 pt editorial type; child resource titles use 16 pt editorial type, with smaller muted metadata. Keep recent reading, archive categorization, native context menus, and folder creation/renaming. App-authored UI calls libraries 文件夹. Keep folders language-specific, with outlined folder icons and muted, spatially separated metadata. Use native DisclosureGroup appearance and default accordion animation. Do not use dot separators as a substitute for hierarchy. Account is available from More and is omitted while the current destination is Account.
 
 Scope cached content and recent reading to the account and library. On a library switch, show that library's cache or loading scene immediately. Superseded requests cannot replace it. Show cached content before refreshing; see [offline storage](../../docs/native-ios/offline-sync.md).
 
@@ -86,7 +74,7 @@ Static annotations highlight on touch-down and open on touch-up, anchored to the
 
 Dynamic definitions overlay the reader in a top-anchored card. Content determines height, capped at 78% of the viewport. Use 36 pt corners and the web's drawer easing. Drag upward or tap outside to dismiss; downward dragging resists. Streaming must preserve the reading viewport and offset.
 
-Annotation content uses prose typography, bold headwords and muted 释义/语源/同源词 labels. Defaults are 16 pt phone/17 pt iPad body and 20/22 pt headwords. Keep bookmark, editing and dictionary actions. Saved definitions reopen for editing with the canonical 词条、释义、语源、同源词 fields.
+Annotation content uses prose typography, bold headwords and muted 释义/语源/同源词 labels. Defaults are 16 pt phone/17 pt iPad body and 20/22 pt headwords. Keep bookmark, editing and dictionary actions. Dictionary links open inside the Leximory browser and return through workspace history. UIKit-hosted annotation popovers receive the workspace explicitly; standalone annotations present the internal browser. Saved definitions reopen for editing with the canonical 词条、释义、语源、同源词 fields.
 
 Dynamic lookup opens the tray immediately with a spinner and 正在理解语境; language resolution stays inside the same loading state. Spinner labels omit ellipses. The shared save control morphs through saving, a brief disabled checkmark confirmation at full contrast, and editing. Keep the ink circle and paper icon fully colored even when disabled; success has a short scale-and-turn flourish and symbols slide without fading. Reduce Motion changes symbols immediately. Browser destinations align with the prose in muted text, without a destination selector. Omit implementation explanations and empty website-setting sections.
 
@@ -96,7 +84,7 @@ Audio playback uses a compact glass capsule, at most 420 pt wide, with playback,
 
 EPUB currently uses bundled epub.js; PDF uses PDFKit. EPUB reading options offer 白纸、灰纸、暖纸、米纸 as diagonally split circular previews of their light and dark variants. Theme names are for VoiceOver only; omit visible captions and automatic-switch explanations. Remember the selected theme and follow system appearance; color changes preserve pagination. Preserve CFI positions, private bookmarks, selection context, authorization and quotas. Ebook bookmark content is not the complete book text.
 
-A center tap toggles controls without reflow. Running titles are centered and fade when controls appear. Use separate circular glass buttons for back, contents, bookmarks and settings, with 44 pt touch targets. Titles use 18 pt serif; page labels use 15 pt interface text. EPUB labels include chapter and page; PDF labels give page X of Y.
+A center tap toggles controls without reflow. Running titles are centered and fade when controls appear. Use separate circular glass buttons for back, contents, bookmarks and settings, with 44 pt touch targets. Displayed address labels use 18 pt editorial type; page labels use 15 pt interface text. EPUB labels include chapter and page; PDF labels give page X of Y.
 
 Empty outer gutter taps turn one page in reading order without animation. Swipes use flat, interruptible slides that track the finger and ease into completion or cancellation. Forward turns move the current page away; backward turns bring the previous page over it. The underneath page moves a short distance with proportional shading. Visible text stays stable throughout motion. Preserve the left-edge back gesture and Reduce Motion.
 

@@ -34,7 +34,7 @@ struct ArticleAudioButton: View {
                         .frame(width: 32, height: 32)
                         .background(LeximoryPalette.paper, in: Circle())
                         Text(fullAudioID != nil ? "朗读全文" : generating ? "正在生成全文录音" : "生成全文录音")
-                            .font(LeximoryTypography.interface(15))
+                            .interfaceFont(15)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(.leading, 6).padding(.trailing, 16).padding(.vertical, 6)
@@ -47,7 +47,7 @@ struct ArticleAudioButton: View {
                 .buttonStyle(.plain).disabled(generating || !online)
                 .accessibilityIdentifier(fullAudioID == nil ? "generate-article-audio" : "play-article-audio")
                 if let failure {
-                    Text(failure).font(LeximoryTypography.interface(14)).foregroundStyle(.secondary)
+                    Text(failure).interfaceFont(14).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }

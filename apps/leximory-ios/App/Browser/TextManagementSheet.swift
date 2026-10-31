@@ -64,7 +64,7 @@ struct TextManagementSheet: View {
                                 .accessibilityIdentifier("text-edit-title")
                             TextField("封面表情", text: Binding(get: { draft?.emoji ?? "" }, set: { draft?.emoji = $0.isEmpty ? nil : $0 }))
                         } footer: {
-                            if !emojiValid { Text("封面请选择一个表情，或留空。") }
+                            if !emojiValid { Text("封面请选择一个表情，或留空。").interfaceFont(13, style: .footnote) }
                         }
                         topicSection
                         if source.text.format == "article" {
@@ -78,7 +78,7 @@ struct TextManagementSheet: View {
                             Button(source.text.format == "ebook" ? "删除电子书" : "删除文章", role: .destructive) { confirmingDelete = true }
                                 .disabled(unavailable).accessibilityIdentifier("text-delete")
                         } footer: {
-                            if removalFailed { Text("删除未能完成，请重试。").accessibilityAddTraits(.updatesFrequently) }
+                            if removalFailed { Text("删除未能完成，请重试。").interfaceFont(13, style: .footnote).accessibilityAddTraits(.updatesFrequently) }
                         }
                     }.disabled(busy).scrollDismissesKeyboard(.interactively)
                 } else if loading {
@@ -89,7 +89,7 @@ struct TextManagementSheet: View {
                     }
                 }
             }
-            .font(LeximoryTypography.interface(17))
+            .interfaceFont(17)
             .navigationTitle("编辑").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if path.isEmpty {
@@ -138,7 +138,7 @@ struct TextManagementSheet: View {
         }.leximorySheetStyle()
     }
     private var topicSection: some View {
-        Section("标签") {
+        Section {
             ForEach($topics) { $topic in
                 HStack {
                     TextField("标签名称", text: $topic.value)
@@ -158,7 +158,7 @@ struct TextManagementSheet: View {
                 topics.append(topic); focusedTopic = topic.id
             }.disabled(topics.count >= 32 || topics.contains { $0.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
                 .accessibilityIdentifier("text-topic-add")
-        }
+        } header: { LeximorySectionHeader("标签") }
     }
     private var ebookSection: some View {
         Section {
@@ -166,7 +166,7 @@ struct TextManagementSheet: View {
                 .disabled(unavailable).accessibilityIdentifier("text-replace-ebook")
             if let file { Text(file.name).foregroundStyle(.secondary) }
         } footer: {
-            if let fileError { Text(fileError).accessibilityAddTraits(.updatesFrequently) }
+            if let fileError { Text(fileError).interfaceFont(13, style: .footnote).accessibilityAddTraits(.updatesFrequently) }
         }
     }
     private func saveFeedback(_ issue: TextSaveIssue) -> some View {
@@ -179,7 +179,7 @@ struct TextManagementSheet: View {
                 else { Task { await save() } }
             }.disabled(unavailable).buttonStyle(.bordered).controlSize(.small)
                 .lineLimit(1).fixedSize()
-        }.font(LeximoryTypography.interface(14))
+        }.interfaceFont(14)
             .padding(.horizontal, 20).padding(.vertical, 12).background(.regularMaterial)
             .accessibilityIdentifier("text-save-feedback").accessibilityAddTraits(.updatesFrequently)
     }

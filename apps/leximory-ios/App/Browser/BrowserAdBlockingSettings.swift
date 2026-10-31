@@ -37,7 +37,7 @@ struct BrowserAdBlockingSettings: View {
                     Toggle("拦截广告", isOn: $draft.enabled)
                         .accessibilityIdentifier("ad-blocking-enabled")
                 } footer: {
-                    Text("减少网页中的广告与跟踪。")
+                    Text("减少网页中的广告与跟踪。").interfaceFont(13, style: .footnote)
                 }
                 if let host {
                     Section {
@@ -46,7 +46,7 @@ struct BrowserAdBlockingSettings: View {
                             set: { if $0 { draft.excludedHosts.remove(host) } else { draft.excludedHosts.insert(host) } }
                         )).disabled(!draft.enabled)
                             .accessibilityIdentifier("ad-blocking-site")
-                    } header: { Text(host).textCase(nil) }
+                    } header: { LeximorySectionHeader(host) }
                 }
                 if !draft.excludedHosts.isEmpty {
                     Section {
@@ -68,6 +68,7 @@ struct BrowserAdBlockingSettings: View {
                 if changed, pageURL != nil {
                     Section {} footer: {
                         Text(reloadsPage ? "更改后将重新载入当前网页，请先保存网页中填写的内容。" : "更改将在下次打开网页时生效。")
+                            .interfaceFont(13, style: .footnote)
                     }
                 }
                 if let error {
@@ -83,7 +84,7 @@ struct BrowserAdBlockingSettings: View {
                     }
                 }
             }
-            .font(LeximoryTypography.interface(17, style: .body))
+            .interfaceFont(17, style: .body)
             .disabled(applying)
             .navigationTitle("广告拦截").navigationBarTitleDisplayMode(.inline)
             .toolbar {

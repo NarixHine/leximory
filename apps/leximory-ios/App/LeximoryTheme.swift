@@ -16,17 +16,17 @@ struct LeximoryUnavailableView<Actions: View>: View {
     var body: some View {
         ContentUnavailableView {
             Label {
-                Text(title).font(LeximoryTypography.interface(24, style: .title2))
+                Text(title).editorialFont(24, relativeTo: .title2)
                     .foregroundStyle(.primary)
             } icon: {
                 Image(systemName: systemImage)
             }
         } description: {
             if let message {
-                Text(message).font(LeximoryTypography.interface(17)).foregroundStyle(.secondary)
+                Text(message).interfaceFont(17).foregroundStyle(.secondary)
             }
         } actions: {
-            actions.font(LeximoryTypography.interface(17))
+            actions.interfaceFont(17)
         }
     }
 }
@@ -78,7 +78,7 @@ struct ReadingLoadingIndicator: View {
         }
     }
     private var caption: some View {
-        Text(label).font(LeximoryTypography.interface(17))
+        Text(label).interfaceFont(17)
             .foregroundStyle(LeximoryPalette.muted)
             .fixedSize(horizontal: true, vertical: false)
     }

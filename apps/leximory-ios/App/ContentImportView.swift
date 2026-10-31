@@ -48,7 +48,7 @@ struct ContentImportView: View {
                             .focused($focusedField, equals: "网址").submitLabel(.go)
                             .onSubmit { focusedField = nil; if !extracted { Task { await submit(annotate: true) } } }
                             .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
-                            .font(LeximoryTypography.interface(17)).foregroundStyle(LeximoryPalette.ink).padding(16)
+                            .interfaceFont(17).foregroundStyle(LeximoryPalette.ink).padding(16)
                             .background(LeximoryPalette.paper, in: RoundedRectangle(cornerRadius: 18))
                             .accessibilityLabel("网址")
                             .accessibilityIdentifier("import-网址")
@@ -58,23 +58,23 @@ struct ContentImportView: View {
                     if isText {
                         input("文本", text: $content, lines: 8...20)
                         if content.utf16.count > lengthLimit {
-                            Text("文本长度超过 \(lengthLimit) 字符").font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted)
+                            Text("文本长度超过 \(lengthLimit) 字符").interfaceFont(14).foregroundStyle(LeximoryPalette.muted)
                         }
                         DisclosureGroup("选项") {
                             if library.language != "Chinese" { Toggle("仅生成词摘", isOn: $onlyComments) }
                             Toggle("AI 生成标题", isOn: $generateTitle)
-                        }.font(LeximoryTypography.interface(15)).foregroundStyle(LeximoryPalette.muted)
+                        }.interfaceFont(15).foregroundStyle(LeximoryPalette.muted)
                     } else if kind == 1 {
                         Button { choosingFile = true } label: {
                             VStack(spacing: 14) {
                                 Image(systemName: "doc.badge.arrow.up").font(.system(size: 32, weight: .light))
-                                Text(ebook?.name ?? "上传电子书").font(LeximoryTypography.interface(17)).multilineTextAlignment(.center)
-                                if let ebook { Text(ByteCountFormatter.string(fromByteCount: Int64(ebook.data.count), countStyle: .file)).font(LeximoryTypography.interface(13)) }
+                                Text(ebook?.name ?? "上传电子书").interfaceFont(17).multilineTextAlignment(.center)
+                                if let ebook { Text(ByteCountFormatter.string(fromByteCount: Int64(ebook.data.count), countStyle: .file)).interfaceFont(13) }
                             }.foregroundStyle(LeximoryPalette.muted).frame(maxWidth: .infinity, minHeight: 180)
                                 .background(LeximoryPalette.cover, in: RoundedRectangle(cornerRadius: 28))
                         }.buttonStyle(.plain).accessibilityLabel("选择 EPUB 或 PDF")
                     }
-                    if let error { Text(error).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted) }
+                    if let error { Text(error).interfaceFont(14).foregroundStyle(LeximoryPalette.muted) }
                     importActions
                 }.padding(24).frame(maxWidth: 580).frame(maxWidth: .infinity)
                     .disabled(busy || uncertain)

@@ -17,6 +17,7 @@ private enum BrowserSaveFailure {
 }
 
 struct BrowserWorkspaceView: View {
+    @ScaledMetric(relativeTo: .subheadline) private var addressTextSize = LeximoryTypography.addressSize
     let client: MobileClient
     let playback: PlaybackController
     var session: AccountSession?
@@ -48,7 +49,6 @@ struct BrowserWorkspaceView: View {
     @State private var chromeHeight: CGFloat = 64
     @State private var completionNotice = false
     @State private var clearingData = false
-    @ScaledMetric(relativeTo: .subheadline) private var addressTextSize = LeximoryTypography.addressSize
     @Environment(\.nativeSync) private var sync
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -116,7 +116,7 @@ struct BrowserWorkspaceView: View {
             .overlay(alignment: .top) {
                 if completionNotice || clipboardNotice != nil {
                     Label(clipboardNotice != nil ? "不是有效网页链接" : "预注释已完成", systemImage: clipboardNotice != nil ? "link" : "sparkles")
-                        .font(LeximoryTypography.interface(15, style: .subheadline)).padding(.horizontal, 18).padding(.vertical, 12)
+                        .interfaceFont(15, style: .subheadline).padding(.horizontal, 18).padding(.vertical, 12)
                         .glassEffect(.regular, in: .capsule).padding(.top, 16)
                         .transition(.opacity.combined(with: .scale(scale: reduceMotion ? 1 : 0.94)))
                         .allowsHitTesting(false).accessibilityAddTraits(.updatesFrequently)
@@ -369,7 +369,7 @@ struct BrowserWorkspaceView: View {
                             .accessibilityLabel(workspace.browser.isPDF ? "保存 PDF" : "保存网页").accessibilityIdentifier("browser-magic-save")
                             .popover(isPresented: Binding(get: { saveError != nil }, set: { if !$0 { saveError = nil } })) {
                                 VStack(alignment: .leading, spacing: 16) {
-                                    Text(saveError?.message ?? "").font(LeximoryTypography.interface(15))
+                                    Text(saveError?.message ?? "").interfaceFont(15)
                                     if saveError?.canRetry == true { Button("重试") { Task { await extract() } } }
                                 }.padding(20).frame(maxWidth: 320).presentationCompactAdaptation(.popover)
                             }
@@ -459,8 +459,10 @@ struct BrowserWorkspaceView: View {
                 }
             }
             Section {
-                Button("账号", systemImage: "person.crop.circle") { finishEditing(); workspace.visit(.account) }
-                    .accessibilityIdentifier("browser-account")
+                if !workspace.current.isAccount {
+                    Button("账号", systemImage: "person.crop.circle") { finishEditing(); workspace.visit(.account) }
+                        .accessibilityIdentifier("browser-account")
+                }
                 Button("文章注释队列", systemImage: "sparkles") { activitySheet = true }
                 Button("广告拦截", systemImage: "hand.raised") { adBlockingSettings = true }
                     .accessibilityIdentifier("browser-ad-blocking")
@@ -491,7 +493,7 @@ struct BrowserWorkspaceView: View {
                 .glassEffect(chromeGlass, in: .circle)
                 .overlay(alignment: .topTrailing) {
                     if workspace.readyCount > 0 {
-                        Text(workspace.readyCount > 99 ? "99+" : "\(workspace.readyCount)").font(LeximoryTypography.interface(11, semibold: true, style: .caption2))
+                        Text(workspace.readyCount > 99 ? "99+" : "\(workspace.readyCount)").interfaceFont(11, semibold: true, style: .caption2)
                             .foregroundStyle(.white).padding(.horizontal, 5).frame(minWidth: 18, minHeight: 18).background(.red, in: .capsule)
                     } else if workspace.hasPending { Circle().fill(.red).frame(width: 8, height: 8).padding(3) }
                 }
@@ -589,11 +591,11 @@ private struct BrowserVocabularyView: View {
             if let selected { VocabularyLibraryView(library: selected.preview, client: workspace.client, closeCorpus: { self.selected = nil }) }
             else {
                 List {
-                    Section("已存词汇") {
+                    Section {
                         ForEach(workspace.libraries.filter(\.owned)) { library in
                             Button { selected = library } label: { BrowserFolderLabel(library: library) }.foregroundStyle(.primary)
                         }
-                    }
+                    } header: { LeximorySectionHeader("已存词汇") }
                 }.listStyle(.insetGrouped)
             }
         }.safeAreaPadding(.bottom, chromeHeight)

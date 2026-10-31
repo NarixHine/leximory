@@ -39,14 +39,14 @@ struct VocabularyLibraryView: View {
     private func timeline(columns: Int) -> some View {
         LazyVStack(alignment: .leading, spacing: 22) {
             ForEach(days, id: \.self) { day in
-                if !day.isEmpty { Text(dateLabel(day)).font(LeximoryTypography.interface(13)).foregroundStyle(.secondary) }
+                if !day.isEmpty { Text(dateLabel(day)).interfaceFont(13).foregroundStyle(.secondary) }
                 wordGrid(words.filter { dateKey($0) == day }, columns: columns)
             }
-            if loading { HStack(spacing: 10) { ProgressView(); Text("正在加载词汇").font(LeximoryTypography.interface(15)) }.frame(maxWidth: .infinity) }
+            if loading { HStack(spacing: 10) { ProgressView(); Text("正在加载词汇").interfaceFont(15) }.frame(maxWidth: .infinity) }
             if cursor != nil && !loading {
                 Button("更多", systemImage: "chevron.down") { Task { await load(reset: false) } }.frame(maxWidth: .infinity, minHeight: 44)
             }
-            if let error { Text(error).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted) }
+            if let error { Text(error).interfaceFont(14).foregroundStyle(LeximoryPalette.muted) }
             if words.isEmpty && error != nil { Button("重试") { Task { await load(reset: true) } } }
         }
     }
@@ -126,9 +126,9 @@ struct CorpusWordTray: View {
                         if let content = word.fields.etymology { section("语源", content) }
                         if let content = word.fields.cognates { section("同源词", content) }
                         if let error = editor.error {
-                            Text(error).font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
+                            Text(error).interfaceFont(13).foregroundStyle(LeximoryPalette.muted)
                         }
-                        if let deletionError { Text(deletionError).font(LeximoryTypography.interface(13)).foregroundStyle(.secondary) }
+                        if let deletionError { Text(deletionError).interfaceFont(13).foregroundStyle(.secondary) }
                         HStack(spacing: 16) {
                             if library.owned && (verifiedWord?.protected ?? word.protected) != true {
                                 Button("编辑词汇", systemImage: "pencil") { editing = true }
@@ -143,10 +143,7 @@ struct CorpusWordTray: View {
                                     .accessibilityIdentifier("review-delete-word")
                             }
                             if let dictionaryURL {
-                                Link(destination: dictionaryURL) {
-                                    Image(systemName: "arrow.up.right.square").font(.system(size: 20))
-                                        .frame(width: 44, height: 44).foregroundStyle(LeximoryPalette.muted)
-                                }.accessibilityLabel("在词典中查看")
+                                DictionaryLink(url: dictionaryURL, client: client) { dismiss() }
                             }
                         }
                     }
@@ -198,7 +195,7 @@ struct CorpusWordTray: View {
     }
     private func section(_ label: String, _ content: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(label).font(LeximoryTypography.interface(14)).foregroundStyle(.secondary)
+            Text(label).interfaceFont(14).foregroundStyle(.secondary)
             AnnotationMarkdownText(content: content, size: 17, language: library.language)
         }
     }

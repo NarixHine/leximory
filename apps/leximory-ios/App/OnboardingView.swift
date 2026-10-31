@@ -55,7 +55,7 @@ struct OnboardingView: View {
         .safeAreaInset(edge: .bottom) {
             Button(action: start) {
                 HStack(spacing: 10) {
-                    Text("开始学习").font(LeximoryTypography.interface(17))
+                    Text("开始学习").interfaceFont(17)
                     Image(systemName: "arrow.right").font(.body.weight(.medium))
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 18)
@@ -96,7 +96,7 @@ struct OnboardingView: View {
                 .tracking(-1.1).foregroundStyle(LeximoryPalette.ink)
                 .accessibilityAddTraits(.isHeader)
             Text("语言学地学语言")
-                .editorialFont(20, relativeTo: .subheadline, language: "Chinese")
+                .displayFont(20, relativeTo: .subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

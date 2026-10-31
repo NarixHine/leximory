@@ -14,10 +14,10 @@ struct LeximoryApp: App {
             }
             preferences.set(true, forKey: "ebook.typography.compact.v1")
         }
-        let attributes: [NSAttributedString.Key: Any] = [.font: LeximoryTypography.interfaceUI(17)]
+        let attributes: [NSAttributedString.Key: Any] = [.font: LeximoryTypography.displayUI(17)]
         UINavigationBar.appearance().titleTextAttributes = attributes
-        UINavigationBar.appearance().largeTitleTextAttributes = [.font: LeximoryTypography.editorialUI(34, language: "Chinese")]
-        UIBarButtonItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.interfaceUI(16)], for: .normal)
+        UINavigationBar.appearance().largeTitleTextAttributes = [.font: LeximoryTypography.displayUI(34)]
+        UIBarButtonItem.appearance().setTitleTextAttributes([.font: LeximoryTypography.interfaceUI(17)], for: .normal)
         for state in [UIControl.State.normal, .selected] {
             UISegmentedControl.appearance().setTitleTextAttributes([.font: LeximoryTypography.interfaceUI(15)], for: state)
         }
@@ -26,7 +26,7 @@ struct LeximoryApp: App {
                              (tabAppearance.inlineLayoutAppearance, CGFloat(15)),
                              (tabAppearance.compactInlineLayoutAppearance, CGFloat(15))] {
             for state in [item.normal, item.selected] {
-                state.titleTextAttributes = [.font: LeximoryTypography.editorialUI(size, language: "Chinese")]
+                state.titleTextAttributes = [.font: LeximoryTypography.interfaceUI(size)]
             }
         }
         UITabBar.appearance().standardAppearance = tabAppearance
@@ -36,7 +36,8 @@ struct LeximoryApp: App {
     var body: some Scene {
         WindowGroup {
             AppRootView(fixturePlayback: playback)
-                .font(LeximoryTypography.interface(17))
+                .interfaceFont(17)
+                .tint(.blue)
                 .preferredColorScheme(previewColorScheme)
         }
     }

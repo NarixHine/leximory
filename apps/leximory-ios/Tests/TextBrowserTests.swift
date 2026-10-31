@@ -72,6 +72,7 @@ import SwiftUI
         field.sendActions(for: .editingChanged)
         try await Task.sleep(for: .milliseconds(30))
         #expect(field.font == LeximoryTypography.addressUI)
+        #expect(field.font?.fontName == "EBGaramond-Regular")
         #expect(drafts.last == "river猫忆")
         _ = field.delegate?.textFieldShouldReturn?(field)
         #expect(submitted == "river猫忆")

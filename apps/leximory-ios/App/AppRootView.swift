@@ -69,7 +69,7 @@ struct AppRootView: View {
                             if let fixtureClient { TextBrowserScreen(client: fixtureClient) }
                             else { LeximoryUnavailableView("浏览网页", systemImage: "globe") }
                         } account: {
-                            Text("账号").font(LeximoryTypography.interface(24))
+                            Text("账号").displayFont(24, relativeTo: .title2)
                         }
                     } else { fixtureBrowser }
                 } else {
@@ -149,9 +149,9 @@ struct SignInView: View {
             VStack(alignment: .leading, spacing: 28) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("继续语言学习之旅")
-                        .font(LeximoryTypography.interface(24, style: .title2)).foregroundStyle(.primary).tracking(-0.3).lineSpacing(3)
+                        .displayFont(24, relativeTo: .title2).foregroundStyle(.primary).tracking(-0.3).lineSpacing(3)
                 }
-                if let notice { Text(notice).font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.secondary) }
+                if let notice { Text(notice).interfaceFont(15, style: .subheadline).foregroundStyle(.secondary) }
                 VStack(spacing: 16) {
                     TextField("邮箱", text: $email).textContentType(.username).keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never).autocorrectionDisabled().accessibilityIdentifier("sign-in-email")
@@ -159,8 +159,8 @@ struct SignInView: View {
                     SecureField("密码", text: $password).textContentType(.password).accessibilityIdentifier("sign-in-password")
                 }.padding(20).background(LeximoryPalette.shell, in: RoundedRectangle(cornerRadius: 22))
                 Link("忘记密码？", destination: session.client.webURL.appending(path: "forgot-password"))
-                    .font(LeximoryTypography.interface(15, style: .subheadline))
-                if let error { Text(error).font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.red).accessibilityAddTraits(.updatesFrequently) }
+                    .interfaceFont(15, style: .subheadline)
+                if let error { Text(error).interfaceFont(15, style: .subheadline).foregroundStyle(.red).accessibilityAddTraits(.updatesFrequently) }
                 Button {
                     submitting = true; error = nil
                     Task {
@@ -172,7 +172,7 @@ struct SignInView: View {
                 } label: {
                     HStack {
                         if submitting { ProgressView().tint(LeximoryPalette.paper) }
-                        Text(submitting ? "登录中" : "登录").font(LeximoryTypography.interface(17))
+                        Text(submitting ? "登录中" : "登录").interfaceFont(17)
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 17)
                     .foregroundStyle(LeximoryPalette.paper)

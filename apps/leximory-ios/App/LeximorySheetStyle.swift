@@ -2,9 +2,8 @@ import SwiftUI
 
 extension View {
     func leximorySheetStyle() -> some View {
-        font(LeximoryTypography.interface(17))
-            .tint(.primary)
-            .scrollContentBackground(.hidden)
+        interfaceFont(17)
+            .tint(.blue)
             .presentationDragIndicator(.visible)
     }
 }

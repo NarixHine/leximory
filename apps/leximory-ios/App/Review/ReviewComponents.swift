@@ -11,9 +11,6 @@ enum ReviewStyle {
     static let todayBorder = color(0xF3F4F6, 0x27272A)
     static let chart = color(0x6B7280, 0xA1A1AA)
 
-    static func handwriting(_ size: CGFloat) -> Font {
-        Font(UIFontMetrics(forTextStyle: .title3).scaledFont(for: LeximoryTypography.face("LXGWWenKaiScreen", size: size)))
-    }
     static func mono(_ size: CGFloat) -> Font {
         Font(UIFontMetrics(forTextStyle: .caption1).scaledFont(for: LeximoryTypography.face("SpaceMono-Regular", size: size)))
     }

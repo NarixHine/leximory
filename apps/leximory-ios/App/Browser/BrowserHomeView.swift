@@ -114,18 +114,26 @@ struct BrowserHomeView: View {
             }.padding(.horizontal, folded ? 0 : 8)
         }
     }
+    private enum HomeCardTitle: String {
+        case browse = "浏览网页"
+        case clipboard = "跳转到剪贴板"
+        case bookmarks = "我的书签"
+        case ebook = "打开电子书"
+        case review = "每日复习"
+    }
+
     @ViewBuilder private func homeCardButtons(squares: Bool, folded: Bool, grid: Bool) -> some View {
-        card(compact ? "跳转到剪贴板" : "浏览网页", symbol: "globe.asia.australia.fill", color: tone(0xE0EEDD, 0x1D2925), accent: tone(0x98C9A3, 0x98C9A3), label: tone(0x2D493F, 0xDDE7C7), angle: -7, folded: folded, square: squares, grid: grid, action: compact ? paste : browse).accessibilityIdentifier("browser-browse")
-        card("我的书签", symbol: "bookmark.fill", color: tone(0xDDEFE6, 0x1D2925), accent: tone(0xBFD8BD, 0xBFD8BD), label: tone(0x2D493F, 0xDDE7C7), angle: 5, folded: folded, square: squares, grid: grid, action: bookmarks).accessibilityIdentifier("browser-bookmarks")
-        card("打开电子书", symbol: "book.closed.fill", color: tone(0xDCEEF2, 0x1D2930), accent: tone(0xB5D2D6, 0xA5D1DA), label: tone(0x2D493F, 0xD2E6EC), angle: -4, folded: folded, square: squares, grid: grid, action: ebook).accessibilityIdentifier("browser-ebook")
-        card("每日复习", symbol: "leaf.fill", color: tone(0xE1E9F8, 0x242B38), accent: tone(0xB2C4DB, 0xB1C3E5), label: tone(0x2D493F, 0xD7E1F3), angle: 3, folded: folded, square: squares, grid: grid, action: review)
+        card(compact ? .clipboard : .browse, symbol: "globe.asia.australia.fill", color: tone(0xE0EEDD, 0x1D2925), accent: tone(0x98C9A3, 0x98C9A3), label: tone(0x2D493F, 0xDDE7C7), angle: -7, folded: folded, square: squares, grid: grid, action: compact ? paste : browse).accessibilityIdentifier("browser-browse")
+        card(.bookmarks, symbol: "bookmark.fill", color: tone(0xDDEFE6, 0x1D2925), accent: tone(0xBFD8BD, 0xBFD8BD), label: tone(0x2D493F, 0xDDE7C7), angle: 5, folded: folded, square: squares, grid: grid, action: bookmarks).accessibilityIdentifier("browser-bookmarks")
+        card(.ebook, symbol: "book.closed.fill", color: tone(0xDCEEF2, 0x1D2930), accent: tone(0xB5D2D6, 0xA5D1DA), label: tone(0x2D493F, 0xD2E6EC), angle: -4, folded: folded, square: squares, grid: grid, action: ebook).accessibilityIdentifier("browser-ebook")
+        card(.review, symbol: "leaf.fill", color: tone(0xE1E9F8, 0x242B38), accent: tone(0xB2C4DB, 0xB1C3E5), label: tone(0x2D493F, 0xD7E1F3), angle: 3, folded: folded, square: squares, grid: grid, action: review)
             .accessibilityIdentifier("browser-review")
     }
     private func tone(_ light: UInt32, _ dark: UInt32) -> Color {
         let value = colorScheme == .dark ? dark : light
         return Color(red: Double((value >> 16) & 255) / 255, green: Double((value >> 8) & 255) / 255, blue: Double(value & 255) / 255)
     }
-    private func card(_ title: String, symbol: String, color: Color, accent: Color, label: Color, angle: Double, folded: Bool, square: Bool, grid: Bool, action: @escaping () -> Void) -> some View {
+    private func card(_ title: HomeCardTitle, symbol: String, color: Color, accent: Color, label: Color, angle: Double, folded: Bool, square: Bool, grid: Bool, action: @escaping () -> Void) -> some View {
         let radius: CGFloat = folded ? 22 : grid ? 24 : 30
         return Button(action: action) {
             cardLabel(title, symbol: symbol,
@@ -134,7 +142,7 @@ struct BrowserHomeView: View {
                 .foregroundStyle(colorScheme == .light ? LeximoryPalette.ink : label)
                 .background { cardSurface(color: color, tint: accent, radius: radius) }
                 .contentShape(RoundedRectangle(cornerRadius: radius))
-        }.buttonStyle(BrowserCardButtonStyle()).accessibilityLabel(title)
+        }.buttonStyle(BrowserCardButtonStyle()).accessibilityLabel(title.rawValue)
             .matchedGeometryEffect(id: symbol, in: cardNamespace).rotationEffect(.degrees(folded || grid || typeSize.isAccessibilitySize ? 0 : angle))
     }
     @ViewBuilder private func cardSurface(color: Color, tint: Color, radius: CGFloat) -> some View {
@@ -167,11 +175,11 @@ struct BrowserHomeView: View {
             }
         }
     }
-    @ViewBuilder private func cardLabel(_ title: String, symbol: String, iconColor: Color, folded: Bool, square: Bool, grid: Bool) -> some View {
+    @ViewBuilder private func cardLabel(_ title: HomeCardTitle, symbol: String, iconColor: Color, folded: Bool, square: Bool, grid: Bool) -> some View {
         if square && folded {
             VStack(spacing: 8) {
                 Image(systemName: symbol).font(.system(size: 22, weight: .medium)).foregroundStyle(iconColor)
-                Text(title).font(LeximoryTypography.interface(17, style: .headline))
+                Text(title.rawValue).displayFont(17, relativeTo: .headline)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             }.padding(.horizontal, 12).padding(.vertical, 12)
                 .frame(maxWidth: .infinity, minHeight: 96)
@@ -185,7 +193,7 @@ struct BrowserHomeView: View {
                         .frame(width: 32, height: 32, alignment: .trailing)
                 }
                 Spacer(minLength: 12)
-                Text(title).font(LeximoryTypography.interface(grid ? 19 : 24, style: grid ? .headline : .title2))
+                Text(title.rawValue).displayFont(grid ? 19 : 24, relativeTo: grid ? .headline : .title2)
                     .lineLimit(1).minimumScaleFactor(0.65).allowsTightening(true)
                     .fixedSize(horizontal: false, vertical: true)
             }.padding(grid ? 18 : 20)
@@ -194,7 +202,7 @@ struct BrowserHomeView: View {
         } else {
             HStack(spacing: 20) {
                 Image(systemName: symbol).font(.system(size: folded ? 22 : 26, weight: .medium)).foregroundStyle(iconColor).frame(width: 44)
-                Text(title).font(LeximoryTypography.interface(folded ? 17 : 20, style: folded ? .headline : .title2))
+                Text(title.rawValue).displayFont(folded ? 17 : 20, relativeTo: folded ? .headline : .title2)
                 Spacer(minLength: 0)
                 Image(systemName: "arrow.up.right").font(.body.weight(.medium)).foregroundStyle(iconColor)
             }.padding(.horizontal, 24).padding(.vertical, folded ? 12 : 22)
@@ -219,7 +227,7 @@ struct BrowserHomeView: View {
                     .frame(width: 40, height: 40)
                     .accessibilityHidden(true)
             }
-            Text(title).font(LeximoryTypography.interface(13, style: .footnote))
+            Text(title).interfaceFont(13, style: .footnote)
                 .foregroundStyle(label)
                 .multilineTextAlignment(.center)
                 .lineLimit(isPin || !typeSize.isAccessibilitySize ? 1 : nil).truncationMode(.tail)
@@ -343,7 +351,7 @@ struct BrowserHomeView: View {
     }
 
     private func recentByline(_ byline: String, identity: String) -> some View {
-        Text(byline).font(LeximoryTypography.interface(12, style: .caption1))
+        Text(byline).interfaceFont(12, style: .caption1)
             .foregroundStyle(.tertiary).lineLimit(1).truncationMode(.tail)
             .accessibilityIdentifier("browser-recent-byline-" + identity)
     }
@@ -480,19 +488,19 @@ struct BrowserPinEditor: View {
                 Section {
                     TextField("名称", text: $title)
                 } header: {
-                    Text("名称").foregroundStyle(.primary)
+                    LeximorySectionHeader("名称")
                 }
                 if isWebpage {
                     Section {
                         TextField("网址", text: $address).keyboardType(.URL)
                             .textInputAutocapitalization(.never).autocorrectionDisabled()
                     } header: {
-                        Text("网址").foregroundStyle(.primary)
+                        LeximorySectionHeader("网址")
                     }
                 }
             }
             .scrollBounceBehavior(.basedOnSize)
-            .font(LeximoryTypography.interface(17, style: .body))
+            .interfaceFont(17, style: .body)
             .navigationTitle("主页快捷方式").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }

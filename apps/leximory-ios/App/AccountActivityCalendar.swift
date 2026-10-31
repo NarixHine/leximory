@@ -27,19 +27,19 @@ struct AccountActivityCalendar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack {
-                Label("入库词汇", systemImage: "book.closed").font(LeximoryTypography.interface(14, style: .subheadline))
+                Label("入库词汇", systemImage: "book.closed").interfaceFont(15, semibold: true, style: .subheadline).foregroundStyle(.secondary)
                 Spacer()
                 Text(today.formatted(.dateTime.year().month().locale(Locale(identifier: "zh_CN")))).foregroundStyle(.secondary)
-                    .font(LeximoryTypography.interface(13, style: .caption1))
+                    .interfaceFont(13, style: .footnote)
             }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 7), spacing: 6) {
                 ForEach(["日", "一", "二", "三", "四", "五", "六"], id: \.self) { name in
-                    Text(name).foregroundStyle(.secondary).font(LeximoryTypography.interface(12, style: .caption1)).accessibilityHidden(true)
+                    Text(name).foregroundStyle(.secondary).interfaceFont(12, style: .caption1).accessibilityHidden(true)
                 }
                 ForEach(days) { day in
                     if let number = day.number {
                         let colors = AccountHeatmapPalette.colors(for: day.count)
-                        Text("\(number)").font(LeximoryTypography.interface(13, style: .caption1)).monospacedDigit()
+                        Text("\(number)").interfaceFont(13, style: .footnote).monospacedDigit()
                             .frame(maxWidth: .infinity, minHeight: 34)
                             .foregroundStyle(colors.foreground)
                             .background(colors.background, in: .rect(cornerRadius: 8))
@@ -54,8 +54,8 @@ struct AccountActivityCalendar: View {
                     RoundedRectangle(cornerRadius: 3).fill(AccountHeatmapPalette.colors(for: count).background).frame(width: 10, height: 10)
                 }
                 Text("多")
-            }.font(LeximoryTypography.interface(11, style: .caption2)).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .trailing).accessibilityHidden(true)
-        }.padding(20).background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
+            }.interfaceFont(11, style: .caption2).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .trailing).accessibilityHidden(true)
+        }.padding(20).background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
     }
     private struct Day: Identifiable { let id: String; let number: Int?; let count: Int? }
 }

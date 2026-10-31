@@ -12,13 +12,13 @@ struct PlaybackBar: View {
             switch playback.state {
             case .idle: EmptyView()
             case .loading:
-                HStack(spacing: 10) { ProgressView(); Text("正在加载录音").font(LeximoryTypography.interface(14)) }
+                HStack(spacing: 10) { ProgressView(); Text("正在加载录音").interfaceFont(14) }
                     .frame(maxWidth: .infinity)
             case .unavailable:
                 Label("录音暂不可用", systemImage: "speaker.slash")
-                    .font(LeximoryTypography.interface(14)).frame(maxWidth: .infinity)
+                    .interfaceFont(14).frame(maxWidth: .infinity)
             case .failed(_, let message):
-                Text(message).font(LeximoryTypography.interface(14))
+                Text(message).interfaceFont(14)
                     .frame(maxWidth: .infinity)
             case .ready(_, let elapsed, let duration, let playing):
                 Button {
@@ -58,7 +58,7 @@ struct PlaybackBar: View {
                 Spacer(minLength: 8)
                 Text(totalTime)
             }
-            .font(LeximoryTypography.interface(12).monospacedDigit())
+            .interfaceFont(12).monospacedDigit()
             .foregroundStyle(LeximoryPalette.muted)
             .accessibilityHidden(true)
         }

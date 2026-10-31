@@ -25,25 +25,28 @@ struct BrowserPreferencesView: View {
                         Picker("收藏至", selection: $choice) {
                             Text("相应语言的词汇仓库").tag(String?.none)
                             ForEach(libraries) { library in
-                                Text(library.name).tag(Optional(library.id))
+                                Text(library.name).editorialFont(17, relativeTo: .body, language: library.preview.language).tag(Optional(library.id))
                             }
                         }
                         Toggle("此网站总是存于这里", isOn: $remember).disabled(choice == nil)
-                    } header: { Text(domain) }
+                    } header: { LeximorySectionHeader(domain) }
                 }
                 if !rules.isEmpty {
-                    Section("已设置的网站") {
+                    Section {
                         ForEach(rules) { rule in
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(rule.domain)
-                                Text(libraries.first(where: { $0.id == rule.libraryId })?.name ?? "文库已不可用")
-                                    .font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
+                                if let library = libraries.first(where: { $0.id == rule.libraryId }) {
+                                    Text(library.name).editorialFont(13, relativeTo: .footnote, language: library.preview.language).foregroundStyle(.secondary)
+                                } else {
+                                    Text("文库已不可用").interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
+                                }
                             }
                             .swipeActions {
                                 Button("删除", role: .destructive) { Task { await remove(rule) } }.disabled(busy)
                             }
                         }
-                    }
+                    } header: { LeximorySectionHeader("已设置的网站") }
                 }
                 if busy { ProgressView() }
                 if let error { Text(error).foregroundStyle(.secondary) }
@@ -129,13 +132,13 @@ struct BrowserBookmarkSheet: View {
                             }
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(library.name)
-                                Text(library.preview.localizedLanguage).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
+                                Text(library.name).editorialFont(17, relativeTo: .body, language: library.preview.language)
+                                Text(library.preview.localizedLanguage).interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
                             }
                         }.foregroundStyle(.primary).disabled(busy)
                     }
                     if libraries.isEmpty && !loading { Text("请先创建一个文库。").foregroundStyle(.secondary) }
-                } header: { Text("选择文库") }
+                } header: { LeximorySectionHeader("选择文库") }
                 if loading || busy { ProgressView() }
                 if let error { Text(error).foregroundStyle(.secondary) }
             }.navigationTitle("存为书签").navigationBarTitleDisplayMode(.inline)

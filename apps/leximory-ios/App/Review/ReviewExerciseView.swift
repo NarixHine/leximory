@@ -47,7 +47,7 @@ struct ReviewExerciseView: View {
                         }
                         if let keywords = conversation?.keywords, !keywords.isEmpty {
                             Text("不妨试试选用 \(keywords.prefix(6).joined(separator: " / "))")
-                                .font(LeximoryTypography.interface(15)).foregroundStyle(.secondary)
+                                .interfaceFont(15).foregroundStyle(.secondary)
                         }
                     }
                     if locked {
@@ -55,37 +55,37 @@ struct ReviewExerciseView: View {
                             Label("完成六成翻译，小黑猫就会轻声回应。", systemImage: "lock")
                             Text("完成翻译 \(model.snapshot?.completedTranslations ?? 0)/\(model.snapshot?.translations?.count ?? 0)")
                                 .foregroundStyle(.secondary)
-                        }.font(LeximoryTypography.interface(16)).padding(22)
+                        }.interfaceFont(16).padding(22)
                             .frame(maxWidth: .infinity, alignment: .leading).background(LeximoryPalette.cover, in: .rect(cornerRadius: 24))
                     }
                     if let submission = savedSubmission, !editing {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
-                                Text("你的回答").font(LeximoryTypography.interface(13)).foregroundStyle(.secondary)
+                                Text("你的回答").interfaceFont(13).foregroundStyle(.secondary)
                                 Spacer()
-                                if status == .pending { ProgressView(); Text("正在点评").font(LeximoryTypography.interface(13)).foregroundStyle(.secondary) }
+                                if status == .pending { ProgressView(); Text("正在点评").interfaceFont(13).foregroundStyle(.secondary) }
                                 if status == .complete { Image(systemName: "checkmark.seal").foregroundStyle(LeximoryPalette.sage) }
                             }
                             ReviewAnnotatedAnswer(content: submission, feedback: feedback, language: learningLanguageName(model.selection.language))
                             if let rationale = feedback?.rationale, !rationale.isEmpty {
-                                Label(rationale, systemImage: "checkmark.seal").font(LeximoryTypography.interface(16))
+                                Label(rationale, systemImage: "checkmark.seal").interfaceFont(16)
                             }
                             if status == .failed {
                                 Text("点评暂时无法完成，请重新提交。")
-                                    .font(LeximoryTypography.interface(15)).foregroundStyle(.secondary)
+                                    .interfaceFont(15).foregroundStyle(.secondary)
                             }
                         }
                     }
                     if let reply = conversation?.reply, status == .complete {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("小黑猫的回应").font(LeximoryTypography.interface(13)).foregroundStyle(.secondary)
+                            Text("小黑猫的回应").interfaceFont(13).foregroundStyle(.secondary)
                             AnnotationMarkdownText(content: reply, size: 18, language: learningLanguageName(model.selection.language))
                         }.padding(22).frame(maxWidth: .infinity, alignment: .leading)
                             .background(LeximoryPalette.cover, in: .rect(cornerRadius: 26))
                     }
                     if let translation, status == .complete {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("参考译文").font(LeximoryTypography.interface(13)).foregroundStyle(.secondary)
+                            Text("参考译文").interfaceFont(13).foregroundStyle(.secondary)
                             AnnotationMarkdownText(content: translation.answer, size: 18, language: learningLanguageName(model.selection.language))
                         }.accessibilityIdentifier("review-reference-answer")
                     }
@@ -94,9 +94,9 @@ struct ReviewExerciseView: View {
                             editing = true
                             if index == nil { writingFocused = true } else { focused = true }
                         }
-                            .font(LeximoryTypography.interface(16)).disabled(sync?.online == false || locked || model.submitting || model.awaitingConfirmation || status == .pending)
+                            .interfaceFont(16).disabled(sync?.online == false || locked || model.submitting || model.awaitingConfirmation || status == .pending)
                     }
-                    if let error = model.error { Text(error).font(LeximoryTypography.interface(15)).foregroundStyle(.secondary) }
+                    if let error = model.error { Text(error).interfaceFont(15).foregroundStyle(.secondary) }
                 }.padding(22).frame(maxWidth: .infinity, alignment: .leading)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
             }.frame(height: min(contentHeight, max(90, availableHeight - inputHeight - 48)))

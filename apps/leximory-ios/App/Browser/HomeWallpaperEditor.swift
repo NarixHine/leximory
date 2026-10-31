@@ -52,7 +52,7 @@ struct HomeWallpaperEditor: View {
                 }.padding(24).frame(maxWidth: 400).frame(maxWidth: .infinity)
             }
             .scrollBounceBehavior(.basedOnSize)
-            .font(LeximoryTypography.interface(17, style: .body))
+            .interfaceFont(17, style: .body)
             .navigationTitle("主页壁纸").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -90,7 +90,7 @@ struct HomeWallpaperEditor: View {
             Label(title, systemImage: "photo")
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .overlay(alignment: .trailing) { if busy { ProgressView().padding(.trailing, 12) } }
-        }.buttonStyle(.borderedProminent).tint(LeximoryPalette.sage)
+        }.buttonStyle(.borderedProminent).tint(.blue)
             .disabled(importing || !store.loaded)
             .accessibilityIdentifier("wallpaper-choose-photo")
     }

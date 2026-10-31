@@ -202,7 +202,7 @@ struct EbookScreen: View {
         .overlay(alignment: .top) {
             if reader.bookmarkNotice != nil {
                 Text(reader.bookmarkErrorMessage)
-                    .font(LeximoryTypography.interface(16, style: .callout)).padding(.horizontal, 20).padding(.vertical, 12)
+                    .interfaceFont(16, style: .callout).padding(.horizontal, 20).padding(.vertical, 12)
                     .background(.regularMaterial, in: Capsule())
                     .padding(.top, 60).padding(.horizontal, 20)
                     .allowsHitTesting(false)
@@ -440,7 +440,7 @@ struct EbookScreen: View {
     }
     private var pageLabel: some View {
         Text(reader.totalPages > 0 ? "\(reader.location ?? "1") / \(reader.totalPages)" : reader.chapterPages > 0 ? "\(reader.chapterPage) / \(reader.chapterPages)" : "\(reader.chapterPage)")
-            .font(LeximoryTypography.interface(15)).foregroundStyle(readerLabelColor)
+            .interfaceFont(15).foregroundStyle(readerLabelColor)
             .lineLimit(1).minimumScaleFactor(0.8).opacity(reader.ready ? 1 : 0)
             .accessibilityIdentifier("ebook-page-position")
             .accessibilityLabel("阅读位置")
@@ -469,7 +469,7 @@ struct EbookScreen: View {
                         VStack(alignment: .leading, spacing: 12) { Text("行距"); Slider(value: proseLeading, in: 1.5...2.2, step: 0.1).accessibilityLabel("行距") }
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("缩放").font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted)
+                            Text("缩放").interfaceFont(14).foregroundStyle(LeximoryPalette.muted)
                             Button { reader.navigate("fit"); tray = nil } label: {
                                 Label("适合页面", systemImage: "arrow.up.left.and.arrow.down.right")
                                     .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
@@ -483,7 +483,7 @@ struct EbookScreen: View {
                             }
                         }.buttonStyle(.plain).tint(LeximoryPalette.ink)
                     }
-                }.font(LeximoryTypography.interface(17)).foregroundStyle(LeximoryPalette.ink)
+                }.interfaceFont(17).foregroundStyle(LeximoryPalette.ink)
                     .padding(24).frame(maxWidth: .infinity, alignment: .leading)
             }.background(LeximoryPalette.paper)
                 .navigationTitle("阅读选项").navigationBarTitleDisplayMode(.inline)
@@ -625,9 +625,9 @@ struct EbookBookmarkCard: View {
                     .foregroundStyle(isPDF ? Color(bookmark.color.ink.withAlphaComponent(1)) : LeximoryPalette.muted)
                     .accessibilityHidden(true)
                 if let chapter = bookmark.chapter?.trimmingCharacters(in: .whitespacesAndNewlines), !chapter.isEmpty {
-                    Text(chapter).font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    Text(chapter).interfaceFont(15, style: .subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 } else if isPDF, let page = bookmark.location {
-                    Text("第\(page)页").font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.secondary)
+                    Text("第\(page)页").interfaceFont(15, style: .subheadline).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").font(.system(size: 12, weight: .medium))
@@ -636,7 +636,7 @@ struct EbookBookmarkCard: View {
             Text(bookmark.quote).font(LeximoryTypography.prose(17, language: language))
                 .lineSpacing(5).lineLimit(7).frame(maxWidth: .infinity, alignment: .leading)
             if isPDF, let page = bookmark.location, bookmark.chapter?.isEmpty == false {
-                Text("第\(page)页").font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(LeximoryPalette.muted)
+                Text("第\(page)页").interfaceFont(13, style: .footnote).foregroundStyle(LeximoryPalette.muted)
             }
         }.foregroundStyle(LeximoryPalette.ink).padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)

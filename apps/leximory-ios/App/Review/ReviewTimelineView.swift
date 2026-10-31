@@ -27,7 +27,7 @@ struct ReviewTimelineView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Label("FORMING CONNECTIONS", systemImage: "cablecar")
                             .font(ReviewStyle.mono(14)).tracking(0.7).foregroundStyle(ReviewStyle.meta)
-                        Text("回忆旧知，创造新知").font(ReviewStyle.handwriting(22)).foregroundStyle(LeximoryPalette.ink)
+                        Text("回忆旧知，创造新知").displayFont(22, relativeTo: .title3).foregroundStyle(LeximoryPalette.ink)
                     }.padding(.leading, dateWidth + 24)
                     if days.count > 1 {
                         Chart(Array(days.reversed().enumerated()), id: \.element.id) { index, day in
@@ -88,14 +88,14 @@ struct ReviewTimelineView: View {
     private func dayRow(_ day: ReviewDay) -> some View {
         HStack(alignment: .top, spacing: 24) {
             VStack(alignment: .trailing, spacing: 5) {
-                Text(day.dayOfWeek).font(LeximoryTypography.interface(12))
+                Text(day.dayOfWeek).interfaceFont(12)
                     .foregroundStyle(day.isToday ? LeximoryPalette.ink : ReviewStyle.meta)
-                Text(String(day.date.dropFirst(5)).replacingOccurrences(of: "-", with: "/")).font(LeximoryTypography.interface(day.isToday ? 20 : 14))
-                    .foregroundStyle(day.isToday ? LeximoryPalette.ink : LeximoryPalette.sage).monospacedDigit()
+                Text(String(day.date.dropFirst(5)).replacingOccurrences(of: "-", with: "/")).interfaceFont(day.isToday ? 20 : 14)
+                    .foregroundStyle(day.isToday ? LeximoryPalette.ink : LeximoryPalette.muted).monospacedDigit()
             }.frame(width: dateWidth, alignment: .trailing).padding(.top, 4)
             VStack(alignment: .leading, spacing: day.isToday ? 12 : 8) {
                 if day.isToday {
-                    Text("今日 \(day.count) 词").font(ReviewStyle.handwriting(14)).foregroundStyle(ReviewStyle.word)
+                    Text("今日 \(day.count) 词").interfaceFont(14, style: .subheadline).foregroundStyle(ReviewStyle.word)
                 }
                 ReviewFlowLayout {
                     ForEach(day.words) { word in

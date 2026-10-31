@@ -137,7 +137,7 @@ struct PDFNotesProblems: View {
                     }
                 }
                 ForEach(model.problems, id: \.key) { record in
-                    Section("第\(record.key.pageIndex + 1)页") {
+                    Section {
                         switch record.state {
                         case .conflict(let other):
                             Text("这页在另一台设备上也有修改。请选择要继续使用的版本。")
@@ -159,7 +159,7 @@ struct PDFNotesProblems: View {
                             } else { Button("重试备份") { Task { await model.retry(record.key) } } }
                         default: EmptyView()
                         }
-                    }
+                    } header: { LeximorySectionHeader("第\(record.key.pageIndex + 1)页") }
                 }
             }
             .navigationTitle("手写笔记").navigationBarTitleDisplayMode(.inline)

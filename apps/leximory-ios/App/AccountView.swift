@@ -64,11 +64,11 @@ struct AccountView: View {
                 }
                 .padding(20).frame(maxWidth: 640).frame(maxWidth: .infinity)
             }
-            .background(LeximoryPalette.paper)
+            .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("账号")
             .navigationBarTitleDisplayMode(.large)
-            .font(LeximoryTypography.interface(17))
-            .tint(.primary)
+            .interfaceFont(17)
+            .tint(.blue)
             .refreshable { await load() }
             .task { await load() }
             .onReceive(NotificationCenter.default.publisher(for: .pdfOutlineUsageChanged)) { _ in Task { await load() } }
@@ -129,7 +129,7 @@ struct AccountView: View {
                 Text(value.username ?? "你好 👋").editorialFont(26, relativeTo: .title, language: "Chinese")
                 if let date = joinedDate(value.createdAt) {
                     Text("\(date.formatted(.dateTime.year().month().day().locale(Locale(identifier: "zh_CN")))) 加入")
-                        .font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
+                        .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
                 }
             }
         }.padding(.vertical, 8)
@@ -165,14 +165,14 @@ struct AccountView: View {
     }
     private func preferences(_ value: AccountSettings) -> some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("英语偏好").foregroundStyle(.secondary).font(LeximoryTypography.interface(14, style: .subheadline))
+            LeximorySectionHeader("英语偏好")
             Picker("英语偏好", selection: Binding(get: { details?.accent ?? "AmE" }, set: { accent in
                 perform { try await session.client.setAccountAccent(accent) }
             })) {
                 Text("美式英语").tag("AmE")
                 Text("英式英语").tag("BrE")
             }.pickerStyle(.segmented).disabled(editingUnavailable)
-        }.padding(20).background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
+        }.padding(20).background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
     }
     private func management(_ value: AccountSettings) -> some View {
         VStack(spacing: 0) {
@@ -193,7 +193,7 @@ struct AccountView: View {
             Divider()
             Button("退出登录", role: .destructive) { confirmsSignOut = true }
                 .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading).disabled(busy)
-        }.padding(.horizontal, 20).background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
+        }.padding(.horizontal, 20).background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
     }
     private func editRow(_ title: String, value: String?, symbol: String, field: AccountEditor.Field) -> some View {
         Button { editor = field } label: {
@@ -258,7 +258,7 @@ private struct MembershipEntryLabel: View {
                     if !details.hasPaidMembership { planCaption }
                 }
             }
-            .font(LeximoryTypography.interface(13, style: .subheadline))
+            .interfaceFont(13, style: .subheadline)
             .foregroundStyle(foreground.opacity(0.8))
 
             if typeSize.isAccessibilitySize {
@@ -275,7 +275,7 @@ private struct MembershipEntryLabel: View {
             }
             if let notice = details.membershipNotice {
                 Text(notice)
-                    .font(LeximoryTypography.interface(14, style: .subheadline))
+                    .interfaceFont(15, style: .subheadline)
                     .foregroundStyle(foreground.opacity(0.8))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -301,10 +301,15 @@ private struct MembershipEntryLabel: View {
     }
 
     private func headline(size: CGFloat) -> some View {
-        Text(details.hasPaidMembership ? details.membershipTitle : "畅学语言，\n畅行天下。")
-            .editorialFont(size, relativeTo: .title, language: nil)
-            .multilineTextAlignment(.leading)
-            .fixedSize(horizontal: false, vertical: true)
+        Group {
+            if details.hasPaidMembership {
+                Text(details.membershipTitle).editorialFont(size, relativeTo: .title, language: nil)
+            } else {
+                Text("畅学语言，\n畅行天下。").displayFont(size, relativeTo: .title)
+            }
+        }
+        .multilineTextAlignment(.leading)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func illustratedHeadline(width: CGFloat, titleSize: CGFloat) -> some View {
@@ -329,7 +334,7 @@ private struct MembershipEntryLabel: View {
             Spacer(minLength: 0)
             Image(systemName: "chevron.right").accessibilityHidden(true)
         }
-        .font(LeximoryTypography.interface(15, style: .subheadline))
+        .interfaceFont(15, style: .subheadline)
         .foregroundStyle(.primary)
         .padding(.horizontal, 16).padding(.vertical, 12)
         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
@@ -355,24 +360,24 @@ private struct AccountQuotaCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
-                Text(title).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.secondary)
+                Text(title).interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
                 Spacer(minLength: 4)
                 ZStack {
                     Circle().stroke(LeximoryPalette.secondaryBorder.opacity(0.5), lineWidth: 3)
                     Circle().trim(from: 0, to: fraction).stroke(LeximoryPalette.ink, style: StrokeStyle(lineWidth: 3, lineCap: .round)).rotationEffect(.degrees(-90))
-                    Text("\(Int(fraction * 100))%").font(LeximoryTypography.interface(10, style: .caption2))
+                    Text("\(Int(fraction * 100))%").interfaceFont(11, style: .caption2)
                 }.frame(width: 40, height: 40).accessibilityHidden(true)
             }
             Spacer(minLength: 12)
             VStack(alignment: .leading, spacing: 6) {
-                Text("\(Int(allowance.used)) / \(Int(allowance.limit))").font(LeximoryTypography.interface(22, style: .title2)).monospacedDigit()
+                Text("\(Int(allowance.used)) / \(Int(allowance.limit))").interfaceFont(22, style: .title2).monospacedDigit()
                 if allowance.resetsIn > 0 {
                     Text("\(Duration.seconds(allowance.resetsIn).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated)))后重置")
-                        .font(LeximoryTypography.interface(12, style: .caption1)).foregroundStyle(.secondary)
+                        .interfaceFont(12, style: .caption1).foregroundStyle(.secondary)
                 }
             }
         }.frame(maxWidth: .infinity, minHeight: 116, alignment: .leading).padding(16)
-            .background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
+            .background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
             .accessibilityElement(children: .combine)
     }
 }
@@ -393,7 +398,7 @@ private struct AccountActionCostTable: View {
     ]
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("操作额度消耗").font(LeximoryTypography.interface(17, style: .headline))
+            LeximorySectionHeader("操作额度消耗")
             if typeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(rows) { row in
@@ -411,7 +416,7 @@ private struct AccountActionCostTable: View {
                     GridRow {
                         Text("操作").frame(maxWidth: .infinity, alignment: .leading)
                         Text("每次消耗").gridColumnAlignment(.trailing)
-                    }.font(LeximoryTypography.interface(12, style: .caption1)).foregroundStyle(.secondary)
+                    }.interfaceFont(12, style: .caption1).foregroundStyle(.secondary)
                         .accessibilityHidden(true)
                     Divider().gridCellUnsizedAxes(.horizontal)
                     ForEach(rows) { row in
@@ -425,8 +430,8 @@ private struct AccountActionCostTable: View {
                 }
             }
         }
-        .font(LeximoryTypography.interface(15, style: .subheadline))
-        .padding(16).background(LeximoryPalette.shell, in: .rect(cornerRadius: 24))
+        .interfaceFont(15, style: .subheadline)
+        .padding(16).background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
     }
 }
 
@@ -466,7 +471,7 @@ private struct AccountEditor: View {
                 }
                 if let message { Section { Text(message).foregroundStyle(.red) } }
             }
-            .font(LeximoryTypography.interface(17)).navigationTitle(field.title).navigationBarTitleDisplayMode(.inline)
+            .interfaceFont(17).navigationTitle(field.title).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() }.disabled(saving) }
                 ToolbarItem(placement: .confirmationAction) {

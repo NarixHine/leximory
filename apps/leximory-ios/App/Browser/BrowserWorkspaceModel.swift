@@ -135,6 +135,7 @@ struct BrowserEntry: Identifiable {
     var textID: String? { if case .document(let document) = resource { document.text.id } else { nil } }
     var isReviewLawn: Bool { if case .reviewSession = resource { true } else { false } }
     var isWeb: Bool { if case .web = resource { true } else { false } }
+    var isAccount: Bool { if case .account = resource { true } else { false } }
 }
 
 enum AnnotationActivityState: String, Codable { case pending, ready, failed }

@@ -22,7 +22,7 @@ struct ReviewSessionView: View {
                         .padding(.horizontal, 12).padding(.top, 88).padding(.bottom, chromeHeight + 16)
                         .frame(maxWidth: 920).frame(maxWidth: .infinity)
                 }.scrollBounceBehavior(.basedOnSize).accessibilityIdentifier("review-session-scroll")
-                Text(learningLanguageName(model.selection.language)).font(LeximoryTypography.interface(16)).padding(.top, 12)
+                Text(learningLanguageName(model.selection.language)).interfaceFont(16).padding(.top, 12)
                 if let exercise = model.exercise {
                     let usableHeight = max(160, min(geometry.size.height, keyboardTop ?? geometry.size.height) - chromeHeight - 56)
                     ReviewExerciseView(model: model, index: { if case .translation(let index) = exercise { return index }; return nil }(), availableHeight: usableHeight)

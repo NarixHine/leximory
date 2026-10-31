@@ -66,7 +66,7 @@ struct MembershipView: View {
                             .foregroundStyle(LeximoryPalette.muted)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.top, 10)
-                    }.font(LeximoryTypography.interface(13, style: .footnote))
+                    }.interfaceFont(13, style: .footnote)
                 }
                 if scrollsPurchaseAction { purchaseFooter }
             }
@@ -91,9 +91,9 @@ struct MembershipView: View {
                     .frame(maxWidth: 440).accessibilityHidden(true)
             }
             Text("畅学语言，畅行天下。")
-                .editorialFont(27, relativeTo: .title, language: "Chinese")
+                .displayFont(27, relativeTo: .title)
             Text("语言学地学语言")
-                .font(LeximoryTypography.interface(14, style: .subheadline))
+                .interfaceFont(15, style: .subheadline)
                 .foregroundStyle(LeximoryPalette.muted)
         }.multilineTextAlignment(.center)
     }
@@ -105,18 +105,18 @@ struct MembershipView: View {
                 Button { selection = plan } label: {
                     VStack(alignment: .leading, spacing: 12) {
                         HStack(alignment: .firstTextBaseline) {
-                            Text(plan.title).font(LeximoryTypography.interface(18, style: .headline))
+                            Text(plan.title).interfaceFont(17, semibold: true, style: .headline)
                             Spacer(minLength: 4)
                             Image(systemName: selection == plan ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 18)).foregroundStyle(selection == plan ? LeximoryPalette.sage : LeximoryPalette.secondaryBorder)
+                                .font(.system(size: 18)).foregroundStyle(selection == plan ? Color.blue : LeximoryPalette.secondaryBorder)
                         }
                         HStack(alignment: .firstTextBaseline, spacing: 3) {
-                            Text(store.prices[plan] ?? "—").font(LeximoryTypography.interface(19, style: .title3))
-                            Text("/ 月").font(LeximoryTypography.interface(12, style: .caption1)).foregroundStyle(LeximoryPalette.muted)
+                            Text(store.prices[plan] ?? "—").interfaceFont(20, style: .title3)
+                            Text("/ 月").interfaceFont(12, style: .caption1).foregroundStyle(LeximoryPalette.muted)
                         }
                     }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
                         .background(selection == plan ? LeximoryPalette.cover : LeximoryPalette.paper, in: .rect(cornerRadius: 20))
-                        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(selection == plan ? LeximoryPalette.sage : LeximoryPalette.secondaryBorder, lineWidth: selection == plan ? 1.5 : 0.5) }
+                        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(selection == plan ? Color.blue : LeximoryPalette.secondaryBorder, lineWidth: selection == plan ? 1.5 : 0.5) }
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("\(plan.title)，每月\(store.prices[plan] ?? "价格暂不可用")")
@@ -139,7 +139,7 @@ struct MembershipView: View {
     private func allowance(_ value: String, label: String) -> some View {
         VStack(spacing: 4) {
             Text(value).editorialFont(27, relativeTo: .title2, language: "English").monospacedDigit()
-            Text(label).font(LeximoryTypography.interface(11, style: .caption1)).foregroundStyle(LeximoryPalette.muted)
+            Text(label).interfaceFont(11, style: .caption1).foregroundStyle(LeximoryPalette.muted)
         }.frame(maxWidth: .infinity).accessibilityElement(children: .combine)
     }
 
@@ -159,7 +159,7 @@ struct MembershipView: View {
                 HStack(spacing: 8) {
                     if store.action == .purchasing { ProgressView().tint(LeximoryPalette.paper) }
                     Text("订阅\(selection.title)")
-                }.font(LeximoryTypography.interface(17)).frame(maxWidth: .infinity, minHeight: 52)
+                }.interfaceFont(17).frame(maxWidth: .infinity, minHeight: 52)
                     .foregroundStyle(LeximoryPalette.paper)
                     .background(LeximoryPalette.ink, in: .capsule)
             }.buttonStyle(.plain).disabled(!store.canPurchase)
@@ -183,7 +183,7 @@ struct MembershipView: View {
                 Link("联系支持", destination: URL(string: "mailto:hi@leximory.com")!).frame(minHeight: 44)
             }
         }
-        .font(LeximoryTypography.interface(12, style: .footnote))
+        .interfaceFont(12, style: .footnote)
         .foregroundStyle(LeximoryPalette.muted).multilineTextAlignment(.center)
     }
 
@@ -193,7 +193,7 @@ struct MembershipView: View {
             if let notice = details.membershipNotice { Text(notice).foregroundStyle(.secondary) }
             if let date = details.membershipDate {
                 Text("\(details.membership?.status == .active && details.membership?.autoRenews == true ? "下次续订" : "订阅到期")：\(date.formatted(.dateTime.year().month().day().locale(Locale(identifier: "zh_CN"))))")
-                    .font(LeximoryTypography.interface(14, style: .subheadline)).foregroundStyle(.secondary)
+                    .interfaceFont(15, style: .subheadline).foregroundStyle(.secondary)
             }
             if details.memberships?.contains(where: { $0.provider == .appStore }) == true || details.membership?.provider == .appStore {
                 Button { showsManagement = true } label: {
@@ -202,7 +202,7 @@ struct MembershipView: View {
             }
             if details.membership?.provider == .legacy || (details.membership == nil && details.hasPaidMembership) {
                 Text("已有会员权益可在此继续使用。如需确认原订阅或取消续订，请联系支持，避免重复订阅。")
-                    .font(LeximoryTypography.interface(13, style: .footnote)).foregroundStyle(.secondary)
+                    .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
                 Link("联系支持", destination: URL(string: "mailto:hi@leximory.com")!).frame(minHeight: 44)
             }
 
@@ -227,9 +227,9 @@ private struct MembershipPrivacyView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("账号与学习内容").font(LeximoryTypography.interface(18, style: .headline))
+                    Text("账号与学习内容").interfaceFont(17, semibold: true, style: .headline)
                     Text("Leximory 使用你的账号资料提供登录和个人资料功能，并保存书签、词汇与学习记录。使用 AI 注解或朗读时，相关文本会发送到服务端处理。")
-                    Text("订阅与付款").font(LeximoryTypography.interface(18, style: .headline))
+                    Text("订阅与付款").interfaceFont(17, semibold: true, style: .headline)
                     Text("App Store 购买由 Apple 处理。Leximory 需要购买记录来确认会员权益，不会收到你的银行卡信息。")
                     Text("如需了解或处理个人数据，请联系 hi@leximory.com。")
                     Link("联系隐私支持", destination: URL(string: "mailto:hi@leximory.com")!).frame(minHeight: 44)

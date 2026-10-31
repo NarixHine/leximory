@@ -195,6 +195,44 @@ struct ReaderScreen: View {
     }
 }
 
+struct DictionaryLink: View {
+    let url: URL
+    let client: MobileClient?
+    var closeAnnotation: (() -> Void)? = nil
+    @Environment(\.browserWorkspace) private var workspace
+    @State private var showsBrowser = false
+
+    var body: some View {
+        Link(destination: url) {
+            Image(systemName: "arrow.up.right.square").font(.system(size: 20))
+                .frame(width: 44, height: 44).foregroundStyle(LeximoryPalette.muted)
+        }
+        .accessibilityLabel("在词典中查看")
+        .environment(\.openURL, OpenURLAction { destination in
+            if let workspace {
+                closeAnnotation?()
+                workspace.openURL(destination)
+            } else {
+                showsBrowser = true
+            }
+            return .handled
+        })
+        .disabled(workspace == nil && client == nil)
+        .sheet(isPresented: $showsBrowser) {
+            if let client {
+                NavigationStack {
+                    TextBrowserScreen(client: client, initialURL: url.absoluteString)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarTrailing) {
+                                LeximorySheetCloseButton { showsBrowser = false }
+                            }
+                        }
+                }.leximorySheetStyle()
+            }
+        }
+    }
+}
+
 struct DefinitionView: View {
     let item: DefinitionPresentation
     let client: MobileClient?
@@ -266,12 +304,12 @@ struct DefinitionView: View {
                                 definitionActions
                                 if let error = model.saveError ?? model.editor?.error {
                                     Text(error)
-                                        .font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
+                                        .interfaceFont(13).foregroundStyle(LeximoryPalette.muted)
                                 }
                             case .generating(let preview):
                                 if client != nil {
                                     if !preview.isEmpty { section("释义", content: preview) }
-                                    HStack(spacing: 10) { ProgressView(); Text("正在理解语境").font(LeximoryTypography.interface(15)) }.frame(maxWidth: .infinity, minHeight: waiting && topTrayHeight != nil ? 32 : 24, alignment: .center)
+                                    HStack(spacing: 10) { ProgressView(); Text("正在理解语境").interfaceFont(15) }.frame(maxWidth: .infinity, minHeight: waiting && topTrayHeight != nil ? 32 : 24, alignment: .center)
                                 } else { Text("示例模式暂不支持生成语境释义。").foregroundStyle(LeximoryPalette.muted) }
                             case .failed(let message):
                                 Text(message).foregroundStyle(LeximoryPalette.muted)
@@ -354,10 +392,9 @@ struct DefinitionView: View {
 
             }
             if let dictionaryURL {
-                Link(destination: dictionaryURL) {
-                    Image(systemName: "arrow.up.right.square").font(.system(size: 20))
-                        .frame(width: 44, height: 44).foregroundStyle(LeximoryPalette.muted)
-                }.accessibilityLabel("在词典中查看")
+                DictionaryLink(url: dictionaryURL, client: client) {
+                    if let closeTray { closeTray() } else { dismiss() }
+                }
             }
         }
     }
@@ -406,7 +443,7 @@ struct DefinitionView: View {
     }
     private func section(_ title: String, content: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(LeximoryTypography.interface(14)).foregroundStyle(.secondary)
+            Text(title).interfaceFont(14).foregroundStyle(.secondary)
             AnnotationMarkdownText(content: content, size: bodySize, language: language)
                 .foregroundStyle(LeximoryPalette.ink)
         }

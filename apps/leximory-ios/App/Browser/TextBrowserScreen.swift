@@ -2,6 +2,7 @@ import SwiftUI
 import LeximoryCore
 
 struct TextBrowserScreen: View {
+    @ScaledMetric(relativeTo: .subheadline) private var addressTextSize = LeximoryTypography.addressSize
     let client: MobileClient
     var bookmarkID: String? = nil
     var initialURL: String? = nil
@@ -37,7 +38,6 @@ struct TextBrowserScreen: View {
     @State private var lastSelection: BrowserSelection?
     @State private var confirmingClear = false
     @State private var clearingData = false
-    @ScaledMetric(relativeTo: .subheadline) private var addressTextSize = LeximoryTypography.addressSize
 
     var body: some View {
         Group {
@@ -73,12 +73,12 @@ struct TextBrowserScreen: View {
             }
             if let error = browser.error {
                 VStack(spacing: 12) {
-                    Text(error).font(LeximoryTypography.interface(16, style: .callout))
+                    Text(error).interfaceFont(16, style: .callout)
                     Button("重试", systemImage: "arrow.clockwise") {
                         if browser.url == nil { opened = false; openingAttempt += 1 }
                         else { browser.web.reload() }
                     }
-                    .font(LeximoryTypography.interface(17, style: .body))
+                    .interfaceFont(17, style: .body)
                     .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).controlSize(.large)
                     .tint(LeximoryPalette.ink).foregroundStyle(LeximoryPalette.paper)
                     .accessibilityIdentifier("browser-load-retry")
@@ -205,7 +205,7 @@ struct TextBrowserScreen: View {
                     .glassEffectID("address", in: chrome)
                 if editingAddress {
                     Button("取消") { finishEditing() }
-                        .font(LeximoryTypography.interface(15)).frame(minWidth: 44, minHeight: 48)
+                        .interfaceFont(15).frame(minWidth: 44, minHeight: 48)
                         .padding(.horizontal, 8).buttonStyle(.plain)
                         .glassEffect(.regular.interactive(), in: .capsule)
                         .glassEffectID("options", in: chrome)

@@ -28,10 +28,10 @@ struct LibraryGallery: View {
                     VStack(alignment: .leading, spacing: 5) {
                         HStack(spacing: 6) {
                             Image(systemName: "books.vertical").accessibilityHidden(true)
-                            Text("MY LIBRARIES").font(LeximoryTypography.interface(12, style: .caption1)).tracking(1.2)
+                            Text("MY LIBRARIES").interfaceFont(12, style: .caption1).tracking(1.2)
                         }.foregroundStyle(.secondary)
                         Text("我的文库")
-                            .editorialFont(30, relativeTo: .largeTitle, language: "Chinese")
+                            .displayFont(30, relativeTo: .largeTitle)
                             .foregroundStyle(LeximoryPalette.ink).accessibilityAddTraits(.isHeader)
                     }.padding(.horizontal, 14).padding(.top, 18)
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14, alignment: .top), count: columns), alignment: .leading, spacing: 16) {
@@ -48,7 +48,7 @@ struct LibraryGallery: View {
                                         Button { openRecent?(library, recent) } label: {
                                             HStack(spacing: 5) {
                                                 Image(systemName: "clock").font(.system(size: 14))
-                                                Text(recent.title).font(LeximoryTypography.interface(12)).lineLimit(1)
+                                                Text(recent.title).interfaceFont(12).lineLimit(1)
                                             }.foregroundStyle(.secondary)
                                         }.buttonStyle(.plain).frame(minHeight: 44)
                                             .accessibilityLabel("最近打开：\(recent.title)")
@@ -64,14 +64,14 @@ struct LibraryGallery: View {
                         VStack(alignment: .leading, spacing: 14) {
                             HStack(spacing: 12) {
                                 Rectangle().fill(LeximoryPalette.border).frame(width: 18, height: 0.5)
-                                Text("已归档").font(LeximoryTypography.interface(14)).accessibilityAddTraits(.isHeader)
+                                Text("已归档").interfaceFont(14).accessibilityAddTraits(.isHeader)
                                 Rectangle().fill(LeximoryPalette.border).frame(height: 0.5)
                             }.foregroundStyle(LeximoryPalette.secondaryLabel).padding(.top, 14)
                             CatalogFlowLayout(spacing: 8) {
                                 ForEach(compact) { library in
                                     HStack(spacing: 2) {
                                         Button { open(library) } label: {
-                                            Text(library.name).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted)
+                                            Text(library.name).editorialFont(14, relativeTo: .subheadline, language: library.language).foregroundStyle(LeximoryPalette.muted)
                                                 .padding(.leading, 15).padding(.trailing, 8).padding(.vertical, 12)
                                         }.buttonStyle(CatalogPressStyle())
                                             .accessibilityIdentifier("library-\(library.id.rawValue)")
@@ -121,7 +121,7 @@ private struct LibraryCard: View {
     let titleSize: CGFloat
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
-            Text(library.localizedLanguage).font(LeximoryTypography.interface(14, style: .subheadline))
+            Text(library.localizedLanguage).interfaceFont(15, style: .subheadline)
                 .foregroundStyle(.secondary)
             Text(library.name).editorialFont(titleSize, language: library.language == "Japanese" ? "Japanese" : "English")
                 .foregroundStyle(LeximoryPalette.ink).lineSpacing(1)
@@ -214,7 +214,7 @@ struct TextGallery: View {
                         .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                     TopicLabels(topics: article.topics, centered: true)
                     if article.format == "bookmark" {
-                        Label(article.subtitle, systemImage: "bookmark").font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(LeximoryPalette.muted)
+                        Label(article.subtitle, systemImage: "bookmark").interfaceFont(13, style: .footnote).foregroundStyle(LeximoryPalette.muted)
                     }
                 }
             }.frame(maxWidth: .infinity).contentShape(Rectangle())
@@ -231,7 +231,7 @@ struct TextGallery: View {
                         .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
                     TopicLabels(topics: article.topics)
                     if article.format == "bookmark" {
-                        Label(article.subtitle, systemImage: "bookmark").font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(LeximoryPalette.muted)
+                        Label(article.subtitle, systemImage: "bookmark").interfaceFont(13, style: .footnote).foregroundStyle(LeximoryPalette.muted)
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 CoverArt(motif: article.cover, identity: article.id.rawValue, animated: true, emoji: article.coverEmoji, background: .newspaper).frame(width: 88, height: 88)

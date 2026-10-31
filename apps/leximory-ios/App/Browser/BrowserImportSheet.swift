@@ -96,7 +96,11 @@ struct BrowserImportSheet: View {
                         HStack {
                             Label("文件夹", systemImage: "folder")
                             Spacer()
-                            Text(folder?.name ?? "选择文件夹").foregroundStyle(.secondary).lineLimit(1)
+                            if let folder {
+                                Text(folder.name).editorialFont(17, relativeTo: .body, language: folder.preview.language).foregroundStyle(.secondary).lineLimit(1)
+                            } else {
+                                Text("选择文件夹").foregroundStyle(.secondary)
+                            }
                             Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
                         }
                     }.foregroundStyle(.primary)
@@ -152,7 +156,7 @@ struct BrowserImportSheet: View {
         }.leximorySheetStyle().presentationDetents([.large])
     }
     private func sectionHeading(_ title: String) -> some View {
-        Text(title).font(LeximoryTypography.interface(13, style: .caption1)).foregroundStyle(.primary)
+        LeximorySectionHeader(title)
     }
     private func confirmImport() {
         Task { await submit() }

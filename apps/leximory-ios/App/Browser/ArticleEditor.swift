@@ -40,9 +40,9 @@ struct ArticleEditorPage: View {
             Divider()
             ArticleEditorWebView(source: content, language: language, fontSize: size, controller: controller)
                 .overlay { if !controller.ready && !controller.failed { ProgressView() } }
-            if let error { Text(error).font(LeximoryTypography.interface(14)).foregroundStyle(.secondary).padding(12) }
+            if let error { Text(error).interfaceFont(14).foregroundStyle(.secondary).padding(12) }
             if controller.failed {
-                Text("正文未能打开，请返回后重试。").font(LeximoryTypography.interface(14)).foregroundStyle(.secondary).padding()
+                Text("正文未能打开，请返回后重试。").interfaceFont(14).foregroundStyle(.secondary).padding()
             }
         }.background(LeximoryPalette.paper).tint(.primary)
             .navigationTitle("编辑全文").navigationBarTitleDisplayMode(.inline)

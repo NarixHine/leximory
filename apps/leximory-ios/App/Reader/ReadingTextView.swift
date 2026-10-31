@@ -239,6 +239,7 @@ struct ReadingTextView: UIViewRepresentable {
                 closeTray: { [weak controller] in controller?.dismiss(animated: true) })
                 .id(item.id)
                 .environment(\.nativeSync, parent.sync)
+                .environment(\.browserWorkspace, parent.workspace)
             controller.rootView = AnyView(content)
             controller.onDismiss = { [weak self, weak controller, weak view] in
                 guard self?.popover === controller else { return }
