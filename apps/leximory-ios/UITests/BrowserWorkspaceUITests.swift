@@ -543,6 +543,27 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertTrue(address.waitForExistence(timeout: 5))
         let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "Browser-first Home"; screenshot.lifetime = .keepAlways; add(screenshot)
     }
+    @MainActor func testHomeSavedPagesSpacingWithoutPinsOrRecents() {
+        let app = launch(extraArguments: ["--workspace-recent-card-fixtures", "--workspace-no-pins"])
+        defer { restore(app) }
+        let saved = app.otherElements["browser-saved-pages"]
+        let recents = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-resume-"))
+        XCTAssertTrue(recents.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(saved.exists)
+        let firstRecentY = recents.allElementsBoundByIndex.map(\.frame.minY).min() ?? 0
+        XCTAssertEqual(firstRecentY - saved.frame.minY, 24, accuracy: 2)
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-pin-")).firstMatch.exists)
+
+        app.terminate()
+        app.launchArguments = ["--browser-workspace-fixtures", "--workspace-recent-card-fixtures", "--workspace-no-recents"]
+        app.launch()
+        let pin = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-pin-")).firstMatch
+        XCTAssertTrue(pin.waitForExistence(timeout: 15))
+        XCTAssertTrue(saved.exists)
+        XCTAssertFalse(recents.firstMatch.exists)
+        XCTAssertEqual(saved.frame.maxY - pin.frame.maxY, 12, accuracy: 2)
+    }
+
     @MainActor func testHomeShortcutsReflowForLargeTextAndLandscape() {
         let app = launch(extraArguments: ["--workspace-recent-card-fixtures",
             "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])

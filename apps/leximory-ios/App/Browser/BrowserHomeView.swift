@@ -239,8 +239,9 @@ struct BrowserHomeView: View {
 
     private var savedPages: some View {
         VStack(spacing: 16) {
-            BrowserHomeShortcutLayout(accessibility: typeSize.isAccessibilitySize) {
-                ForEach(pins) { pin in
+            if !pins.isEmpty {
+                BrowserHomeShortcutLayout(accessibility: typeSize.isAccessibilitySize) {
+                    ForEach(pins) { pin in
                         Button { openPin(pin) } label: {
                             shortcutLabel(pin.title, isPin: true) {
                                 Group {
@@ -266,8 +267,9 @@ struct BrowserHomeView: View {
                                 }.tint(.red)
                             }
                     }
-            }.frame(maxWidth: 400).frame(maxWidth: .infinity)
-                .padding(.horizontal, 4).padding(.top, 8)
+                }.frame(maxWidth: 400).frame(maxWidth: .infinity)
+                    .padding(.horizontal, 4).padding(.top, 8)
+            }
             if !readingResources.isEmpty || recentWebpage != nil {
                 VStack(alignment: .leading, spacing: 0) {
                     if let page = recentWebpage {
@@ -306,6 +308,7 @@ struct BrowserHomeView: View {
                 }
             }
         }.padding(12).modifier(BrowserHomeGlass())
+            .accessibilityIdentifier("browser-saved-pages")
     }
 
     @ViewBuilder private func insetBackground(cornerRadius: CGFloat) -> some View {

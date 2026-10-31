@@ -48,13 +48,18 @@ struct BrowserWorkspacePreview: View {
                 UserDefaults.standard.removeObject(forKey: "recent-access.workspace-fixture")
                 let workspace = BrowserWorkspaceModel(client: client, namespace: "workspace-fixture")
                 let arguments = ProcessInfo.processInfo.arguments
+                if arguments.contains("--workspace-no-pins") || arguments.contains("--workspace-no-recents") {
+                    UserDefaults.standard.removeObject(forKey: "browser.recent-web.workspace-fixture")
+                }
                 if arguments.contains("--workspace-recent-card-fixtures"),
                    let data = payloads["texts/workspace-folder"],
                    let page = try? JSONDecoder().decode(CatalogPage<CatalogText>.self, from: data) {
-                    for id in ["fixture-reader", "fixture-forest", "workspace-epub"] {
-                        if let text = page.items.first(where: { $0.id == id }) { await workspace.open(text) }
+                    if !arguments.contains("--workspace-no-recents") {
+                        for id in ["fixture-reader", "fixture-forest", "workspace-epub"] {
+                            if let text = page.items.first(where: { $0.id == id }) { await workspace.open(text) }
+                        }
                     }
-                    if let text = page.items.first {
+                    if !arguments.contains("--workspace-no-pins"), let text = page.items.first {
                         workspace.savePin(BrowserHomePin(id: UUID(), title: text.title, destination: .document(text)))
                     }
                     if arguments.contains("--workspace-multiple-pins") {

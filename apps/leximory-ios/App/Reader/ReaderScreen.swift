@@ -252,8 +252,8 @@ struct DefinitionView: View {
     @State private var editing = false
     @State private var saveAcknowledged = false
     @State private var streamFeedback = DefinitionStreamFeedback()
+    @State private var streamImpact: UIImpactFeedbackGenerator?
     @AppStorage(AnnotationFeedback.preferenceKey) private var hapticsEnabled = true
-    @State private var lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
     @State private var model: DefinitionModel
     @Environment(\.nativeSync) private var sync
     @Environment(\.dismiss) private var dismiss
@@ -278,7 +278,7 @@ struct DefinitionView: View {
     private var waiting: Bool {
         model.isGenerating && model.visibleDefinition == nil && client != nil
     }
-    private var feedbackAllowed: Bool { AnnotationFeedback.supported && hapticsEnabled && !lowPowerMode && allowsFeedback && scenePhase == .active }
+    private var feedbackAllowed: Bool { AnnotationFeedback.supported && hapticsEnabled && allowsFeedback && scenePhase == .active }
     private var streamedCharacterCount: Int {
         guard let definition = model.visibleDefinition else { return 0 }
         return definition.definition.count + (definition.etymology?.count ?? 0) + (definition.cognates?.count ?? 0)
@@ -371,19 +371,15 @@ struct DefinitionView: View {
     var body: some View {
         trayContent
         .onChange(of: streamedCharacterCount) { _, count in
+            let previousPulse = streamFeedback.pulse
             streamFeedback.update(characterCount: count, enabled: model.isGenerating && feedbackAllowed)
-        }
-        .sensoryFeedback(.impact(weight: .light, intensity: 0.2), trigger: streamFeedback.pulse) { _, _ in
-            model.isGenerating && feedbackAllowed
+            guard streamFeedback.pulse != previousPulse else { return }
+            if streamImpact == nil { streamImpact = UIImpactFeedbackGenerator(style: .soft) }
+            streamImpact?.impactOccurred(intensity: 0.5)
+            streamImpact?.prepare()
         }
         .sensoryFeedback(.success, trigger: model.saveState) { old, new in
             old == .saving && new == .saved && feedbackAllowed
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
-            lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
-        }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled }
         }
         .onChange(of: model.isReady) { _, ready in
             if ready, allowsFeedback, scenePhase == .active, UIAccessibility.isVoiceOverRunning {
@@ -395,7 +391,7 @@ struct DefinitionView: View {
             if sync?.online == false, item.definition == nil { model.offline() }
             else if let client { model.startGeneration(client: client, source: item.source) }
         }
-        .onDisappear { model.dismiss() }
+        .onDisappear { streamImpact = nil; model.dismiss() }
     }
     private func acknowledgeSave() async {
         saveAcknowledged = false
