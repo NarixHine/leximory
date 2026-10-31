@@ -2,6 +2,50 @@ import XCTest
 import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
+    @MainActor func testDynamicDefinitionRecoveryAndSaveStayInPlace() {
+        for dark in [false, true] {
+            let app = launch(extraArguments: ["--workspace-definition-fixtures"] + (dark ? ["--dark-appearance"] : []))
+            defer { restore(app) }
+            app.buttons["我的书签"].tap()
+            let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+            XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+            app.buttons["browser-resource-fixture-reader"].tap()
+            let paragraph = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "A quiet page")).firstMatch
+            XCTAssertTrue(paragraph.waitForExistence(timeout: 10))
+            paragraph.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)).press(forDuration: 1)
+            let lookup = app.menuItems["🐈 猫忆查"]
+            XCTAssertTrue(lookup.waitForExistence(timeout: 5)); lookup.tap()
+            XCTAssertTrue(app.staticTexts["正在理解语境"].waitForExistence(timeout: 5))
+            let loading = XCTAttachment(screenshot: app.screenshot())
+            loading.name = "Annotation loading, \(dark ? "dark" : "light")"
+            loading.lifetime = .keepAlways; add(loading)
+            let definition = app.textViews.matching(NSPredicate(format: "value == %@", "河岸，河流两侧的陆地。")).firstMatch
+            XCTAssertTrue(definition.waitForExistence(timeout: 10))
+            XCTAssertTrue(app.staticTexts["语源"].waitForExistence(timeout: 5))
+            let beforeRecovery = definition.frame
+            let save = app.buttons["收藏词汇"]
+            let deadline = Date().addingTimeInterval(10)
+            while !save.exists && Date() < deadline {
+                XCTAssertTrue(definition.exists)
+                XCTAssertFalse(app.textViews.containing(NSPredicate(format: "value CONTAINS %@", "REPLAY")).firstMatch.exists)
+                if save.waitForExistence(timeout: 0.3) { break }
+            }
+            XCTAssertTrue(save.exists)
+            XCTAssertEqual(definition.frame.minY, beforeRecovery.minY, accuracy: 1)
+            let buttonFrame = save.frame
+            save.tap()
+            let edit = app.buttons["编辑词汇"]
+            XCTAssertTrue(edit.waitForExistence(timeout: 5))
+            XCTAssertEqual(edit.frame.midX, buttonFrame.midX, accuracy: 1)
+            XCTAssertEqual(edit.frame.midY, buttonFrame.midY, accuracy: 1)
+            let capture = XCTAttachment(screenshot: app.screenshot())
+            capture.name = "Recovered annotation with stationary save control"
+            capture.lifetime = .keepAlways; add(capture)
+            edit.tap()
+            XCTAssertTrue(app.buttons["取消"].waitForExistence(timeout: 5))
+        }
+    }
+
     @MainActor func testAnnotationDictionaryOpensInWorkspaceAndReturnsToArticle() {
         let app = launch(); defer { restore(app) }
         app.buttons["我的书签"].tap()

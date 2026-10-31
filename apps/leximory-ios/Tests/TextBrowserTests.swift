@@ -71,11 +71,63 @@ import SwiftUI
         field.unmarkText()
         field.sendActions(for: .editingChanged)
         try await Task.sleep(for: .milliseconds(30))
-        #expect(field.font == LeximoryTypography.addressUI)
+        #expect(field.font?.pointSize == LeximoryTypography.addressUI.pointSize)
         #expect(field.font?.fontName == "EBGaramond-Regular")
         #expect(drafts.last == "river猫忆")
+        let committed = try #require(field.attributedText)
+        let chineseFont = try #require(committed.attribute(.font, at: 5, effectiveRange: nil) as? UIFont)
+        #expect(abs(chineseFont.pointSize - LeximoryTypography.addressUI.pointSize * 0.85) < 0.001)
+        let committedCaret = try #require(field.selectedTextRange)
+        #expect(committedCaret.isEmpty)
+        #expect(field.offset(from: field.beginningOfDocument, to: committedCaret.start) == 7)
         _ = field.delegate?.textFieldShouldReturn?(field)
         #expect(submitted == "river猫忆")
+    }
+
+    @Test func addressInputSizesChineseDuringInitialDisplayEditingAndDynamicTypeChanges() throws {
+        let field = BrowserURLTextField(frame: CGRect(x: 0, y: 0, width: 360, height: 48))
+        field.wantsFocus = false
+        field.placeholder = "输入网址或搜索"
+        field.text = "A猫，。𠀀かな🙂"
+
+        func checkSizes() throws {
+            let text = try #require(field.attributedText)
+            let base = try #require(text.attribute(.font, at: 0, effectiveRange: nil) as? UIFont).pointSize
+            if field.traitCollection.preferredContentSizeCategory.isAccessibilityCategory {
+                #expect(base > 18)
+            } else {
+                #expect(base == 18)
+            }
+            var offset = 0
+            for (glyph, scale): (String, CGFloat) in [
+                ("A", 1), ("猫", 0.85), ("，", 0.85), ("。", 0.85), ("𠀀", 0.85),
+                ("か", 1), ("な", 1), ("🙂", 1)
+            ] {
+                let font = try #require(text.attribute(.font, at: offset, effectiveRange: nil) as? UIFont)
+                #expect(abs(font.pointSize - base * scale) < 0.001, "Incorrect input size for \(glyph)")
+                offset += glyph.utf16.count
+            }
+            let placeholder = try #require(field.attributedPlaceholder)
+            let font = try #require(placeholder.attribute(.font, at: 0, effectiveRange: nil) as? UIFont)
+            #expect(abs(font.pointSize - base * 0.85) < 0.001)
+        }
+
+        try checkSizes()
+        field.selectedTextRange = field.textRange(from: field.endOfDocument, to: field.endOfDocument)
+        field.insertText("猫")
+        field.sendActions(for: .editingChanged)
+        let edited = try #require(field.attributedText)
+        let lastFont = try #require(edited.attribute(.font, at: edited.length - 1, effectiveRange: nil) as? UIFont)
+        #expect(abs(lastFont.pointSize - 18 * 0.85) < 0.001)
+        let caret = try #require(field.selectedTextRange)
+        #expect(field.offset(from: field.beginningOfDocument, to: caret.start) == edited.length)
+        field.deleteBackward()
+        field.sendActions(for: .editingChanged)
+        try checkSizes()
+
+        field.traitOverrides.preferredContentSizeCategory = .accessibilityExtraExtraExtraLarge
+        field.updateTraitsIfNeeded()
+        try checkSizes()
     }
 
     @Test func selectionReadsOnlyBoundedContextWithoutCloningLargeParagraphs() async throws {

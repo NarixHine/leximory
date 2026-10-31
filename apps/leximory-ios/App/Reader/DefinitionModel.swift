@@ -40,9 +40,9 @@ enum DefinitionSource {
 
 @MainActor @Observable final class DefinitionModel {
     enum State {
-        case generating(String)
+        case generating(Definition)
         case ready(Definition, completionID: String?)
-        case failed(String)
+        case failed(String, preview: Definition?)
     }
     enum SaveState: Equatable { case idle, saving, saved, uncertain }
     private(set) var state: State
@@ -53,29 +53,44 @@ enum DefinitionSource {
     private(set) var saveState: SaveState = .idle
     @ObservationIgnored private var saveRequest: Task<SavedVocabulary, Error>?
     private var creationDefinition: Definition?
-    init(embedded: Definition?) {
-        state = embedded.map { .ready($0, completionID: nil) } ?? .generating("")
+    var visibleDefinition: Definition? {
+        switch state {
+        case .generating(let preview): preview.definition.isEmpty ? nil : preview
+        case .ready(let definition, _): definition
+        case .failed(_, let preview): preview
+        }
     }
-    func offline() { state = .failed("离线时可以查看已保存的释义。语境查词需要联网。") }
+    var isReady: Bool { if case .ready = state { true } else { false } }
+    var isGenerating: Bool { if case .generating = state { true } else { false } }
+    init(embedded: Definition?) {
+        state = embedded.map { .ready($0, completionID: nil) } ?? .generating(Definition(lemma: "", definition: ""))
+    }
+    func offline() { state = .failed("离线时可以查看已保存的释义。语境查词需要联网。", preview: visibleDefinition) }
     func generate(client: MobileClient, source: DefinitionSource) async {
         await generate { try await source.stream(client: client) }
     }
     func generate(stream: @MainActor () async throws -> (events: AsyncThrowingStream<DefinitionEvent, Error>, target: BrowserTarget?)) async {
         if case .ready = state { return }
-        state = .generating("")
+        let retained = visibleDefinition
+        state = .generating(retained ?? Definition(lemma: "", definition: ""))
         var raw = ""
+        var started = false
+        var recovering = retained != nil
         do {
             let stream = try await stream()
             browserTarget = stream.target
             for try await event in stream.events {
                 try Task.checkCancellation()
                 switch event {
-                case .started: raw = ""
+                case .started:
+                    // A retry can produce different wording. Retain the visible response
+                    // until its replacement completes instead of replaying its opening.
+                    if started { recovering = visibleDefinition != nil }
+                    started = true
+                    raw = ""
                 case .delta(_, let text):
                     raw += text
-                    let fields = raw.components(separatedBy: "||")
-                    let preview = fields.count >= 3 ? fields[2].replacingOccurrences(of: "}}", with: "") : ""
-                    state = .generating(preview)
+                    if !recovering, let preview = Self.preview(raw) { state = .generating(preview) }
                 case .completed(let id, let definition):
                     state = .ready(definition, completionID: id)
                     return
@@ -86,8 +101,22 @@ enum DefinitionSource {
             throw URLError(.cannotParseResponse)
         } catch {
             guard !Task.isCancelled else { return }
-            state = .failed((MobileClient.cause(of: error) as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message ?? "释义未能完成，请关闭后重试。")
+            state = .failed((MobileClient.cause(of: error) as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message ?? "释义未能完成，请关闭后重试。", preview: visibleDefinition)
         }
+    }
+    private static func preview(_ raw: String) -> Definition? {
+        let fields = raw.components(separatedBy: "||")
+        guard fields.count >= 3 else { return nil }
+        func field(_ index: Int) -> String? {
+            guard index < fields.count else { return nil }
+            var value = fields[index]
+            if index == fields.count - 1 {
+                while value.last == "|" || value.last == "}" { value.removeLast() }
+            }
+            value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return value.isEmpty ? nil : value
+        }
+        return Definition(lemma: field(1) ?? "", definition: field(2) ?? "", etymology: field(3), cognates: field(4))
     }
     @discardableResult func save(client: MobileClient, source: DefinitionSource) -> Task<Void, Never>? {
         save { completionID in
@@ -150,4 +179,18 @@ enum DefinitionSource {
     }
     private struct CreationFailed: Error {}
     private struct DefinitionFailure: Error { let message: String }
+}
+
+struct DefinitionStreamFeedback {
+    private var highWaterCount = 0
+    private var lastPulse: ContinuousClock.Instant?
+    private(set) var pulse = 0
+
+    mutating func update(characterCount: Int, now: ContinuousClock.Instant = .now) {
+        guard characterCount > highWaterCount else { return }
+        highWaterCount = characterCount
+        guard lastPulse.map({ now - $0 >= .milliseconds(70) }) ?? true else { return }
+        lastPulse = now
+        pulse += 1
+    }
 }

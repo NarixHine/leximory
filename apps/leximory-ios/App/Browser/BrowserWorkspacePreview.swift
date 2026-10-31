@@ -113,12 +113,23 @@ private actor BrowserWorkspaceFixtureTransport: ClientTransport {
     private let review = ReviewFixtureTransport()
     var payloads: [String: Data]
     private var pendingReads = 0
+    private var definitionAttempts = 0
     private var completionGate: (@MainActor @Sendable () -> Bool)?
     private let store: LocalReadingStore
     init(payloads: [String: Data], store: LocalReadingStore) { self.payloads = payloads; self.store = store }
     func setCompletionGate(_ gate: @escaping @MainActor @Sendable () -> Bool) { completionGate = gate }
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
         if operationID == "review" { return try await review.send(request, body: body, baseURL: baseURL, operationID: operationID) }
+        if ProcessInfo.processInfo.arguments.contains("--workspace-definition-fixtures") {
+            if operationID == "definitions" {
+                definitionAttempts += 1
+                return Self.definitionResponse(recovering: definitionAttempts > 1)
+            }
+            if operationID == "vocabulary" {
+                try await Task.sleep(for: .milliseconds(300))
+                return (.init(status: .ok), HTTPBody(#"{"id":"fixture-word","libraryId":"workspace-folder"}"#))
+            }
+        }
         let path = (request.path ?? "").split(separator: "?")[0].split(separator: "/").map(String.init)
         var key = operationID
         if operationID == "texts", path.count >= 2 { key += "/" + path[path.count - 2] }
@@ -172,6 +183,32 @@ private actor BrowserWorkspaceFixtureTransport: ClientTransport {
         if operationID == "browserRule" || operationID == "ebookPosition" { return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody("{\"saved\":true}")) }
         guard let data = payloads[key] else { throw URLError(.unsupportedURL) }
         return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(data))
+    }
+    private static func definitionResponse(recovering: Bool) -> (HTTPResponse, HTTPBody) {
+        let frames = recovering ? [
+            #"{"kind":"started","requestId":"recovered"}"#,
+            #"{"kind":"delta","requestId":"recovered","text":"{{bank||bank||REPLAY"}"#,
+            #"{"kind":"completed","requestId":"recovered","definition":{"lemma":"bank","definition":"河岸，河流两侧的陆地。","etymology":"源自古英语。","cognates":"bench"}}"#
+        ] : [
+            #"{"kind":"started","requestId":"first"}"#,
+            #"{"kind":"delta","requestId":"first","text":"{{bank||bank||河岸，河流两侧的陆地。"}"#,
+            #"{"kind":"delta","requestId":"first","text":"||源自古英语。||bench}}"}"#
+        ]
+        let bytes = AsyncThrowingStream<ArraySlice<UInt8>, Error> { continuation in
+            let task = Task {
+                do {
+                    for frame in frames {
+                        try await Task.sleep(for: .seconds(1))
+                        continuation.yield(Array((frame + "\n").utf8)[...])
+                    }
+                    if recovering { continuation.finish() }
+                    else { continuation.finish(throwing: URLError(.networkConnectionLost)) }
+                } catch { continuation.finish(throwing: error) }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+        return (.init(status: .ok, headerFields: [.contentType: "application/x-ndjson"]),
+                HTTPBody(bytes, length: .unknown, iterationBehavior: .single))
     }
 }
 #endif

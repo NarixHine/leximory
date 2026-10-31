@@ -391,6 +391,62 @@ struct BrowserAddressField: UIViewRepresentable {
 
 final class BrowserURLTextField: UITextField {
     var wantsFocus = true
+    private var applyingTypography = false
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        addTarget(self, action: #selector(applyTypography), for: .editingChanged)
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (field: BrowserURLTextField, _: UITraitCollection) in
+            field.applyTypography()
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var text: String? {
+        didSet { applyTypography() }
+    }
+
+    override func unmarkText() {
+        super.unmarkText()
+        applyTypography()
+    }
+
+    @objc private func applyTypography() {
+        // Never replace the keyboard's marked text during Chinese/Japanese composition.
+        guard !applyingTypography, markedTextRange == nil else { return }
+        applyingTypography = true
+        defer { applyingTypography = false }
+        let base = UIFontMetrics(forTextStyle: .subheadline).scaledFont(
+            for: LeximoryTypography.editorialUI(LeximoryTypography.addressSize), compatibleWith: traitCollection)
+        let styled = LeximoryTypography.scaledChineseInput(text ?? "", size: base.pointSize)
+        let current = attributedText ?? NSAttributedString(string: "")
+        let formatted = NSMutableAttributedString(attributedString: current)
+        var changed = false
+        styled.enumerateAttribute(.font, in: NSRange(location: 0, length: styled.length)) { value, range, _ in
+            let expected = value as! UIFont
+            current.enumerateAttribute(.font, in: range) { value, run, _ in
+                let existing = value as? UIFont
+                if existing?.fontName != expected.fontName || existing?.pointSize != expected.pointSize {
+                    formatted.addAttribute(.font, value: expected, range: run)
+                    changed = true
+                }
+            }
+        }
+        if changed {
+            let selection = selectedTextRange
+            attributedText = formatted
+            if let selection { selectedTextRange = selection }
+        }
+        if let placeholder {
+            let styledPlaceholder = NSMutableAttributedString(attributedString:
+                LeximoryTypography.scaledChineseInput(placeholder, size: base.pointSize))
+            styledPlaceholder.addAttribute(.foregroundColor, value: UIColor.placeholderText,
+                                           range: NSRange(location: 0, length: styledPlaceholder.length))
+            attributedPlaceholder = styledPlaceholder
+        }
+    }
+
     override func didMoveToWindow() {
         super.didMoveToWindow()
         guard window != nil else { return }

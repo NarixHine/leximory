@@ -55,6 +55,20 @@ enum LeximoryTypography {
         return text
     }
 
+    static func scaledChineseInput(_ string: String, size: CGFloat) -> NSAttributedString {
+        let text = NSMutableAttributedString(string: string, attributes: [.font: editorialUI(size)])
+        let chinese = editorialUI(size * chineseGlyphScale, language: "Chinese")
+        var offset = 0
+        for character in string {
+            let length = String(character).utf16.count
+            if isChinese(character) {
+                text.addAttribute(.font, value: chinese, range: NSRange(location: offset, length: length))
+            }
+            offset += length
+        }
+        return text
+    }
+
     private static func isChinese(_ character: Character) -> Bool {
         character.unicodeScalars.contains {
             (0x3400...0x9FFF).contains($0.value) || (0xF900...0xFAFF).contains($0.value)

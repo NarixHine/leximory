@@ -17,24 +17,88 @@ import LeximoryCore
         #expect(result == definition)
         #expect(id == "receipt")
     }
-    @Test(.timeLimit(.minutes(1))) func restartedGenerationReplacesPartialText() async throws {
+    @Test func recoveryKeepsVisibleDefinitionUntilReplacementIsComplete() async throws {
+        let model = DefinitionModel(embedded: nil)
+        var events: [DefinitionEvent] = [
+            .started("first"), .delta("first", "{{bank||bank||old"),
+            .started("second"), .delta("second", "{{bank||bank||new")
+        ]
+        let stream = AsyncThrowingStream<DefinitionEvent, Error>(unfolding: { @MainActor in
+            if events.count <= 2 {
+                guard case .generating(let preview) = model.state else { Issue.record("Preview disappeared during recovery"); return nil }
+                #expect(preview.definition == "old")
+            }
+            return events.isEmpty ? .completed("second", self.definition) : events.removeFirst()
+        })
+        await model.generate { (stream, nil) }
+        guard case .ready(_, let id) = model.state else { Issue.record("Missing recovered definition"); return }
+        #expect(id == "second")
+    }
+    @Test func generationStreamsAllSectionsAndRetainsThemAfterFailure() async throws {
         let model = DefinitionModel(embedded: nil)
         let channel = AsyncThrowingStream<DefinitionEvent, Error>.makeStream()
-        let task = Task { await model.generate { (channel.stream, nil) } }
-        defer { channel.continuation.finish(); task.cancel() }
+        channel.continuation.yield(.started("first"))
+        channel.continuation.yield(.delta("first", "{{bank||bank||河岸||源自古英语||bench}"))
+        channel.continuation.finish(throwing: URLError(.networkConnectionLost))
+        await model.generate { (channel.stream, nil) }
+        #expect(model.visibleDefinition == Definition(lemma: "bank", definition: "河岸", etymology: "源自古英语", cognates: "bench"))
+        #expect(model.isReady == false)
+        #expect(model.save { _ in throw URLError(.badURL) } == nil)
+    }
+    @Test func splitDelimitersNeverAppearInTheDefinition() async throws {
+        let model = DefinitionModel(embedded: nil)
+        var events: [DefinitionEvent] = [
+            .started("first"), .delta("first", "{{bank||bank||河岸|"),
+            .delta("first", "|源自古英语|"), .delta("first", "|bench}"), .delta("first", "}")
+        ]
+        let stream = AsyncThrowingStream<DefinitionEvent, Error>(unfolding: { @MainActor in
+            if events.count <= 3 { #expect(model.visibleDefinition?.definition == "河岸") }
+            if events.count <= 2 { #expect(model.visibleDefinition?.etymology == "源自古英语") }
+            if events.count <= 1 { #expect(model.visibleDefinition?.cognates == "bench") }
+            return events.isEmpty ? .completed("first", self.definition) : events.removeFirst()
+        })
+        await model.generate { (stream, nil) }
+    }
+    @Test func streamingFeedbackIsPacedAndDoesNotReplayOldText() {
+        var feedback = DefinitionStreamFeedback()
+        let start = ContinuousClock.now
+        feedback.update(characterCount: 3, now: start)
+        #expect(feedback.pulse == 1)
+        feedback.update(characterCount: 10, now: start + .milliseconds(20))
+        #expect(feedback.pulse == 1)
+        feedback.update(characterCount: 20, now: start + .milliseconds(160))
+        #expect(feedback.pulse == 2)
+        feedback.update(characterCount: 20, now: start + .seconds(1))
+        feedback.update(characterCount: 5, now: start + .seconds(2))
+        #expect(feedback.pulse == 2)
+        feedback.update(characterCount: 1000, now: start + .seconds(3))
+        #expect(feedback.pulse == 3)
+    }
+    @Test func streamingFeedbackKeepsUpWithVisibleTyping() {
+        var feedback = DefinitionStreamFeedback()
+        let start = ContinuousClock.now
+        feedback.update(characterCount: 1, now: start)
+        feedback.update(characterCount: 2, now: start + .milliseconds(20))
+        #expect(feedback.pulse == 1)
+        feedback.update(characterCount: 5, now: start + .milliseconds(70))
+        #expect(feedback.pulse == 2)
+        feedback.update(characterCount: 9, now: start + .milliseconds(140))
+        #expect(feedback.pulse == 3)
+        feedback.update(characterCount: 9, now: start + .seconds(2))
+        #expect(feedback.pulse == 3)
+    }
+    @Test func recoveredCompletionReplacesPreviewAndUsesItsReceipt() async throws {
+        let model = DefinitionModel(embedded: nil)
+        let channel = AsyncThrowingStream<DefinitionEvent, Error>.makeStream()
         channel.continuation.yield(.started("first"))
         channel.continuation.yield(.delta("first", "{{bank||bank||old"))
         channel.continuation.yield(.started("second"))
         channel.continuation.yield(.delta("second", "{{bank||bank||new"))
-        while true {
-            try Task.checkCancellation()
-            if case .generating("new") = model.state { break }
-            await Task.yield()
-        }
         channel.continuation.yield(.completed("second", definition))
-        await task.value
+        await model.generate { (channel.stream, nil) }
         channel.continuation.finish()
-        guard case .ready(_, let id) = model.state else { Issue.record("Missing recovered definition"); return }
+        guard case .ready(let result, let id) = model.state else { Issue.record("Missing recovered definition"); return }
+        #expect(result == definition)
         #expect(id == "second")
     }
     @Test func saveSwitchesActionsImmediatelyAndIgnoresDoubleTap() async throws {

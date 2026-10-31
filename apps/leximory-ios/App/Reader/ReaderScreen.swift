@@ -244,11 +244,13 @@ struct DefinitionView: View {
     let trayDragging: Bool
     let onScrollPermission: ((Bool) -> Void)?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @State private var contentHeight: CGFloat = 64
     @State private var bottomSafeArea: CGFloat = 0
     @State private var lookupAttempt = 0
     @State private var editing = false
     @State private var saveAcknowledged = false
+    @State private var streamFeedback = DefinitionStreamFeedback()
     @State private var model: DefinitionModel
     @Environment(\.nativeSync) private var sync
     @Environment(\.dismiss) private var dismiss
@@ -266,12 +268,15 @@ struct DefinitionView: View {
         _model = State(initialValue: DefinitionModel(embedded: item.definition))
     }
     private var lemma: String {
-        if case .ready(let definition, _) = model.state { return definition.lemma }
+        if let definition = model.visibleDefinition, !definition.lemma.isEmpty { return definition.lemma }
         return item.definition?.lemma ?? item.source.text
     }
     private var waiting: Bool {
-        if case .generating(let preview) = model.state { return preview.isEmpty && client != nil }
-        return false
+        model.isGenerating && model.visibleDefinition == nil && client != nil
+    }
+    private var streamedCharacterCount: Int {
+        guard let definition = model.visibleDefinition else { return 0 }
+        return definition.definition.count + (definition.etymology?.count ?? 0) + (definition.cognates?.count ?? 0)
     }
     private var trayHeight: CGFloat? {
         guard let available = topTrayHeight else { return nil }
@@ -296,22 +301,27 @@ struct DefinitionView: View {
                                         .accessibilityAddTraits(.isHeader)
                                 }
                             }
-                            switch model.state {
-                            case .ready(let definition, _):
+                            if let definition = model.visibleDefinition {
                                 section("释义", content: definition.definition)
                                 if let etymology = definition.etymology, !etymology.isEmpty { section("语源", content: etymology) }
                                 if let cognates = definition.cognates, !cognates.isEmpty { section("同源词", content: cognates) }
+                            }
+                            switch model.state {
+                            case .ready:
                                 definitionActions
                                 if let error = model.saveError ?? model.editor?.error {
                                     Text(error)
                                         .interfaceFont(13).foregroundStyle(LeximoryPalette.muted)
                                 }
-                            case .generating(let preview):
+                            case .generating:
                                 if client != nil {
-                                    if !preview.isEmpty { section("释义", content: preview) }
-                                    HStack(spacing: 10) { ProgressView(); Text("正在理解语境").interfaceFont(15) }.frame(maxWidth: .infinity, minHeight: waiting && topTrayHeight != nil ? 32 : 24, alignment: .center)
+                                    HStack(spacing: 10) {
+                                        ProgressView().tint(LeximoryPalette.muted)
+                                        Text("正在理解语境").interfaceFont(15)
+                                            .foregroundStyle(LeximoryPalette.muted)
+                                    }.frame(maxWidth: .infinity, minHeight: waiting && topTrayHeight != nil ? 32 : 24, alignment: .center)
                                 } else { Text("示例模式暂不支持生成语境释义。").foregroundStyle(LeximoryPalette.muted) }
-                            case .failed(let message):
+                            case .failed(let message, _):
                                 Text(message).foregroundStyle(LeximoryPalette.muted)
                                 if client != nil { Button("重试", systemImage: "arrow.clockwise") { lookupAttempt += 1 } }
                             }
@@ -347,6 +357,19 @@ struct DefinitionView: View {
         .presentationDetents([.height(max(160, min(contentHeight, 560) - bottomSafeArea)), .large])
         .background(topTrayHeight == nil ? LeximoryPalette.annotationSurface : Color.clear).accessibilityIdentifier("definition-tray")
         .accessibilityAction(.escape) { if let closeTray { closeTray() } else { dismiss() } }
+        .onChange(of: streamedCharacterCount) { _, count in
+            if model.isGenerating, scenePhase == .active { streamFeedback.update(characterCount: count) }
+        }
+        .sensoryFeedback(.impact(weight: .light, intensity: 0.65), trigger: streamFeedback.pulse) { _, _ in
+            scenePhase == .active
+        }
+        .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: model.isReady) { _, ready in
+            ready && item.isDynamic && scenePhase == .active
+        }
+        .sensoryFeedback(.success, trigger: model.saveState) { old, new in
+            old == .saving && new == .saved && scenePhase == .active
+        }
+        .sensoryFeedback(.selection, trigger: editing) { _, editing in editing && scenePhase == .active }
         .task(id: model.saveState) {
             saveAcknowledged = false
             guard case .saved = model.saveState else { return }
@@ -377,18 +400,6 @@ struct DefinitionView: View {
                     .disabled(saveLocked || sync?.online == false)
                     .animation(model.saveState == .saving ? nil : actionMotion, value: model.saveState)
                     .animation(actionMotion, value: saveAcknowledged)
-                    .keyframeAnimator(initialValue: DefinitionSuccessMotion(), trigger: model.saveState == .saved && !reduceMotion) { content, motion in
-                        content.scaleEffect(motion.scale).rotationEffect(.degrees(motion.rotation))
-                    } keyframes: { _ in
-                        KeyframeTrack(\.scale) {
-                            CubicKeyframe(1.18, duration: 0.18)
-                            CubicKeyframe(1, duration: 0.26)
-                        }
-                        KeyframeTrack(\.rotation) {
-                            CubicKeyframe(-10, duration: 0.12)
-                            CubicKeyframe(0, duration: 0.32)
-                        }
-                    }
 
             }
             if let dictionaryURL {
@@ -399,12 +410,10 @@ struct DefinitionView: View {
         }
     }
     private var actionMotion: Animation? {
-        reduceMotion ? nil : .timingCurve(0.22, 1, 0.36, 1, duration: 0.24)
+        reduceMotion ? nil : .easeOut(duration: 0.18)
     }
     private var primarySymbolTransition: AnyTransition {
-        reduceMotion ? .identity : .asymmetric(
-            insertion: .offset(y: 26).combined(with: .scale(scale: 0.85)),
-            removal: .offset(y: -26).combined(with: .scale(scale: 0.85)))
+        reduceMotion ? .identity : .opacity
     }
     private var saveSymbol: String {
         switch model.saveState {
@@ -451,11 +460,6 @@ struct DefinitionView: View {
 
 }
 
-private struct DefinitionSuccessMotion {
-    var scale: CGFloat = 1
-    var rotation: Double = 0
-}
-
 struct DefinitionPrimaryButtonStyle: ButtonStyle {
     let reduceMotion: Bool
 
@@ -463,7 +467,7 @@ struct DefinitionPrimaryButtonStyle: ButtonStyle {
         configuration.label
             .foregroundStyle(LeximoryPalette.paper)
             .background(LeximoryPalette.ink, in: Circle())
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.92 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.96 : 1)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }

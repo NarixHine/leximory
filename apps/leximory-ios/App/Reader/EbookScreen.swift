@@ -46,6 +46,7 @@ struct EbookBookmarkColorRequest: Equatable {
     @ObservationIgnored var prepareForFind: (() async -> Void)?
     private var nextPendingBookmarkID = -1
     var bookmarkNotice: UUID?
+    private(set) var bookmarkConfirmation: UUID?
     var bookmarkErrorMessage = "标记未能保存，请重试。"
     var bookmarkColorRequest: EbookBookmarkColorRequest?
     private(set) var pendingBookmarkColors: Set<Int> = []
@@ -110,7 +111,7 @@ struct EbookBookmarkColorRequest: Equatable {
     }
     func finishBookmark(_ pending: EbookBookmark, saved: EbookBookmark?) {
         guard let index = bookmarks.firstIndex(where: { $0.id == pending.id }) else { return }
-        if let saved { bookmarks[index] = saved }
+        if let saved { bookmarks[index] = saved; bookmarkConfirmation = UUID() }
         else { bookmarks.remove(at: index); bookmarkErrorMessage = "标记未能保存，请重试。"; bookmarkNotice = UUID() }
     }
     func gutterSide(at point: CGPoint) -> Bool? {
@@ -210,6 +211,7 @@ struct EbookScreen: View {
             }
         }
         .sensoryFeedback(.error, trigger: reader.bookmarkNotice)
+        .sensoryFeedback(.success, trigger: reader.bookmarkConfirmation) { _, _ in scenePhase == .active }
         .task(id: reader.bookmarkNotice) {
             guard reader.bookmarkNotice != nil else { return }
             UIAccessibility.post(notification: .announcement, argument: reader.bookmarkErrorMessage)
