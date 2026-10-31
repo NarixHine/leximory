@@ -90,7 +90,7 @@ struct HomeWallpaperEditor: View {
             Label(title, systemImage: "photo")
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .overlay(alignment: .trailing) { if busy { ProgressView().padding(.trailing, 12) } }
-        }.buttonStyle(.borderedProminent).tint(.blue)
+        }.buttonStyle(.borderedProminent).tint(LeximoryPalette.sage)
             .disabled(importing || !store.loaded)
             .accessibilityIdentifier("wallpaper-choose-photo")
     }

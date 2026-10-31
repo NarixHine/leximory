@@ -243,6 +243,7 @@ struct DefinitionView: View {
     let closeTray: (() -> Void)?
     let trayDragging: Bool
     let onScrollPermission: ((Bool) -> Void)?
+    let allowsFeedback: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @State private var contentHeight: CGFloat = 64
@@ -251,6 +252,8 @@ struct DefinitionView: View {
     @State private var editing = false
     @State private var saveAcknowledged = false
     @State private var streamFeedback = DefinitionStreamFeedback()
+    @AppStorage(AnnotationFeedback.preferenceKey) private var hapticsEnabled = true
+    @State private var lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
     @State private var model: DefinitionModel
     @Environment(\.nativeSync) private var sync
     @Environment(\.dismiss) private var dismiss
@@ -261,10 +264,11 @@ struct DefinitionView: View {
         if topTrayHeight != nil { return sizeClass == .regular ? regularBodySize * 17 / 18 : compactBodySize * 16 / 17 }
         return sizeClass == .regular ? regularBodySize : compactBodySize
     }
-    init(item: DefinitionPresentation, client: MobileClient?, language: String, isPopover: Bool, topTrayHeight: CGFloat? = nil, closeTray: (() -> Void)? = nil, trayDragging: Bool = false, onScrollPermission: ((Bool) -> Void)? = nil) {
+    init(item: DefinitionPresentation, client: MobileClient?, language: String, isPopover: Bool, topTrayHeight: CGFloat? = nil, closeTray: (() -> Void)? = nil, trayDragging: Bool = false, onScrollPermission: ((Bool) -> Void)? = nil, allowsFeedback: Bool = true) {
         self.item = item; self.client = client; self.initialLanguage = language; self.isPopover = isPopover
         self.topTrayHeight = topTrayHeight; self.closeTray = closeTray
         self.trayDragging = trayDragging; self.onScrollPermission = onScrollPermission
+        self.allowsFeedback = allowsFeedback
         _model = State(initialValue: DefinitionModel(embedded: item.definition))
     }
     private var lemma: String {
@@ -274,6 +278,7 @@ struct DefinitionView: View {
     private var waiting: Bool {
         model.isGenerating && model.visibleDefinition == nil && client != nil
     }
+    private var feedbackAllowed: Bool { AnnotationFeedback.supported && hapticsEnabled && !lowPowerMode && allowsFeedback && scenePhase == .active }
     private var streamedCharacterCount: Int {
         guard let definition = model.visibleDefinition else { return 0 }
         return definition.definition.count + (definition.etymology?.count ?? 0) + (definition.cognates?.count ?? 0)
@@ -282,7 +287,7 @@ struct DefinitionView: View {
         guard let available = topTrayHeight else { return nil }
         return min(max(64, contentHeight), max(64, available * 0.78))
     }
-    var body: some View {
+    private var trayContent: some View {
         VStack(spacing: 0) {
             GeometryReader { geometry in
                 let safeAreaBottom = geometry.safeAreaInsets.bottom
@@ -294,33 +299,36 @@ struct DefinitionView: View {
                                 editing = false
                             }, cancel: { editing = false })
                         } else {
-                            if !waiting {
-                                HStack(alignment: .center, spacing: 10) {
-                                    Text(lemma).font(LeximoryTypography.prose(item.isDynamic ? 20 : 24, language: language, bold: true))
-                                        .foregroundStyle(LeximoryPalette.ink).textSelection(.enabled)
-                                        .accessibilityAddTraits(.isHeader)
+                            HStack(alignment: .center, spacing: 10) {
+                                Text(lemma).font(LeximoryTypography.prose(item.isDynamic ? 20 : 24, language: language, bold: true))
+                                    .foregroundStyle(LeximoryPalette.ink).textSelection(.enabled)
+                                    .lineLimit(item.isDynamic ? 3 : nil)
+                                    .accessibilityAddTraits(.isHeader)
+                                    .accessibilityIdentifier("definition-headword")
+                                Spacer(minLength: 0)
+                                if model.isGenerating, !waiting, client != nil {
+                                    ProgressView().controlSize(.mini).tint(.secondary)
+                                        .accessibilityLabel("正在生成释义")
+                                        .accessibilityIdentifier("definition-generating")
                                 }
                             }
                             if let definition = model.visibleDefinition {
                                 section("释义", content: definition.definition)
+                                if item.isDynamic { definitionActions; saveFailure }
                                 if let etymology = definition.etymology, !etymology.isEmpty { section("语源", content: etymology) }
                                 if let cognates = definition.cognates, !cognates.isEmpty { section("同源词", content: cognates) }
                             }
                             switch model.state {
                             case .ready:
-                                definitionActions
-                                if let error = model.saveError ?? model.editor?.error {
-                                    Text(error)
-                                        .interfaceFont(13).foregroundStyle(LeximoryPalette.muted)
-                                }
+                                if !item.isDynamic { definitionActions; saveFailure }
                             case .generating:
-                                if client != nil {
+                                if waiting {
                                     HStack(spacing: 10) {
                                         ProgressView().tint(LeximoryPalette.muted)
                                         Text("正在理解语境").interfaceFont(15)
                                             .foregroundStyle(LeximoryPalette.muted)
                                     }.frame(maxWidth: .infinity, minHeight: waiting && topTrayHeight != nil ? 32 : 24, alignment: .center)
-                                } else { Text("示例模式暂不支持生成语境释义。").foregroundStyle(LeximoryPalette.muted) }
+                                } else if client == nil { Text("示例模式暂不支持生成语境释义。").foregroundStyle(LeximoryPalette.muted) }
                             case .failed(let message, _):
                                 Text(message).foregroundStyle(LeximoryPalette.muted)
                                 if client != nil { Button("重试", systemImage: "arrow.clockwise") { lookupAttempt += 1 } }
@@ -348,7 +356,7 @@ struct DefinitionView: View {
             .frame(height: topTrayHeight != nil ? trayHeight : nil)
             .clipped()
         }
-        .animation(reduceMotion ? nil : .timingCurve(0.32, 0.72, 0, 1, duration: 0.24), value: trayHeight)
+        .animation(reduceMotion || model.isGenerating ? nil : .timingCurve(0.32, 0.72, 0, 1, duration: 0.24), value: trayHeight)
         .frame(width: isPopover ? 400 : nil)
         .frame(idealHeight: isPopover ? max(120, min(contentHeight, 520)) : nil,
                maxHeight: isPopover ? max(120, min(contentHeight, 520)) : nil,
@@ -357,39 +365,54 @@ struct DefinitionView: View {
         .presentationDetents([.height(max(160, min(contentHeight, 560) - bottomSafeArea)), .large])
         .background(topTrayHeight == nil ? LeximoryPalette.annotationSurface : Color.clear).accessibilityIdentifier("definition-tray")
         .accessibilityAction(.escape) { if let closeTray { closeTray() } else { dismiss() } }
+    }
+    var body: some View {
+        trayContent
         .onChange(of: streamedCharacterCount) { _, count in
-            if model.isGenerating, scenePhase == .active { streamFeedback.update(characterCount: count) }
+            streamFeedback.update(characterCount: count, enabled: model.isGenerating && feedbackAllowed)
         }
-        .sensoryFeedback(.impact(weight: .light, intensity: 0.65), trigger: streamFeedback.pulse) { _, _ in
-            scenePhase == .active
-        }
-        .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: model.isReady) { _, ready in
-            ready && item.isDynamic && scenePhase == .active
+        .sensoryFeedback(.impact(weight: .light, intensity: 0.2), trigger: streamFeedback.pulse) { _, _ in
+            model.isGenerating && feedbackAllowed
         }
         .sensoryFeedback(.success, trigger: model.saveState) { old, new in
-            old == .saving && new == .saved && scenePhase == .active
+            old == .saving && new == .saved && feedbackAllowed
         }
-        .sensoryFeedback(.selection, trigger: editing) { _, editing in editing && scenePhase == .active }
-        .task(id: model.saveState) {
-            saveAcknowledged = false
-            guard case .saved = model.saveState else { return }
-            do { try await Task.sleep(for: .milliseconds(650)) } catch { return }
-            withAnimation(actionMotion) { saveAcknowledged = true }
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+            lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
         }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { lowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled }
+        }
+        .onChange(of: model.isReady) { _, ready in
+            if ready, allowsFeedback, scenePhase == .active, UIAccessibility.isVoiceOverRunning {
+                UIAccessibility.post(notification: .announcement, argument: "释义已显示")
+            }
+        }
+        .task(id: model.saveState) { await acknowledgeSave() }
         .task(id: "\(item.id):\(lookupAttempt)") {
             if sync?.online == false, item.definition == nil { model.offline() }
-            else if let client { await model.generate(client: client, source: item.source) }
+            else if let client { model.startGeneration(client: client, source: item.source) }
         }
+        .onDisappear { model.dismiss() }
+    }
+    private func acknowledgeSave() async {
+        saveAcknowledged = false
+        guard case .saved = model.saveState else { return }
+        if allowsFeedback, scenePhase == .active, UIAccessibility.isVoiceOverRunning {
+            UIAccessibility.post(notification: .announcement, argument: "词汇已收藏")
+        }
+        do { try await Task.sleep(for: .milliseconds(650)) } catch { return }
+        withAnimation(actionMotion) { saveAcknowledged = true }
     }
     private var definitionActions: some View {
         HStack(spacing: 16) {
             if let client {
                 Button {
-                    if case .idle = model.saveState { model.save(client: client, source: item.source) }
+                    if case .idle = model.saveState { model.requestSave(client: client, source: item.source) }
                     else if case .saved = model.saveState, saveAcknowledged { withAnimation(actionMotion) { editing = true } }
                 } label: {
                     ZStack {
-                        if case .saving = model.saveState {
+                        if model.saveState == .queued || model.saveState == .saving {
                             ProgressView().tint(LeximoryPalette.paper).transition(primarySymbolTransition)
                         } else {
                             Image(systemName: saveSymbol).font(.system(size: 20))
@@ -412,13 +435,18 @@ struct DefinitionView: View {
     private var actionMotion: Animation? {
         reduceMotion ? nil : .easeOut(duration: 0.18)
     }
+    @ViewBuilder private var saveFailure: some View {
+        if let error = model.saveError ?? model.editor?.error {
+            Text(error).interfaceFont(13).foregroundStyle(LeximoryPalette.muted)
+        }
+    }
     private var primarySymbolTransition: AnyTransition {
         reduceMotion ? .identity : .opacity
     }
     private var saveSymbol: String {
         switch model.saveState {
         case .idle: "book.closed"
-        case .saving: "book.closed"
+        case .queued, .saving: "book.closed"
         case .saved: saveAcknowledged ? "pencil" : "checkmark"
         case .uncertain: "exclamationmark"
         }
@@ -426,15 +454,15 @@ struct DefinitionView: View {
     private var saveLabel: String {
         switch model.saveState {
         case .idle: "收藏词汇"
-        case .saving: "正在收藏"
+        case .queued, .saving: "正在收藏"
         case .saved: saveAcknowledged ? "编辑词汇" : "已收藏"
         case .uncertain: "收藏结果待确认"
         }
     }
     private var saveLocked: Bool {
         switch model.saveState {
-        case .idle: false
-        case .saving, .uncertain: true
+        case .idle: !model.isReady && !model.isGenerating
+        case .queued, .saving, .uncertain: true
         case .saved: !saveAcknowledged
         }
     }
@@ -501,7 +529,8 @@ struct DefinitionTopTray: View {
                     .accessibilityHidden(true)
                 DefinitionView(item: item, client: client, language: language, isPopover: false,
                                topTrayHeight: geometry.size.height, closeTray: dismissTray,
-                               trayDragging: dragging, onScrollPermission: { canMove = $0 })
+                               trayDragging: dragging, onScrollPermission: { canMove = $0 },
+                               allowsFeedback: presented && dismissal == nil && !dragging)
                     .frame(width: min(LeximoryLayout.annotationMeasure, geometry.size.width - 24))
                     .clipShape(RoundedRectangle(cornerRadius: 36, style: .continuous))
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 36, style: .continuous))

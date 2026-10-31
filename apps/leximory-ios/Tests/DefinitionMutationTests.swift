@@ -45,19 +45,93 @@ import LeximoryCore
         #expect(model.isReady == false)
         #expect(model.save { _ in throw URLError(.badURL) } == nil)
     }
-    @Test func splitDelimitersNeverAppearInTheDefinition() async throws {
+    @Test func splitDelimitersNeverAppearInTheDefinition() {
+        var previews: [Definition] = []
+        let buffer = DefinitionPreviewBuffer { previews.append($0) }
+        for chunk in ["{{bank||bank||河岸|", "|源自古英语|", "|bench}", "}"] {
+            buffer.append(chunk)
+            buffer.flush()
+        }
+        #expect(previews == [
+            Definition(lemma: "bank", definition: "河岸"),
+            Definition(lemma: "bank", definition: "河岸", etymology: "源自古英语"),
+            Definition(lemma: "bank", definition: "河岸", etymology: "源自古英语", cognates: "bench")
+        ])
+    }
+    @Test(.timeLimit(.minutes(1))) func providerBurstsPublishTogetherEvenWhenNoMoreChunksArrive() async {
+        let updates = AsyncStream<Definition>.makeStream()
+        let buffer = DefinitionPreviewBuffer { updates.continuation.yield($0) }
+        buffer.append("{{bank||bank||河")
+        buffer.append("岸")
+        buffer.append("，河流两侧")
+        buffer.append("的陆地。")
+        var iterator = updates.stream.makeAsyncIterator()
+        #expect(await iterator.next()?.definition == "河")
+        #expect(await iterator.next()?.definition == "河岸，河流两侧的陆地。")
+        buffer.cancel()
+        updates.continuation.finish()
+    }
+    @Test func incompleteFormattingAndRubyWaitForTheirClosingDelimiter() {
+        #expect(DefinitionPreviewBuffer.preview("{{bank||bank||**n. 河岸") == nil)
+        #expect(DefinitionPreviewBuffer.preview("{{bank||bank||**n. 河岸** `bæ")?.definition == "**n. 河岸**")
+        #expect(DefinitionPreviewBuffer.preview("{{語||語||意味。<ruby>不憫<rt>ふびん</rt>")?.definition == "意味。")
+        #expect(DefinitionPreviewBuffer.preview("{{語||語||意味。<ruby>不憫<rt>ふびん</rt></ruby> 🙂")?.definition == "意味。<ruby>不憫<rt>ふびん</rt></ruby> 🙂")
+    }
+    @Test(.timeLimit(.minutes(1))) func earlySaveWaitsForValidatedCompletionAndSurvivesDismissal() async throws {
         let model = DefinitionModel(embedded: nil)
-        var events: [DefinitionEvent] = [
-            .started("first"), .delta("first", "{{bank||bank||河岸|"),
-            .delta("first", "|源自古英语|"), .delta("first", "|bench}"), .delta("first", "}")
-        ]
+        let receipt = try receipt()
+        let writes = AsyncStream<String?>.makeStream()
+        var count = 0
+        var events: [DefinitionEvent] = [.started("request"), .delta("request", "{{bank||bank||preview")]
         let stream = AsyncThrowingStream<DefinitionEvent, Error>(unfolding: { @MainActor in
-            if events.count <= 3 { #expect(model.visibleDefinition?.definition == "河岸") }
-            if events.count <= 2 { #expect(model.visibleDefinition?.etymology == "源自古英语") }
-            if events.count <= 1 { #expect(model.visibleDefinition?.cognates == "bench") }
-            return events.isEmpty ? .completed("first", self.definition) : events.removeFirst()
+            if !events.isEmpty { return events.removeFirst() }
+            model.requestSave { id in
+                count += 1
+                #expect(model.visibleDefinition == self.definition)
+                writes.continuation.yield(id)
+                return receipt
+            }
+            #expect(model.saveState == .queued)
+            #expect(count == 0)
+            model.requestSave { _ in Issue.record("Duplicate queued save"); return receipt }
+            model.dismiss()
+            return .completed("verified-receipt", self.definition)
+        })
+        let generation = try #require(model.startGeneration { (stream, nil) })
+        await generation.value
+        #expect(!generation.isCancelled)
+        var iterator = writes.stream.makeAsyncIterator()
+        #expect(await iterator.next() == .some("verified-receipt"))
+        #expect(count == 1)
+        writes.continuation.finish()
+    }
+    @Test func incompleteGenerationNeverCommitsAnEarlySave() async {
+        let model = DefinitionModel(embedded: nil)
+        var writes = 0
+        var events: [DefinitionEvent] = [.started("request"), .delta("request", "{{bank||bank||preview")]
+        let stream = AsyncThrowingStream<DefinitionEvent, Error>(unfolding: { @MainActor in
+            if !events.isEmpty { return events.removeFirst() }
+            model.requestSave { _ in writes += 1; throw URLError(.badURL) }
+            #expect(model.saveState == .queued)
+            throw URLError(.networkConnectionLost)
         })
         await model.generate { (stream, nil) }
+        #expect(writes == 0)
+        #expect(model.saveState == .idle)
+        #expect(model.visibleDefinition?.definition == "preview")
+        #expect(model.saveError != nil)
+    }
+    @Test func dismissingAnUnsavedLookupCancelsItsGeneration() async throws {
+        let model = DefinitionModel(embedded: nil)
+        let channel = AsyncThrowingStream<DefinitionEvent, Error>.makeStream()
+        var requested = false
+        let generation = try #require(model.startGeneration { requested = true; return (channel.stream, nil) })
+        model.dismiss()
+        await generation.value
+        #expect(generation.isCancelled)
+        #expect(!requested)
+        #expect(model.isReady == false)
+        channel.continuation.finish()
     }
     @Test func streamingFeedbackIsPacedAndDoesNotReplayOldText() {
         var feedback = DefinitionStreamFeedback()
@@ -81,11 +155,27 @@ import LeximoryCore
         feedback.update(characterCount: 2, now: start + .milliseconds(20))
         #expect(feedback.pulse == 1)
         feedback.update(characterCount: 5, now: start + .milliseconds(70))
+        #expect(feedback.pulse == 1)
+        feedback.update(characterCount: 7, now: start + .milliseconds(120))
         #expect(feedback.pulse == 2)
         feedback.update(characterCount: 9, now: start + .milliseconds(140))
+        #expect(feedback.pulse == 2)
+        feedback.update(characterCount: 12, now: start + .milliseconds(240))
         #expect(feedback.pulse == 3)
         feedback.update(characterCount: 9, now: start + .seconds(2))
         #expect(feedback.pulse == 3)
+    }
+    @Test func suppressedTextIsNotReplayedWhenFeedbackIsEnabled() {
+        var feedback = DefinitionStreamFeedback()
+        let start = ContinuousClock.now
+        feedback.update(characterCount: 20, enabled: false, now: start)
+        feedback.update(characterCount: 20, now: start + .seconds(1))
+        #expect(feedback.pulse == 0)
+        feedback.update(characterCount: 21, now: start + .seconds(2))
+        #expect(feedback.pulse == 1)
+        feedback.update(characterCount: 100, enabled: false, now: start + .seconds(3))
+        feedback.update(characterCount: 100, now: start + .seconds(4))
+        #expect(feedback.pulse == 1)
     }
     @Test func recoveredCompletionReplacesPreviewAndUsesItsReceipt() async throws {
         let model = DefinitionModel(embedded: nil)

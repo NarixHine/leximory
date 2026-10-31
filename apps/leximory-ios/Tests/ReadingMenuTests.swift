@@ -220,6 +220,39 @@ import LeximoryCore
         #expect(query == "river")
     }
 
+    @Test func learningActionGlyphsMatchUtilityInkHeight() {
+        let font = ReadingMenuTypography.learningFont()
+        #expect(font.fontName == "Fontquan-XinYiJiXiangSong-Regular")
+        let height = ReadingMenuTypography.inkBounds(text: "猫忆查荧光笔", font: font).height
+        #expect(abs(height - 14.52) < 0.1)
+    }
+
+    @Test(arguments: ["猫忆查", "荧光笔", "辞典", "拷贝", "Bing"])
+    func renderedGlyphsShareTheControlCenter(text: String) throws {
+        let label = ReadingMenuLabel()
+        label.text = text
+        label.font = ["猫忆查", "荧光笔"].contains(text) ? ReadingMenuTypography.learningFont() : LeximoryTypography.interfaceUI(15)
+        label.textColor = .black
+        label.frame = CGRect(origin: .zero, size: label.intrinsicContentSize)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 3; format.opaque = false
+        let image = try #require(UIGraphicsImageRenderer(bounds: label.bounds, format: format).image { _ in
+            label.drawText(in: label.bounds)
+        }.cgImage)
+        let width = image.width, height = image.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let rows = try pixels.withUnsafeMutableBytes { buffer -> [Int] in
+            let context = try #require(CGContext(data: buffer.baseAddress, width: width, height: height,
+                bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            let bytes = buffer.bindMemory(to: UInt8.self)
+            return (0..<height).filter { y in (0..<width).contains { x in bytes[(y * width + x) * 4 + 3] > 32 } }
+        }
+        let top = try #require(rows.first), bottom = try #require(rows.last)
+        #expect(abs(Double(top + bottom + 1) / 2 - Double(height) / 2) <= 1)
+    }
+
     @Test func existingPDFHighlightOmitsAddHighlight() {
         let actions = EbookLearningMenu.actions(reader: EbookReaderState(), includeBookmark: false)
         #expect(actions.map(\.title) == [ReadingSelectionMenu.lookupTitle, BrowserSearchEngine.selected().name])

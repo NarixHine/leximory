@@ -108,7 +108,7 @@ struct MembershipView: View {
                             Text(plan.title).interfaceFont(17, semibold: true, style: .headline)
                             Spacer(minLength: 4)
                             Image(systemName: selection == plan ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 18)).foregroundStyle(selection == plan ? Color.blue : LeximoryPalette.secondaryBorder)
+                                .font(.system(size: 18)).foregroundStyle(selection == plan ? LeximoryPalette.sage : LeximoryPalette.secondaryBorder)
                         }
                         HStack(alignment: .firstTextBaseline, spacing: 3) {
                             Text(store.prices[plan] ?? "—").interfaceFont(20, style: .title3)
@@ -116,7 +116,7 @@ struct MembershipView: View {
                         }
                     }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
                         .background(selection == plan ? LeximoryPalette.cover : LeximoryPalette.paper, in: .rect(cornerRadius: 20))
-                        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(selection == plan ? Color.blue : LeximoryPalette.secondaryBorder, lineWidth: selection == plan ? 1.5 : 0.5) }
+                        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(selection == plan ? LeximoryPalette.sage : LeximoryPalette.secondaryBorder, lineWidth: selection == plan ? 1.5 : 0.5) }
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("\(plan.title)，每月\(store.prices[plan] ?? "价格暂不可用")")

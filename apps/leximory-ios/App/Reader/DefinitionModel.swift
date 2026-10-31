@@ -44,7 +44,7 @@ enum DefinitionSource {
         case ready(Definition, completionID: String?)
         case failed(String, preview: Definition?)
     }
-    enum SaveState: Equatable { case idle, saving, saved, uncertain }
+    enum SaveState: Equatable { case idle, queued, saving, saved, uncertain }
     private(set) var state: State
     private(set) var browserTarget: BrowserTarget?
     private(set) var savedWord: SavedVocabulary?
@@ -52,6 +52,8 @@ enum DefinitionSource {
     private(set) var saveError: String?
     private(set) var saveState: SaveState = .idle
     @ObservationIgnored private var saveRequest: Task<SavedVocabulary, Error>?
+    @ObservationIgnored private var generationTask: Task<Void, Never>?
+    @ObservationIgnored private var queuedSave: (@MainActor (String?) async throws -> SavedVocabulary)?
     private var creationDefinition: Definition?
     var visibleDefinition: Definition? {
         switch state {
@@ -66,17 +68,32 @@ enum DefinitionSource {
         state = embedded.map { .ready($0, completionID: nil) } ?? .generating(Definition(lemma: "", definition: ""))
     }
     func offline() { state = .failed("离线时可以查看已保存的释义。语境查词需要联网。", preview: visibleDefinition) }
-    func generate(client: MobileClient, source: DefinitionSource) async {
-        await generate { try await source.stream(client: client) }
+    @discardableResult func startGeneration(client: MobileClient, source: DefinitionSource) -> Task<Void, Never>? {
+        startGeneration { try await source.stream(client: client) }
+    }
+    @discardableResult func startGeneration(stream: @escaping @MainActor () async throws -> (events: AsyncThrowingStream<DefinitionEvent, Error>, target: BrowserTarget?)) -> Task<Void, Never>? {
+        guard generationTask == nil, !isReady else { return nil }
+        let task = Task {
+            await generate(stream: stream)
+            generationTask = nil
+        }
+        generationTask = task
+        return task
+    }
+    func dismiss() {
+        // An explicit save outlives the tray. An ordinary lookup does not.
+        if saveState != .queued && saveState != .saving { generationTask?.cancel() }
     }
     func generate(stream: @MainActor () async throws -> (events: AsyncThrowingStream<DefinitionEvent, Error>, target: BrowserTarget?)) async {
         if case .ready = state { return }
         let retained = visibleDefinition
         state = .generating(retained ?? Definition(lemma: "", definition: ""))
-        var raw = ""
+        let buffer = DefinitionPreviewBuffer { [weak self] preview in self?.state = .generating(preview) }
+        defer { buffer.cancel() }
         var started = false
         var recovering = retained != nil
         do {
+            try Task.checkCancellation()
             let stream = try await stream()
             browserTarget = stream.target
             for try await event in stream.events {
@@ -87,12 +104,17 @@ enum DefinitionSource {
                     // until its replacement completes instead of replaying its opening.
                     if started { recovering = visibleDefinition != nil }
                     started = true
-                    raw = ""
+                    buffer.restart(retaining: recovering)
                 case .delta(_, let text):
-                    raw += text
-                    if !recovering, let preview = Self.preview(raw) { state = .generating(preview) }
+                    buffer.append(text)
                 case .completed(let id, let definition):
+                    buffer.cancel()
                     state = .ready(definition, completionID: id)
+                    if let operation = queuedSave {
+                        queuedSave = nil
+                        saveState = .idle
+                        save(operation: operation)
+                    }
                     return
                 case .failed(_, let error): throw DefinitionFailure(message: error.message)
                 }
@@ -101,29 +123,29 @@ enum DefinitionSource {
             throw URLError(.cannotParseResponse)
         } catch {
             guard !Task.isCancelled else { return }
+            buffer.flush()
             state = .failed((MobileClient.cause(of: error) as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message ?? "释义未能完成，请关闭后重试。", preview: visibleDefinition)
-        }
-    }
-    private static func preview(_ raw: String) -> Definition? {
-        let fields = raw.components(separatedBy: "||")
-        guard fields.count >= 3 else { return nil }
-        func field(_ index: Int) -> String? {
-            guard index < fields.count else { return nil }
-            var value = fields[index]
-            if index == fields.count - 1 {
-                while value.last == "|" || value.last == "}" { value.removeLast() }
+            if saveState == .queued {
+                queuedSave = nil
+                saveState = .idle
+                saveError = "词汇尚未收藏，请在释义完成后重试。"
             }
-            value = value.trimmingCharacters(in: .whitespacesAndNewlines)
-            return value.isEmpty ? nil : value
         }
-        return Definition(lemma: field(1) ?? "", definition: field(2) ?? "", etymology: field(3), cognates: field(4))
     }
-    @discardableResult func save(client: MobileClient, source: DefinitionSource) -> Task<Void, Never>? {
-        save { completionID in
+    func requestSave(client: MobileClient, source: DefinitionSource) {
+        requestSave { completionID in
             let receipt = try await source.save(client: client, completionID: completionID)
             SavedWordsWidgetSync.schedule(client: client)
             return receipt
         }
+    }
+    func requestSave(operation: @escaping @MainActor (String?) async throws -> SavedVocabulary) {
+        guard saveState == .idle else { return }
+        if isGenerating, visibleDefinition != nil {
+            saveError = nil
+            queuedSave = operation
+            saveState = .queued
+        } else { save(operation: operation) }
     }
     @discardableResult func save(operation: @escaping @MainActor (String?) async throws -> SavedVocabulary) -> Task<Void, Never>? {
         guard case .ready(let definition, let completionID) = state, case .idle = saveState else { return nil }
@@ -179,18 +201,4 @@ enum DefinitionSource {
     }
     private struct CreationFailed: Error {}
     private struct DefinitionFailure: Error { let message: String }
-}
-
-struct DefinitionStreamFeedback {
-    private var highWaterCount = 0
-    private var lastPulse: ContinuousClock.Instant?
-    private(set) var pulse = 0
-
-    mutating func update(characterCount: Int, now: ContinuousClock.Instant = .now) {
-        guard characterCount > highWaterCount else { return }
-        highWaterCount = characterCount
-        guard lastPulse.map({ now - $0 >= .milliseconds(70) }) ?? true else { return }
-        lastPulse = now
-        pulse += 1
-    }
 }

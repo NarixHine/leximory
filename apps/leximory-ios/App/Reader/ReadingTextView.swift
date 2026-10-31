@@ -954,10 +954,10 @@ private extension UIFont {
             content.addArrangedSubview(icon)
         }
         if !iconOnly && !element.title.isEmpty {
-            let label = UILabel()
+            let label = ReadingMenuLabel()
             label.text = element.title
             let learningAction = primary || element.title == "荧光笔"
-            let face = learningAction ? LeximoryTypography.displayUI(16) : LeximoryTypography.interfaceUI(15)
+            let face = learningAction ? ReadingMenuTypography.learningFont() : LeximoryTypography.interfaceUI(15)
             label.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: face)
             label.numberOfLines = 1
             if primary { label.adjustsFontSizeToFitWidth = true; label.minimumScaleFactor = 0.8 }
@@ -1080,6 +1080,59 @@ private extension UIFont {
         CATransaction.commit()
     }
 
+}
+
+@MainActor enum ReadingMenuTypography {
+    private static let learningSample = "猫忆查荧光笔"
+    private static let utilitySample = "辞典拷贝"
+
+    static func learningFont() -> UIFont {
+        // Cascade descriptors discard the display face's scale matrix. Use the fixed
+        // Chinese face directly and match its ink height to the utility face.
+        let reference = LeximoryTypography.interfaceUI(15)
+        let face = LeximoryTypography.face("Fontquan-XinYiJiXiangSong-Regular", size: 15)
+        let ratio = inkBounds(text: utilitySample, font: reference).height
+            / inkBounds(text: learningSample, font: face).height
+        return face.withSize(15 * ratio)
+    }
+
+    static func inkBounds(text: String, font: UIFont) -> CGRect {
+        CTLineGetBoundsWithOptions(line(text: text, font: font), [.useGlyphPathBounds])
+    }
+
+    private static func line(text: String, font: UIFont) -> CTLine {
+        CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: [.font: font]))
+    }
+}
+
+/// Centers visible ink rather than the unrelated line boxes of the two font families.
+final class ReadingMenuLabel: UILabel {
+    override var intrinsicContentSize: CGSize {
+        guard let text, let font else { return .zero }
+        let ink = ReadingMenuTypography.inkBounds(text: text, font: font)
+        return CGSize(width: ceil(ink.width), height: ceil(ink.height))
+    }
+
+    override func drawText(in rect: CGRect) {
+        guard let text, let font, let context = UIGraphicsGetCurrentContext() else { return }
+        let ink = ReadingMenuTypography.inkBounds(text: text, font: font)
+        guard ink.width > 0, ink.height > 0 else { return }
+        let scale = adjustsFontSizeToFitWidth ? min(1, max(minimumScaleFactor, bounds.width / ink.width)) : 1
+        let color = textColor.resolvedColor(with: traitCollection).cgColor
+        let attributed = NSAttributedString(string: text, attributes: [
+            .font: font,
+            NSAttributedString.Key(kCTForegroundColorAttributeName as String): color
+        ])
+        let line = CTLineCreateWithAttributedString(attributed)
+        context.saveGState()
+        context.textMatrix = .identity
+        context.translateBy(x: bounds.midX - ink.midX * scale,
+                            y: bounds.midY + ink.midY * scale)
+        context.scaleBy(x: scale, y: -scale)
+        context.textPosition = .zero
+        CTLineDraw(line, context)
+        context.restoreGState()
+    }
 }
 
 // Fitted to the supplied ScreenRecording_10-31-2026 18-25-33_1.mov using its frame timestamps.

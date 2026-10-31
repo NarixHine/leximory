@@ -22,6 +22,7 @@ struct AccountView: View {
     }
     @State private var confirmsSignOut = false
     @State private var photo: PhotosPickerItem?
+    @AppStorage(AnnotationFeedback.preferenceKey) private var annotationHaptics = true
     #if DEBUG && targetEnvironment(simulator)
     private var fixtureMode = false
     init(session: AccountSession, playback: PlaybackController, preview: AccountSettings? = nil) {
@@ -46,6 +47,13 @@ struct AccountView: View {
                         stats(details)
                         AccountActivityCalendar(details: details)
                         preferences(details)
+                        if AnnotationFeedback.supported {
+                            Toggle("查词触感", isOn: $annotationHaptics)
+                                .accessibilityHint("查词时随释义显示提供轻微触感，收藏成功时确认。")
+                                .accessibilityIdentifier("account-annotation-haptics")
+                                .padding(20)
+                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
+                        }
                         management(details)
                         AccountActionCostTable()
                     } else if loading {
@@ -68,7 +76,7 @@ struct AccountView: View {
             .navigationTitle("账号")
             .navigationBarTitleDisplayMode(.large)
             .interfaceFont(17)
-            .tint(.blue)
+            .tint(.primary)
             .refreshable { await load() }
             .task { await load() }
             .onReceive(NotificationCenter.default.publisher(for: .pdfOutlineUsageChanged)) { _ in Task { await load() } }

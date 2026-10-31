@@ -38,11 +38,15 @@ final class BrowserWorkspaceUITests: XCTestCase {
             let lookup = app.buttons["猫忆查"]
             XCTAssertTrue(lookup.waitForExistence(timeout: 5)); lookup.tap()
             XCTAssertTrue(app.staticTexts["正在理解语境"].waitForExistence(timeout: 5))
+            let headword = app.staticTexts["definition-headword"]
+            XCTAssertTrue(headword.exists)
+            XCTAssertFalse(headword.label.isEmpty)
             let loading = XCTAttachment(screenshot: app.screenshot())
             loading.name = "Annotation loading, \(dark ? "dark" : "light")"
             loading.lifetime = .keepAlways; add(loading)
             let definition = app.textViews.matching(NSPredicate(format: "value == %@", "河岸，河流两侧的陆地。")).firstMatch
             XCTAssertTrue(definition.waitForExistence(timeout: 10))
+            XCTAssertFalse(app.staticTexts["正在理解语境"].exists)
             XCTAssertTrue(app.staticTexts["语源"].waitForExistence(timeout: 5))
             let beforeRecovery = definition.frame
             let save = app.buttons["收藏词汇"]
@@ -56,8 +60,10 @@ final class BrowserWorkspaceUITests: XCTestCase {
             XCTAssertEqual(definition.frame.minY, beforeRecovery.minY, accuracy: 1)
             let buttonFrame = save.frame
             save.tap()
+            XCTAssertTrue(save.waitForNonExistence(timeout: 3))
             let edit = app.buttons["编辑词汇"]
             XCTAssertTrue(edit.waitForExistence(timeout: 5))
+            XCTAssertFalse(app.activityIndicators["definition-generating"].exists)
             XCTAssertEqual(edit.frame.midX, buttonFrame.midX, accuracy: 1)
             XCTAssertEqual(edit.frame.midY, buttonFrame.midY, accuracy: 1)
             let capture = XCTAttachment(screenshot: app.screenshot())

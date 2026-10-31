@@ -238,6 +238,80 @@ test('cache hit uses the same terminal contract without charging or generation',
     assert.equal(h.metrics.charges, 0)
     assert.equal(h.metrics.generations, 0)
 })
+test('provider bursts retain every character and flush before completion', async () => {
+    const h = harness({
+        async *generate() {
+            for (const character of '{{bank||bank||河岸 🙂||古英语||bench}}') yield character
+        },
+    })
+    const frames = (await (await h.handler(request())).text())
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line))
+    const deltas = frames.filter((frame) => frame.kind === 'delta')
+    assert.equal(deltas.map((frame) => frame.text).join(''), '{{bank||bank||河岸 🙂||古英语||bench}}')
+    assert.equal(deltas.length, 2)
+    assert.equal(frames.at(-1).kind, 'completed')
+    assert.deepEqual(frames.at(-1).definition, {
+        lemma: 'bank',
+        definition: '河岸 🙂',
+        etymology: '古英语',
+        cognates: 'bench',
+    })
+})
+test('a large multilingual provider chunk is split into bounded, decodable frames', async () => {
+    const meaning = '🙂漢'.repeat(5000)
+    const output = `{{bank||bank||${meaning}}}`
+    const h = harness({
+        async *generate() {
+            yield output
+        },
+    })
+    const records = (await (await h.handler(request())).text()).trim().split('\n')
+    const frames = records.map((line) => JSON.parse(line))
+    for (const record of records) assert.ok(Buffer.byteLength(record) < 65536)
+    for (const frame of frames.filter((frame) => frame.kind === 'delta'))
+        assert.ok(Buffer.byteLength(frame.text) < 8192)
+    assert.equal(
+        frames
+            .filter((frame) => frame.kind === 'delta')
+            .map((frame) => frame.text)
+            .join(''),
+        output,
+    )
+    assert.equal(frames.at(-1).definition.definition, meaning)
+})
+test('buffered text is delivered during a provider pause before generation completes', async () => {
+    let resume: () => void = () => {}
+    const paused = new Promise<void>((resolve) => {
+        resume = resolve
+    })
+    const h = harness({
+        async *generate() {
+            yield '{{bank||bank||河'
+            yield '岸'
+            await paused
+            yield '}}'
+        },
+    })
+    const response = await h.handler(request())
+    const reader = response.body!.getReader()
+    try {
+        const decoder = new TextDecoder()
+        let received = ''
+        while (!received.includes('"text":"岸"')) {
+            const next = await reader.read()
+            assert.equal(next.done, false)
+            received += decoder.decode(next.value, { stream: true })
+        }
+        assert.doesNotMatch(received, /"kind":"completed"/)
+        assert.equal(h.receipts.size, 0)
+    } finally {
+        resume()
+        while (!(await reader.read()).done) {}
+        reader.releaseLock()
+    }
+})
 test('quota denial happens before streaming headers or generation', async () => {
     const h = harness({ charge: async () => false })
     const response = await h.handler(request())

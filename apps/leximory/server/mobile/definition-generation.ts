@@ -59,15 +59,40 @@ export function definitionResponse(input: {
                 signal.throwIfAborted()
                 controller.enqueue(encoder.encode(JSON.stringify(frame) + '\n'))
             }
+            let pending = ''
+            let sentDelta = false
+            let timer: ReturnType<typeof setTimeout> | undefined
+            const cancelFlush = () => {
+                clearTimeout(timer)
+                timer = undefined
+            }
+            const flush = () => {
+                cancelFlush()
+                if (!pending || signal.aborted) return
+                emit({ kind: 'delta', requestId: input.requestId, text: pending })
+                pending = ''
+                sentDelta = true
+            }
+            const delta = (text: string) => {
+                signal.throwIfAborted()
+                // Bound each frame without splitting a Unicode code point. Send the
+                // opening immediately, then combine small provider bursts for 24 ms.
+                for (const part of text.match(/.{1,1024}/gsu) ?? []) {
+                    pending += part
+                    if (!sentDelta || pending.length >= 1024) flush()
+                    else timer ??= setTimeout(flush, 24)
+                }
+            }
+            signal.addEventListener('abort', cancelFlush, { once: true })
             try {
                 emit({ kind: 'started', requestId: input.requestId })
-                const definition = await input.generate(signal, (text) =>
-                    emit({ kind: 'delta', requestId: input.requestId, text }),
-                )
+                const definition = await input.generate(signal, delta)
+                flush()
                 signal.throwIfAborted()
                 await input.complete(definition)
                 emit({ kind: 'completed', requestId: input.requestId, definition })
             } catch (error) {
+                flush()
                 input.failed?.(error)
                 if (!signal.aborted)
                     emit({
@@ -77,6 +102,8 @@ export function definitionResponse(input: {
                             .error,
                     })
             } finally {
+                cancelFlush()
+                signal.removeEventListener('abort', cancelFlush)
                 if (!abort.signal.aborted) controller.close()
             }
         },

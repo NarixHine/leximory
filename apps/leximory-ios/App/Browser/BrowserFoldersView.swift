@@ -65,7 +65,7 @@ struct BrowserFoldersView: View {
         .sheet(item: $editor) { request in
             FolderEditorSheet(client: workspace.client, library: request.library) { workspace.upsertFolder($0) }
         }
-        .tint(.blue)
+        .tint(.primary)
         .accessibilityIdentifier("browser-bookmarks")
     }
     private func refreshBookmarks() async {
@@ -190,7 +190,7 @@ struct BrowserFolderPicker: View {
                 workspace.upsertFolder(library); selection = library.id
             }
         }
-        .tint(.blue)
+        .tint(.primary)
     }
     private func row(_ library: CatalogLibrary) -> some View {
         DisclosureGroup(isExpanded: Binding(get: { expanded.contains(library.id) }, set: { value in
