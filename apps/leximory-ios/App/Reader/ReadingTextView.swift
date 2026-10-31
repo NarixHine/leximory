@@ -957,7 +957,7 @@ private extension UIFont {
             let label = UILabel()
             label.text = element.title
             let learningAction = primary || element.title == "荧光笔"
-            let face = learningAction ? LeximoryTypography.displayUI(15) : LeximoryTypography.interfaceUI(15)
+            let face = learningAction ? LeximoryTypography.displayUI(16) : LeximoryTypography.interfaceUI(15)
             label.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: face)
             label.numberOfLines = 1
             if primary { label.adjustsFontSizeToFitWidth = true; label.minimumScaleFactor = 0.8 }
@@ -987,7 +987,7 @@ private extension UIFont {
             content.removeArrangedSubview(icon); icon.removeFromSuperview()
             let well = UIView()
             well.backgroundColor = UIColor { traits in
-                EbookHighlightColor.yellow.ink.withAlphaComponent(traits.userInterfaceStyle == .dark ? 0.3 : 0.65)
+                EbookHighlightColor.sage.ink.withAlphaComponent(traits.userInterfaceStyle == .dark ? 0.3 : 0.65)
             }
             well.layer.cornerRadius = 6
             well.widthAnchor.constraint(equalToConstant: 23).isActive = true

@@ -290,6 +290,8 @@ final class BrowserWebView: WKWebView {
         url = web.url; title = web.title ?? ""; loading = web.isLoading
         canGoBack = web.canGoBack; canGoForward = web.canGoForward
         pageColor = web.themeColor ?? web.underPageBackgroundColor
+        web.backgroundColor = pageColor
+        web.scrollView.backgroundColor = pageColor
     }
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         currentNavigation = navigation

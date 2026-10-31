@@ -269,7 +269,7 @@ import SwiftUI
     }
 
     @Test func browserChromeTracksPageThemeAndBackground() async throws {
-        let model = TextBrowserModel()
+        let model = TextBrowserModel(websiteDataStore: .nonPersistent())
         let navigation = BrowserTestNavigation()
         model.web.navigationDelegate = navigation
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
@@ -287,6 +287,19 @@ import SwiftUI
         try await expectPageColor(model, red: 200, green: 214, blue: 189)
         _ = try await model.web.evaluateJavaScript("document.querySelector('meta[name=theme-color]').remove()")
         try await expectPageColor(model, red: 255, green: 253, blue: 247)
+        try await navigation.load(model.web, html: """
+            <html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+            <meta name="theme-color" content="#18202a"></head>
+            <body style="background:#101820;min-height:1600px">A dark forest</body></html>
+            """)
+        try await expectPageColor(model, red: 24, green: 32, blue: 42)
+        let scrollView = model.web.scrollView
+        #expect(scrollView.contentSize.height > scrollView.bounds.height)
+        scrollView.setContentOffset(CGPoint(x: 0, y: scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom), animated: false)
+        try await expectPageColor(model, red: 24, green: 32, blue: 42)
+        #expect(scrollView.contentInset.bottom == 80)
+        _ = try await model.web.evaluateJavaScript("document.querySelector('meta[name=theme-color]').remove()")
+        try await expectPageColor(model, red: 16, green: 24, blue: 32)
     }
 
     private func expectPageColor(_ model: TextBrowserModel, red: CGFloat, green: CGFloat, blue: CGFloat) async throws {
@@ -294,6 +307,14 @@ import SwiftUI
             var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
             if model.pageColor.getRed(&r, green: &g, blue: &b, alpha: &a),
                abs(r - red / 255) < 0.001, abs(g - green / 255) < 0.001, abs(b - blue / 255) < 0.001 {
+                for background in [model.web.backgroundColor, model.web.scrollView.backgroundColor] {
+                    let color = try #require(background)
+                    #expect(color.getRed(&r, green: &g, blue: &b, alpha: &a))
+                    #expect(abs(r - red / 255) < 0.001)
+                    #expect(abs(g - green / 255) < 0.001)
+                    #expect(abs(b - blue / 255) < 0.001)
+                    #expect(abs(a - 1) < 0.001)
+                }
                 return
             }
             try await Task.sleep(for: .milliseconds(20))
