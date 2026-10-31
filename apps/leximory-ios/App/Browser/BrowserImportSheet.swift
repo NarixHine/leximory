@@ -89,9 +89,9 @@ struct BrowserImportSheet: View {
                 Section {
                     if let file {
                         Label(file.name, systemImage: "book.closed").foregroundStyle(.secondary)
-                        if editingTitle { TextField("标题", text: $title) }
+                        if editingTitle { TextField("标题", text: $title).tint(.blue) }
                         else { Button("编辑标题", systemImage: "pencil") { editingTitle = true } }
-                    } else { TextField("标题", text: $title, axis: .vertical).lineLimit(1...3) }
+                    } else { TextField("标题", text: $title, axis: .vertical).tint(.blue).lineLimit(1...3) }
                     Button { path.append(.folder) } label: {
                         HStack {
                             Label("文件夹", systemImage: "folder")

@@ -96,18 +96,14 @@ struct SavedWordsWidgetView: View {
             .padding(.bottom, -8)
     }
 
-    @ViewBuilder private func paperPanel<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        let panel = content().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    private func paperPanel<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             .foregroundStyle(LeximoryPalette.ink)
-        if renderingMode == .fullColor {
-            if #available(iOS 26, *) {
-                panel.glassEffect(.regular.tint(LeximoryPalette.paper.opacity(0.55)), in: .rect(cornerRadius: 23))
-            } else {
-                panel.background(.regularMaterial, in: .rect(cornerRadius: 23))
+            .background {
+                if renderingMode == .fullColor {
+                    RoundedRectangle(cornerRadius: 23).fill(LeximoryPalette.paper.opacity(0.88))
+                }
             }
-        } else {
-            panel
-        }
     }
 
     private var accessibilitySummary: String {

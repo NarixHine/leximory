@@ -328,6 +328,7 @@ struct BrowserAddressField: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> BrowserURLTextField {
         let field = BrowserURLTextField()
+        field.tintColor = .systemBlue
         editor.field = field
         field.delegate = context.coordinator
         field.placeholder = "输入网址或搜索"

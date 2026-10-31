@@ -468,10 +468,10 @@ private struct AccountEditor: View {
             Form {
                 Section {
                     if field == .password {
-                        SecureField("新密码", text: $value).textContentType(.newPassword)
-                        SecureField("确认密码", text: $confirmation).textContentType(.newPassword)
+                        SecureField("新密码", text: $value).tint(.blue).textContentType(.newPassword)
+                        SecureField("确认密码", text: $confirmation).tint(.blue).textContentType(.newPassword)
                     } else {
-                        TextField(field == .email ? "电子邮箱地址" : "你的用户名", text: $value)
+                        TextField(field == .email ? "电子邮箱地址" : "你的用户名", text: $value).tint(.blue)
                             .textContentType(field == .email ? .emailAddress : .nickname)
                             .keyboardType(field == .email ? .emailAddress : .default)
                             .textInputAutocapitalization(.never).autocorrectionDisabled()

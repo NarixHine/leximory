@@ -60,6 +60,7 @@ private struct ReviewAnswerText: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> UITextView {
         let view = UITextView()
+        view.tintColor = .systemBlue
         view.delegate = context.coordinator
         view.backgroundColor = .clear
         view.isEditable = false

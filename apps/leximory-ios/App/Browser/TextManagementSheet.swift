@@ -60,9 +60,9 @@ struct TextManagementSheet: View {
                 if let source, draft != nil {
                     Form {
                         Section {
-                            TextField("标题", text: draftBinding(\.title), axis: .vertical).lineLimit(1...4)
+                            TextField("标题", text: draftBinding(\.title), axis: .vertical).tint(.blue).lineLimit(1...4)
                                 .accessibilityIdentifier("text-edit-title")
-                            TextField("封面表情", text: Binding(get: { draft?.emoji ?? "" }, set: { draft?.emoji = $0.isEmpty ? nil : $0 }))
+                            TextField("封面表情", text: Binding(get: { draft?.emoji ?? "" }, set: { draft?.emoji = $0.isEmpty ? nil : $0 })).tint(.blue)
                         } footer: {
                             if !emojiValid { Text("封面请选择一个表情，或留空。").interfaceFont(13, style: .footnote) }
                         }
@@ -141,7 +141,7 @@ struct TextManagementSheet: View {
         Section {
             ForEach($topics) { $topic in
                 HStack {
-                    TextField("标签名称", text: $topic.value)
+                    TextField("标签名称", text: $topic.value).tint(.blue)
                         .lineLimit(1)
                         .focused($focusedTopic, equals: topic.id).submitLabel(.done)
                         .onSubmit { focusedTopic = nil }

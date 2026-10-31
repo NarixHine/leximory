@@ -112,6 +112,7 @@ struct ReadingTextView: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> RubyTextView {
         let view = RubyTextView(frame: .zero, textContainer: nil)
+        view.tintColor = .systemBlue
         view.isEditable = false
         view.isSelectable = true
         view.contentInsetAdjustmentBehavior = .automatic

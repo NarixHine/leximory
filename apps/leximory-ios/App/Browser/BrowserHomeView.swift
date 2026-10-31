@@ -179,7 +179,7 @@ struct BrowserHomeView: View {
         if square && folded {
             VStack(spacing: 8) {
                 Image(systemName: symbol).font(.system(size: 22, weight: .medium)).foregroundStyle(iconColor)
-                Text(title.rawValue).displayFont(17, relativeTo: .headline)
+                Text(title.rawValue).displayFont(19, relativeTo: .headline)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
             }.padding(.horizontal, 12).padding(.vertical, 12)
                 .frame(maxWidth: .infinity, minHeight: 96)
@@ -193,7 +193,7 @@ struct BrowserHomeView: View {
                         .frame(width: 32, height: 32, alignment: .trailing)
                 }
                 Spacer(minLength: 12)
-                Text(title.rawValue).displayFont(grid ? 19 : 24, relativeTo: grid ? .headline : .title2)
+                Text(title.rawValue).displayFont(grid ? 21 : 26, relativeTo: grid ? .headline : .title2)
                     .lineLimit(1).minimumScaleFactor(0.65).allowsTightening(true)
                     .fixedSize(horizontal: false, vertical: true)
             }.padding(grid ? 18 : 20)
@@ -202,14 +202,14 @@ struct BrowserHomeView: View {
         } else {
             HStack(spacing: 20) {
                 Image(systemName: symbol).font(.system(size: folded ? 22 : 26, weight: .medium)).foregroundStyle(iconColor).frame(width: 44)
-                Text(title.rawValue).displayFont(folded ? 17 : 20, relativeTo: folded ? .headline : .title2)
+                Text(title.rawValue).displayFont(folded ? 19 : 22, relativeTo: folded ? .headline : .title2)
                 Spacer(minLength: 0)
                 Image(systemName: "arrow.up.right").font(.body.weight(.medium)).foregroundStyle(iconColor)
             }.padding(.horizontal, 24).padding(.vertical, folded ? 12 : 22)
                 .frame(maxWidth: .infinity, minHeight: 58)
         }
     }
-    private func shortcutLabel<Icon: View>(_ title: String, isPin: Bool = false, cutout: Bool = true, background: Color = .white, label: Color = .primary, @ViewBuilder icon: () -> Icon) -> some View {
+    private func shortcutLabel<Icon: View>(_ title: String, isPin: Bool = false, cutout: Bool = true, background: Color = .white, @ViewBuilder icon: () -> Icon) -> some View {
         VStack(spacing: 10) {
             if isPin {
                 icon().frame(width: 24, height: 24)
@@ -228,7 +228,7 @@ struct BrowserHomeView: View {
                     .accessibilityHidden(true)
             }
             Text(title).interfaceFont(13, style: .footnote)
-                .foregroundStyle(label)
+                .homeWallpaperInk()
                 .multilineTextAlignment(.center)
                 .lineLimit(isPin || !typeSize.isAccessibilitySize ? 1 : nil).truncationMode(.tail)
                 .minimumScaleFactor(isPin ? 1 : 0.75)
@@ -486,13 +486,13 @@ struct BrowserPinEditor: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("名称", text: $title)
+                    TextField("名称", text: $title).tint(.blue)
                 } header: {
                     LeximorySectionHeader("名称")
                 }
                 if isWebpage {
                     Section {
-                        TextField("网址", text: $address).keyboardType(.URL)
+                        TextField("网址", text: $address).tint(.blue).keyboardType(.URL)
                             .textInputAutocapitalization(.never).autocorrectionDisabled()
                     } header: {
                         LeximorySectionHeader("网址")

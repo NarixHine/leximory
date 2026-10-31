@@ -9,6 +9,51 @@ import CoreText
 import LeximoryCore
 @testable import Leximory
 
+@MainActor @Suite(.serialized) struct NativeTextSelectionTests {
+    @Test(arguments: [UIUserInterfaceStyle.light, .dark])
+    func selectionStaysBlueInsideNeutralSheets(appearance: UIUserInterfaceStyle) async throws {
+        let document = try FixtureArticle.samples[0].document()
+        let editor = BrowserAddressEditor()
+        let content = VStack {
+            TextField("标题", text: .constant("Field notes")).tint(.blue)
+            BrowserAddressField(address: "猫 A", editor: editor, submit: {}).frame(height: 48)
+            ReadingTextView(document: document, textID: TextID(rawValue: "selection-test"), jumpToEnd: false, onDefine: { _, _, _ in })
+                .frame(height: 300)
+            AnnotationMarkdownText(content: "A quiet forest", size: 17, language: "English")
+        }.leximorySheetStyle()
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        window.overrideUserInterfaceStyle = appearance
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let host = UIHostingController(rootView: content)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer {
+            editor.field?.wantsFocus = false
+            editor.field?.resignFirstResponder()
+            window.isHidden = true
+            previous?.makeKey()
+        }
+        try await Task.sleep(for: .milliseconds(200))
+        host.view.layoutIfNeeded()
+        func descendants(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(descendants) }
+        let textControls = descendants(host.view).filter { $0 is UITextField || $0 is UITextView }
+        #expect(textControls.count >= 4)
+        for view in textControls {
+            let actual = view.tintColor.resolvedColor(with: view.traitCollection)
+            let expected = UIColor.systemBlue.resolvedColor(with: view.traitCollection)
+            func components(_ color: UIColor) -> [CGFloat] {
+                var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+                #expect(color.getRed(&red, green: &green, blue: &blue, alpha: &alpha))
+                return [red, green, blue, alpha]
+            }
+            #expect(zip(components(actual), components(expected)).allSatisfy { abs($0 - $1) < 0.001 },
+                    "Native selection tint for \(type(of: view))")
+        }
+    }
+}
+
 @MainActor struct ReaderNativeTests {
     @Test func metadataEditsRefreshTheExistingReaderHeader() async throws {
         let document = try FixtureArticle.samples[0].document()

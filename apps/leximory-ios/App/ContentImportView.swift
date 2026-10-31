@@ -45,7 +45,7 @@ struct ContentImportView: View {
                     if kind == 2 {
                         TextField("", text: $url, prompt: Text(verbatim: "https://theleximorytimes.com/")
                             .foregroundStyle(LeximoryPalette.muted))
-                            .focused($focusedField, equals: "网址").submitLabel(.go)
+                            .tint(.blue).focused($focusedField, equals: "网址").submitLabel(.go)
                             .onSubmit { focusedField = nil; if !extracted { Task { await submit(annotate: true) } } }
                             .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                             .interfaceFont(17).foregroundStyle(LeximoryPalette.ink).padding(16)
@@ -121,7 +121,7 @@ struct ContentImportView: View {
     }
     private func input(_ label: String, text: Binding<String>, lines: ClosedRange<Int>) -> some View {
         TextField(label, text: text, prompt: Text(label == "文本" ? "" : label).foregroundStyle(LeximoryPalette.muted), axis: .vertical)
-            .lineLimit(lines).focused($focusedField, equals: label)
+            .tint(.blue).lineLimit(lines).focused($focusedField, equals: label)
             .accessibilityLabel(label).accessibilityIdentifier("import-\(label)")
             .font(LeximoryTypography.prose(18, language: library.language)).foregroundStyle(LeximoryPalette.ink)
             .padding(14).background(LeximoryPalette.paper, in: RoundedRectangle(cornerRadius: 18))

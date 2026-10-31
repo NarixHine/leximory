@@ -54,7 +54,7 @@ struct BrowserAdBlockingSettings: View {
                             List {
                                 ForEach(draft.excludedHosts.sorted(), id: \.self) { host in
                                     HStack {
-                                        Text(host).textSelection(.enabled)
+                                        Text(host).textSelection(.enabled).tint(.blue)
                                         Spacer(minLength: 16)
                                         Button("恢复拦截") { draft.excludedHosts.remove(host) }
                                             .accessibilityLabel("在 \(host) 恢复拦截")

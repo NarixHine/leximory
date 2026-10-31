@@ -105,6 +105,7 @@ private struct RubyAnnotationText: UIViewRepresentable {
 
     func makeUIView(context: Context) -> AnnotationRubyTextView {
         let view = AnnotationRubyTextView()
+        view.tintColor = .systemBlue
         view.delegate = view
         view.isEditable = false; view.isScrollEnabled = false; view.backgroundColor = .clear
         view.textContainer.lineFragmentPadding = 0

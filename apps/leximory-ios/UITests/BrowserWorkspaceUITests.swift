@@ -39,13 +39,13 @@ final class BrowserWorkspaceUITests: XCTestCase {
             XCTAssertTrue(lookup.waitForExistence(timeout: 5)); lookup.tap()
             XCTAssertTrue(app.staticTexts["正在理解语境"].waitForExistence(timeout: 5))
             let headword = app.staticTexts["definition-headword"]
-            XCTAssertTrue(headword.exists)
-            XCTAssertFalse(headword.label.isEmpty)
+            XCTAssertFalse(headword.exists)
             let loading = XCTAttachment(screenshot: app.screenshot())
             loading.name = "Annotation loading, \(dark ? "dark" : "light")"
             loading.lifetime = .keepAlways; add(loading)
             let definition = app.textViews.matching(NSPredicate(format: "value == %@", "河岸，河流两侧的陆地。")).firstMatch
             XCTAssertTrue(definition.waitForExistence(timeout: 10))
+            XCTAssertEqual(headword.label, "bank")
             XCTAssertFalse(app.staticTexts["正在理解语境"].exists)
             XCTAssertTrue(app.staticTexts["语源"].waitForExistence(timeout: 5))
             let beforeRecovery = definition.frame
@@ -57,6 +57,9 @@ final class BrowserWorkspaceUITests: XCTestCase {
                 if save.waitForExistence(timeout: 0.3) { break }
             }
             XCTAssertTrue(save.exists)
+            let cognates = app.textViews.matching(NSPredicate(format: "value == %@", "bench")).firstMatch
+            XCTAssertTrue(cognates.exists)
+            XCTAssertGreaterThanOrEqual(save.frame.minY, cognates.frame.maxY)
             XCTAssertEqual(definition.frame.minY, beforeRecovery.minY, accuracy: 1)
             let buttonFrame = save.frame
             save.tap()

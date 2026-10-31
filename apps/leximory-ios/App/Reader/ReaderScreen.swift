@@ -299,28 +299,30 @@ struct DefinitionView: View {
                                 editing = false
                             }, cancel: { editing = false })
                         } else {
-                            HStack(alignment: .center, spacing: 10) {
-                                Text(lemma).font(LeximoryTypography.prose(item.isDynamic ? 20 : 24, language: language, bold: true))
-                                    .foregroundStyle(LeximoryPalette.ink).textSelection(.enabled)
-                                    .lineLimit(item.isDynamic ? 3 : nil)
-                                    .accessibilityAddTraits(.isHeader)
-                                    .accessibilityIdentifier("definition-headword")
-                                Spacer(minLength: 0)
-                                if model.isGenerating, !waiting, client != nil {
-                                    ProgressView().controlSize(.mini).tint(.secondary)
-                                        .accessibilityLabel("正在生成释义")
-                                        .accessibilityIdentifier("definition-generating")
+                            if !waiting {
+                                HStack(alignment: .center, spacing: 10) {
+                                    Text(lemma).font(LeximoryTypography.prose(item.isDynamic ? 20 : 24, language: language, bold: true))
+                                        .foregroundStyle(LeximoryPalette.ink).textSelection(.enabled).tint(.blue)
+                                        .lineLimit(item.isDynamic ? 3 : nil)
+                                        .accessibilityAddTraits(.isHeader)
+                                        .accessibilityIdentifier("definition-headword")
+                                    Spacer(minLength: 0)
+                                    if model.isGenerating, client != nil {
+                                        ProgressView().controlSize(.mini).tint(.secondary)
+                                            .accessibilityLabel("正在生成释义")
+                                            .accessibilityIdentifier("definition-generating")
+                                    }
                                 }
                             }
                             if let definition = model.visibleDefinition {
                                 section("释义", content: definition.definition)
-                                if item.isDynamic { definitionActions; saveFailure }
                                 if let etymology = definition.etymology, !etymology.isEmpty { section("语源", content: etymology) }
                                 if let cognates = definition.cognates, !cognates.isEmpty { section("同源词", content: cognates) }
                             }
                             switch model.state {
                             case .ready:
-                                if !item.isDynamic { definitionActions; saveFailure }
+                                definitionActions
+                                saveFailure
                             case .generating:
                                 if waiting {
                                     HStack(spacing: 10) {
@@ -479,7 +481,7 @@ struct DefinitionView: View {
         return base?.appending(path: lemma)
     }
     private func section(_ title: String, content: String) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 2) {
             Text(title).interfaceFont(14).foregroundStyle(.secondary)
             AnnotationMarkdownText(content: content, size: bodySize, language: language)
                 .foregroundStyle(LeximoryPalette.ink)

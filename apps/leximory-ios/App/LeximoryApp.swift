@@ -37,7 +37,6 @@ struct LeximoryApp: App {
         WindowGroup {
             AppRootView(fixturePlayback: playback)
                 .interfaceFont(17)
-                .tint(.primary)
                 .preferredColorScheme(previewColorScheme)
         }
     }

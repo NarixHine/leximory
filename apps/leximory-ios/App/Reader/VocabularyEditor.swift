@@ -49,7 +49,7 @@ struct VocabularyEditor: View {
                 if label == "词条" { TextField(label, text: value) }
                 else { TextField(label, text: value, axis: .vertical).lineLimit(lines) }
             }
-                .focused($focusedField, equals: label)
+                .tint(.blue).focused($focusedField, equals: label)
                 .submitLabel(label == "词条" ? .done : .return)
                 .onSubmit { if label == "词条" { focusedField = nil } }
                 .font(LeximoryTypography.prose(18, language: language)).lineSpacing(4)

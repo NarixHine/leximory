@@ -141,7 +141,7 @@ struct ArticleMarkdownPreview: View {
                     .interfaceFont(15).buttonStyle(.plain).foregroundStyle(.secondary)
             }
         }.frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(.primary)
-            .textSelection(.enabled).accessibilityIdentifier("article-markdown-preview")
+            .textSelection(.enabled).tint(.blue).accessibilityIdentifier("article-markdown-preview")
     }
     @ViewBuilder private func blockContent(_ block: ArticleMarkdownDocument.Block) -> some View {
         switch block.kind {

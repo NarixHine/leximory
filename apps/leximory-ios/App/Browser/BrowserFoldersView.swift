@@ -229,7 +229,7 @@ struct FolderEditorSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField("名称", text: $name)
+                TextField("名称", text: $name).tint(.blue)
                 if library == nil {
                     Picker("语言", selection: $language) { ForEach(languages, id: \.0) { code, label in Text(label).tag(code) } }
                 }

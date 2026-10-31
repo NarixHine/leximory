@@ -33,21 +33,13 @@ struct HomeWallpaperEditor: View {
                                 .accessibilityIdentifier("wallpaper-error")
                         }
 
-                        HStack(spacing: 16) {
-                            Button("恢复默认") {
-                                do { try store.restoreDefault(appearance); error = nil }
-                                catch { self.error = "暂时无法恢复默认，请重试。" }
-                            }.disabled(store.choice(for: appearance) == .bundled || importing || !store.loaded)
-                                .frame(maxWidth: .infinity, minHeight: 44)
-                                .accessibilityIdentifier("wallpaper-reset")
-
-                            Button("使用纯色") {
-                                do { try store.useSolidColor(appearance); error = nil }
-                                catch { self.error = "暂时无法使用纯色，请重试。" }
-                            }.disabled(store.choice(for: appearance) == .solid || importing || !store.loaded)
-                                .frame(maxWidth: .infinity, minHeight: 44)
-                                .accessibilityIdentifier("wallpaper-solid")
-                        }.tint(.primary)
+                        Button("恢复默认") {
+                            do { try store.restoreDefault(appearance); error = nil }
+                            catch { self.error = "暂时无法恢复默认，请重试。" }
+                        }.disabled(store.choice(for: appearance) == .bundled || importing || !store.loaded)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .tint(.primary)
+                            .accessibilityIdentifier("wallpaper-reset")
                     }
                 }.padding(24).frame(maxWidth: 400).frame(maxWidth: .infinity)
             }

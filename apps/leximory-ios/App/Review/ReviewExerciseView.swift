@@ -122,7 +122,7 @@ struct ReviewExerciseView: View {
                         enabled: sync?.online != false && !model.submitting && !model.awaitingConfirmation && status != .pending, submit: submit)
                         .frame(height: inputHeight)
                 } else {
-                    TextEditor(text: draft).font(ReviewStyle.mono(16)).frame(height: inputHeight)
+                    TextEditor(text: draft).tint(.blue).font(ReviewStyle.mono(16)).frame(height: inputHeight)
                         .scrollContentBackground(.hidden).focused($writingFocused)
                         .disabled(sync?.online == false || locked || model.submitting || model.awaitingConfirmation || status == .pending)
                         .accessibilityLabel("写给小黑猫的话")
@@ -159,6 +159,7 @@ private struct ReviewTranslationInput: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> FocusView {
         let view = FocusView()
+        view.tintColor = .systemBlue
         view.delegate = context.coordinator
         view.backgroundColor = .clear
         view.textContainerInset = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)

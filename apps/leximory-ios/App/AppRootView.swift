@@ -153,10 +153,10 @@ struct SignInView: View {
                 }
                 if let notice { Text(notice).interfaceFont(15, style: .subheadline).foregroundStyle(.secondary) }
                 VStack(spacing: 16) {
-                    TextField("邮箱", text: $email).textContentType(.username).keyboardType(.emailAddress)
+                    TextField("邮箱", text: $email).tint(.blue).textContentType(.username).keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never).autocorrectionDisabled().accessibilityIdentifier("sign-in-email")
                     Divider()
-                    SecureField("密码", text: $password).textContentType(.password).accessibilityIdentifier("sign-in-password")
+                    SecureField("密码", text: $password).tint(.blue).textContentType(.password).accessibilityIdentifier("sign-in-password")
                 }.padding(20).background(LeximoryPalette.shell, in: RoundedRectangle(cornerRadius: 22))
                 Link("忘记密码？", destination: session.client.webURL.appending(path: "forgot-password"))
                     .interfaceFont(15, style: .subheadline)

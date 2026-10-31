@@ -81,6 +81,7 @@ struct ArticleEditorWebView: UIViewRepresentable {
         configuration.websiteDataStore = .nonPersistent()
         configuration.userContentController.add(context.coordinator, name: "editor")
         let web = WKWebView(frame: .zero, configuration: configuration)
+        web.tintColor = .systemBlue
         web.isOpaque = false; web.backgroundColor = .clear; web.scrollView.backgroundColor = .clear
         web.navigationDelegate = context.coordinator
         web.scrollView.keyboardDismissMode = .interactive
