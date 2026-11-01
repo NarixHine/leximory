@@ -753,7 +753,7 @@ final class ReaderUITests: XCTestCase {
         XCTAssertEqual(app.buttons["reading-selection-荧光笔"].frame.midY, row.midY, accuracy: 2)
         XCTAssertTrue(app.buttons["reading-selection-辞典"].isHittable)
         capture(app, name: dark ? "PDF selection menu dark" : "PDF selection menu light")
-        let copy = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["拷贝", "拷貝", "复制", "Copy"])).firstMatch
+        let copy = app.buttons["复制"]
         if !copy.isHittable {
             let more = app.buttons["下一页"].firstMatch
             XCTAssertTrue(more.isHittable)
@@ -1002,7 +1002,7 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(paragraph.waitForExistence(timeout: 10))
         paragraph.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)).press(forDuration: 1)
         capture(app, name: "Selection menu")
-        XCTAssertTrue(app.buttons["拷贝"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["复制"].waitForExistence(timeout: 5))
         let define = app.buttons["猫忆查"]
         XCTAssertTrue(define.exists)
         for title in ["查找所选内容", "翻译", "搜索网页", "Translate", "Search Web"] {

@@ -236,6 +236,10 @@ final class EbookPDFHighlight: PDFAnnotation {
 }
 
 final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard let hit = super.hitTest(point, with: event) else { return nil }
+        return (pageOverlayViewProvider as? PDFDrawingOverlays)?.readingTouchTarget(for: hit) ?? hit
+    }
     private lazy var highlightMenu = UIEditMenuInteraction(delegate: self)
     var reader: EbookReaderState?
     var highlightAtTouchDown: EbookPDFHighlight?

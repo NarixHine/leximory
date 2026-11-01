@@ -83,7 +83,6 @@ import LeximoryCore
 }
 
 @MainActor enum AnnotationFeedback {
-    static let preferenceKey = "annotation-haptics-enabled"
     static let supported = UIDevice.current.userInterfaceIdiom == .phone && CHHapticEngine.capabilitiesForHardware().supportsHaptics
 }
 

@@ -186,6 +186,11 @@ import SwiftUI
         let document = try #require(pdf.document)
         let overlay = try #require(provider.overlays[document.index(for: page)])
         provider.update()
+        let readingPoint = CGPoint(x: overlay.bounds.midX, y: overlay.bounds.midY)
+        #expect(overlay.hitTest(readingPoint, with: nil) == nil)
+        let documentView = try #require(pdf.documentView)
+        #expect(provider.readingTouchTarget(for: overlay.canvas) === documentView)
+        #expect(provider.readingTouchTarget(for: documentView) == nil)
         let initialAssignments = pdf.markupAssignments
         await model.toggleDrawing()
         #expect(model.drawing)
@@ -201,6 +206,8 @@ import SwiftUI
         #expect(overlay.loaded)
         #expect(overlay.canvas.isDrawingEnabled)
         #expect(overlay.canvas.isFirstResponder)
+        #expect(overlay.hitTest(readingPoint, with: nil) != nil)
+        #expect(provider.readingTouchTarget(for: overlay.canvas) == nil)
         overlay.canvas.drawing = drawing()
         provider.canvasViewDrawingDidChange(overlay.canvas)
         pdf.drawingCanvas = overlay.canvas
@@ -208,6 +215,8 @@ import SwiftUI
         #expect(!model.drawing)
         #expect(!overlay.canvas.isDrawingEnabled)
         #expect(!overlay.canvas.isFirstResponder)
+        #expect(overlay.hitTest(readingPoint, with: nil) == nil)
+        #expect(provider.readingTouchTarget(for: overlay.canvas) === documentView)
         try await Task.sleep(for: .milliseconds(100))
         #expect(!pdf.isInMarkupMode)
         #expect(!overlay.canvas.isFirstResponder)
@@ -224,6 +233,18 @@ import SwiftUI
         try await Task.sleep(for: .milliseconds(100))
         #expect(!overlay.canvas.isFirstResponder)
         #expect(!overlay.canvas.isDrawingEnabled)
+        await model.toggleDrawing()
+        provider.update()
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(overlay.canvas.isFirstResponder)
+        provider.pdfView(pdf, willEndDisplayingOverlayView: overlay, for: page)
+        #expect(!overlay.isUserInteractionEnabled)
+        #expect(!overlay.canvas.isDrawingEnabled)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(!overlay.canvas.isFirstResponder)
+        #expect(provider.overlays[document.index(for: page)] == nil)
+        model.endDrawing()
+        #expect(provider.readingTouchTarget(for: overlay.canvas) === documentView)
     }
 
     @Test func finishingPopulatedDrawingSavesAndReopensThroughSwiftUI() async throws {

@@ -2,6 +2,137 @@ import XCTest
 import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
+    @MainActor func testSavedPDFTextSelectionImmediatelyAfterOpening() {
+        assertPDFSelectionImmediatelyAfterOpening()
+    }
+    @MainActor func testSavedPDFSelectionBypassesInteractiveDrawingCanvas() {
+        assertPDFSelectionImmediatelyAfterOpening(extraEnvironment: ["LEXIMORY_FIXTURE_PDF_ACTIVE_CANVAS": "1"])
+    }
+    @MainActor private func assertPDFSelectionImmediatelyAfterOpening(extraEnvironment: [String: String] = [:]) {
+        let app = launch(extraEnvironment: extraEnvironment); defer { restore(app) }
+        app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+        let pdf = app.buttons["browser-resource-workspace-pdf"].firstMatch
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+        if !pdf.isHittable { app.swipeUp() }
+        pdf.tap()
+        let passage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The river. We walked")).firstMatch
+        XCTAssertTrue(passage.waitForExistence(timeout: 10), app.debugDescription)
+        let before = XCTAttachment(screenshot: app.screenshot())
+        before.name = "PDF before first selection"; before.lifetime = .keepAlways; add(before)
+        passage.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5)).press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["reading-selection-猫忆查"].waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any)["com.apple.text.grabber.leading"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["com.apple.text.grabber.trailing"].exists)
+        app.buttons["reading-selection-复制"].tap()
+        assertPDFCopyByPastingIntoAddress(app, expected: "along")
+        let reader = app.otherElements["ebook-reader"]
+        let position = app.staticTexts["ebook-page-position"]
+        for _ in 0..<3 where position.value as? String != "第2页，共2页" {
+            reader.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.7))
+                .press(forDuration: 0.05, thenDragTo: reader.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.2)))
+        }
+        XCTAssertEqual(position.value as? String, "第2页，共2页")
+    }
+
+    @MainActor func testSavedPDFSelectionAtPrintScaleAndAfterFingerDrawing() {
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 612, height: 792)).pdfData { context in
+            context.beginPage()
+            let attributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 12)]
+            ("The quiet river winds through the valley." as NSString).draw(at: CGPoint(x: 40, y: 180), withAttributes: attributes)
+            for line in 0..<24 {
+                ("Printed prose stays selectable beside handwritten notes on the page." as NSString)
+                    .draw(at: CGPoint(x: 40, y: 220 + line * 18), withAttributes: attributes)
+            }
+        }
+        let app = launch(extraEnvironment: ["LEXIMORY_FIXTURE_PDF": data.base64EncodedString()])
+        defer { restore(app) }
+        app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+        let pdf = app.buttons["browser-resource-workspace-pdf"].firstMatch
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+        if !pdf.isHittable { app.swipeUp() }
+        pdf.tap()
+        let reader = app.otherElements["ebook-reader"]
+        let passage = app.staticTexts["The quiet river winds through the valley."]
+        XCTAssertTrue(passage.waitForExistence(timeout: 10), app.debugDescription)
+        func selectAndCopyRiver() {
+            let start = passage.coordinate(withNormalizedOffset: CGVector(dx: 0.28, dy: 0.5))
+            start.press(forDuration: 0.7, thenDragTo: start.withOffset(CGVector(dx: 3, dy: 2)),
+                withVelocity: .slow, thenHoldForDuration: 0.2)
+            XCTAssertTrue(app.descendants(matching: .any)["com.apple.text.grabber.leading"].waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertTrue(app.descendants(matching: .any)["com.apple.text.grabber.trailing"].exists)
+            let copy = app.buttons["reading-selection-复制"]
+            XCTAssertTrue(copy.waitForExistence(timeout: 5), app.debugDescription)
+            copy.tap()
+        }
+        selectAndCopyRiver()
+        let trailing = app.descendants(matching: .any)["com.apple.text.grabber.trailing"]
+        trailing.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 0.1, thenDragTo: passage.coordinate(withNormalizedOffset: CGVector(dx: 1.08, dy: 0.5)),
+                withVelocity: .slow, thenHoldForDuration: 0.2)
+        XCTAssertTrue(app.buttons["reading-selection-复制"].waitForExistence(timeout: 5), app.debugDescription)
+        app.buttons["reading-selection-复制"].tap()
+        assertPDFCopyByPastingIntoAddress(app, expected: "river winds through the valley.")
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.4)).tap()
+        let drawing = app.buttons["pdf-drawing-toggle"]
+        if !drawing.isHittable { reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).tap() }
+        XCTAssertTrue(drawing.waitForExistence(timeout: 5)); drawing.tap()
+        XCTAssertEqual(drawing.label, "完成手写")
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.55))
+            .press(forDuration: 0.05, thenDragTo: reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.58)))
+        drawing.tap()
+        XCTAssertEqual(drawing.label, "手写笔记")
+        selectAndCopyRiver()
+        assertPDFCopyByPastingIntoAddress(app, expected: "river")
+    }
+
+    @MainActor private func assertPDFCopyByPastingIntoAddress(_ app: XCUIApplication, expected: String) {
+        app.buttons["browser-address"].tap()
+        let input = app.textFields["browser-address-input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        input.press(forDuration: 1)
+        let paste = app.menuItems.matching(NSPredicate(format: "label IN %@", ["粘贴", "黏贴", "Paste", "ペースト"])).firstMatch
+        XCTAssertTrue(paste.waitForExistence(timeout: 5), app.debugDescription)
+        paste.tap()
+        XCTAssertEqual((input.value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines), expected)
+        app.buttons["后退"].tap()
+    }
+
+    @MainActor func testSavedPDFTextSelectionBeforeAndAfterHandwriting() {
+        let app = launch(); defer { restore(app) }
+        app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+        let pdf = app.buttons["browser-resource-workspace-pdf"].firstMatch
+        XCTAssertTrue(pdf.waitForExistence(timeout: 10))
+        if !pdf.isHittable { app.swipeUp() }
+        pdf.tap()
+        let reader = app.otherElements["ebook-reader"]
+        XCTAssertTrue(reader.waitForExistence(timeout: 10))
+        let drawing = app.buttons["pdf-drawing-toggle"]
+        if !drawing.isHittable { reader.tap() }
+        XCTAssertTrue(drawing.waitForExistence(timeout: 5))
+        let passage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The final PDF page")).firstMatch
+        app.buttons["ebook-contents"].tap(); app.buttons["2"].tap()
+        XCTAssertTrue(passage.waitForExistence(timeout: 10))
+        func selectText() {
+            passage.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).press(forDuration: 1.2)
+            XCTAssertTrue(app.buttons["reading-selection-猫忆查"].waitForExistence(timeout: 5), app.debugDescription)
+        }
+        selectText()
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65)).tap()
+        XCTAssertTrue(app.buttons["reading-selection-猫忆查"].waitForNonExistence(timeout: 5))
+        if !drawing.isHittable { reader.tap() }
+        drawing.tap()
+        XCTAssertEqual(drawing.label, "完成手写")
+        drawing.tap()
+        XCTAssertEqual(drawing.label, "手写笔记")
+        selectText()
+    }
+
     @MainActor func testWebSelectionUsesCustomGlassMenu() throws {
         let page = try BrowserPageServer()
         defer { page.listener.cancel() }
@@ -15,6 +146,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
         heading.press(forDuration: 1)
         let lookup = app.buttons["reading-selection-猫忆查"]
         XCTAssertTrue(lookup.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.buttons["复制"].exists)
         XCTAssertTrue(app.buttons["reading-selection-web-search"].isHittable)
         XCTAssertFalse(app.buttons["reading-selection-更多"].exists)
         XCTAssertFalse(app.menuItems["猫忆查"].exists)
@@ -311,15 +443,16 @@ final class BrowserWorkspaceUITests: XCTestCase {
         waitForExpectations(timeout: 15)
     }
 
-    @MainActor private func launch(extraArguments: [String] = []) -> XCUIApplication {
+    @MainActor private func launch(extraArguments: [String] = [], extraEnvironment: [String: String] = [:]) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--browser-workspace-fixtures"] + extraArguments
+        app.launchEnvironment.merge(extraEnvironment) { _, value in value }
         app.launch()
         XCTAssertTrue(app.buttons["browser-address"].waitForExistence(timeout: 15))
         return app
     }
     @MainActor private func restore(_ app: XCUIApplication) {
-        app.terminate(); app.launchArguments = []; app.launch()
+        app.terminate(); app.launchArguments = []; app.launchEnvironment = [:]; app.launch()
     }
     @MainActor func testAddressMatchesOpenAssetsWithoutExpandingFolders() {
         let app = launch(); defer { restore(app) }

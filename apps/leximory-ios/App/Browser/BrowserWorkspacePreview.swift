@@ -1,5 +1,6 @@
 #if DEBUG && targetEnvironment(simulator)
 import SwiftUI
+import PDFKit
 import LeximoryCore
 import OpenAPIRuntime
 import HTTPTypes
@@ -13,6 +14,11 @@ struct BrowserWorkspacePreview: View {
         Group {
             if let client, let workspace { BrowserWorkspaceView(client: client, namespace: "workspace-fixture", playback: playback, pendingText: $pendingText, initialWorkspace: workspace) }
             else { ProgressView() }
+        }.onChange(of: workspace?.ebookReader?.ready) { _, ready in
+            guard ready == true, ProcessInfo.processInfo.environment["LEXIMORY_FIXTURE_PDF_ACTIVE_CANVAS"] == "1" else { return }
+            for scene in UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }) {
+                scene.windows.forEach(exposeDrawingCanvas)
+            }
         }.task {
             guard client == nil else { return }
             do {
@@ -35,7 +41,9 @@ struct BrowserWorkspacePreview: View {
                             await store.save(descriptor, for: "ebook/" + text.id)
                             let filename = text.id == "workspace-japanese" ? "japanese-fixture.epub" : text.id == "workspace-pdf" ? "reader-fixture.pdf" : "reader-fixture.epub"
                             if let url = Bundle.main.url(forResource: filename, withExtension: nil) {
-                                try await store.saveData(Data(contentsOf: url), for: "book/" + text.id)
+                                let suppliedPDF = text.id == "workspace-pdf"
+                                    ? ProcessInfo.processInfo.environment["LEXIMORY_FIXTURE_PDF"].flatMap { Data(base64Encoded: $0) } : nil
+                                try await store.saveData(suppliedPDF ?? Data(contentsOf: url), for: "book/" + text.id)
                                 await store.save(descriptor.url.absoluteString, for: "book-source/" + text.id)
                             }
                         }
@@ -80,6 +88,21 @@ struct BrowserWorkspacePreview: View {
                 self.client = client
             } catch { assertionFailure("Browser workspace fixture could not be prepared: \(error)") }
         }
+    }
+    private func exposeDrawingCanvas(in view: UIView) {
+        if let pdf = view as? PDFView, let provider = pdf.pageOverlayViewProvider as? PDFDrawingOverlays {
+            for overlay in provider.overlays.values {
+                let updateInput = overlay.updateInput
+                overlay.updateInput = { [weak overlay] in
+                    updateInput?()
+                    overlay?.isUserInteractionEnabled = true
+                    overlay?.canvas.isUserInteractionEnabled = true
+                }
+                overlay.isUserInteractionEnabled = true
+                overlay.canvas.isUserInteractionEnabled = true
+            }
+        }
+        view.subviews.forEach(exposeDrawingCanvas)
     }
     static func payloads() throws -> [String: Data] {
         func encode(_ object: Any) throws -> Data { try JSONSerialization.data(withJSONObject: object) }

@@ -16,7 +16,7 @@ import LeximoryCore
     init(pageIndex: Int, size: CGSize) {
         self.pageIndex = pageIndex; pageSize = size
         super.init(frame: CGRect(origin: .zero, size: size))
-        backgroundColor = .clear; isOpaque = false
+        backgroundColor = .clear; isOpaque = false; isUserInteractionEnabled = false
         canvas.backgroundColor = .clear; canvas.isOpaque = false
         canvas.overrideUserInterfaceStyle = .light
         canvas.isScrollEnabled = false; canvas.bounces = false
@@ -118,6 +118,8 @@ import LeximoryCore
         guard let overlay = overlayView as? PDFDrawingOverlay else { return }
         capture(overlay); model.flush()
         if activeCanvas === overlay.canvas { schedulePresentationUpdate() }
+        overlay.isUserInteractionEnabled = false
+        overlay.canvas.isDrawingEnabled = false
         overlay.load?.cancel(); picker.removeObserver(overlay.canvas)
         overlays[overlay.pageIndex] = nil
     }
@@ -156,6 +158,15 @@ import LeximoryCore
         updatePresentation()
         await model.flush()?.value
     }
+    func readingTouchTarget(for hit: UIView) -> UIView? {
+        guard !model.drawing else { return nil }
+        var ancestor: UIView? = hit
+        while let view = ancestor, view !== pdf {
+            if view is PDFDrawingOverlay { return pdf?.documentView }
+            ancestor = view.superview
+        }
+        return nil
+    }
     func schedulePresentationUpdate() {
         guard !stopped, presentationUpdate == nil else { return }
         // Enter and leave drawing outside PDFKit and SwiftUI layout callbacks.
@@ -176,6 +187,8 @@ import LeximoryCore
         if let pdf, pdf.isInMarkupMode != model.drawing { pdf.isInMarkupMode = model.drawing }
         for overlay in overlays.values {
             let enabled = model.drawing && overlay.loaded
+            // PDFKit 27 hit-tests page overlays in reading mode too.
+            overlay.isUserInteractionEnabled = enabled
             if overlay.canvas.isDrawingEnabled != enabled { overlay.canvas.isDrawingEnabled = enabled }
         }
         configureNavigation()

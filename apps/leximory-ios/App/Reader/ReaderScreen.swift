@@ -253,7 +253,6 @@ struct DefinitionView: View {
     @State private var saveAcknowledged = false
     @State private var streamFeedback = DefinitionStreamFeedback()
     @State private var streamImpact: UIImpactFeedbackGenerator?
-    @AppStorage(AnnotationFeedback.preferenceKey) private var hapticsEnabled = true
     @State private var model: DefinitionModel
     @Environment(\.nativeSync) private var sync
     @Environment(\.dismiss) private var dismiss
@@ -278,7 +277,7 @@ struct DefinitionView: View {
     private var waiting: Bool {
         model.isGenerating && model.visibleDefinition == nil && client != nil
     }
-    private var feedbackAllowed: Bool { AnnotationFeedback.supported && hapticsEnabled && allowsFeedback && scenePhase == .active }
+    private var feedbackAllowed: Bool { AnnotationFeedback.supported && allowsFeedback && scenePhase == .active }
     private var streamedCharacterCount: Int {
         guard let definition = model.visibleDefinition else { return 0 }
         return definition.definition.count + (definition.etymology?.count ?? 0) + (definition.cognates?.count ?? 0)
@@ -336,9 +335,7 @@ struct DefinitionView: View {
                                 if client != nil { Button("重试", systemImage: "arrow.clockwise") { lookupAttempt += 1 } }
                             }
                         }
-                    }.padding(.horizontal, item.isDynamic ? 20 : 24)
-                        .padding(.top, waiting ? 16 : item.isDynamic ? 20 : 24)
-                        .padding(.bottom, waiting ? 16 : item.isDynamic ? 16 : 24)
+                    }.padding(item.isDynamic ? 20 : 24)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in

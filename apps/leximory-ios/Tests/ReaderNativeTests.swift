@@ -429,9 +429,9 @@ import LeximoryCore
         let paste = UICommand(title: "粘贴", action: #selector(UIResponderStandardEditActions.paste(_:)))
         let children = ReadingSelectionMenu.copyAndLookupActions([select, paste, UIMenu(title: "", children: [select, copy])])
         #expect(children.count == 1)
-        let menu = children.first as? UIMenu
-        #expect(menu?.children.count == 1)
-        #expect((menu?.children.first as? UICommand)?.action == copy.action)
+        #expect((children.first as? UICommand)?.action == copy.action)
+        #expect(children.first?.title == "复制")
+        #expect(children.first?.accessibilityLabel == "复制")
     }
     @Test func sessionExpiryDoesNotTreatNetworkFailuresAsSignout() {
         #expect(AccountSession.requiresSignIn(AuthError.sessionMissing))

@@ -169,7 +169,7 @@ final class TextBrowserUITests: XCTestCase {
         heading.press(forDuration: 1)
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "猫忆查")).firstMatch.waitForExistence(timeout: 5), app.debugDescription)
         let menu = XCTAttachment(screenshot: app.screenshot()); menu.name = "Article-matched selection menu"; menu.lifetime = .keepAlways; add(menu)
-        XCTAssertTrue(app.buttons["拷贝"].exists)
+        XCTAssertTrue(app.buttons["复制"].exists)
         for title in ["拷贝高亮标记的链接", "Copy Link with Highlight", "查找所选内容", "翻译", "搜索网页"] {
             XCTAssertFalse(app.buttons[title].exists)
         }

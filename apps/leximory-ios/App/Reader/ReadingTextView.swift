@@ -64,8 +64,11 @@ import os
     static func copyAndLookupActions(_ elements: [UIMenuElement]) -> [UIMenuElement] {
         elements.flatMap { element -> [UIMenuElement] in
             if let menu = element as? UIMenu { return copyAndLookupActions(menu.children) }
-            if let command = element as? UICommand, command.action == #selector(UIResponderStandardEditActions.copy(_:)) {
-                return [command]
+            if (element as? UICommand)?.action == #selector(UIResponderStandardEditActions.copy(_:)) || copyTitles.contains(nativeTitle(element)) {
+                if let action = element as? UIAction { action.title = "复制" }
+                else if let command = element as? UICommand { command.title = "复制" }
+                element.accessibilityLabel = "复制"
+                return [element]
             }
             if defineTitles.contains(nativeTitle(element)) {
                 if let action = element as? UIAction { action.title = "辞典" }
@@ -73,7 +76,7 @@ import os
                 element.accessibilityLabel = "辞典"
                 return [element]
             }
-            return copyTitles.contains(nativeTitle(element)) ? [element] : []
+            return []
         }
     }
 
@@ -1085,7 +1088,7 @@ private extension UIFont {
 
 @MainActor enum ReadingMenuTypography {
     private static let learningSample = "猫忆查荧光笔"
-    private static let utilitySample = "辞典拷贝"
+    private static let utilitySample = "辞典复制"
 
     static func learningFont() -> UIFont {
         // Cascade descriptors discard the display face's scale matrix. Use the fixed
