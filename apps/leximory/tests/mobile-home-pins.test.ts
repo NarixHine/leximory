@@ -202,6 +202,39 @@ test('home pin CAS serializes concurrent device edits and returns the winning re
     assert.deepEqual(await store.list(other, undefined, signal), { items: [], nextCursor: null })
 })
 
+test('home pins accept nullable fields omitted by the generated Swift SDK', async () => {
+    const { handler, state } = fixture()
+    const { faviconURL: _favicon, expectedRevision: _base, ...withoutNulls } = input
+    const response = await handler(request(withoutNulls))
+    assert.equal(response.status, 200)
+    assert.equal(state.rows[0]?.favicon_url, null)
+    assert.equal(state.rows[0]?.revision, revision)
+    const document = await handler(
+        request({
+            ...withoutNulls,
+            expectedRevision: revision,
+            revision: id(5),
+            destination: {
+                kind: 'document',
+                text: { id: 'article', libraryId: 'library', title: 'Article', topics: [], format: 'article' },
+            },
+        }),
+    )
+    assert.equal(document.status, 200)
+    assert.deepEqual(state.rows[0]?.destination, {
+        kind: 'document',
+        text: {
+            id: 'article',
+            libraryId: 'library',
+            title: 'Article',
+            topics: [],
+            format: 'article',
+            emoji: null,
+            createdAt: null,
+        },
+    })
+})
+
 test('home pin response loss replays committed inserts and updates without changing their revision or timestamps', async () => {
     const { state, store } = fixture()
     state.loseResponse = true

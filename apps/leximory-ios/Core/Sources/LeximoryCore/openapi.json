@@ -332,6 +332,7 @@
                                         }
                                       },
                                       "emoji": {
+                                        "default": null,
                                         "type": [
                                           "string",
                                           "null"
@@ -339,6 +340,7 @@
                                         "maxLength": 64
                                       },
                                       "createdAt": {
+                                        "default": null,
                                         "type": [
                                           "string",
                                           "null"
@@ -367,8 +369,6 @@
                                       "libraryId",
                                       "title",
                                       "topics",
-                                      "emoji",
-                                      "createdAt",
                                       "format"
                                     ],
                                     "additionalProperties": false
@@ -607,6 +607,7 @@
                                 }
                               },
                               "emoji": {
+                                "default": null,
                                 "type": [
                                   "string",
                                   "null"
@@ -614,6 +615,7 @@
                                 "maxLength": 64
                               },
                               "createdAt": {
+                                "default": null,
                                 "type": [
                                   "string",
                                   "null"
@@ -642,8 +644,6 @@
                               "libraryId",
                               "title",
                               "topics",
-                              "emoji",
-                              "createdAt",
                               "format"
                             ],
                             "additionalProperties": false
@@ -658,6 +658,7 @@
                     ]
                   },
                   "faviconURL": {
+                    "default": null,
                     "type": [
                       "string",
                       "null"
@@ -675,6 +676,7 @@
                     "format": "uuid"
                   },
                   "expectedRevision": {
+                    "default": null,
                     "type": [
                       "string",
                       "null"
@@ -688,10 +690,8 @@
                 "required": [
                   "title",
                   "destination",
-                  "faviconURL",
                   "sortOrder",
                   "revision",
-                  "expectedRevision",
                   "deleted"
                 ],
                 "additionalProperties": false
@@ -775,6 +775,7 @@
                                   }
                                 },
                                 "emoji": {
+                                  "default": null,
                                   "type": [
                                     "string",
                                     "null"
@@ -782,6 +783,7 @@
                                   "maxLength": 64
                                 },
                                 "createdAt": {
+                                  "default": null,
                                   "type": [
                                     "string",
                                     "null"
@@ -810,8 +812,6 @@
                                 "libraryId",
                                 "title",
                                 "topics",
-                                "emoji",
-                                "createdAt",
                                 "format"
                               ],
                               "additionalProperties": false

@@ -463,10 +463,15 @@ struct AnnotationActivity: Identifiable, Codable {
                 guard !pending.isEmpty else { break }
                 for change in pending {
                     try Task.checkCancellation()
-                    let saved = try await client.saveHomePin(change)
-                    try Task.checkCancellation()
-                    pinSync.receive(saved)
-                    persistPinSync(); applyCloudPins()
+                    do {
+                        let saved = try await client.saveHomePin(change)
+                        try Task.checkCancellation()
+                        pinSync.receive(saved)
+                        persistPinSync(); applyCloudPins()
+                    } catch {
+                        try Task.checkCancellation()
+                        // Retain this edit without holding up unrelated pins.
+                    }
                 }
             }
         } catch {
@@ -754,6 +759,9 @@ struct AnnotationActivity: Identifiable, Codable {
             if pin.title == previous.title { pin.title = text.title }
             return pin
         }
+        for pin in homePins {
+            if case .document(let saved) = pin.destination, saved.id == text.id { stagePin(pin) }
+        }
         persistPins(); rememberReading(text)
         recentlyOpened[text.libraryId] = text.preview
         persistRecentlyOpened()
@@ -783,8 +791,9 @@ struct AnnotationActivity: Identifiable, Codable {
         recentReading.texts.removeAll { $0.id == text.id }; persistRecentReading()
         if recentlyOpened[text.libraryId]?.id.rawValue == text.id { recentlyOpened[text.libraryId] = nil }
         persistRecentlyOpened()
-        homePins.removeAll { if case .document(let saved) = $0.destination { return saved.id == text.id }; return false }
-        persistPins()
+        for pin in homePins {
+            if case .document(let saved) = pin.destination, saved.id == text.id { deletePin(pin) }
+        }
         history.removeAll { $0.textID == text.id }
         if ebookTextID == text.id { ebookReader = nil; ebookTextID = nil }
         revision += 1

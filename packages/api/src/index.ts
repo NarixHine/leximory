@@ -44,8 +44,8 @@ export const homePinDestinationSchema = z.discriminatedUnion('kind', [
             text: textSchema.extend({
                 title: z.string().max(2048),
                 topics: z.array(z.string().max(128)).max(32),
-                emoji: z.string().max(64).nullable(),
-                createdAt: z.string().max(64).nullable(),
+                emoji: z.string().max(64).nullable().default(null),
+                createdAt: z.string().max(64).nullable().default(null),
                 bookmarkURL: homePinURLSchema.nullable().optional(),
             }),
         })
@@ -69,7 +69,8 @@ export const homePinSchema = homePinFieldsSchema
     .strict()
 export const homePinSaveSchema = homePinFieldsSchema
     .extend({
-        expectedRevision: z.uuid().toLowerCase().nullable(),
+        faviconURL: homePinURLSchema.nullable().default(null),
+        expectedRevision: z.uuid().toLowerCase().nullable().default(null),
         deleted: z.boolean(),
     })
     .strict()

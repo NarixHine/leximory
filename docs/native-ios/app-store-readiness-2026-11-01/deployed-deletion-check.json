@@ -1,0 +1,20 @@
+{
+    "checkedAt": "2026-11-02T07:20:44.888553+00:00",
+    "status": "not_verified",
+    "phase": "deployed-job-completion",
+    "disposableAccountCount": 1,
+    "accounts": [
+        {
+            "userId": "861a9168-b13f-4a66-920b-3d52ee760ef4",
+            "requestId": "ce076ba9-df54-40b4-97bd-14a9eb2bf57a",
+            "frozen": true,
+            "lastReceiptStatus": "pending"
+        }
+    ],
+    "recoveryEventAccepted": true,
+    "recoveryEventFunctionRuns": 0,
+    "vercelDeploymentOrConfigurationChanged": false,
+    "inngestAppRegistrationChanged": false,
+    "reason": "Initial deployed deletion returned 503. The isolated receipt remains pending. A recovery event sent with the locally available default-environment credentials has no function run; this does not establish preview-environment registration or completion.",
+    "requiredHumanAction": "Deploy the local API fixes and configure or verify the matching preview Inngest environment and app sync. All Vercel operations are performed by the human."
+}

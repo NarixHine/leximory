@@ -408,7 +408,10 @@ public struct MobileClient: Sendable {
         return result
     }
     public func saveHomePin(_ mutation: HomePinMutation) async throws -> HomePin {
-        let payload = try JSONDecoder().decode(Operations.saveHomePin.Input.Body.jsonPayload.self, from: JSONEncoder().encode(mutation))
+        let destination = try mapped(mutation.destination, to: Operations.saveHomePin.Input.Body.jsonPayload.destinationPayload.self)
+        let payload = Operations.saveHomePin.Input.Body.jsonPayload(title: mutation.title, destination: destination,
+            faviconURL: mutation.faviconURL, sortOrder: mutation.sortOrder, revision: mutation.revision,
+            expectedRevision: mutation.expectedRevision, deleted: mutation.deleted)
         return try mapped(try await client.saveHomePin(path: .init(pinId: mutation.id), body: .json(payload)).ok.body.json, to: HomePin.self)
     }
     public func browserRules() async throws -> [BrowserRule] {

@@ -917,3 +917,233 @@ private final class ScrollHistoryServer: Sendable {
         }
     }
 }
+
+
+@MainActor struct HomePinWorkspaceSyncTests {
+    private let origin = URL(string: "https://pins.test")!
+    private func client(_ server: PinTransport, account: String = "reader") -> MobileClient {
+        MobileClient(baseURL: origin, transport: server, token: { _ in account })
+    }
+    private func clean(_ namespaces: [String]) {
+        for key in UserDefaults.standard.dictionaryRepresentation().keys {
+            if namespaces.contains(where: { key.hasSuffix("." + $0) }) { UserDefaults.standard.removeObject(forKey: key) }
+        }
+    }
+    private func pin(_ title: String = "Reading") -> BrowserHomePin {
+        BrowserHomePin(id: UUID(), title: title, destination: .webpage(URL(string: "https://example.com/article")!))
+    }
+    @Test func legacyPinsUploadOnceAndAnotherDeviceReceivesEditsAndDeletions() async throws {
+        let namespaces = [UUID().uuidString, UUID().uuidString]
+        defer { clean(namespaces) }
+        let original = pin()
+        UserDefaults.standard.set(try JSONEncoder().encode([original]), forKey: "browser.home-pins." + namespaces[0])
+        let server = PinTransport()
+        let first = BrowserWorkspaceModel(client: client(server), namespace: namespaces[0])
+        #expect(first.homePins == [original])
+        await first.syncPins()
+        let second = BrowserWorkspaceModel(client: client(server), namespace: namespaces[1])
+        await second.syncPins()
+        #expect(second.homePins == [original])
+        var renamed = original; renamed.title = "Daily reading"
+        second.savePin(renamed)
+        await second.syncPins()
+        await first.syncPins()
+        #expect(first.homePins == [renamed])
+        first.deletePin(renamed)
+        await first.syncPins()
+        await second.syncPins()
+        #expect(second.homePins.isEmpty)
+        #expect(await server.rowCount == 1)
+        #expect(await server.saveCount == 3)
+    }
+    @Test func offlineEditsSurviveRestartAndALostSaveResponse() async throws {
+        let namespace = UUID().uuidString
+        defer { clean([namespace]) }
+        let server = PinTransport()
+        let first = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        let original = pin()
+        first.savePin(original)
+        await server.setOffline(true)
+        await first.syncPins()
+        #expect(first.homePins == [original])
+        #expect(first.error == nil)
+        let reopened = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        #expect(reopened.homePins == [original])
+        await server.setOffline(false)
+        await server.loseNextSaveResponse()
+        await reopened.syncPins()
+        #expect(reopened.homePins == [original])
+        #expect(reopened.error == nil)
+        #expect(await server.rowCount == 1)
+        let acknowledged = try #require(await server.rowsForReader.first)
+        await reopened.syncPins()
+        #expect(await server.rowsForReader.first?.revision == acknowledged.revision)
+        #expect(await server.saveCount == 2)
+    }
+    @Test func remoteDeletionWinsOverADisconnectedDevicesRename() async throws {
+        let namespaces = [UUID().uuidString, UUID().uuidString]
+        defer { clean(namespaces) }
+        let server = PinTransport()
+        let first = BrowserWorkspaceModel(client: client(server), namespace: namespaces[0])
+        let original = pin()
+        first.savePin(original)
+        await first.syncPins()
+        let second = BrowserWorkspaceModel(client: client(server), namespace: namespaces[1])
+        await second.syncPins()
+        var renamed = original; renamed.title = "Offline edit"
+        second.savePin(renamed)
+        first.deletePin(original)
+        await first.syncPins()
+        await second.syncPins()
+        #expect(second.homePins.isEmpty)
+        #expect(await server.saveCount == 2)
+    }
+    @Test func accountsAreIsolatedAndGuestsNeverSendPinRequests() async throws {
+        let namespaces = [UUID().uuidString, UUID().uuidString, UUID().uuidString]
+        defer { clean(namespaces) }
+        let server = PinTransport()
+        let first = BrowserWorkspaceModel(client: client(server), namespace: namespaces[0])
+        first.savePin(pin())
+        await first.syncPins()
+        let other = BrowserWorkspaceModel(client: client(server, account: "other"), namespace: namespaces[1])
+        await other.syncPins()
+        #expect(other.homePins.isEmpty)
+        let guest = BrowserWorkspaceModel(client: client(server), namespace: namespaces[2], localOnly: true)
+        let calls = await server.calls
+        guest.savePin(pin("Local shortcut"))
+        await guest.syncPins()
+        #expect(await server.calls == calls)
+        #expect(guest.homePins.count == 1)
+    }
+    @Test func deletingContentAlsoDeletesItsCloudPin() async throws {
+        let namespace = UUID().uuidString
+        defer { clean([namespace]) }
+        let server = PinTransport()
+        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        let text = try JSONDecoder().decode(CatalogText.self, from: Data(#"{"id":"article","libraryId":"library","title":"Article","topics":[],"emoji":null,"createdAt":null,"format":"article"}"#.utf8))
+        let original = BrowserHomePin(id: UUID(), title: text.title, destination: .document(text))
+        workspace.savePin(original)
+        await workspace.syncPins()
+        workspace.contentRemoved(text)
+        await workspace.syncPins()
+        #expect(workspace.homePins.isEmpty)
+        #expect(await server.rowsForReader.first?.deletedAt != nil)
+        let reopened = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        await reopened.syncPins()
+        #expect(reopened.homePins.isEmpty)
+    }
+    @Test func renamingContentUpdatesItsCloudSnapshotAndPreservesCustomPinTitles() async throws {
+        let namespace = UUID().uuidString
+        defer { clean([namespace]) }
+        let server = PinTransport()
+        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        func text(_ title: String) throws -> CatalogText {
+            try JSONDecoder().decode(CatalogText.self, from: JSONSerialization.data(withJSONObject: ["id":"article", "libraryId":"library", "title":title, "topics":[], "emoji":NSNull(), "createdAt":NSNull(), "format":"article"]))
+        }
+        let original = try text("Original title")
+        let automatic = BrowserHomePin(id: UUID(), title: original.title, destination: .document(original))
+        let custom = BrowserHomePin(id: UUID(), title: "My shortcut", destination: .document(original))
+        workspace.savePin(automatic); workspace.savePin(custom)
+        await workspace.syncPins()
+        await workspace.contentChanged(try text("Updated title"), reloadReader: false)
+        await workspace.syncPins()
+        let rows = await server.rowsForReader
+        #expect(Set(rows.map(\.title)) == ["Updated title", "My shortcut"])
+        for row in rows {
+            if case .document(let snapshot) = row.destination { #expect(snapshot.title == "Updated title") }
+            else { Issue.record("Document shortcut changed its destination kind") }
+        }
+    }
+    @Test func oneRejectedLegacyPinDoesNotBlockOtherEditsOrDisappearLocally() async {
+        let namespace = UUID().uuidString
+        defer { clean([namespace]) }
+        let server = PinTransport()
+        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        let long = pin(String(repeating: "x", count: 257))
+        let valid = pin("Daily reading")
+        workspace.savePin(long)
+        workspace.savePin(valid)
+        await workspace.syncPins()
+        #expect(workspace.homePins == [long, valid])
+        #expect(await server.rowsForReader.map(\.title) == ["Daily reading"])
+        #expect(workspace.error == nil)
+    }
+    @Test func cancelledCloudResponseCannotRecreatePurgedAccountData() async throws {
+        let namespace = UUID().uuidString
+        defer { clean([namespace]) }
+        let server = PinTransport()
+        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        workspace.savePin(pin())
+        await workspace.syncPins()
+        await server.pauseNextRead()
+        let task = Task { await workspace.syncPins() }
+        for _ in 0..<1000 {
+            if await server.readIsPaused { break }
+            await Task.yield()
+        }
+        #expect(await server.readIsPaused)
+        task.cancel()
+        clean([namespace])
+        await server.resumeRead()
+        await task.value
+        #expect(!UserDefaults.standard.dictionaryRepresentation().keys.contains { $0.hasSuffix("." + namespace) })
+    }
+
+    private actor PinTransport: ClientTransport {
+        private var rows: [String: [String: HomePin]] = [:]
+        private var offline = false
+        private var loseResponse = false
+        private var pauseRead = false
+        private var paused: CheckedContinuation<Void, Never>?
+        private(set) var calls = 0
+        private(set) var saveCount = 0
+        var rowCount: Int { rows.values.reduce(0) { $0 + $1.count } }
+        var rowsForReader: [HomePin] { Array(rows["reader", default: [:]].values) }
+        var readIsPaused: Bool { paused != nil }
+        func setOffline(_ value: Bool) { offline = value }
+        func loseNextSaveResponse() { loseResponse = true }
+        func pauseNextRead() { pauseRead = true }
+        func resumeRead() { paused?.resume(); paused = nil }
+        func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+            calls += 1
+            if offline { throw URLError(.notConnectedToInternet) }
+            let account = String((request.headerFields[.authorization] ?? "").dropFirst("Bearer ".count))
+            let result: Data
+            switch operationID {
+            case "homePins":
+                let page = CatalogPageForPins(items: Array(rows[account, default: [:]].values))
+                result = try JSONEncoder().encode(page)
+                if pauseRead { pauseRead = false; await withCheckedContinuation { paused = $0 } }
+            case "saveHomePin":
+                saveCount += 1
+                let data = try await Data(collecting: #require(body), upTo: 32768)
+                var object = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+                // The generated SDK moves the ID to the path and omits absent nullable fields.
+                #expect(object["id"] == nil)
+                let id = try #require(request.path?.split(separator: "/").last).description
+                object["id"] = id
+                let change = try JSONDecoder().decode(HomePinMutation.self, from: JSONSerialization.data(withJSONObject: object))
+                if change.title.utf16.count > 256 {
+                    return (HTTPResponse(status: .badRequest, headerFields: [.contentType: "application/json"]), HTTPBody(#"{"error":{"code":"invalid_input","message":"Invalid pin","retryable":false}}"#))
+                }
+                var saved = change.pin
+                saved.updatedAt = "2026-11-02T00:00:00Z"
+                if change.deleted { saved.deletedAt = "2026-11-02T00:00:00Z" }
+                if let existing = rows[account]?[id], existing.revision != change.expectedRevision || existing.deletedAt != nil { saved = existing }
+                rows[account, default: [:]][id] = saved
+                if loseResponse { loseResponse = false; throw URLError(.networkConnectionLost) }
+                result = try JSONEncoder().encode(saved)
+            default: throw URLError(.unsupportedURL)
+            }
+            return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(result))
+        }
+    }
+    private struct CatalogPageForPins: Encodable {
+        let items: [HomePin]
+        func encode(to encoder: any Encoder) throws {
+            var c = encoder.container(keyedBy: Keys.self)
+            try c.encode(items, forKey: .items); try c.encodeNil(forKey: .nextCursor)
+        }
+        enum Keys: String, CodingKey { case items, nextCursor }
+    }
+}
