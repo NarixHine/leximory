@@ -397,6 +397,20 @@ public struct MobileClient: Sendable {
         await localStore?.upsertText(text)
         return text
     }
+    public func allHomePins() async throws -> [HomePin] {
+        var result: [HomePin] = []
+        var cursor: String?
+        repeat {
+            let page = try mapped(try await client.homePins(query: .init(cursor: cursor)).ok.body.json, to: CatalogPage<HomePin>.self)
+            result.append(contentsOf: page.items)
+            cursor = page.nextCursor
+        } while cursor != nil
+        return result
+    }
+    public func saveHomePin(_ mutation: HomePinMutation) async throws -> HomePin {
+        let payload = try JSONDecoder().decode(Operations.saveHomePin.Input.Body.jsonPayload.self, from: JSONEncoder().encode(mutation))
+        return try mapped(try await client.saveHomePin(path: .init(pinId: mutation.id), body: .json(payload)).ok.body.json, to: HomePin.self)
+    }
     public func browserRules() async throws -> [BrowserRule] {
         struct Rules: Decodable { let items: [BrowserRule] }
         return try mapped(try await client.browserRules().ok.body.json, to: Rules.self).items

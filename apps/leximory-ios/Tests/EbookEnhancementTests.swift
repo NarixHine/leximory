@@ -349,6 +349,7 @@ import LeximoryCore
 
     @Test func pendingBookmarksCanBeRecoloredIndependently() {
         let reader = EbookReaderState()
+        reader.canBookmark = true
         reader.location = "3"; reader.chapter = "Chapter"
         let first = reader.beginBookmark(EbookSelection(quote: "First", context: "First", offset: 0, location: "2"))
         let second = reader.beginBookmark(EbookSelection(quote: "Second", context: "Second", offset: 0))

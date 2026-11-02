@@ -1,6 +1,40 @@
 import XCTest
 
 final class GuestAccountUITests: XCTestCase {
+    @MainActor func testContextualEntryKeepsFormReachableWithKeyboardAndLargeText() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        for accessibility in [false, true] {
+            app.launchArguments = ["--account-entry-preview", "--account-entry-inflected"]
+                + (accessibility ? ["--dark-appearance", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"] : [])
+            app.launch()
+            let email = app.textFields["sign-in-email"]
+            XCTAssertTrue(email.waitForExistence(timeout: 8))
+            for _ in 0..<5 where !email.isHittable { app.swipeUp() }
+            email.tap(); email.typeText("reader@example.com")
+            XCTAssertEqual(email.value as? String, "reader@example.com")
+            XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+            let password = app.secureTextFields["sign-in-password"]
+            for _ in 0..<5 where !password.isHittable { app.swipeUp() }
+            XCTAssertTrue(password.isHittable)
+            password.tap(); password.typeText("a-test-password")
+            XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+            let submit = app.buttons["account-entry-submit"]
+            for _ in 0..<5 where !submit.isHittable { app.swipeUp() }
+            XCTAssertTrue(submit.isHittable)
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.name = accessibility ? "Account form with accessibility text and keyboard" : "Account form with keyboard"
+            screenshot.lifetime = .keepAlways; add(screenshot)
+            app.swipeDown()
+            let close = app.buttons["account-entry-close"]
+            for _ in 0..<5 where !close.isHittable { app.swipeDown() }
+            XCTAssertTrue(close.isHittable); close.tap()
+            XCTAssertTrue(app.buttons["browser-address"].waitForExistence(timeout: 5))
+            app.terminate()
+        }
+    }
+
     @MainActor func testAccountHeadwordUsesTheAnnotationBaseForm() {
         let app = XCUIApplication()
         app.launchArguments = ["--account-entry-preview", "--account-entry-inflected"]

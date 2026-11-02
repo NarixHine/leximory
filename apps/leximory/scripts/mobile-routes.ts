@@ -17,6 +17,7 @@ async function main() {
             ),
         )
     const groups = {
+        'home-pins': ['homePins', 'saveHomePin'],
         guest: ['guestSession', 'guestRevokeSession', 'guestDefinitions', 'guestDefinitionResult'],
         'vocabulary-create': ['createVocabulary'],
         catalog: ['me', 'libraries', 'texts', 'document', 'audio'],

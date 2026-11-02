@@ -27,6 +27,58 @@ export const textSchema = z
         bookmarkURL: z.url().nullable().optional(),
     })
     .strict()
+const homePinURLSchema = z
+    .url({ protocol: /^https?$/ })
+    .max(4096)
+    .refine((value) => {
+        const url = new URL(value)
+        return !url.username && !url.password
+    })
+export const homePinDestinationSchema = z.discriminatedUnion('kind', [
+    z
+        .object({ kind: z.literal('webpage'), url: homePinURLSchema, bookmarkId: resourceID.nullable().optional() })
+        .strict(),
+    z
+        .object({
+            kind: z.literal('document'),
+            text: textSchema.extend({
+                title: z.string().max(2048),
+                topics: z.array(z.string().max(128)).max(32),
+                emoji: z.string().max(64).nullable(),
+                createdAt: z.string().max(64).nullable(),
+                bookmarkURL: homePinURLSchema.nullable().optional(),
+            }),
+        })
+        .strict(),
+])
+const homePinFieldsSchema = z
+    .object({
+        title: z.string().trim().min(1).max(256),
+        destination: homePinDestinationSchema,
+        faviconURL: homePinURLSchema.nullable(),
+        sortOrder: z.int().min(0).max(2147483647),
+        revision: z.uuid().toLowerCase(),
+    })
+    .strict()
+export const homePinSchema = homePinFieldsSchema
+    .extend({
+        id: z.uuid().toLowerCase(),
+        deletedAt: z.iso.datetime({ offset: true }).nullable(),
+        updatedAt: z.iso.datetime({ offset: true }),
+    })
+    .strict()
+export const homePinSaveSchema = homePinFieldsSchema
+    .extend({
+        expectedRevision: z.uuid().toLowerCase().nullable(),
+        deleted: z.boolean(),
+    })
+    .strict()
+export const homePinsPageSchema = z
+    .object({
+        items: z.array(homePinSchema).max(100),
+        nextCursor: z.uuid().nullable(),
+    })
+    .strict()
 export const textEditSchema = z
     .object({
         title: z.string().trim().min(1).max(512),
@@ -384,6 +436,14 @@ export const accountDeletionStatusSchema = z
     .strict()
 
 export const mobileContract = {
+    homePins: oc
+        .route({ method: 'GET', path: '/browser/home-pins' })
+        .input(z.object({ cursor: z.uuid().optional() }).strict())
+        .output(homePinsPageSchema),
+    saveHomePin: oc
+        .route({ method: 'POST', path: '/browser/home-pins/{pinId}' })
+        .input(homePinSaveSchema.extend({ pinId: z.uuid() }))
+        .output(homePinSchema),
     guestSession: oc
         .route({ method: 'POST', path: '/guest/session', spec: (spec) => ({ ...spec, security: [] }) })
         .input(z.object({}).strict())

@@ -360,7 +360,11 @@ final class BrowserWorkspaceUITests: XCTestCase {
                 "Files", "文件", "ファイル")).firstMatch.exists)
             let capture = XCTAttachment(screenshot: app.screenshot())
             capture.name = "Native \(format.uppercased()) export"; capture.lifetime = .keepAlways; add(capture)
-            app.swipeDown()
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.1)).tap()
+            } else {
+                app.swipeDown()
+            }
             expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.otherElements["ActivityListView"])
             waitForExpectations(timeout: 5)
             XCTAssertTrue(app.buttons["browser-more"].waitForExistence(timeout: 5))

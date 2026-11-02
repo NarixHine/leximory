@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 @testable import Leximory
 
 struct EbookExportTests {
-    @Test(arguments: [EbookExport.Format.epub, .pdf])
+    @Test(.timeLimit(.minutes(1)), arguments: [EbookExport.Format.epub, .pdf])
     func exportsOriginalFileBytesWithMatchingTypeAndFilename(format: EbookExport.Format) async throws {
         let source = try #require(Bundle.main.url(forResource: "reader-fixture", withExtension: format.rawValue))
         let bytes = try Data(contentsOf: source)

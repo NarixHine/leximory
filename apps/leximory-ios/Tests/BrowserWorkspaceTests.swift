@@ -787,7 +787,7 @@ private final class ScrollHistoryServer: Sendable {
                 {"text":{"id":"ebook","libraryId":"active","title":"A book","topics":[],"emoji":null,"createdAt":null,"format":"ebook"},
                  "library":\(Self.libraryJSON),"url":"https://bookmarks.test/book.pdf?token=renewed&v=1","format":"pdf",
                  "expiresAt":"2099-01-01T00:00:00Z","location":"5",
-                 "bookmarks":[{"id":42,"quote":"A new highlight","chapter":null,"location":"5","createdAt":null}]}
+                 "bookmarks":[{"id":42,"quote":"A new highlight","chapter":null,"location":"5","createdAt":null,"color":"sage"}]}
                 """
             case "texts":
                 if request.path?.contains("/active/") == true {

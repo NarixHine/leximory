@@ -140,6 +140,45 @@ export type Database = {
                     },
                 ]
             }
+            browser_home_pins: {
+                Row: {
+                    created_at: string
+                    deleted_at: string | null
+                    destination: Json
+                    favicon_url: string | null
+                    id: string
+                    revision: string
+                    sort_order: number
+                    title: string
+                    updated_at: string
+                    user_id: string
+                }
+                Insert: {
+                    created_at?: string
+                    deleted_at?: string | null
+                    destination: Json
+                    favicon_url?: string | null
+                    id: string
+                    revision?: string
+                    sort_order?: number
+                    title: string
+                    updated_at?: string
+                    user_id: string
+                }
+                Update: {
+                    created_at?: string
+                    deleted_at?: string | null
+                    destination?: Json
+                    favicon_url?: string | null
+                    id?: string
+                    revision?: string
+                    sort_order?: number
+                    title?: string
+                    updated_at?: string
+                    user_id?: string
+                }
+                Relationships: []
+            }
             dictations: {
                 Row: {
                     content: Json

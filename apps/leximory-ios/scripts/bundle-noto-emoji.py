@@ -23,4 +23,7 @@ names = {1: "Leximory Noto Emoji", 3: "1.000;LEXI;LeximoryNotoEmoji", 4: "Leximo
 for record in font["name"].names:
     if record.nameID in names:
         record.string = names[record.nameID].encode(record.getEncoding())
+for table in font["cmap"].tables:
+    if table.format == 14:
+        table.uvsDict[0xFE0F] = list(table.uvsDict[0xFE0E])
 font.save(args.output)

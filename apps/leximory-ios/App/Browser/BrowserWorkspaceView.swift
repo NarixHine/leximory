@@ -201,6 +201,13 @@ struct BrowserWorkspaceView: View {
             guard scenePhase == .active else { return }
             await workspace.cacheRecentImages()
         }
+        .task(id: "pins/\(scenePhase == .active)/\(sync?.online != false)/\(workspace.pinMutationRevision)") {
+            guard scenePhase == .active, sync?.online != false else { return }
+            while !Task.isCancelled {
+                await workspace.syncPins()
+                do { try await Task.sleep(for: .seconds(15)) } catch { return }
+            }
+        }
         .task(id: sync?.revision) { await workspace.refresh(online: sync == nil) }
         .task(id: editingAddress ? workspace.addressSearchFolders.map(\.id) + [sync?.online == false ? "offline" : "online"] : []) {
             guard editingAddress else { return }

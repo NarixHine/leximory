@@ -235,6 +235,717 @@
   },
   "openapi": "3.1.1",
   "paths": {
+    "/browser/home-pins": {
+      "get": {
+        "operationId": "homePins",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "allowEmptyValue": true,
+            "allowReserved": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "maxItems": 100,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 256
+                          },
+                          "destination": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "enum": [
+                                      "webpage"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "url": {
+                                    "type": "string",
+                                    "maxLength": 4096,
+                                    "format": "uri"
+                                  },
+                                  "bookmarkId": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "url"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "enum": [
+                                      "document"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "text": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                                      },
+                                      "libraryId": {
+                                        "type": "string",
+                                        "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                                      },
+                                      "title": {
+                                        "type": "string",
+                                        "maxLength": 2048
+                                      },
+                                      "topics": {
+                                        "type": "array",
+                                        "maxItems": 32,
+                                        "items": {
+                                          "type": "string",
+                                          "maxLength": 128
+                                        }
+                                      },
+                                      "emoji": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "maxLength": 64
+                                      },
+                                      "createdAt": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "maxLength": 64
+                                      },
+                                      "format": {
+                                        "enum": [
+                                          "article",
+                                          "ebook",
+                                          "bookmark"
+                                        ],
+                                        "type": "string"
+                                      },
+                                      "bookmarkURL": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "maxLength": 4096,
+                                        "format": "uri"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "libraryId",
+                                      "title",
+                                      "topics",
+                                      "emoji",
+                                      "createdAt",
+                                      "format"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "text"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "faviconURL": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 4096,
+                            "format": "uri"
+                          },
+                          "sortOrder": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 2147483647
+                          },
+                          "revision": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "deletedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "destination",
+                          "faviconURL",
+                          "sortOrder",
+                          "revision",
+                          "id",
+                          "deletedAt",
+                          "updatedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "nextCursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "nextCursor"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/browser/home-pins/{pinId}": {
+      "post": {
+        "operationId": "saveHomePin",
+        "parameters": [
+          {
+            "name": "pinId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "destination": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "enum": [
+                              "webpage"
+                            ],
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string",
+                            "maxLength": 4096,
+                            "format": "uri"
+                          },
+                          "bookmarkId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "url"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "enum": [
+                              "document"
+                            ],
+                            "type": "string"
+                          },
+                          "text": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                              },
+                              "libraryId": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                              },
+                              "title": {
+                                "type": "string",
+                                "maxLength": 2048
+                              },
+                              "topics": {
+                                "type": "array",
+                                "maxItems": 32,
+                                "items": {
+                                  "type": "string",
+                                  "maxLength": 128
+                                }
+                              },
+                              "emoji": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 64
+                              },
+                              "createdAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 64
+                              },
+                              "format": {
+                                "enum": [
+                                  "article",
+                                  "ebook",
+                                  "bookmark"
+                                ],
+                                "type": "string"
+                              },
+                              "bookmarkURL": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 4096,
+                                "format": "uri"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "libraryId",
+                              "title",
+                              "topics",
+                              "emoji",
+                              "createdAt",
+                              "format"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "text"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "faviconURL": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4096,
+                    "format": "uri"
+                  },
+                  "sortOrder": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483647
+                  },
+                  "revision": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expectedRevision": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uuid"
+                  },
+                  "deleted": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "title",
+                  "destination",
+                  "faviconURL",
+                  "sortOrder",
+                  "revision",
+                  "expectedRevision",
+                  "deleted"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 256
+                    },
+                    "destination": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "enum": [
+                                "webpage"
+                              ],
+                              "type": "string"
+                            },
+                            "url": {
+                              "type": "string",
+                              "maxLength": 4096,
+                              "format": "uri"
+                            },
+                            "bookmarkId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "url"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "enum": [
+                                "document"
+                              ],
+                              "type": "string"
+                            },
+                            "text": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                                },
+                                "libraryId": {
+                                  "type": "string",
+                                  "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                                },
+                                "title": {
+                                  "type": "string",
+                                  "maxLength": 2048
+                                },
+                                "topics": {
+                                  "type": "array",
+                                  "maxItems": 32,
+                                  "items": {
+                                    "type": "string",
+                                    "maxLength": 128
+                                  }
+                                },
+                                "emoji": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "maxLength": 64
+                                },
+                                "createdAt": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "maxLength": 64
+                                },
+                                "format": {
+                                  "enum": [
+                                    "article",
+                                    "ebook",
+                                    "bookmark"
+                                  ],
+                                  "type": "string"
+                                },
+                                "bookmarkURL": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "maxLength": 4096,
+                                  "format": "uri"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "libraryId",
+                                "title",
+                                "topics",
+                                "emoji",
+                                "createdAt",
+                                "format"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "text"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "faviconURL": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "maxLength": 4096,
+                      "format": "uri"
+                    },
+                    "sortOrder": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 2147483647
+                    },
+                    "revision": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "deletedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "destination",
+                    "faviconURL",
+                    "sortOrder",
+                    "revision",
+                    "id",
+                    "deletedAt",
+                    "updatedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/guest/session": {
       "post": {
         "operationId": "guestSession",
