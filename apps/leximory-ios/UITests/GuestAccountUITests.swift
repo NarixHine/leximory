@@ -23,6 +23,7 @@ final class GuestAccountUITests: XCTestCase {
         XCTAssertTrue(lookup.waitForExistence(timeout: 5)); lookup.tap()
         let consent = app.buttons["允许并查词"]
         XCTAssertTrue(consent.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "definition-generating").firstMatch.exists)
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "20 次猫忆查")).firstMatch.exists)
         XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Vercel")).firstMatch.exists)
         XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "不会上传")).firstMatch.exists)

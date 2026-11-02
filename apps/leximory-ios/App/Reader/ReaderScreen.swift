@@ -322,7 +322,7 @@ struct DefinitionView: View {
                                         .accessibilityAddTraits(.isHeader)
                                         .accessibilityIdentifier("definition-headword")
                                     Spacer(minLength: 0)
-                                    if model.isGenerating, client != nil {
+                                    if model.isGenerating, client != nil, !requiresGuestConsent {
                                         ProgressView().controlSize(.mini).tint(.secondary)
                                             .accessibilityLabel("正在生成释义")
                                             .accessibilityIdentifier("definition-generating")
