@@ -38,3 +38,7 @@ export const articleImported = eventType('app/article.imported', {
 export const appleSubscriptionChanged = eventType('app/apple.subscription.changed', {
     schema: staticSchema<{ environment: 'Production' | 'Sandbox'; chain: string }>(),
 })
+
+export const accountDeletionRequested = eventType('app/account.deletion.requested', {
+    schema: z.object({ requestId: z.uuid() }).strict(),
+})

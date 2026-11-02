@@ -21,6 +21,7 @@ struct BrowserWorkspaceView: View {
     let client: MobileClient
     let playback: PlaybackController
     var session: AccountSession?
+    var guest: GuestSession?
     @Binding var pendingText: TextID?
     @Binding var pendingHome: Bool
     @State private var workspace: BrowserWorkspaceModel
@@ -56,9 +57,9 @@ struct BrowserWorkspaceView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Namespace private var chromeNamespace
 
-    init(client: MobileClient, namespace: String, playback: PlaybackController, session: AccountSession? = nil, pendingText: Binding<TextID?>, pendingHome: Binding<Bool> = .constant(false), initialWorkspace: BrowserWorkspaceModel? = nil) {
-        self.client = client; self.playback = playback; self.session = session; _pendingText = pendingText; _pendingHome = pendingHome
-        _workspace = State(initialValue: initialWorkspace ?? BrowserWorkspaceModel(client: client, namespace: namespace))
+    init(client: MobileClient, namespace: String, playback: PlaybackController, session: AccountSession? = nil, guest: GuestSession? = nil, pendingText: Binding<TextID?>, pendingHome: Binding<Bool> = .constant(false), initialWorkspace: BrowserWorkspaceModel? = nil) {
+        self.client = client; self.playback = playback; self.session = session; self.guest = guest; _pendingText = pendingText; _pendingHome = pendingHome
+        _workspace = State(initialValue: initialWorkspace ?? BrowserWorkspaceModel(client: client, namespace: namespace, localOnly: guest != nil))
         _wallpapers = State(initialValue: HomeWallpaperStore(namespace: namespace))
     }
     private var webBookmarkID: String? { if case .web(let page) = workspace.current.resource { page.bookmarkID } else { nil } }
@@ -160,7 +161,14 @@ struct BrowserWorkspaceView: View {
         .task { await wallpapers.load() }
         .fileImporter(isPresented: $choosingFile, allowedContentTypes: [.epub, .pdf]) { result in
             Task {
-                do { let file = try await BrowserEbookFile.read(result.get()); importRequest = BrowserImportRequest(source: .ebook(file)) }
+                do {
+                    let file = try await BrowserEbookFile.read(result.get())
+                    if let guest {
+                        let input = try guest.openFile(file)
+                        workspace.recordDocument(input.document)
+                        workspace.visit(.document(input.document))
+                    } else { importRequest = BrowserImportRequest(source: .ebook(file)) }
+                }
                 catch {
                     if (error as NSError).code == NSUserCancelledError { return }
                     workspace.error = (error as? URLError)?.code == .dataLengthExceedsMaximum ? "请选择小于 4.5 MB 的电子书。" : "电子书无法打开，请重新选择 EPUB 或 PDF 文件。"
@@ -207,6 +215,7 @@ struct BrowserWorkspaceView: View {
         }
         .task(id: pendingText) {
             guard let id = pendingText else { return }
+            if guest != nil { session?.entry = AccountEntryContext(purpose: .cloudLibrary); pendingText = nil; return }
             do {
                 let document = try await client.documentDetails(textID: id.rawValue)
                 guard !Task.isCancelled else { return }
@@ -322,16 +331,23 @@ struct BrowserWorkspaceView: View {
     }
     @ViewBuilder private func resource(_ entry: BrowserEntry) -> some View {
         switch entry.resource {
-        case .bookmarks: BrowserFoldersView(workspace: workspace, editText: { editingText = $0 })
+        case .bookmarks:
+            if guest != nil { GuestAccountPrompt(title: "我的书签", message: "登录后查看你的文件夹和已保存内容。", purpose: .cloudLibrary) }
+            else { BrowserFoldersView(workspace: workspace, editText: { editingText = $0 }) }
         case .account:
             if let session { AccountView(session: session, playback: playback).safeAreaPadding(.bottom, chromeHeight) }
             else { LeximoryUnavailableView("账号", systemImage: "person.crop.circle") }
         case .vocabulary: BrowserVocabularyView(workspace: workspace)
-        case .review: ReviewTimelineView(client: client, progressOverrides: workspace.reviewProgress, open: workspace.openReview)
+        case .review:
+            if guest != nil { GuestAccountPrompt(title: "每日复习", message: "登录后复习你收藏的生词。", purpose: .review) }
+            else { ReviewTimelineView(client: client, progressOverrides: workspace.reviewProgress, open: workspace.openReview) }
         case .reviewSession(let model):
             ReviewSessionView(model: model, onProgress: { workspace.updateReview(model) })
         case .document(let document):
-            if document.text.format == "ebook" { EbookScreen(article: document.text.preview, client: client, language: document.library.preview.language) }
+            if document.text.format == "ebook" {
+                EbookScreen(article: document.text.preview, client: guest == nil ? client : nil,
+                    language: document.library.preview.language, localInput: guest?.files[document.text.id])
+            }
             else { ReaderScreen(article: document.text.preview, playback: playback, language: document.library.preview.language, client: client) }
         default: EmptyView()
         }
@@ -422,7 +438,7 @@ struct BrowserWorkspaceView: View {
                         .disabled(sync?.online == false).accessibilityIdentifier("browser-edit-text")
                 }
             }
-            if let pin = workspace.currentPin {
+            if let pin = workspace.currentPin, guest == nil || workspace.current.isWeb {
                 Section {
                     if workspace.current.isWeb {
                         Button("在网页中查找", systemImage: "magnifyingglass") {
@@ -460,10 +476,17 @@ struct BrowserWorkspaceView: View {
             }
             Section {
                 if !workspace.current.isAccount {
-                    Button("账号", systemImage: "person.crop.circle") { finishEditing(); workspace.visit(.account) }
+                    Button("账号", systemImage: "person.crop.circle") {
+                        finishEditing()
+                        if guest != nil { session?.entry = AccountEntryContext() }
+                        else { workspace.visit(.account) }
+                    }
                         .accessibilityIdentifier("browser-account")
                 }
-                Button("文章注释队列", systemImage: "sparkles") { activitySheet = true }
+                if guest == nil { Button("文章注释队列", systemImage: "sparkles") { activitySheet = true } }
+                if let session, guest != nil, session.deletion.accepted {
+                    Button("账号删除状态", systemImage: "person.crop.circle.badge.minus") { session.deletion.presented = true }
+                }
                 Button("广告拦截", systemImage: "hand.raised") { adBlockingSettings = true }
                     .accessibilityIdentifier("browser-ad-blocking")
                 Picker(selection: $searchEngine) {
@@ -528,6 +551,7 @@ struct BrowserWorkspaceView: View {
         finishEditing(); workspace.openURL(url)
     }
     private func extract() async {
+        guard guest == nil else { session?.entry = AccountEntryContext(purpose: .cloudLibrary); return }
         saveError = nil
         extracting = true
         defer { extracting = false }

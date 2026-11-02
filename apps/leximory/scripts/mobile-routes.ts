@@ -17,9 +17,12 @@ async function main() {
             ),
         )
     const groups = {
+        guest: ['guestSession', 'guestRevokeSession', 'guestDefinitions', 'guestDefinitionResult'],
+        'vocabulary-create': ['createVocabulary'],
         catalog: ['me', 'libraries', 'texts', 'document', 'audio'],
         'article-audio': ['generateArticleAudio'],
         'apple-billing': ['appleTransaction'],
+        'account-deletion': ['accountDeletion', 'accountDeletionStatus', 'accountDeletionRetry'],
         account: [
             'accountSettings',
             'accountAccent',

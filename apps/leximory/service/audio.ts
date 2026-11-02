@@ -1,5 +1,6 @@
 'use server'
 
+import { assertUserActive } from '@repo/supabase/user'
 import { Kilpi } from '@repo/service/kilpi'
 import { incrAudioQuota, maxAudioQuota } from '@repo/user/quota'
 import { retrieveAudioUrl, uploadAudio } from '@/server/db/audio'
@@ -34,5 +35,6 @@ export async function generateAudio(id: string, lib: string, text: string) {
         userId,
     })
 
+    await assertUserActive(userId)
     return uploadAudio({ id, audio })
 }

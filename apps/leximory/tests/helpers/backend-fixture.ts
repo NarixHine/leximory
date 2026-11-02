@@ -35,7 +35,10 @@ export async function startBackendFixture() {
             response.end(JSON.stringify(value))
         }
         try {
-            if (url.pathname === '/supabase/auth/v1/user') {
+            if (
+                url.pathname === '/supabase/auth/v1/user' ||
+                url.pathname === `/supabase/auth/v1/admin/users/${userId}`
+            ) {
                 json({
                     id: userId,
                     aud: 'authenticated',
@@ -75,11 +78,11 @@ export async function startBackendFixture() {
                 return
             }
             if (url.pathname === '/supabase/rest/v1/users') {
+                if (profileUnavailable) {
+                    json({ code: '08006', message: 'Fixture account storage unavailable' }, 503)
+                    return
+                }
                 if (request.method === 'POST') {
-                    if (profileUnavailable) {
-                        json({ code: '08006', message: 'Fixture account storage unavailable' }, 503)
-                        return
-                    }
                     const account = z.object({ id: z.literal(userId), lexicoin: z.literal(20) }).parse(body)
                     if (!String(request.headers.prefer).includes('resolution=ignore-duplicates'))
                         throw new Error('Account initialization must never overwrite an existing balance or plan')

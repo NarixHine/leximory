@@ -208,7 +208,13 @@ private struct BearerMiddleware: ClientMiddleware {
             try Task.checkCancellation()
             result = try await next(request, body, baseURL)
         }
-        if result.0.status.code == 401 {
+        var requiresRecentAuthentication = false
+        if result.0.status.code == 401, let responseBody = result.1 {
+            let bytes = try await Data(collecting: responseBody, upTo: 65536)
+            requiresRecentAuthentication = (try? JSONDecoder().decode(MobileFailure.self, from: bytes))?.error.code == "reauthentication_required"
+            result.1 = HTTPBody(bytes)
+        }
+        if result.0.status.code == 401 && !requiresRecentAuthentication {
             await unauthorized(request.headerFields[.authorization]?.replacingOccurrences(of: "Bearer ", with: "") ?? original)
         }
         let noteOperation = operationID == "pdfNotes" || operationID == "savePDFNote"
@@ -347,6 +353,25 @@ public struct MobileClient: Sendable {
         let account = try mapped(try await client.me().ok.body.json, to: Account.self)
         await localStore?.save(account, for: "account")
         return account
+    }
+    public func createVocabulary(requestID: String, language: String, fields: VocabularyFields) async throws -> SavedVocabulary {
+        guard let language = Operations.createVocabulary.Input.Body.jsonPayload.languagePayload(rawValue: language) else { throw URLError(.badURL) }
+        return try await MutationRetry.run {
+            try mapped(try await client.createVocabulary(body: .json(.init(requestId: requestID, language: language,
+                fields: .init(lemma: fields.lemma, definition: fields.definition,
+                    etymology: fields.etymology, cognates: fields.cognates, original: fields.original)))).ok.body.json, to: SavedVocabulary.self)
+        }
+    }
+    public func deleteAccount(requestID: String, receiptToken: String, expectedUserID: String) async throws -> AccountDeletionReceipt {
+        try await MutationRetry.run {
+            try mapped(try await client.accountDeletion(body: .json(.init(requestId: requestID, receiptToken: receiptToken, expectedUserId: expectedUserID))).ok.body.json, to: AccountDeletionReceipt.self)
+        }
+    }
+    public func accountDeletionStatus(requestID: String) async throws -> AccountDeletionReceipt {
+        try mapped(try await client.accountDeletionStatus(path: .init(requestId: requestID)).ok.body.json, to: AccountDeletionReceipt.self)
+    }
+    public func retryAccountDeletion(requestID: String) async throws -> AccountDeletionReceipt {
+        try mapped(try await client.accountDeletionRetry(path: .init(requestId: requestID)).ok.body.json, to: AccountDeletionReceipt.self)
     }
     public func libraries(cursor: String? = nil) async throws -> CatalogPage<CatalogLibrary> {
         try mapped(try await client.libraries(query: .init(cursor: cursor)).ok.body.json, to: CatalogPage<CatalogLibrary>.self)

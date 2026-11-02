@@ -1,3 +1,4 @@
+import { isUserActive } from '@repo/supabase/user'
 import { cron } from 'inngest'
 import { inngest } from './client'
 import { notifyEvent } from './events'
@@ -37,8 +38,8 @@ export const fanNotification = inngest.createFunction(
 )
 
 export const notify = inngest.createFunction({ id: 'notify', triggers: [notifyEvent] }, async ({ event }) => {
-    const { title, body, url, subscription, uid: _uid } = event.data
-    if (!subscription) return
+    const { title, body, url, subscription, uid } = event.data
+    if (!subscription || !(await isUserActive(uid))) return
     const subs = JSON.parse(subscription)
     await webpush.sendNotification(
         subs,

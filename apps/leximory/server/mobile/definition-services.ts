@@ -1,3 +1,4 @@
+import { assertUserActive } from '@repo/supabase/user'
 import { chargeCommentaryQuota } from './quota-store'
 import { serializeWord } from './word-format'
 import { checkedResponse } from './http'
@@ -54,6 +55,7 @@ export const definitionServices: DefinitionServices = {
         return value === null ? null : checkedResponse(receiptSchema, value)
     },
     async save(subject, sourceLibrary, language, definition, requestId) {
+        await assertUserActive(subject.userId)
         const { data: source } = await supabase
             .from('libraries')
             .select('owner')

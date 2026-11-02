@@ -149,6 +149,7 @@ struct AnnotationActivity: Identifiable, Codable {
 @MainActor @Observable final class BrowserWorkspaceModel {
     static let maximumAddressMatches = 5
     let client: MobileClient
+    let localOnly: Bool
     private(set) var browser = TextBrowserModel()
     private(set) var homePins: [BrowserHomePin] = []
     private(set) var pinImages: [URL: UIImage] = [:]
@@ -234,6 +235,7 @@ struct AnnotationActivity: Identifiable, Codable {
         }
     }
     func prepareAddressSearch(online: Bool) async {
+        guard !localOnly else { return }
         for folder in addressSearchFolders {
             guard !Task.isCancelled else { return }
             await loadFolder(folder, online: online, reportsFailure: false)
@@ -248,8 +250,8 @@ struct AnnotationActivity: Identifiable, Codable {
             return all.first { $0.id == id } ?? recentReading.texts.first { $0.id == id }
         }
     }
-    init(client: MobileClient, namespace: String, now: Date = Date()) {
-        self.client = client; self.namespace = namespace
+    init(client: MobileClient, namespace: String, now: Date = Date(), localOnly: Bool = false) {
+        self.client = client; self.namespace = namespace; self.localOnly = localOnly
         if let data = UserDefaults.standard.data(forKey: "browser.hidden-home-recents." + namespace),
            let hidden = try? JSONDecoder().decode(HiddenHomeRecents.self, from: data) { hiddenHomeRecents = hidden }
         let readingKey = "browser.recent." + namespace
@@ -630,6 +632,10 @@ struct AnnotationActivity: Identifiable, Codable {
         revision += 1
     }
     func open(_ text: CatalogText) async {
+        if localOnly {
+            if let document = documents[text.id] { visit(.document(document)) }
+            return
+        }
         let request = UUID(); openRequest = request; opening = true; error = nil
         defer { if openRequest == request { opening = false } }
         do {
@@ -716,6 +722,7 @@ struct AnnotationActivity: Identifiable, Codable {
         if let data = try? JSONEncoder().encode(recentlyOpened) { UserDefaults.standard.set(data, forKey: "recent-access." + namespace) }
     }
     func refresh(online: Bool) async {
+        guard !localOnly else { loading = false; return }
         let request = UUID(); catalogRequest = request
         let mutation = catalogMutation
         if let cached = await client.localStore?.value([CatalogLibrary].self, for: "libraries"), catalogRequest == request, catalogMutation == mutation, !Task.isCancelled { libraries = cached; loading = false }
@@ -786,6 +793,7 @@ struct AnnotationActivity: Identifiable, Codable {
         else { libraries.append(library) }
     }
     func poll() async {
+        guard !localOnly else { return }
         for activity in activities where activity.state == .pending {
             guard !Task.isCancelled else { return }
             do {

@@ -313,7 +313,7 @@ struct TextBrowserScreen: View {
         guard !browser.loading, browser.error == nil else { return }
         lastSelection = selection
         definition = DefinitionPresentation(source: .webpage(id: UUID(), selection: selection,
-            bookmarkID: bookmarkID, libraryID: nil), definition: nil)
+            bookmarkID: bookmarkID, libraryID: nil), definition: nil, sourceTitle: RecentWebpage.normalizedTitle(browser.title))
     }
 
 }

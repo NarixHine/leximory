@@ -108,6 +108,7 @@ struct EbookScreen: View {
     let article: FixtureArticle
     let client: MobileClient?
     var language = "English"
+    var localInput: LocalEbookInput? = nil
     @State private var reader = EbookReaderState()
     @State private var data: Data?
     @State private var contentID = UUID()
@@ -230,7 +231,7 @@ struct EbookScreen: View {
             guard let action = reader.selectionAction else { return }
             switch action.kind {
             case .define:
-                definition = DefinitionPresentation(source: .ebook(textID: article.id.rawValue, quote: action.selection.quote, context: action.selection.context, offset: action.selection.offset), definition: nil)
+                definition = DefinitionPresentation(source: .ebook(textID: article.id.rawValue, quote: action.selection.quote, context: action.selection.context, offset: action.selection.offset), definition: nil, sourceTitle: article.title)
             case .bookmark(let color): Task { await saveBookmark(action.selection, color: color) }
             }
         }
@@ -468,7 +469,12 @@ struct EbookScreen: View {
         bookRequest = UUID(); reader.book = nil
         loading = true; refreshingContent = false; loadError = nil; reader.ready = false; reader.loadFailure = nil; data = nil
         do {
-            if let client {
+            if let localInput {
+                reader.format = localInput.book.descriptor.format
+                data = localInput.book.data
+                reader.book = localInput.book
+                reader.canBookmark = false
+            } else if let client {
                 let book: LocalEbook
                 let cached = await client.cachedEbook(textID: article.id.rawValue)
                 if let cached { book = cached }

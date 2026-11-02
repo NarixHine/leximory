@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import Auth
 import LeximoryCore
+import OpenAPIRuntime
 import os
 
 struct AppConfiguration: Decodable, Sendable, Equatable {
@@ -28,28 +29,42 @@ struct AppConfiguration: Decodable, Sendable, Equatable {
 actor AccountTokens {
     static let bundled = AppConfiguration.bundled.map { AccountTokens(configuration: $0) }
     private let auth: AuthClient
+    private let configuration: AppConfiguration
+    private let fetch: AuthClient.FetchHandler
     private var generation = 0
     private var signingIn: Task<Session, Error>?
-    private var refresh: Task<String, Error>?
-    init(configuration: AppConfiguration) {
+    private var creatingAccount: Task<AuthResponse, Error>?
+    private var callback: Task<Session, Error>?
+    private var refresh: Task<Session, Error>?
+    init(configuration: AppConfiguration, storage: any AuthLocalStorage = KeychainLocalStorage(service: "com.leximory.reader.auth"),
+         fetch: @escaping AuthClient.FetchHandler = { try await URLSession.shared.data(for: $0) }) {
+        self.configuration = configuration
+        self.fetch = fetch
         auth = AuthClient(url: configuration.supabaseURL.appending(path: "auth/v1"),
             headers: ["apikey": configuration.anonKey],
             storageKey: "leximory.session.\(configuration.supabaseURL.host ?? "project")",
-            localStorage: KeychainLocalStorage(service: "com.leximory.reader.auth"),
+            localStorage: storage, fetch: fetch,
             autoRefreshToken: false, emitLocalSessionAsInitialSession: false)
     }
-    func token(rejected: String?) async throws -> String {
+    func token(rejected: String?, expectedUserID: String? = nil) async throws -> String {
         let currentGeneration = generation
         let session = try await auth.session
         guard generation == currentGeneration else { throw CancellationError() }
+        guard expectedUserID == nil || session.user.id.uuidString.lowercased() == expectedUserID?.lowercased() else { throw CancellationError() }
         if rejected == nil || rejected != session.accessToken { return session.accessToken }
-        if let refresh { return try await refresh.value }
-        let task = Task { try await auth.refreshSession().accessToken }
+        if let refresh {
+            let refreshed = try await refresh.value
+            guard generation == currentGeneration,
+                  expectedUserID == nil || refreshed.user.id.uuidString.lowercased() == expectedUserID?.lowercased() else { throw CancellationError() }
+            return refreshed.accessToken
+        }
+        let task = Task { try await auth.refreshSession() }
         refresh = task
         defer { if generation == currentGeneration { refresh = nil } }
-        let token = try await task.value
+        let refreshed = try await task.value
         guard generation == currentGeneration else { throw CancellationError() }
-        return token
+        guard expectedUserID == nil || refreshed.user.id.uuidString.lowercased() == expectedUserID?.lowercased() else { throw CancellationError() }
+        return refreshed.accessToken
     }
     func signIn(email: String, password: String) async throws {
         let currentGeneration = generation
@@ -59,6 +74,60 @@ actor AccountTokens {
         _ = try await task.value
         guard generation == currentGeneration else { throw CancellationError() }
     }
+    func reauthenticate(email: String, password: String, expectedUserID: String) async throws {
+        let currentGeneration = generation
+        let isolated = AuthClient(url: configuration.supabaseURL.appending(path: "auth/v1"),
+            headers: ["apikey": configuration.anonKey], storageKey: "reauthentication",
+            localStorage: TransientAuthStorage(), fetch: fetch, autoRefreshToken: false, emitLocalSessionAsInitialSession: false)
+        let task = Task {
+            let session = try await isolated.signIn(email: email, password: password)
+            guard generation == currentGeneration, session.user.id.uuidString.lowercased() == expectedUserID.lowercased() else {
+                throw URLError(.userAuthenticationRequired)
+            }
+            return try await auth.setSession(accessToken: session.accessToken, refreshToken: session.refreshToken)
+        }
+        signingIn = task
+        defer { if generation == currentGeneration { signingIn = nil } }
+        _ = try await task.value
+        guard generation == currentGeneration else { throw CancellationError() }
+    }
+    static let callbackURL = URL(string: "leximory://auth/callback")!
+    static let recoveryCallbackURL = URL(string: "leximory://auth/callback?flow=recovery")!
+
+    func signUp(email: String, password: String) async throws -> Bool {
+        let currentGeneration = generation
+        let task = Task { try await auth.signUp(email: email, password: password, redirectTo: Self.callbackURL) }
+        creatingAccount = task
+        defer { if generation == currentGeneration { creatingAccount = nil } }
+        let response = try await task.value
+        guard generation == currentGeneration else { throw CancellationError() }
+        return response.session == nil
+    }
+    func resendConfirmation(email: String) async throws {
+        try await auth.resend(email: email, type: .signup, emailRedirectTo: Self.callbackURL)
+    }
+    func sendPasswordRecovery(email: String) async throws {
+        try await auth.resetPasswordForEmail(email, redirectTo: Self.recoveryCallbackURL)
+    }
+    func handleCallback(_ url: URL) async throws {
+        generation += 1
+        let currentGeneration = generation
+        let refreshing = refresh; refresh = nil; refreshing?.cancel()
+        if let refreshing { _ = await refreshing.result }
+        let authenticating = signingIn; signingIn = nil; authenticating?.cancel()
+        if let authenticating { _ = await authenticating.result }
+        let creating = creatingAccount; creatingAccount = nil; creating?.cancel()
+        if let creating { _ = await creating.result }
+        let previous = callback; callback = nil; previous?.cancel()
+        if let previous { _ = await previous.result }
+        guard generation == currentGeneration else { throw CancellationError() }
+        let task = Task { try await auth.session(from: url) }
+        callback = task
+        defer { if generation == currentGeneration { callback = nil } }
+        _ = try await task.value
+        guard generation == currentGeneration else { throw CancellationError() }
+    }
+
     func updateUsername(_ username: String) async throws {
         _ = try await auth.update(user: UserAttributes(data: ["username": .string(username)]))
     }
@@ -71,6 +140,14 @@ actor AccountTokens {
     func matches(_ rejected: String) -> Bool { auth.currentSession?.accessToken == rejected }
     func signOut() async {
         generation += 1
+        let creating = creatingAccount
+        creatingAccount = nil
+        creating?.cancel()
+        if let creating { _ = await creating.result }
+        let handlingCallback = callback
+        callback = nil
+        handlingCallback?.cancel()
+        if let handlingCallback { _ = await handlingCallback.result }
         let refreshing = refresh
         refresh = nil
         refreshing?.cancel()
@@ -80,6 +157,12 @@ actor AccountTokens {
         signingIn = nil
         try? await auth.signOut(scope: .local)
     }
+}
+
+private struct TransientAuthStorage: AuthLocalStorage {
+    func store(key: String, value: Data) throws { }
+    func retrieve(key: String) throws -> Data? { nil }
+    func remove(key: String) throws { }
 }
 
 struct SignInFailure: LocalizedError {
@@ -133,34 +216,59 @@ struct SignInFailure: LocalizedError {
     private(set) var state: State = .restoring
     private(set) var generation = 0
     let membership = MembershipStore()
+    let guest: GuestSession
+    let deletion: AccountDeletionModel
+    var entry: AccountEntryContext?
+    var callbackFailure: String?
+    private(set) var passwordRecovery = false
+    private(set) var authCallbackRevision = 0
     private(set) var avatarRevision = 0
     let tokens: AccountTokens
     private let configuration: AppConfiguration
+    @ObservationIgnored private let transport: (any ClientTransport)?
     private(set) var sync: NativeSync?
     @ObservationIgnored private var scopedClient: MobileClient?
+    private var scopedAccountID: String?
     var client: MobileClient { scopedClient ?? onlineClient }
     @ObservationIgnored private lazy var onlineClient = makeClient()
-    private func makeClient(store: LocalReadingStore? = nil, notesStore: PDFNotesStore? = nil) -> MobileClient {
-        MobileClient(baseURL: configuration.apiURL, token: { [tokens, weak self] rejected in
+    private func makeClient(store: LocalReadingStore? = nil, notesStore: PDFNotesStore? = nil, accountID: String? = nil) -> MobileClient {
+        let token: @Sendable (String?) async throws -> String = { [tokens, weak self] rejected in
         let current = await self?.generation
-        do { return try await tokens.token(rejected: rejected) }
+        do { return try await tokens.token(rejected: rejected, expectedUserID: accountID) }
         catch {
             if Self.requiresSignIn(error), let current { await self?.expire(generation: current) }
             throw error
         }
-    }, unauthorized: { [weak self] rejected in
-        await self?.expire(rejected: rejected)
-    }, localStore: store, notesStore: notesStore)
+        }
+        let unauthorized: @Sendable (String) async -> Void = { [weak self] rejected in await self?.expire(rejected: rejected) }
+        if let transport {
+            return MobileClient(baseURL: configuration.apiURL, transport: transport, token: token, unauthorized: unauthorized, localStore: store, notesStore: notesStore)
+        }
+        return MobileClient(baseURL: configuration.apiURL, token: token, unauthorized: unauthorized, localStore: store, notesStore: notesStore)
     }
-    init(configuration: AppConfiguration) {
-        let tokens = configuration == AppConfiguration.bundled
+    init(configuration: AppConfiguration, tokens suppliedTokens: AccountTokens? = nil, transport: (any ClientTransport)? = nil) {
+        let tokens = suppliedTokens ?? (configuration == AppConfiguration.bundled
             ? (AccountTokens.bundled ?? AccountTokens(configuration: configuration))
-            : AccountTokens(configuration: configuration)
+            : AccountTokens(configuration: configuration))
         self.tokens = tokens
         self.configuration = configuration
+        self.transport = transport
+        guest = GuestSession(baseURL: configuration.apiURL)
+        deletion = AccountDeletionModel(baseURL: configuration.apiURL)
     }
     func restore() async {
-        let current = generation
+        var current = generation
+        let tokenAccountID = await tokens.cachedUserID()
+        if let scopedAccountID, scopedAccountID != tokenAccountID {
+            membership.stop(); generation += 1; current = generation; state = .restoring
+            await clearStore(preservingReading: true)
+        }
+        if await tokens.cachedUserID() == nil {
+            guard generation == current, !Task.isCancelled else { return }
+            await clearStore()
+            state = .signedOut
+            return
+        }
         do {
             if scopedClient == nil, let id = await tokens.cachedUserID() { try await openStore(accountID: id) }
             if let cached = await client.localStore?.value(Account.self, for: "account"),
@@ -201,6 +309,85 @@ struct SignInFailure: LocalizedError {
             throw failure
         }
     }
+    func signUp(email: String, password: String) async throws -> Bool {
+        let current = generation
+        let requiresConfirmation = try await tokens.signUp(email: email, password: password)
+        guard current == generation, !Task.isCancelled else { throw CancellationError() }
+        if !requiresConfirmation { await restore() }
+        return requiresConfirmation
+    }
+    func resendConfirmation(email: String) async throws { try await tokens.resendConfirmation(email: email) }
+    func completeAccountEntry(_ context: AccountEntryContext?) async throws {
+        guard state.isSignedIn else { return }
+        if let context, let word = context.word {
+            _ = try await client.createVocabulary(requestID: context.id.uuidString, language: word.language,
+                fields: VocabularyFields(original: word.original, definition: word.definition))
+            await SavedWordsWidgetSync.refresh(client: client)
+        }
+        entry = nil
+    }
+    func requestDeletion() async {
+        guard let id = state.accountID else { return }
+        await deletion.submit(client: client, userID: id)
+        await finishAcceptedDeletion()
+    }
+    func finishAcceptedDeletion() async {
+        guard deletion.accepted, !deletion.localCleaned, let id = deletion.userID else { return }
+        let cachedID = await tokens.cachedUserID()
+        let notes = state.accountID == id ? client.notesStore : nil
+        if state.accountID == nil || state.accountID == id { entry = nil; passwordRecovery = false }
+        if state.accountID == id || cachedID == id { await signOut() }
+        do {
+            if let notes { try await notes.purge() }
+            else {
+                let store = try PDFNotesStore(root: PDFNotesStore.applicationRoot(), origin: configuration.apiURL, accountID: id)
+                try await store.purge()
+            }
+            let reading = try LocalReadingStore(root: LocalReadingStore.applicationRoot(), origin: configuration.apiURL, accountID: id)
+            try await reading.purge()
+            try HomeWallpaperStore(namespace: id).removeAll()
+            for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasSuffix(".\(id)") {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+            try deletion.markLocalCleaned()
+        } catch { deletion.localCleanupFailed = true }
+    }
+    func sendPasswordRecovery(email: String) async throws { try await tokens.sendPasswordRecovery(email: email) }
+    func completePasswordRecovery(_ password: String) async throws {
+        let current = generation
+        try await tokens.updatePassword(password)
+        guard current == generation, !Task.isCancelled else { throw CancellationError() }
+        passwordRecovery = false
+        await restore()
+    }
+    @discardableResult
+    func handleAuthCallback(_ url: URL) async throws -> Bool {
+        guard Self.isAuthCallback(url) else { return false }
+        let current = generation
+        let previousAccountID = await tokens.cachedUserID()
+        try await tokens.handleCallback(url)
+        guard current == generation, !Task.isCancelled else { throw CancellationError() }
+        let callbackAccountID = await tokens.cachedUserID()
+        if callbackAccountID != previousAccountID { deletion.presented = false }
+        passwordRecovery = Self.isPasswordRecoveryCallback(url)
+        await restore()
+        guard await tokens.cachedUserID() == callbackAccountID, !Task.isCancelled else { throw CancellationError() }
+        if entry == nil { entry = AccountEntryContext(purpose: .account) }
+        authCallbackRevision += 1
+        return true
+    }
+    nonisolated static func isAuthCallback(_ url: URL) -> Bool {
+        url.scheme?.lowercased() == "leximory" && url.host?.lowercased() == "auth" && url.path == "/callback"
+            && url.user == nil && url.password == nil && url.port == nil
+    }
+    nonisolated static func isPasswordRecoveryCallback(_ url: URL) -> Bool {
+        guard isAuthCallback(url) else { return false }
+        let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        let fragment = URLComponents(string: "?" + (url.fragment ?? ""))?.queryItems ?? []
+        return query.contains { $0.name == "flow" && $0.value == "recovery" }
+            || (query + fragment).contains { $0.name == "type" && $0.value == "recovery" }
+    }
+
     func refreshAccount() async {
         let current = generation
         guard state.isSignedIn else { return }
@@ -229,16 +416,17 @@ struct SignInFailure: LocalizedError {
         await clearStore(clearWidget: false)
         let store = try LocalReadingStore(root: LocalReadingStore.applicationRoot(), origin: configuration.apiURL, accountID: accountID.lowercased())
         let notes = try PDFNotesStore(root: PDFNotesStore.applicationRoot(), origin: configuration.apiURL, accountID: accountID)
-        let scoped = makeClient(store: store, notesStore: notes)
+        let scoped = makeClient(store: store, notesStore: notes, accountID: accountID)
         scopedClient = scoped
+        scopedAccountID = accountID.lowercased()
         sync = NativeSync(store: store, client: scoped)
         SavedWordsWidgetSync.activate(origin: configuration.apiURL, accountID: accountID)
     }
-    private func clearStore(clearWidget: Bool = true) async {
+    private func clearStore(clearWidget: Bool = true, preservingReading: Bool = false) async {
         if clearWidget { SavedWordsWidgetSync.clear() }
         let previous = sync
-        sync = nil; scopedClient = nil
-        await previous?.stop()
+        sync = nil; scopedClient = nil; scopedAccountID = nil
+        await previous?.stop(preservingReading: preservingReading)
     }
     nonisolated static func requiresSignIn(_ error: any Error) -> Bool {
         guard let authError = error as? AuthError else { return false }
@@ -255,6 +443,7 @@ struct SignInFailure: LocalizedError {
         await tokens.signOut()
         guard generation == expiredGeneration else { return }
         state = .expired
+        if !deletion.accepted { entry = AccountEntryContext() }
     }
     private func expire(rejected: String) async {
         let current = generation
@@ -262,6 +451,8 @@ struct SignInFailure: LocalizedError {
         await expire(generation: current)
     }
     func signOut() async {
+        passwordRecovery = false
+        entry = nil
         if let id = state.accountID { UserDefaults.standard.removeObject(forKey: "recent-access.\(id)") }
         membership.stop()
         generation += 1

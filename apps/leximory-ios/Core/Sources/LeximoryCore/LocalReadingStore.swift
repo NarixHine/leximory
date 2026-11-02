@@ -316,9 +316,17 @@ public actor LocalReadingStore {
             }
         }
     }
-    public func close() {
-        closed = true; online = false; manifest = Manifest()
-        try? FileManager.default.removeItem(at: directory)
+    public func close(preservingData: Bool = false) {
+        closed = true; online = false
+        if !preservingData {
+            manifest = Manifest()
+            try? FileManager.default.removeItem(at: directory)
+        }
         notify(); for listener in listeners.values { listener.finish() }; listeners.removeAll()
+    }
+    public func purge() throws {
+        close(preservingData: true)
+        manifest = Manifest()
+        if FileManager.default.fileExists(atPath: directory.path) { try FileManager.default.removeItem(at: directory) }
     }
 }

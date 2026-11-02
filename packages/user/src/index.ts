@@ -1,4 +1,5 @@
 import 'server-only'
+import { cacheTag } from 'next/cache'
 import { createClient } from '@repo/supabase/server'
 import { Plan, prefixUrl } from '@repo/env/config'
 import { redirect } from 'next/navigation'
@@ -20,7 +21,7 @@ export async function getUser() {
         data: { user },
         error,
     } = await supabase.auth.getUser()
-    if (error || !user) {
+    if (error || !user || user.app_metadata?.account_deletion) {
         return null
     }
     const {
@@ -67,11 +68,12 @@ export async function getUserById(userId: string) {
 
 async function getProfileById(userId: string) {
     'use cache'
+    cacheTag(`profile:${userId}`)
     const {
         data: { user },
         error,
     } = await supabase.auth.admin.getUserById(userId)
-    if (error || !user) {
+    if (error || !user || user.app_metadata?.account_deletion) {
         throw new Error('User not found')
     }
     const {

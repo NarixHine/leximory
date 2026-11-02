@@ -244,7 +244,7 @@ struct ReadingTextView: UIViewRepresentable {
                 view.highlightAnnotation(nil)
                 return
             }
-            let item = DefinitionPresentation(source: .article(occurrence.selection), definition: occurrence.definition)
+            let item = DefinitionPresentation(source: .article(occurrence.selection), definition: occurrence.definition, sourceTitle: parent.article?.title)
             let existing = popover
             let controller = existing ?? AnnotationPopoverController(rootView: AnyView(EmptyView()))
             let content = DefinitionView(item: item, client: parent.client, language: parent.language, isPopover: true,

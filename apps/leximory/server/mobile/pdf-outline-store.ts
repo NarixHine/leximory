@@ -1,3 +1,4 @@
+import { assertUserActive } from '@repo/supabase/user'
 import 'server-only'
 import { outlinePointerKey, readPDFOutlinePointer } from './pdf-outline-storage'
 import { publishPDFOutlineScript } from './pdf-outline-publication'
@@ -110,6 +111,7 @@ export const pdfOutlineStore: PDFOutlineStore = {
                 const bytes = await embedPDFOutline(beforeBytes, generated.result.entries)
                 const digest = createHash('sha256').update(bytes).digest('hex')
                 path = uploadPath(scope, input.requestId, digest)
+                await assertUserActive(scope.userId)
                 const uploaded = await bucket.upload(path, bytes, { contentType: 'application/pdf' })
                 if (uploaded.error) {
                     // The previous upload may have completed before a lost response or publication failure.

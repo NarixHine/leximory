@@ -1,3 +1,4 @@
+import { isUserActive } from '@repo/supabase/user'
 import { emojiPrompt } from '../ai/text-metadata'
 import { inngest } from './client'
 import { prefixUrl } from '@repo/env/config'
@@ -130,6 +131,8 @@ export const annotateFullArticle = inngest.createFunction(
     async ({ step, event }) => {
         const { article, textId, onlyComments, userId, generateTitle } = event.data
 
+        if (!(await isUserActive(userId))) return { deleted: true }
+
         await step.run('set-annotation-progress-annotating', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'annotating' })
         })
@@ -180,10 +183,12 @@ export const annotateFullArticle = inngest.createFunction(
 
         const textUrl = `/library/${libId}/${textId}`
 
+        if (!(await isUserActive(userId))) return { deleted: true }
         await step.run('set-annotation-progress-saving', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'saving' })
         })
         await step.run('save-article', async () => {
+            if (!(await isUserActive(userId))) return
             const generatedEmoji = getFinalAiOutput(emoji).trim() || undefined
             const generatedTitle = titleResult
                 ? getFinalAiOutput(titleResult)
@@ -200,9 +205,11 @@ export const annotateFullArticle = inngest.createFunction(
             revalidateTag(`texts:${libId}`, 'max')
         })
 
+        if (!(await isUserActive(userId))) return { deleted: true }
         await step.run('set-annotation-progress-completed', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'completed' })
         })
+        if (!(await isUserActive(userId))) return { deleted: true }
         const { hasSubs, subscription } = await step.run('get-user-subs', async () => {
             return await getSubsStatus({ userId })
         })

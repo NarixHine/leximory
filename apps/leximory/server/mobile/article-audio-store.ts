@@ -1,3 +1,4 @@
+import { assertUserActive } from '@repo/supabase/user'
 import 'server-only'
 import { randomUUID } from 'node:crypto'
 import { getMembership } from '@repo/user/membership'
@@ -44,6 +45,7 @@ export const articleAudioStore: ArticleAudioStore = {
             if (allowed === 1) invalidateMutationCaches(`quota:${userId}:audio`)
             const audio = await speak({ text, lang, userId, signal })
             signal.throwIfAborted()
+            await assertUserActive(userId)
             await uploadAudio({ id, audio })
         } finally {
             await redis.eval(

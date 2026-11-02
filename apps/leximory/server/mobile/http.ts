@@ -7,14 +7,17 @@ import { requireMobileSubject, type BearerVerifier } from './auth'
 import { MobileError, MobileDependencyError, mobileErrorResponse } from './errors'
 import { ExternalServiceError } from '../errors/external-service'
 
-export interface MobileContext {
+export interface MobileRequestContext {
     request: Request
-    subject: MobileSubject
     signal: AbortSignal
     params: Record<string, string>
     traceId: string
 }
+export interface MobileContext extends MobileRequestContext {
+    subject: MobileSubject
+}
 export type MobileOperation = (context: MobileContext) => Promise<unknown>
+export type PublicMobileOperation = (context: MobileRequestContext) => Promise<unknown>
 
 const upstreamFailure = z.object({
     code: z
@@ -27,16 +30,20 @@ const upstreamFailure = z.object({
         .optional(),
 })
 
-export function mobileEndpoint(verify: BearerVerifier, operation: MobileOperation, timeout = 20000) {
+function requestEndpoint<Identity extends object>(
+    authenticate: (request: Request) => Promise<Identity>,
+    operation: (context: MobileRequestContext & Identity) => Promise<unknown>,
+    timeout: number,
+) {
     return async (request: Request, context: { params: Promise<Record<string, string>> }): Promise<Response> => {
         const supplied = request.headers.get('X-Leximory-Request-ID')
         const traceId = supplied && /^[a-zA-Z0-9-]{1,64}$/.test(supplied) ? supplied : randomUUID()
         try {
-            const subject = await requireMobileSubject(request, verify)
+            const identity = await authenticate(request)
             const params = z.record(z.string(), resourceID).parse((await context.params) ?? {})
             const signal = AbortSignal.any([request.signal, AbortSignal.timeout(timeout)])
             signal.throwIfAborted()
-            const result = await operation({ request, subject, signal, params, traceId })
+            const result = await operation({ request, ...identity, signal, params, traceId })
             signal.throwIfAborted()
             const response = result instanceof Response ? result : Response.json(result)
             response.headers.set('Cache-Control', 'private, no-store')
@@ -66,6 +73,18 @@ export function mobileEndpoint(verify: BearerVerifier, operation: MobileOperatio
             return response
         }
     }
+}
+
+export function mobileEndpoint(verify: BearerVerifier, operation: MobileOperation, timeout = 20000) {
+    return requestEndpoint(
+        async (request) => ({ subject: await requireMobileSubject(request, verify) }),
+        operation,
+        timeout,
+    )
+}
+
+export function publicMobileEndpoint(operation: PublicMobileOperation, timeout = 20000) {
+    return requestEndpoint(async () => ({}), operation, timeout)
 }
 
 export async function bodyBytes(

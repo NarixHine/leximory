@@ -10,6 +10,12 @@ private enum DocumentState {
 struct DefinitionPresentation: Identifiable {
     let source: DefinitionSource
     let definition: Definition?
+    let sourceTitle: String?
+    init(source: DefinitionSource, definition: Definition?, sourceTitle: String? = nil) {
+        self.source = source; self.definition = definition
+        let title = sourceTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.sourceTitle = title?.isEmpty == false ? title : nil
+    }
     var id: String { source.id }
     var isDynamic: Bool { definition == nil }
 }
@@ -53,7 +59,7 @@ struct ReaderScreen: View {
                 ReadingTextView(document: document, article: currentArticle, language: language, textID: article.id, jumpToEnd: jumpToEnd,
                     bottomObstruction: browserChromeHeight + (playback.textID == article.id ? playbackHeight + 24 : 0), localStore: client?.localStore, client: client, sync: sync, readOnly: sync?.online == false, annotationReveal: annotationReveal, articleAudio: articleAudioButton(document: document),
                     onTitleVisibilityChange: { titlePastViewport = !$0 }, onDefine: { selection, embedded, _ in
-                        definition = DefinitionPresentation(source: .article(selection), definition: embedded)
+                        definition = DefinitionPresentation(source: .article(selection), definition: embedded, sourceTitle: article.title)
                     })
                 .background(LeximoryPalette.paper)
                 .ignoresSafeArea(.container, edges: [.top, .bottom])
@@ -237,7 +243,12 @@ struct DefinitionView: View {
     let item: DefinitionPresentation
     let client: MobileClient?
     private let initialLanguage: String
-    private var language: String { model.browserTarget?.displayLanguage ?? initialLanguage }
+    private var language: String {
+        if let guest, let selection = try? item.source.guestSelection(title: item.sourceTitle, language: initialLanguage) {
+            return learningLanguageName(guest.language(for: selection))
+        }
+        return model.browserTarget?.displayLanguage ?? initialLanguage
+    }
     let isPopover: Bool
     let topTrayHeight: CGFloat?
     let closeTray: (() -> Void)?
@@ -255,6 +266,10 @@ struct DefinitionView: View {
     @State private var streamImpact: UIImpactFeedbackGenerator?
     @State private var model: DefinitionModel
     @Environment(\.nativeSync) private var sync
+    @Environment(\.guestSession) private var guest
+    @Environment(\.accountSession) private var account
+    @Environment(\.browserWorkspace) private var workspace
+    @AppStorage("guest.contextual-ai-consent.v1") private var guestAIConsent = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var sizeClass
     @ScaledMetric(relativeTo: .body) private var compactBodySize = 17.0
@@ -275,8 +290,9 @@ struct DefinitionView: View {
         return item.definition?.lemma ?? item.source.text
     }
     private var waiting: Bool {
-        model.isGenerating && model.visibleDefinition == nil && client != nil
+        model.isGenerating && model.visibleDefinition == nil && (client != nil || guest != nil) && !requiresGuestConsent
     }
+    private var requiresGuestConsent: Bool { guest != nil && item.isDynamic && !guestAIConsent }
     private var feedbackAllowed: Bool { AnnotationFeedback.supported && allowsFeedback && scenePhase == .active }
     private var streamedCharacterCount: Int {
         guard let definition = model.visibleDefinition else { return 0 }
@@ -323,16 +339,24 @@ struct DefinitionView: View {
                                 definitionActions
                                 saveFailure
                             case .generating:
-                                if waiting {
+                                if requiresGuestConsent {
+                                    Text("无需登录可免费体验 5 次猫忆查。所选词语及附近句子会经 Vercel 发送至 Google 识别语言，并由 DeepSeek 生成释义。不会上传整本电子书。")
+                                        .interfaceFont(15).foregroundStyle(.secondary)
+                                    Button("允许并查词") { guestAIConsent = true }
+                                        .interfaceFont(17).buttonStyle(.borderedProminent).tint(LeximoryPalette.ink)
+                                        .foregroundStyle(LeximoryPalette.paper)
+                                } else if waiting {
                                     HStack(spacing: 10) {
                                         ProgressView().tint(LeximoryPalette.muted)
                                         Text("正在理解语境").interfaceFont(15)
                                             .foregroundStyle(LeximoryPalette.muted)
                                     }.frame(maxWidth: .infinity, minHeight: waiting && topTrayHeight != nil ? 32 : 24, alignment: .center)
-                                } else if client == nil { Text("示例模式暂不支持生成语境释义。").foregroundStyle(LeximoryPalette.muted) }
+                                } else if client == nil && guest == nil { Text("示例模式暂不支持生成语境释义。").foregroundStyle(LeximoryPalette.muted) }
                             case .failed(let message, _):
                                 Text(message).foregroundStyle(LeximoryPalette.muted)
-                                if client != nil { Button("重试", systemImage: "arrow.clockwise") { lookupAttempt += 1 } }
+                                if guest != nil && model.quotaExhausted {
+                                    Button("登录后继续查词") { account?.entry = AccountEntryContext(purpose: .service) }
+                                } else if client != nil || guest != nil { Button("重试", systemImage: "arrow.clockwise") { lookupAttempt += 1 } }
                             }
                         }
                     }.padding(item.isDynamic ? 20 : 24)
@@ -384,8 +408,15 @@ struct DefinitionView: View {
             }
         }
         .task(id: model.saveState) { await acknowledgeSave() }
-        .task(id: "\(item.id):\(lookupAttempt)") {
+        .task(id: "\(item.id):\(lookupAttempt):\(guest == nil || guestAIConsent)") {
             if sync?.online == false, item.definition == nil { model.offline() }
+            else if let guest {
+                guard !requiresGuestConsent else { return }
+                model.startGeneration {
+                    let selection = try item.source.guestSelection(title: item.sourceTitle, language: language)
+                    return (try await guest.lookup(selection), nil)
+                }
+            }
             else if let client { model.startGeneration(client: client, source: item.source) }
         }
         .onDisappear { streamImpact = nil; model.dismiss() }
@@ -401,7 +432,18 @@ struct DefinitionView: View {
     }
     private var definitionActions: some View {
         HStack(spacing: 16) {
-            if let client {
+            if let guest {
+                Button {
+                    guard let definition = model.visibleDefinition,
+                          let selection = try? item.source.guestSelection(title: item.sourceTitle, language: language) else { return }
+                    account?.entry = AccountEntryContext(purpose: .words,
+                        word: AccountWordContext(definition: definition, original: selection.quote, quote: selection.excerpt,
+                            title: selection.title, language: guest.language(for: selection)))
+                } label: {
+                    Image(systemName: "book.closed").font(.system(size: 20)).frame(width: 48, height: 48)
+                }.buttonStyle(DefinitionPrimaryButtonStyle(reduceMotion: reduceMotion))
+                    .accessibilityLabel("收藏词汇").disabled(!model.isReady)
+            } else if let client {
                 Button {
                     if case .idle = model.saveState { model.requestSave(client: client, source: item.source) }
                     else if case .saved = model.saveState, saveAcknowledged { withAnimation(actionMotion) { editing = true } }

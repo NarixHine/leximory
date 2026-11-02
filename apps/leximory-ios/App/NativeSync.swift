@@ -131,12 +131,12 @@ import LeximoryCore
         do { try await notes?.synchronize(document: activePDF) } catch { }
     }
     func pause() { active = false; runID = nil; catalogTask?.cancel(); scheduledNotes?.cancel() }
-    func stop() async {
+    func stop(preservingReading: Bool = false) async {
         stopped = true; monitor.cancel(); observer?.cancel(); catalogTask?.cancel()
         scheduledNotes?.cancel()
         await notes?.stop()
         await client.notesStore?.close()
-        await store.close()
+        await store.close(preservingData: preservingReading)
     }
 }
 

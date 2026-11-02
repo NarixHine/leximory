@@ -2,7 +2,12 @@ import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { BearerVerifier } from '../../server/mobile/auth'
-import { mobileEndpoint, type MobileOperation } from '../../server/mobile/http'
+import {
+    mobileEndpoint,
+    publicMobileEndpoint,
+    type MobileOperation,
+    type PublicMobileOperation,
+} from '../../server/mobile/http'
 
 const root = fileURLToPath(new URL('../../app/api/mobile/v1/', import.meta.url))
 async function readRoutes(
@@ -28,7 +33,7 @@ const routes = readRoutes(root)
 
 // Tests exercise the same endpoint wrapper with external services injected.
 // Read the real route exports so tests cannot silently use a separate route table.
-export function testMobileHandler(operations: Record<string, MobileOperation>, verify: BearerVerifier) {
+function routeHandler(endpoint: (id: string) => ReturnType<typeof publicMobileEndpoint> | null) {
     return async (request: Request): Promise<Response> => {
         const url = new URL(request.url)
         if (!url.pathname.startsWith('/api/mobile/v1/')) return new Response(null, { status: 404 })
@@ -48,17 +53,21 @@ export function testMobileHandler(operations: Record<string, MobileOperation>, v
             if (!matches) continue
             const id = route.operations[request.method]
             if (!id) return new Response(null, { status: 405 })
-            const operation = operations[id]
-            if (!operation) return new Response(null, { status: 404 })
+            const handler = endpoint(id)
+            if (!handler) return new Response(null, { status: 404 })
             const context = { params: Object.keys(params).length ? Promise.resolve(params) : undefined }
             // Next's runtime passes undefined static params despite its generated handler type.
-            const response: unknown = await Reflect.apply(mobileEndpoint(verify, operation, 60000), undefined, [
-                request,
-                context,
-            ])
+            const response: unknown = await Reflect.apply(handler, undefined, [request, context])
             if (!(response instanceof Response)) throw new Error('The mobile endpoint did not return an HTTP response')
             return response
         }
         return new Response(null, { status: 404 })
     }
+}
+
+export function testMobileHandler(operations: Record<string, MobileOperation>, verify: BearerVerifier) {
+    return routeHandler((id) => (operations[id] ? mobileEndpoint(verify, operations[id], 60000) : null))
+}
+export function testPublicMobileHandler(operations: Record<string, PublicMobileOperation>) {
+    return routeHandler((id) => (operations[id] ? publicMobileEndpoint(operations[id], 60000) : null))
 }

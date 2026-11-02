@@ -51,6 +51,7 @@ enum DefinitionSource {
     private(set) var editor: VocabularyEditModel?
     private(set) var saveError: String?
     private(set) var saveState: SaveState = .idle
+    private(set) var quotaExhausted = false
     @ObservationIgnored private var saveRequest: Task<SavedVocabulary, Error>?
     @ObservationIgnored private var generationTask: Task<Void, Never>?
     @ObservationIgnored private var queuedSave: (@MainActor (String?) async throws -> SavedVocabulary)?
@@ -87,6 +88,7 @@ enum DefinitionSource {
     func generate(stream: @MainActor () async throws -> (events: AsyncThrowingStream<DefinitionEvent, Error>, target: BrowserTarget?)) async {
         if case .ready = state { return }
         let retained = visibleDefinition
+        quotaExhausted = false
         state = .generating(retained ?? Definition(lemma: "", definition: ""))
         let buffer = DefinitionPreviewBuffer { [weak self] preview in self?.state = .generating(preview) }
         defer { buffer.cancel() }
@@ -123,6 +125,7 @@ enum DefinitionSource {
             throw URLError(.cannotParseResponse)
         } catch {
             guard !Task.isCancelled else { return }
+            quotaExhausted = (MobileClient.cause(of: error) as? MobileFailure)?.error.code == "quota_exceeded"
             buffer.flush()
             state = .failed((MobileClient.cause(of: error) as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message ?? "释义未能完成，请关闭后重试。", preview: visibleDefinition)
             if saveState == .queued {

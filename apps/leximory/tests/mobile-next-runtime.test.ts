@@ -85,6 +85,20 @@ test(
                     'utf8',
                 ),
             )
+            for (const path of [
+                'guest/session',
+                'guest/session/revoke',
+                'guest/definitions',
+                'guest/definitions/[requestId]',
+                'vocabulary',
+            ]) {
+                const destination = join(root, 'app/api/mobile/v1', path)
+                await mkdir(destination, { recursive: true })
+                await writeFile(
+                    join(destination, 'route.ts'),
+                    await readFile(new URL('../app/api/mobile/v1/' + path + '/route.ts', import.meta.url), 'utf8'),
+                )
+            }
             const runNext = (args: string[]) => {
                 const child = spawn(process.execPath, [require.resolve('next/dist/bin/next'), ...args], {
                     cwd: root,
@@ -124,6 +138,24 @@ test(
                     await delay(100)
                 }
             }
+            const guestInput = await fetch(origin + '/api/mobile/v1/guest/session', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ unsupported: true }),
+            })
+            assert.equal(guestInput.status, 400, output + '\n' + (await guestInput.clone().text()))
+            const guestDenied = await fetch(origin + '/api/mobile/v1/guest/definitions', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json', authorization: 'Bearer forged' },
+                body: '{}',
+            })
+            assert.equal(guestDenied.status, 401)
+            const saveDenied = await fetch(origin + '/api/mobile/v1/vocabulary', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: '{}',
+            })
+            assert.equal(saveDenied.status, 401)
             const headers = { authorization: 'Bearer runtime-test' }
             for (const method of ['GET', 'POST']) {
                 const response = await fetch(origin + '/api/static', { method, headers })

@@ -25,7 +25,8 @@ for (const [name, subject, resource, readable, writable] of policyCases) {
 test('bearer verification uses the configured Auth server and its returned subject', async () => {
     let calls = 0
     const verify = createSupabaseBearerVerifier({
-        url: 'https://project.fixture.invalid', anonKey: 'fixture-public-key',
+        url: 'https://project.fixture.invalid',
+        anonKey: 'fixture-public-key',
         fetcher: async (input, init) => {
             calls += 1
             assert.equal(String(input), 'https://project.fixture.invalid/auth/v1/user')
@@ -46,39 +47,85 @@ test('bearer verification uses the configured Auth server and its returned subje
     assert.equal(canWriteLibrary(subject, library), false)
 })
 
-for (const authorization of [undefined, '', 'Basic token', 'Bearer', 'Bearer a, Bearer b', 'Bearer a b', `Bearer ${'a'.repeat(16385)}`]) {
+for (const authorization of [
+    undefined,
+    '',
+    'Basic token',
+    'Bearer',
+    'Bearer a, Bearer b',
+    'Bearer a b',
+    `Bearer ${'a'.repeat(16385)}`,
+]) {
     test(`missing or malformed bearer never falls back to cookies: ${authorization?.slice(0, 24) ?? 'absent'}`, async () => {
         const headers = new Headers({ Cookie: 'sb-session=pretend-valid-session' })
         if (authorization !== undefined) headers.set('Authorization', authorization)
-        await assert.rejects(requireMobileSubject(new Request('https://fixture.invalid', { headers }), async () => {
-            assert.fail('Verification must not run without one valid bearer credential')
-        }), error => error instanceof MobileError && error.code === 'unauthenticated')
+        await assert.rejects(
+            requireMobileSubject(new Request('https://fixture.invalid', { headers }), async () => {
+                assert.fail('Verification must not run without one valid bearer credential')
+            }),
+            (error) => error instanceof MobileError && error.code === 'unauthenticated',
+        )
     })
 }
 
 for (const token of ['expired.fixture.token', 'wrong-project.fixture.token', 'unsigned.fixture.token']) {
     test(`Auth server rejection is respected: ${token}`, async () => {
         const verify = createSupabaseBearerVerifier({
-            url: 'https://project.fixture.invalid', anonKey: 'fixture-public-key',
+            url: 'https://project.fixture.invalid',
+            anonKey: 'fixture-public-key',
             fetcher: async (_, init) => {
                 assert.equal(new Headers(init?.headers).get('Authorization'), `Bearer ${token}`)
                 return Response.json({ message: 'invalid token', error_code: 'bad_jwt' }, { status: 401 })
             },
         })
-        await assert.rejects(requireMobileSubject(new Request('https://fixture.invalid', {
-            headers: { Authorization: `Bearer ${token}` },
-        }), verify), error => error instanceof MobileError && error.code === 'unauthenticated')
+        await assert.rejects(
+            requireMobileSubject(
+                new Request('https://fixture.invalid', {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                verify,
+            ),
+            (error) => error instanceof MobileError && error.code === 'unauthenticated',
+        )
     })
 }
 
 test('Auth service failure is recoverable and does not pretend the token is expired', async () => {
     const verify = createSupabaseBearerVerifier({
-        url: 'https://project.fixture.invalid', anonKey: 'fixture-public-key',
+        url: 'https://project.fixture.invalid',
+        anonKey: 'fixture-public-key',
         fetcher: async () => Response.json({ message: 'temporarily unavailable' }, { status: 429 }),
     })
-    await assert.rejects(requireMobileSubject(new Request('https://fixture.invalid', {
-        headers: { Authorization: 'Bearer fixture.token' },
-    }), verify), error => error instanceof MobileError && error.code === 'service_unavailable')
+    await assert.rejects(
+        requireMobileSubject(
+            new Request('https://fixture.invalid', {
+                headers: { Authorization: 'Bearer fixture.token' },
+            }),
+            verify,
+        ),
+        (error) => error instanceof MobileError && error.code === 'service_unavailable',
+    )
+})
+
+test('a deleting account cannot reenter mobile APIs with an otherwise valid bearer', async () => {
+    const verify = createSupabaseBearerVerifier({
+        url: 'https://project.fixture.invalid',
+        anonKey: 'fixture-public-key',
+        fetcher: async () =>
+            Response.json({
+                id: 'deleting-reader',
+                app_metadata: { account_deletion: 'pending-deletion' },
+            }),
+    })
+    await assert.rejects(
+        requireMobileSubject(
+            new Request('https://fixture.invalid', {
+                headers: { Authorization: 'Bearer fixture.token' },
+            }),
+            verify,
+        ),
+        (error) => error instanceof MobileError && error.code === 'unauthenticated',
+    )
 })
 
 test('HTTP failures are typed private JSON without redirects or exception details', async () => {

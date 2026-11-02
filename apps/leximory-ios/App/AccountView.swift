@@ -193,6 +193,12 @@ struct AccountView: View {
             Divider()
             Button("退出登录", role: .destructive) { confirmsSignOut = true }
                 .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading).disabled(busy)
+            Divider()
+            Button("删除账号", role: .destructive) {
+                session.deletion.prepare(userID: value.userId)
+                session.deletion.presented = true
+            }
+                .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading).disabled(editingUnavailable)
         }.padding(.horizontal, 20).background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
     }
     private func editRow(_ title: String, value: String?, symbol: String, field: AccountEditor.Field) -> some View {

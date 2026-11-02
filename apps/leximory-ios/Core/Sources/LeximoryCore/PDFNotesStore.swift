@@ -197,4 +197,10 @@ public actor PDFNotesStore {
         for listener in listeners.values { listener.finish() }
         listeners.removeAll()
     }
+    public func purge() throws {
+        close()
+        unsaved.removeAll()
+        knownKeys = nil
+        if FileManager.default.fileExists(atPath: directory.path) { try FileManager.default.removeItem(at: directory) }
+    }
 }

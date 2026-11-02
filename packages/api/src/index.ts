@@ -151,6 +151,36 @@ export const definitionFrameSchema = z.discriminatedUnion('kind', [
     z.object({ kind: z.literal('completed'), requestId: resourceID, definition: definitionSchema }).strict(),
     z.object({ kind: z.literal('failed'), requestId: resourceID, error: mobileErrorSchema.shape.error }).strict(),
 ])
+export const guestAllowanceSchema = z
+    .object({ used: z.int().nonnegative(), limit: z.int().positive(), resetsAt: z.iso.datetime() })
+    .strict()
+export const guestSessionSchema = z
+    .object({ token: z.string().min(32).max(128), expiresAt: z.iso.datetime(), allowance: guestAllowanceSchema })
+    .strict()
+export const guestDefinitionInputSchema = ebookSelectionSchema
+    .extend({ requestId: z.uuid(), language: LangSchema.optional(), accent: z.enum(['AmE', 'BrE']).default('AmE') })
+    .strict()
+export const guestDefinitionResultSchema = z.discriminatedUnion('state', [
+    z.object({ state: z.literal('running'), requestId: z.uuid(), allowance: guestAllowanceSchema }).strict(),
+    z
+        .object({
+            state: z.literal('completed'),
+            requestId: z.uuid(),
+            language: LangSchema,
+            definition: definitionSchema,
+            allowance: guestAllowanceSchema,
+        })
+        .strict(),
+    z
+        .object({
+            state: z.literal('failed'),
+            requestId: z.uuid(),
+            error: mobileErrorSchema.shape.error,
+            allowance: guestAllowanceSchema,
+        })
+        .strict(),
+])
+
 export const vocabularyInputSchema = z
     .object({
         occurrence: occurrenceSchema,
@@ -163,6 +193,10 @@ export const vocabularyEditSchema = definitionSchema
         original: z.string().min(1).max(1024),
     })
     .strict()
+export const createVocabularySchema = z
+    .object({ requestId: z.uuid(), language: LangSchema, fields: vocabularyEditSchema })
+    .strict()
+
 export const savedWordSchema = z
     .object({
         id: resourceID,
@@ -335,7 +369,66 @@ export const reviewTimelineSchema = z.object({
     ),
     nextCursor: z.string().nullable(),
 })
+export const accountDeletionInputSchema = z
+    .object({
+        requestId: z.uuid(),
+        receiptToken: z.string().regex(/^[a-f0-9]{64}$/),
+        expectedUserId: z.uuid(),
+    })
+    .strict()
+export const accountDeletionStatusSchema = z
+    .object({
+        requestId: z.uuid(),
+        status: z.enum(['pending', 'completed', 'failed']),
+    })
+    .strict()
+
 export const mobileContract = {
+    guestSession: oc
+        .route({ method: 'POST', path: '/guest/session', spec: (spec) => ({ ...spec, security: [] }) })
+        .input(z.object({}).strict())
+        .output(guestSessionSchema),
+    guestRevokeSession: oc
+        .route({ method: 'POST', path: '/guest/session/revoke' })
+        .input(z.object({}).strict())
+        .output(z.object({ deleted: z.literal(true) }).strict()),
+    guestDefinitions: oc
+        .route({
+            method: 'POST',
+            path: '/guest/definitions',
+            spec: (spec) => ({
+                ...spec,
+                responses: {
+                    ...spec.responses,
+                    200: {
+                        description: 'Guest contextual definition frames',
+                        content: { 'application/x-ndjson': { schema: { type: 'string', format: 'binary' } } },
+                    },
+                },
+            }),
+        })
+        .input(guestDefinitionInputSchema)
+        .output(z.string()),
+    guestDefinitionResult: oc
+        .route({ method: 'GET', path: '/guest/definitions/{requestId}' })
+        .input(z.object({ requestId: z.uuid() }).strict())
+        .output(guestDefinitionResultSchema),
+    createVocabulary: oc
+        .route({ method: 'POST', path: '/vocabulary' })
+        .input(createVocabularySchema)
+        .output(z.object({ id: resourceID, libraryId: resourceID }).strict()),
+    accountDeletion: oc
+        .route({ method: 'POST', path: '/account/deletion' })
+        .input(accountDeletionInputSchema)
+        .output(accountDeletionStatusSchema),
+    accountDeletionStatus: oc
+        .route({ method: 'GET', path: '/account/deletion/{requestId}' })
+        .input(z.object({ requestId: z.uuid() }).strict())
+        .output(accountDeletionStatusSchema),
+    accountDeletionRetry: oc
+        .route({ method: 'POST', path: '/account/deletion/{requestId}/retry' })
+        .input(z.object({ requestId: z.uuid() }).strict())
+        .output(accountDeletionStatusSchema),
     reviewTimeline: oc
         .route({ method: 'GET', path: '/review' })
         .input(z.object({ cursor: z.string().max(100).optional() }).strict())

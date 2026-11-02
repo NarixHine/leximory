@@ -1,3 +1,4 @@
+import { assertUserActive } from '@repo/supabase/user'
 import { supabase } from '@repo/supabase'
 import {
     normalizeReviewConversationPayload,
@@ -17,10 +18,7 @@ interface FlashbackData {
     created_at: string
 }
 
-export type FlashbackReviewProgress = Pick<
-    FlashbackData,
-    'date' | 'lang' | 'story' | 'translations' | 'conversation'
->
+export type FlashbackReviewProgress = Pick<FlashbackData, 'date' | 'lang' | 'story' | 'translations' | 'conversation'>
 
 interface CreateFlashbackParams {
     userId: string
@@ -84,6 +82,7 @@ export async function createFlashback({
     translations,
     conversation,
 }: CreateFlashbackParams) {
+    await assertUserActive(userId)
     const normalizedTranslations = normalizeReviewTranslations(translations)
     const normalizedConversation = conversation ? normalizeReviewConversation(conversation) : null
 
@@ -115,6 +114,7 @@ export async function updateFlashbackReview({
     translations,
     conversation,
 }: UpdateFlashbackReviewParams) {
+    await assertUserActive(userId)
     const normalizedTranslations = normalizeReviewTranslations(translations)
     const normalizedConversation = conversation ? normalizeReviewConversation(conversation) : null
 
@@ -154,7 +154,7 @@ export async function listFlashbacksWithin({
         .lte('date', endDate)
         .throwOnError()
 
-    return data.map(row => ({
+    return data.map((row) => ({
         date: row.date,
         lang: row.lang,
         story: row.story || '',

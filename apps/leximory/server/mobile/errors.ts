@@ -8,6 +8,7 @@ const failures = {
         message: '此订阅属于另一个 Leximory 账号，请登录购买时使用的账号后恢复。',
         retryable: false,
     },
+    reauthentication_required: { status: 401, message: '请重新验证身份后删除账号。', retryable: false },
     unauthenticated: { status: 401, message: '请登录后继续。', retryable: false },
     inaccessible: { status: 404, message: '此内容暂不可用。', retryable: false },
     invalid_input: { status: 400, message: '请求无效，请重试。', retryable: false },
