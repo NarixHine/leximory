@@ -154,6 +154,9 @@ struct AnnotationActivity: Identifiable, Codable {
     private(set) var homePins: [BrowserHomePin] = []
     private(set) var pinMutationRevision = 0
     @ObservationIgnored private var pinSync = HomePinSyncState()
+    @ObservationIgnored private let pinDefaults: UserDefaults
+    @ObservationIgnored private let pinPersistence: HomePinPersistence
+    @ObservationIgnored private var guestPinGeneration: UUID?
     @ObservationIgnored private var syncingPins = false
     private var pinSyncKey: String { "browser.pin-sync." + client.webURL.absoluteString + "." + namespace }
     private(set) var pinImages: [URL: UIImage] = [:]
@@ -254,9 +257,11 @@ struct AnnotationActivity: Identifiable, Codable {
             return all.first { $0.id == id } ?? recentReading.texts.first { $0.id == id }
         }
     }
-    init(client: MobileClient, namespace: String, now: Date = Date(), localOnly: Bool = false) {
+    init(client: MobileClient, namespace: String, now: Date = Date(), localOnly: Bool = false, pinDefaults: UserDefaults = .standard) {
         self.client = client; self.namespace = namespace; self.localOnly = localOnly
-        if let data = UserDefaults.standard.data(forKey: "browser.pin-sync." + client.webURL.absoluteString + "." + namespace),
+        self.pinDefaults = pinDefaults
+        pinPersistence = HomePinPersistence(origin: client.webURL, defaults: pinDefaults)
+        if let data = pinDefaults.data(forKey: "browser.pin-sync." + client.webURL.absoluteString + "." + namespace),
            let saved = try? JSONDecoder().decode(HomePinSyncState.self, from: data) { pinSync = saved }
         if let data = UserDefaults.standard.data(forKey: "browser.hidden-home-recents." + namespace),
            let hidden = try? JSONDecoder().decode(HiddenHomeRecents.self, from: data) { hiddenHomeRecents = hidden }
@@ -289,12 +294,23 @@ struct AnnotationActivity: Identifiable, Codable {
            let saved = try? JSONDecoder().decode([String: FixtureArticle].self, from: data) { recentlyOpened = saved }
         if let data = UserDefaults.standard.data(forKey: "browser.annotations." + namespace),
            let saved = try? JSONDecoder().decode([AnnotationActivity].self, from: data) { activities = saved }
-        if let data = UserDefaults.standard.data(forKey: "browser.home-pins." + namespace),
-           let pins = try? JSONDecoder().decode([BrowserHomePin].self, from: data) {
-            homePins = pins
-            for pin in pins {
-                if let url = pin.iconURL, let data = pin.faviconData, let image = UIImage(data: data) { pinImages[url] = image }
+        if localOnly {
+            let guest = pinPersistence.guestPins(namespace: namespace)
+            homePins = guest.pins; guestPinGeneration = guest.generation
+        } else {
+            homePins = pinPersistence.accountPins(namespace)
+            pinSync.seed(homePins.enumerated().map { cloudPin($0.element, order: $0.offset) })
+            let claimed = pinPersistence.claimGuestPins(account: namespace)
+            pinSync.importPins(claimed.enumerated().map { cloudPin($0.element, order: $0.offset) })
+            var destinations = Set(homePins.map(\.destinationIdentity))
+            homePins += claimed.filter { destinations.insert($0.destinationIdentity).inserted }
+            if persistPinSync() {
+                applyCloudPins()
+                pinPersistence.completeGuestClaim(account: namespace)
             }
+        }
+        for pin in homePins {
+            if let url = pin.iconURL, let data = pin.faviconData, let image = UIImage(data: data) { pinImages[url] = image }
         }
         connectBrowser()
     }
@@ -311,17 +327,17 @@ struct AnnotationActivity: Identifiable, Codable {
             title = document.text.title
         default: return nil
         }
-        return homePins.first { pin in
-            switch (pin.destination, destination) {
-            case (.webpage(let a, _), .webpage(let b, _)): a == b
-            case (.document(let a), .document(let b)): a.id == b.id
-            default: false
-            }
-        } ?? BrowserHomePin(id: UUID(), title: title, destination: destination)
+        let candidate = BrowserHomePin(id: UUID(), title: title, destination: destination)
+        return homePins.first { $0.destinationIdentity == candidate.destinationIdentity } ?? candidate
     }
     func savePin(_ pin: BrowserHomePin) {
         guard !pin.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         var pin = pin
+        if !homePins.contains(where: { $0.id == pin.id }),
+           let existing = homePins.first(where: { $0.destinationIdentity == pin.destinationIdentity }) {
+            pin = BrowserHomePin(id: existing.id, title: pin.title, destination: pin.destination,
+                faviconURL: pin.faviconURL, faviconData: pin.faviconData)
+        }
         if let index = homePins.firstIndex(where: { $0.id == pin.id }) {
             let existing = homePins[index]
             if existing.destination == pin.destination, pin.faviconURL == nil { pin.faviconURL = existing.faviconURL }
@@ -395,7 +411,7 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     func deletePin(_ pin: BrowserHomePin) {
         stagePin(pin, deleted: true)
-        homePins.removeAll { $0.id == pin.id }
+        homePins.removeAll { $0.destinationIdentity == pin.destinationIdentity }
         let retainedURLs = Set(homePins.compactMap(\.iconURL))
         pinImages = pinImages.filter { retainedURLs.contains($0.key) }
         persistPins()
@@ -407,9 +423,9 @@ struct AnnotationActivity: Identifiable, Codable {
         }
     }
     private func persistPins() {
-        if let data = try? JSONEncoder().encode(homePins) {
-            UserDefaults.standard.set(data, forKey: "browser.home-pins." + namespace)
-        }
+        if localOnly, let generation = guestPinGeneration {
+            pinPersistence.saveGuestPins(homePins, namespace: namespace, generation: generation)
+        } else if !localOnly { pinPersistence.saveAccountPins(homePins, account: namespace) }
     }
     private func cloudPin(_ pin: BrowserHomePin, order: Int) -> HomePin {
         let destination: HomePinDestination
@@ -423,11 +439,13 @@ struct AnnotationActivity: Identifiable, Codable {
     private func stagePin(_ pin: BrowserHomePin, deleted: Bool = false) {
         guard !localOnly else { return }
         pinSync.stage(cloudPin(pin, order: homePins.firstIndex(where: { $0.id == pin.id }) ?? homePins.count), deleted: deleted)
-        persistPinSync()
+        persistPinSync(); applyCloudPins()
         pinMutationRevision += 1
     }
-    private func persistPinSync() {
-        if let data = try? JSONEncoder().encode(pinSync) { UserDefaults.standard.set(data, forKey: pinSyncKey) }
+    @discardableResult private func persistPinSync() -> Bool {
+        guard let data = try? JSONEncoder().encode(pinSync) else { return false }
+        pinDefaults.set(data, forKey: pinSyncKey)
+        return true
     }
     private func applyCloudPins() {
         let previous = Dictionary(uniqueKeysWithValues: homePins.map { ($0.id, $0) })
@@ -454,15 +472,14 @@ struct AnnotationActivity: Identifiable, Codable {
         do {
             let remote = try await client.allHomePins()
             try Task.checkCancellation()
-            let local = homePins.enumerated().map { cloudPin($0.element, order: $0.offset) }
-            for row in remote { pinSync.receive(row) }
-            pinSync.seed(local)
+            pinSync.receive(remote)
             persistPinSync(); applyCloudPins()
             for _ in 0..<3 {
                 let pending = Array(pinSync.pending.values)
                 guard !pending.isEmpty else { break }
                 for change in pending {
                     try Task.checkCancellation()
+                    guard pinSync.pending[change.id]?.revision == change.revision else { continue }
                     do {
                         let saved = try await client.saveHomePin(change)
                         try Task.checkCancellation()

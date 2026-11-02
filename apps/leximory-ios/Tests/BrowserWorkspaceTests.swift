@@ -920,28 +920,78 @@ private final class ScrollHistoryServer: Sendable {
 
 
 @MainActor struct HomePinWorkspaceSyncTests {
+    private let suiteName = "home-pin-test." + UUID().uuidString
+    private var pinDefaults: UserDefaults { UserDefaults(suiteName: suiteName)! }
     private let origin = URL(string: "https://pins.test")!
     private func client(_ server: PinTransport, account: String = "reader") -> MobileClient {
         MobileClient(baseURL: origin, transport: server, token: { _ in account })
     }
     private func clean(_ namespaces: [String]) {
-        for key in UserDefaults.standard.dictionaryRepresentation().keys {
-            if namespaces.contains(where: { key.hasSuffix("." + $0) }) { UserDefaults.standard.removeObject(forKey: key) }
-        }
+        pinDefaults.removePersistentDomain(forName: suiteName)
     }
     private func pin(_ title: String = "Reading") -> BrowserHomePin {
         BrowserHomePin(id: UUID(), title: title, destination: .webpage(URL(string: "https://example.com/article")!))
+    }
+    @Test func guestPinsMoveImmediatelyOfflineAndNeverLeakToTheNextAccount() async throws {
+        let suite = "pin-handoff." + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let server = PinTransport()
+        let guest = BrowserWorkspaceModel(client: client(server), namespace: "local-guest", localOnly: true, pinDefaults: defaults)
+        let original = pin("Before login"); guest.savePin(original)
+        let account = BrowserWorkspaceModel(client: client(server), namespace: "A", pinDefaults: defaults)
+        #expect(account.homePins == [original])
+        #expect(await server.calls == 0)
+        await server.setOffline(true); await account.syncPins()
+        let reopened = BrowserWorkspaceModel(client: client(server), namespace: "A", pinDefaults: defaults)
+        #expect(reopened.homePins == [original])
+        guest.savePin(pin("Late guest callback"))
+        let signedOut = BrowserWorkspaceModel(client: client(server), namespace: "local-guest", localOnly: true, pinDefaults: defaults)
+        #expect(signedOut.homePins.isEmpty)
+        let other = BrowserWorkspaceModel(client: client(server, account: "other"), namespace: "B", pinDefaults: defaults)
+        #expect(other.homePins.isEmpty)
+        await server.setOffline(false); await reopened.syncPins()
+        #expect(await server.rowsForReader.map(\.title) == ["Before login"])
+    }
+    @Test func guestHandoffUsesCloudNamesAndAppendsOnlyNewDestinations() async throws {
+        let suite = "pin-handoff." + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let server = PinTransport()
+        let cloud = BrowserWorkspaceModel(client: client(server), namespace: "other-device", pinDefaults: defaults)
+        cloud.savePin(pin("Account name")); await cloud.syncPins()
+        let guest = BrowserWorkspaceModel(client: client(server), namespace: "local-guest", localOnly: true, pinDefaults: defaults)
+        guest.savePin(pin("Guest duplicate"))
+        let added = BrowserHomePin(id: UUID(), title: "New guest pin", destination: .webpage(URL(string: "https://new.test/")!))
+        guest.savePin(added)
+        let account = BrowserWorkspaceModel(client: client(server), namespace: "A", pinDefaults: defaults)
+        await account.syncPins()
+        #expect(account.homePins.map(\.title) == ["Account name", "New guest pin"])
+        #expect(await server.rowCount == 2)
+        let reopened = BrowserWorkspaceModel(client: client(server), namespace: "A", pinDefaults: defaults)
+        await reopened.syncPins()
+        #expect(reopened.homePins.map(\.title) == ["Account name", "New guest pin"])
+        #expect(await server.rowCount == 2)
+    }
+    @Test func savingTheSameDestinationTwiceUpdatesOneShortcut() async throws {
+        let namespace = UUID().uuidString; defer { clean([namespace]) }
+        let server = PinTransport()
+        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace, pinDefaults: pinDefaults)
+        workspace.savePin(pin("First")); workspace.savePin(pin("Updated"))
+        #expect(workspace.homePins.map(\.title) == ["Updated"])
+        await workspace.syncPins()
+        #expect(await server.rowCount == 1)
     }
     @Test func legacyPinsUploadOnceAndAnotherDeviceReceivesEditsAndDeletions() async throws {
         let namespaces = [UUID().uuidString, UUID().uuidString]
         defer { clean(namespaces) }
         let original = pin()
-        UserDefaults.standard.set(try JSONEncoder().encode([original]), forKey: "browser.home-pins." + namespaces[0])
+        pinDefaults.set(try JSONEncoder().encode([original]), forKey: "browser.home-pins." + namespaces[0])
         let server = PinTransport()
-        let first = BrowserWorkspaceModel(client: client(server), namespace: namespaces[0])
+        let first = BrowserWorkspaceModel(client: client(server), namespace: namespaces[0], pinDefaults: pinDefaults)
         #expect(first.homePins == [original])
         await first.syncPins()
-        let second = BrowserWorkspaceModel(client: client(server), namespace: namespaces[1])
+        let second = BrowserWorkspaceModel(client: client(server), namespace: namespaces[1], pinDefaults: pinDefaults)
         await second.syncPins()
         #expect(second.homePins == [original])
         var renamed = original; renamed.title = "Daily reading"
@@ -960,14 +1010,14 @@ private final class ScrollHistoryServer: Sendable {
         let namespace = UUID().uuidString
         defer { clean([namespace]) }
         let server = PinTransport()
-        let first = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        let first = BrowserWorkspaceModel(client: client(server), namespace: namespace, pinDefaults: pinDefaults)
         let original = pin()
         first.savePin(original)
         await server.setOffline(true)
         await first.syncPins()
         #expect(first.homePins == [original])
         #expect(first.error == nil)
-        let reopened = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        let reopened = BrowserWorkspaceModel(client: client(server), namespace: namespace, pinDefaults: pinDefaults)
         #expect(reopened.homePins == [original])
         await server.setOffline(false)
         await server.loseNextSaveResponse()
@@ -984,11 +1034,11 @@ private final class ScrollHistoryServer: Sendable {
         let namespaces = [UUID().uuidString, UUID().uuidString]
         defer { clean(namespaces) }
         let server = PinTransport()
-        let first = BrowserWorkspaceModel(client: client(server), namespace: namespaces[0])
+        let first = BrowserWorkspaceModel(client: client(server), namespace: namespaces[0], pinDefaults: pinDefaults)
         let original = pin()
         first.savePin(original)
         await first.syncPins()
-        let second = BrowserWorkspaceModel(client: client(server), namespace: namespaces[1])
+        let second = BrowserWorkspaceModel(client: client(server), namespace: namespaces[1], pinDefaults: pinDefaults)
         await second.syncPins()
         var renamed = original; renamed.title = "Offline edit"
         second.savePin(renamed)
@@ -1002,13 +1052,13 @@ private final class ScrollHistoryServer: Sendable {
         let namespaces = [UUID().uuidString, UUID().uuidString, UUID().uuidString]
         defer { clean(namespaces) }
         let server = PinTransport()
-        let first = BrowserWorkspaceModel(client: client(server), namespace: namespaces[0])
+        let first = BrowserWorkspaceModel(client: client(server), namespace: namespaces[0], pinDefaults: pinDefaults)
         first.savePin(pin())
         await first.syncPins()
-        let other = BrowserWorkspaceModel(client: client(server, account: "other"), namespace: namespaces[1])
+        let other = BrowserWorkspaceModel(client: client(server, account: "other"), namespace: namespaces[1], pinDefaults: pinDefaults)
         await other.syncPins()
         #expect(other.homePins.isEmpty)
-        let guest = BrowserWorkspaceModel(client: client(server), namespace: namespaces[2], localOnly: true)
+        let guest = BrowserWorkspaceModel(client: client(server), namespace: namespaces[2], localOnly: true, pinDefaults: pinDefaults)
         let calls = await server.calls
         guest.savePin(pin("Local shortcut"))
         await guest.syncPins()
@@ -1019,7 +1069,7 @@ private final class ScrollHistoryServer: Sendable {
         let namespace = UUID().uuidString
         defer { clean([namespace]) }
         let server = PinTransport()
-        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace, pinDefaults: pinDefaults)
         let text = try JSONDecoder().decode(CatalogText.self, from: Data(#"{"id":"article","libraryId":"library","title":"Article","topics":[],"emoji":null,"createdAt":null,"format":"article"}"#.utf8))
         let original = BrowserHomePin(id: UUID(), title: text.title, destination: .document(text))
         workspace.savePin(original)
@@ -1028,27 +1078,27 @@ private final class ScrollHistoryServer: Sendable {
         await workspace.syncPins()
         #expect(workspace.homePins.isEmpty)
         #expect(await server.rowsForReader.first?.deletedAt != nil)
-        let reopened = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        let reopened = BrowserWorkspaceModel(client: client(server), namespace: namespace, pinDefaults: pinDefaults)
         await reopened.syncPins()
         #expect(reopened.homePins.isEmpty)
     }
-    @Test func renamingContentUpdatesItsCloudSnapshotAndPreservesCustomPinTitles() async throws {
+    @Test(arguments: [false, true]) func renamingContentUpdatesItsCloudSnapshotAndPreservesCustomPinTitles(customTitle: Bool) async throws {
         let namespace = UUID().uuidString
         defer { clean([namespace]) }
         let server = PinTransport()
-        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace, pinDefaults: pinDefaults)
         func text(_ title: String) throws -> CatalogText {
             try JSONDecoder().decode(CatalogText.self, from: JSONSerialization.data(withJSONObject: ["id":"article", "libraryId":"library", "title":title, "topics":[], "emoji":NSNull(), "createdAt":NSNull(), "format":"article"]))
         }
         let original = try text("Original title")
         let automatic = BrowserHomePin(id: UUID(), title: original.title, destination: .document(original))
         let custom = BrowserHomePin(id: UUID(), title: "My shortcut", destination: .document(original))
-        workspace.savePin(automatic); workspace.savePin(custom)
+        workspace.savePin(customTitle ? custom : automatic)
         await workspace.syncPins()
         await workspace.contentChanged(try text("Updated title"), reloadReader: false)
         await workspace.syncPins()
         let rows = await server.rowsForReader
-        #expect(Set(rows.map(\.title)) == ["Updated title", "My shortcut"])
+        #expect(rows.map(\.title) == [customTitle ? "My shortcut" : "Updated title"])
         for row in rows {
             if case .document(let snapshot) = row.destination { #expect(snapshot.title == "Updated title") }
             else { Issue.record("Document shortcut changed its destination kind") }
@@ -1058,9 +1108,9 @@ private final class ScrollHistoryServer: Sendable {
         let namespace = UUID().uuidString
         defer { clean([namespace]) }
         let server = PinTransport()
-        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace, pinDefaults: pinDefaults)
         let long = pin(String(repeating: "x", count: 257))
-        let valid = pin("Daily reading")
+        let valid = BrowserHomePin(id: UUID(), title: "Daily reading", destination: .webpage(URL(string: "https://other.test/")!))
         workspace.savePin(long)
         workspace.savePin(valid)
         await workspace.syncPins()
@@ -1072,7 +1122,7 @@ private final class ScrollHistoryServer: Sendable {
         let namespace = UUID().uuidString
         defer { clean([namespace]) }
         let server = PinTransport()
-        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace)
+        let workspace = BrowserWorkspaceModel(client: client(server), namespace: namespace, pinDefaults: pinDefaults)
         workspace.savePin(pin())
         await workspace.syncPins()
         await server.pauseNextRead()
@@ -1086,7 +1136,7 @@ private final class ScrollHistoryServer: Sendable {
         clean([namespace])
         await server.resumeRead()
         await task.value
-        #expect(!UserDefaults.standard.dictionaryRepresentation().keys.contains { $0.hasSuffix("." + namespace) })
+        #expect(!pinDefaults.dictionaryRepresentation().keys.contains { $0.hasSuffix("." + namespace) })
     }
 
     private actor PinTransport: ClientTransport {
@@ -1127,8 +1177,8 @@ private final class ScrollHistoryServer: Sendable {
                     return (HTTPResponse(status: .badRequest, headerFields: [.contentType: "application/json"]), HTTPBody(#"{"error":{"code":"invalid_input","message":"Invalid pin","retryable":false}}"#))
                 }
                 var saved = change.pin
-                saved.updatedAt = "2026-11-02T00:00:00Z"
-                if change.deleted { saved.deletedAt = "2026-11-02T00:00:00Z" }
+                saved.updatedAt = Date(timeIntervalSince1970: 1_793_577_600 + Double(saveCount)).formatted(.iso8601)
+                if change.deleted { saved.deletedAt = saved.updatedAt }
                 if let existing = rows[account]?[id], existing.revision != change.expectedRevision || existing.deletedAt != nil { saved = existing }
                 rows[account, default: [:]][id] = saved
                 if loseResponse { loseResponse = false; throw URLError(.networkConnectionLost) }

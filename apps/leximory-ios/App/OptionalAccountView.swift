@@ -45,7 +45,7 @@ struct SignInView: View {
     var notice: String? = nil
     var context: AccountEntryContext? = nil
 
-    private enum Mode { case signIn, register, confirmation, recovery, recoverySent, newPassword }
+    private enum Mode: String { case signIn, register, confirmation, recovery, recoverySent, newPassword }
     private enum Field: Hashable { case email, password }
     @State private var mode = Mode.signIn
     @State private var email = ""
@@ -65,27 +65,28 @@ struct SignInView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     sheetControls
-                    VStack(alignment: .leading, spacing: 0) {
+                    VStack(alignment: .leading, spacing: 24) {
                         if mode == .signIn, let word = context?.word {
-                            readingContext(word).padding(.top, 14).padding(.bottom, 34)
-                        } else { Color.clear.frame(height: 36) }
+                            readingContext(word).padding(.bottom, 8)
+                        }
                         introduction
-                        if let notice, mode == .signIn { caption(notice).padding(.top, 16) }
-                        if let message { caption(message).padding(.top, 16) }
-                        if (mode == .signIn && !session.state.isSignedIn) || mode == .register || mode == .recovery || mode == .newPassword {
-                            fields.padding(.top, 20)
+                        VStack(alignment: .leading, spacing: 20) {
+                            if (mode == .signIn && !session.state.isSignedIn) || mode == .register || mode == .recovery || mode == .newPassword {
+                                fields
+                            }
+                            if let failure {
+                                Text(failure).interfaceFont(15, style: .subheadline).foregroundStyle(Color(uiColor: .systemRed))
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityAddTraits(.updatesFrequently)
+                                    .accessibilityIdentifier("account-entry-error")
+                            }
+                            actions
                         }
-                        if let failure {
-                            Text(failure).interfaceFont(15, style: .subheadline).foregroundStyle(.red)
-                                .accessibilityAddTraits(.updatesFrequently)
-                                .accessibilityIdentifier("account-entry-error").padding(.vertical, 12)
-                        }
-                        actions.padding(.top, 2)
-                        if mode == .signIn || mode == .register { legal }
                     }
-                    .padding(.horizontal, 28).frame(maxWidth: 536).frame(maxWidth: .infinity)
-                    Spacer(minLength: 0)
-                    lawn.padding(.top, -18).padding(.bottom, 8)
+                    .padding(.horizontal, LeximoryLayout.pageInset).padding(.top, 24)
+                    .frame(maxWidth: 520).frame(maxWidth: .infinity)
+                    Spacer(minLength: 24)
+                    lawn.padding(.bottom, 8)
                 }
                 .frame(minHeight: geometry.size.height, alignment: .top)
             }
@@ -100,6 +101,16 @@ struct SignInView: View {
             else if session.state.isSignedIn { perform { try await finish() } }
         }
         .task {
+            #if DEBUG && targetEnvironment(simulator)
+            let arguments = ProcessInfo.processInfo.arguments
+            if arguments.contains("--account-entry-preview"),
+               let index = arguments.firstIndex(of: "--account-entry-mode"),
+               arguments.indices.contains(index + 1), let previewMode = Mode(rawValue: arguments[index + 1]) {
+                mode = previewMode
+                if previewMode == .confirmation || previewMode == .recoverySent { email = "reader@example.com" }
+                return
+            }
+            #endif
             if session.passwordRecovery { mode = .newPassword }
             else if session.state.isSignedIn { perform { try await finish() } }
         }
@@ -121,13 +132,15 @@ struct SignInView: View {
     }
 
     private var introduction: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(heading).displayFont(34, relativeTo: .largeTitle).foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
             caption(benefit)
             if mode == .confirmation || mode == .recoverySent {
                 Text(email).interfaceFont(17).foregroundStyle(.primary).textSelection(.enabled).tint(.blue)
             }
+            if let notice, mode == .signIn { caption(notice) }
+            if let message { caption(message) }
         }
     }
     private var heading: String {
@@ -135,7 +148,7 @@ struct SignInView: View {
         case .signIn: context?.heading ?? "继续语言学习之旅"
         case .register: "开始语言学习之旅"
         case .confirmation: "检查你的邮箱"
-        case .recovery: "重新找回你的账号"
+        case .recovery: "重设密码"
         case .recoverySent: "检查你的邮箱"
         case .newPassword: "设置新密码"
         }
@@ -152,43 +165,56 @@ struct SignInView: View {
     }
 
     private var fields: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             if mode != .newPassword {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("邮箱").interfaceFont(16)
-                    TextField(text: $email, prompt: Text("yourname@example.com").foregroundStyle(Color(uiColor: .secondaryLabel))) { Text("邮箱") }
-                        .interfaceFont(19).textContentType(.username).keyboardType(.emailAddress)
+                fieldRow("邮箱") {
+                    TextField("", text: $email)
+                        .textContentType(.username).keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never).autocorrectionDisabled().tint(.blue)
                         .focused($focus, equals: .email).submitLabel(mode == .recovery ? .send : .next)
                         .onSubmit { if mode == .recovery { submit() } else { focus = .password } }
                         .accessibilityLabel("邮箱").accessibilityIdentifier("sign-in-email")
-                        .frame(minHeight: 30).padding(.bottom, 3)
-                    Divider()
                 }
+                Divider()
             }
             if mode != .recovery {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(mode == .newPassword ? "新密码" : "密码").interfaceFont(16)
-                    SecureField(text: $password, prompt: Text("••••••••").font(.system(size: 19)).tracking(3).foregroundStyle(Color(uiColor: .secondaryLabel))) { Text("密码") }
-                        .interfaceFont(19).textContentType(mode == .signIn ? .password : .newPassword).tint(.blue)
+                fieldRow(mode == .newPassword ? "新密码" : "密码") {
+                    SecureField("", text: $password)
+                        .textContentType(mode == .signIn ? .password : .newPassword).tint(.blue)
                         .focused($focus, equals: .password).submitLabel(.go).onSubmit(submit)
                         .accessibilityLabel(mode == .newPassword ? "新密码" : "密码")
-                        .accessibilityIdentifier("sign-in-password").frame(minHeight: 30).padding(.bottom, 3)
-                    Divider()
+                        .accessibilityIdentifier("sign-in-password")
                 }
+                Divider()
             }
             if mode == .signIn {
                 HStack {
                     Spacer()
                     Button { changeMode(.recovery) } label: { Text("忘记密码？").underline() }
-                        .interfaceFont(15, style: .subheadline).foregroundStyle(.secondary).frame(minHeight: 44)
-                }.padding(.top, -18)
+                        .interfaceFont(15, style: .subheadline).foregroundStyle(.primary).frame(minHeight: 44)
+                }.padding(.top, 4)
             }
         }.disabled(submitting)
     }
 
+    private func fieldRow<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
+        Group {
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(label)
+                    content().frame(minHeight: 44)
+                }.padding(.vertical, 12)
+            } else {
+                HStack(spacing: 16) {
+                    Text(label).frame(width: 64, alignment: .leading)
+                    content().frame(maxWidth: .infinity, minHeight: 52)
+                }
+            }
+        }.interfaceFont(17).foregroundStyle(.primary)
+    }
+
     @ViewBuilder private var actions: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 8) {
             primaryButton
             switch mode {
             case .signIn:
@@ -218,6 +244,7 @@ struct SignInView: View {
                     .interfaceFont(15, style: .subheadline).frame(minHeight: 44)
             case .recovery, .newPassword: EmptyView()
             }
+            if mode == .signIn || mode == .register { legal }
         }.buttonStyle(.plain).foregroundStyle(.primary)
     }
 
@@ -225,9 +252,10 @@ struct SignInView: View {
         Button(action: submit) {
             HStack(spacing: 10) {
                 if submitting { ProgressView().tint(Color(uiColor: .systemBackground)) }
-                Text(submitting ? "请稍候" : primaryTitle).interfaceFont(18)
+                Text(submitting ? "请稍候" : primaryTitle).interfaceFont(17)
             }
-            .frame(maxWidth: .infinity, minHeight: 48)
+            .padding(.horizontal, 20).padding(.vertical, 14)
+            .frame(maxWidth: .infinity, minHeight: 52)
             .foregroundStyle(Color(uiColor: .systemBackground))
             .background(Color.primary, in: Capsule())
             .contentShape(Capsule())
@@ -355,18 +383,20 @@ struct SignInView: View {
         return Font(scalesWithBody ? UIFontMetrics(forTextStyle: .body).scaledFont(for: font) : font)
     }
     private func caption(_ text: String) -> some View {
-        Text(text).interfaceFont(18).foregroundStyle(.secondary).lineSpacing(4)
+        Text(text).interfaceFont(17).foregroundStyle(.secondary).lineSpacing(4)
             .fixedSize(horizontal: false, vertical: true)
     }
     private var legal: some View {
         HStack(spacing: 10) {
             Link("服务条款", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+                .foregroundStyle(.primary)
                 .underline()
                 .frame(minHeight: 44)
-            Text("与")
-            NavigationLink { AccountEntryPrivacyView() } label: { Text("隐私政策").underline() }.frame(minHeight: 44)
+            Text("与").foregroundStyle(.secondary)
+            NavigationLink { AccountEntryPrivacyView() } label: { Text("隐私政策").underline() }
+                .foregroundStyle(.primary).frame(minHeight: 44)
         }
-        .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
+        .interfaceFont(13, style: .footnote)
         .frame(maxWidth: .infinity)
     }
     private var lawn: some View {

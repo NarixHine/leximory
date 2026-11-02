@@ -99,7 +99,7 @@ final class GuestAccountUITests: XCTestCase {
         app.buttons["返回登录"].tap()
         XCTAssertTrue(app.staticTexts["bank"].waitForExistence(timeout: 4))
         app.buttons["忘记密码？"].tap()
-        XCTAssertTrue(app.staticTexts["重新找回你的账号"].waitForExistence(timeout: 4))
+        XCTAssertTrue(app.staticTexts["重设密码"].waitForExistence(timeout: 4))
         XCTAssertFalse(app.secureTextFields["sign-in-password"].exists)
         XCTAssertTrue(app.textFields["sign-in-email"].exists)
     }

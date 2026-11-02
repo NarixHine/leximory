@@ -130,6 +130,10 @@ In the review timeline, open a word and choose 删除词汇. Deletion requires c
 
 The new management API must be deployed with the app. It authenticates bearer tokens, requires folder ownership, rejects bookmark resources and shadow content folders, checks edit revisions and file limits/signatures, and serializes native text mutations. File changes retain the old bytes for rollback if storage cleanup or metadata publication fails. No schema migration is needed. Rebuild the editor bundle after changing the web serializer or editor dependencies with `node apps/leximory-ios/scripts/bundle-editor.mjs`; `--check` verifies it is current.
 
+## Home pins
+
+Pins appear from local storage immediately and sync per account and API origin. Guest webpage pins move into the next signed-in account once, with a persisted handoff that survives offline use or interrupted sign-in. Existing account names and order win on overlapping destinations; new guest pins append. Independent field edits merge, queued changes survive retries, and deletion wins over stale edits. Duplicate destinations appear once. Local ebook shortcuts stay local. Account deletion clears its unfinished handoff without touching other accounts or new guest pins.
+
 ## Browser ad blocking
 
 More → 广告拦截 opens the shared browser settings sheet. Blocking starts enabled, and website exceptions match the displayed hostname exactly. Changes stay in the sheet until confirmation. Applying a change to the current page explicitly offers a reload; form results apply it on a later navigation. Clearing browsing data removes exceptions and preserves the global switch. Ebook, editor, and authentication web views are unaffected.

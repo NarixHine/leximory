@@ -346,6 +346,7 @@ struct SignInFailure: LocalizedError {
             let reading = try LocalReadingStore(root: LocalReadingStore.applicationRoot(), origin: configuration.apiURL, accountID: id)
             try await reading.purge()
             try HomeWallpaperStore(namespace: id).removeAll()
+            HomePinPersistence(origin: configuration.apiURL).completeGuestClaim(account: id)
             for key in UserDefaults.standard.dictionaryRepresentation().keys where key.hasSuffix(".\(id)") {
                 UserDefaults.standard.removeObject(forKey: key)
             }

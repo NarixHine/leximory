@@ -51,6 +51,10 @@ struct BrowserWorkspacePreview: View {
                 }
                 UserDefaults.standard.removeObject(forKey: "browser.hidden-home-recents.workspace-fixture")
                 UserDefaults.standard.removeObject(forKey: "browser.home-pins.workspace-fixture")
+                for key in UserDefaults.standard.dictionaryRepresentation().keys
+                    where key.hasSuffix(".workspace-fixture") && (key.hasPrefix("browser.home-pins.") || key.hasPrefix("browser.pin-sync.")) {
+                    UserDefaults.standard.removeObject(forKey: key)
+                }
                 UserDefaults.standard.removeObject(forKey: "browser.annotations.workspace-fixture")
                 UserDefaults.standard.removeObject(forKey: "browser.recent.workspace-fixture")
                 UserDefaults.standard.removeObject(forKey: "recent-access.workspace-fixture")
