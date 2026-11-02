@@ -74,15 +74,15 @@ import LeximoryCore
                 }
             }
         } catch {
-            if !accepted { failure = "删除请求尚未确认，请重试。" }
+            if !accepted { failure = "删除未能完成，请重试。" }
         }
     }
     func resume() async {
         guard intent != nil else { return }
-        await refresh(recoverAcceptance: true)
+        await refresh()
         if status != .completed { presented = true }
     }
-    func refresh(recoverAcceptance: Bool = false, userInitiated: Bool = false) async {
+    func refresh() async {
         guard let intent, !busy, status != .completed else { return }
         busy = true; failure = nil
         defer { busy = false }
@@ -94,9 +94,7 @@ import LeximoryCore
             if !intent.queued && receipt.status == .pending {
                 try record(try await receiptClient(intent).retryAccountDeletion(requestID: intent.requestID), queued: true)
             }
-        } catch {
-            if userInitiated { failure = "删除状态暂时无法更新，请稍后重试。" }
-        }
+        } catch { }
     }
     func retry() async {
         guard let intent, !busy else { return }

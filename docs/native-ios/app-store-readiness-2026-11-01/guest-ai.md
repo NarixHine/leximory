@@ -6,7 +6,7 @@ Guests use the real browser and the existing EPUB/PDF readers, annotation trays 
 
 ## Allowance
 
-The first AI lookup lazily creates a random guest credential. The credential lives in Keychain and expires after 30 days. It permits five generated definitions during that period. Cached results and failed generations do not spend another use. There is no daily allowance or “come back tomorrow” copy.
+The first AI lookup lazily creates a random guest credential. The credential lives in Keychain and expires after 30 days. It permits twenty generated definitions during that period. Cached results and failed generations do not spend another use. There is no daily allowance or “come back tomorrow” copy.
 
 The existing Redis service atomically reserves allowance and binds a UUID to the request payload. Repeated requests recover the same result without another charge. One generation may run per credential. Completed definitions expire after 24 hours; request identities remain through credential expiry to prevent a retry from being charged again. Expired result identities return an unavailable result instead of generating again. Enrollment uses Vercel's trusted network header and a six-per-hour limit. Guest bearers cannot authorize account endpoints.
 
@@ -14,7 +14,7 @@ A disposable credential and network throttle reduce casual abuse. They do not id
 
 ## Reading UI
 
-The first guest lookup requests permission in the existing definition tray. It explains the five free uses and that nearby context passes through Vercel to Google for language detection and DeepSeek for definitions. It does not upload the book. Inputs preserve the exact UTF-16 quote offset and bound nearby context. Exhaustion offers sign-in to use the account's existing allowance. Existing signed-in quotas and prompts retain their current behavior.
+The first guest lookup requests permission in the existing definition tray. It states the twenty free uses and asks permission to share the selected word and nearby context with third-party AI. The existing privacy explanation identifies the AI providers. Infrastructure routing and unsolicited reassurances are absent from the lookup prompt. Inputs preserve the exact UTF-16 quote offset and bound nearby context. Exhaustion offers sign-in to use the account's existing allowance. Existing signed-in quotas and prompts retain their current behavior.
 
 The selected visual reference is [the optional account screen](05-optional-account.png). The generated reader studies are rejected explorations. Native implementation uses the real reader UI.
 

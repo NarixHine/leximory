@@ -15,7 +15,7 @@ import { definitionResponse } from './definition-generation'
 import { parseGeneratedDefinition, type CompletedDefinition } from './definitions'
 import { MobileError } from './errors'
 
-export const guestDefinitionLimit = 5
+export const guestDefinitionLimit = 20
 export const guestSessionLifetime = 30 * 86400
 export const guestResultLifetime = 86400
 export const guestGenerationLifetime = 90

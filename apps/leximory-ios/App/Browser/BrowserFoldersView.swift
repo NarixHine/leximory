@@ -187,7 +187,7 @@ struct BrowserFolderPicker: View {
         .navigationTitle("选择文件夹").navigationBarTitleDisplayMode(.inline)
         .sheet(item: $editor) { request in
             FolderEditorSheet(client: workspace.client, library: request.library) { library in
-                workspace.upsertFolder(library); selection = library.id
+                workspace.upsertFolder(library); selection = library.id; dismiss()
             }
         }
         .tint(.primary)

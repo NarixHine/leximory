@@ -16,6 +16,8 @@ struct ContentImportView: View {
     @State private var generateTitle = false
     @State private var choosingFile = false
     @State private var ebook: ImportedFile?
+    @State private var ebookDraft = EbookImportDraft(filename: "")
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var busy = false
     @State private var error: String?
     @State private var uncertain = false
@@ -28,9 +30,10 @@ struct ContentImportView: View {
         switch library.language { case "English", "French": 30000; case "Chinese": 5000; default: 10000 }
     }
     private var isText: Bool { kind == 0 || (kind == 2 && extracted) }
+    private var importTitle: String { kind == 1 ? ebookDraft.title : title }
     private var valid: Bool {
         if kind == 2 && !extracted { return URL(string: url).map { ["http", "https"].contains($0.scheme?.lowercased() ?? "") && $0.host != nil } ?? false }
-        return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && title.count <= 512 &&
+        return !importTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && importTitle.count <= 512 &&
         (kind != 1 ? !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && content.utf16.count <= lengthLimit : ebook != nil)
     }
     var body: some View {
@@ -54,7 +57,12 @@ struct ContentImportView: View {
                             .accessibilityIdentifier("import-网址")
                             .onChange(of: url) { extracted = false; bookmarkRequestID = UUID().uuidString }
                     }
-                    if kind != 2 || extracted { input("标题", text: $title, lines: 1...3) }
+                    if kind == 0 || kind == 2 && extracted || kind == 1 && ebook != nil {
+                        input("标题", text: kind == 1 ? Binding(get: { ebookDraft.title }, set: {
+                            ebookDraft.takeTitle(); ebookDraft.title = $0
+                        }) : $title, lines: 1...3)
+                            .id(kind == 1 ? ebookDraft.titleRevision : 0).transition(.opacity)
+                    }
                     if isText {
                         input("文本", text: $content, lines: 8...20)
                         if content.utf16.count > lengthLimit {
@@ -68,7 +76,7 @@ struct ContentImportView: View {
                         Button { choosingFile = true } label: {
                             VStack(spacing: 14) {
                                 Image(systemName: "doc.badge.arrow.up").font(.system(size: 32, weight: .light))
-                                Text(ebook?.name ?? "上传电子书").interfaceFont(17).multilineTextAlignment(.center)
+                                Text(ebook?.name ?? "选择电子书").interfaceFont(17).multilineTextAlignment(.center)
                                 if let ebook { Text(ByteCountFormatter.string(fromByteCount: Int64(ebook.data.count), countStyle: .file)).interfaceFont(13) }
                             }.foregroundStyle(LeximoryPalette.muted).frame(maxWidth: .infinity, minHeight: 180)
                                 .background(LeximoryPalette.cover, in: RoundedRectangle(cornerRadius: 28))
@@ -79,7 +87,7 @@ struct ContentImportView: View {
                 }.padding(24).frame(maxWidth: 580).frame(maxWidth: .infinity)
                     .disabled(busy || uncertain)
             }.scrollDismissesKeyboard(.interactively).background(LeximoryPalette.shell)
-                .navigationTitle("创建文章").navigationBarTitleDisplayMode(.inline)
+                .navigationTitle(kind == 1 ? "导入电子书" : "创建文章").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("取消", role: .cancel) { dismiss() }.buttonStyle(.plain)
@@ -91,6 +99,9 @@ struct ContentImportView: View {
                     Task { await readFile(result) }
                 }
         }.presentationDetents([.large])
+            .onChange(of: focusedField) { if kind == 1, focusedField == "标题" { ebookDraft.takeTitle() } }
+            .onChange(of: kind) { if kind != 1 { ebookDraft.stop() } }
+            .onDisappear { ebookDraft.stop() }
     }
     private var importActions: some View {
         HStack(spacing: 16) {
@@ -113,7 +124,7 @@ struct ContentImportView: View {
                 HStack(spacing: 8) {
                     if busy && !savingBookmark { ProgressView().tint(LeximoryPalette.paper) }
                     else { Image(systemName: kind == 1 ? "arrow.up.doc" : "airplane") }
-                    Text(busy && !savingBookmark ? (kind != 1 ? "导入中" : "上传中") : (isText ? "生成" : "导入"))
+                    Text(busy && !savingBookmark ? "导入中" : (isText ? "生成" : "导入"))
                 }.frame(maxWidth: .infinity, minHeight: 48)
                     .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Capsule())
             }.buttonStyle(.plain).accessibilityIdentifier("content-import-submit")
@@ -151,11 +162,30 @@ struct ContentImportView: View {
                 guard data.count <= 4_718_592 else { throw ImportError.message("发生错误，文件需小于 4.5MB") }
                 return data
             }.value
+            guard isArticle == (kind != 1) else { return }
             if isArticle {
                 guard let text = String(data: loaded, encoding: .utf8) ?? String(data: loaded, encoding: .utf16) else { throw ImportError.message("不支持的文本编码") }
                 content = text
-            } else { ebook = ImportedFile(name: url.lastPathComponent, data: loaded) }
-            if title.isEmpty { title = url.deletingPathExtension().lastPathComponent }
+            } else {
+                ebookDraft.stop()
+                let next = EbookImportDraft(filename: url.lastPathComponent)
+                if ebook == nil, ebookDraft.titleEdited {
+                    next.takeTitle(); next.title = ebookDraft.title
+                }
+                next.takeFolder()
+                ebookDraft = next
+                articleRequestID = UUID().uuidString
+                ebook = ImportedFile(name: url.lastPathComponent, data: loaded)
+                error = nil
+                let metadata = await EbookImportMetadata.read(.init(name: url.lastPathComponent, data: loaded))
+                await next.fill(metadata: metadata, reduceMotion: reduceMotion) { _ in
+                    try await client.suggestEbookImport(requestID: articleRequestID, field: "title", filename: url.lastPathComponent,
+                        title: metadata.title, author: metadata.author, language: metadata.language,
+                        sample: metadata.sample)
+                }
+                return
+            }
+            if isArticle, title.isEmpty { title = url.deletingPathExtension().lastPathComponent }
             error = nil
         } catch {
             if (error as NSError).code != NSUserCancelledError { self.error = (error as? ImportError)?.description ?? "无法读取文件，请重试。" }
@@ -164,6 +194,7 @@ struct ContentImportView: View {
     private func submit(annotate: Bool) async {
         guard valid, !busy, !uncertain else { return }
         focusedField = nil
+        if kind == 1 { ebookDraft.stop() }
         busy = true; error = nil
         defer { busy = false }
         do {
@@ -178,7 +209,7 @@ struct ContentImportView: View {
                     annotate: annotate, onlyComments: onlyComments, generateTitle: generateTitle, requestID: articleRequestID)
             } else {
                 guard let ebook else { return }
-                text = try await client.uploadEbook(libraryID: library.id.rawValue, title: title, filename: ebook.name, data: ebook.data)
+                text = try await client.uploadEbook(libraryID: library.id.rawValue, title: importTitle.trimmingCharacters(in: .whitespacesAndNewlines), filename: ebook.name, data: ebook.data)
             }
             imported(text); dismiss()
         } catch {

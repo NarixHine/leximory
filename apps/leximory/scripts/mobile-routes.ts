@@ -48,6 +48,7 @@ async function main() {
         'pdf-notes': ['pdfNotes', 'savePDFNote'],
         authoring: ['extractArticle', 'vocabularyList', 'savedWord', 'editWord', 'importArticle', 'uploadEbook'],
         management: ['editableText', 'editText', 'removeText', 'replaceEbook', 'removeEbook', 'removeWord'],
+        'ebook-import': ['suggestEbookImport'],
         folders: ['createFolder', 'renameFolder', 'libraryArchive'],
         review: ['reviewTimeline', 'reviewCheck', 'reviewStart', 'reviewTranslation', 'reviewConversation'],
         shortcuts: ['saveShortcutWord'],

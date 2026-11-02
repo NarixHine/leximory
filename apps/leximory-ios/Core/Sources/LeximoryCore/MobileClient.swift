@@ -385,6 +385,12 @@ public struct MobileClient: Sendable {
     public func texts(libraryID: String, cursor: String? = nil) async throws -> CatalogPage<CatalogText> {
         try mapped(try await client.texts(path: .init(libraryId: libraryID), query: .init(cursor: cursor)).ok.body.json, to: CatalogPage<CatalogText>.self)
     }
+    public func suggestEbookImport(requestID: String, field: String, filename: String, title: String,
+                                   author: String, language: String, sample: String) async throws -> String? {
+        guard let field = Operations.suggestEbookImport.Input.Body.jsonPayload.fieldPayload(rawValue: field) else { return nil }
+        return try await client.suggestEbookImport(body: .json(.init(requestId: requestID, field: field, filename: filename,
+            title: title, author: author, language: language, sample: sample))).ok.body.json.value
+    }
     public struct ArticlePreview: Codable, Sendable { public let title: String; public let content: String }
     public func extractArticle(libraryID: String, url: String) async throws -> ArticlePreview {
         try mapped(try await client.extractArticle(path: .init(libraryId: libraryID), body: .json(.init(url: url))).ok.body.json, to: ArticlePreview.self)

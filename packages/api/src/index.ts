@@ -436,6 +436,18 @@ export const accountDeletionStatusSchema = z
     })
     .strict()
 
+export const ebookImportSuggestionSchema = z
+    .object({
+        requestId: resourceID,
+        field: z.enum(['title', 'folder']),
+        filename: z.string().min(1).max(512),
+        title: z.string().max(512),
+        author: z.string().max(512),
+        language: z.string().max(64),
+        sample: z.string().max(8000),
+    })
+    .strict()
+
 export const mobileContract = {
     homePins: oc
         .route({ method: 'GET', path: '/browser/home-pins' })
@@ -574,6 +586,10 @@ export const mobileContract = {
         .route({ method: 'POST', path: '/browser/rules' })
         .input(z.object({ domain: z.string().min(1).max(253), libraryId: resourceID.nullish() }))
         .output(z.object({ saved: z.boolean() })),
+    suggestEbookImport: oc
+        .route({ method: 'POST', path: '/ebooks/import-suggestion' })
+        .input(ebookImportSuggestionSchema)
+        .output(z.object({ value: z.string().max(512).nullable() }).strict()),
     extractArticle: oc
         .route({ method: 'POST', path: '/libraries/{libraryId}/article-preview' })
         .input(z.object({ libraryId: resourceID, url: z.url().max(2048) }))

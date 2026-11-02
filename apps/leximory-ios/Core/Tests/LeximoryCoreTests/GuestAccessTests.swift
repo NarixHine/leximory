@@ -37,7 +37,7 @@ struct GuestAccessTests {
         }
         #expect(definition?.definition == "河岸")
         #expect(await transport.identities == [input.requestId, input.requestId])
-        #expect(credential.allowance.limit == 5)
+        #expect(credential.allowance.limit == 20)
     }
 
     @Test func savedWordAndDeletionUseTheirGeneratedAuthenticatedContracts() async throws {
@@ -97,7 +97,7 @@ struct GuestAccessTests {
             #expect(baseURL.path == "/api/mobile/v1")
             if request.path == "/guest/session" {
                 #expect(request.headerFields[.authorization] == nil)
-                return (.init(status: .ok), HTTPBody(#"{"token":"guest-token","expiresAt":"2099-11-01T00:00:00Z","allowance":{"used":0,"limit":5,"resetsAt":"2099-11-01T00:00:00Z"}}"#))
+                return (.init(status: .ok), HTTPBody(#"{"token":"guest-token","expiresAt":"2099-11-01T00:00:00Z","allowance":{"used":0,"limit":20,"resetsAt":"2099-11-01T00:00:00Z"}}"#))
             }
             #expect(request.headerFields[.authorization] == "Bearer guest-token")
             let input = try JSONDecoder().decode(GuestDefinitionInput.self, from: await Data(collecting: #require(body), upTo: 32768))

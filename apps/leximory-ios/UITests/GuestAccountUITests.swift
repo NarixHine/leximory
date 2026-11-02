@@ -1,6 +1,34 @@
 import XCTest
 
 final class GuestAccountUITests: XCTestCase {
+    @MainActor func testFirstLookupAsksBeforeGeneratingDefinition() throws {
+        continueAfterFailure = false
+        let page = try BrowserPageServer(extraArticleContent: """
+            <style>main>p{display:none}#guest-selection{display:block;font-size:28px;line-height:1.7}</style>
+            <p id="guest-selection">leaves turn gold beside the river.</p>
+            """)
+        defer { page.listener.cancel() }
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--guest-home-preview", "-guest.contextual-ai-consent.v1", "NO"]
+        app.launch()
+        let address = app.buttons["browser-address"]
+        XCTAssertTrue(address.waitForExistence(timeout: 10)); address.tap()
+        let input = app.textFields["browser-address-input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5)); input.typeText(page.url + "\n")
+        let sentence = app.webViews.staticTexts["leaves turn gold beside the river."].firstMatch
+        XCTAssertTrue(sentence.waitForExistence(timeout: 15))
+        sentence.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.2)).press(forDuration: 1)
+        let lookup = app.buttons["reading-selection-猫忆查"]
+        XCTAssertTrue(lookup.waitForExistence(timeout: 5)); lookup.tap()
+        let consent = app.buttons["允许并查词"]
+        XCTAssertTrue(consent.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "20 次猫忆查")).firstMatch.exists)
+        XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Vercel")).firstMatch.exists)
+        XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "不会上传")).firstMatch.exists)
+        XCTAssertFalse(app.buttons["收藏词汇"].exists)
+    }
+
     @MainActor func testContextualEntryKeepsFormReachableWithKeyboardAndLargeText() {
         continueAfterFailure = false
         let app = XCUIApplication()

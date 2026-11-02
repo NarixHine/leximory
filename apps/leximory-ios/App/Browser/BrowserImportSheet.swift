@@ -51,23 +51,37 @@ struct BrowserImportSheet: View {
     @State private var error: String?
     @State private var path: [ImportStep] = []
     @State private var requestID = UUID().uuidString
-    @State private var editingTitle = false
+    @State private var ebookDraft: EbookImportDraft
+    @FocusState private var titleFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     private var draft: BrowserArticleDraft? { if case .article(let draft) = request.source { draft } else { nil } }
     private var file: BrowserEbookFile? {
         switch request.source { case .ebook(let file), .pdf(let file): file; case .article: nil }
     }
-    private var folder: CatalogLibrary? { workspace.writableFolders.first { $0.id == folderID } }
+    private var selectedFolderID: String? { file == nil ? folderID : ebookDraft.folderID }
+    private var importTitle: String { file == nil ? title : ebookDraft.title }
+    private var folder: CatalogLibrary? { workspace.writableFolders.first { $0.id == selectedFolderID } }
+    private var folderSelection: Binding<String?> {
+        Binding(get: { selectedFolderID }, set: { value in
+            if file == nil { folderID = value }
+            else { ebookDraft.takeFolder(); ebookDraft.folderID = value }
+        })
+    }
     private var limit: Int? {
         guard let folder else { return nil }
         switch folder.language { case "en", "fr": return 30000; case "zh": return 5000; default: return 10000 }
     }
     private var contentTooLong: Bool { limit.map { content.utf16.count > $0 } ?? false }
     private var valid: Bool {
-        folder != nil && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && title.count <= 512 &&
+        folder != nil && !importTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && importTitle.count <= 512 &&
         (file != nil || !fullText || !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !contentTooLong)
     }
     init(request: BrowserImportRequest, workspace: BrowserWorkspaceModel, imported: @escaping (CatalogText, Bool) -> Void) {
         self.request = request; self.workspace = workspace; self.imported = imported
+        let filename: String
+        switch request.source { case .ebook(let file), .pdf(let file): filename = file.name; case .article: filename = "" }
+        _ebookDraft = State(initialValue: EbookImportDraft(filename: filename))
         switch request.source {
         case .article(let draft): _title = State(initialValue: draft.title); _content = State(initialValue: draft.content)
         case .ebook(let file), .pdf(let file): _title = State(initialValue: (file.name as NSString).deletingPathExtension); _content = State(initialValue: "")
@@ -88,18 +102,36 @@ struct BrowserImportSheet: View {
                 }
                 Section {
                     if let file {
-                        Label(file.name, systemImage: "book.closed").foregroundStyle(.secondary)
-                        if editingTitle { TextField("标题", text: $title).tint(.blue) }
-                        else { Button("编辑标题", systemImage: "pencil") { editingTitle = true } }
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("书名").interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
+                            TextField("书名", text: Binding(get: { ebookDraft.title }, set: { value in
+                                ebookDraft.takeTitle(); ebookDraft.title = value
+                            }), axis: .vertical)
+                                .editorialFont(17, relativeTo: .body, language: folder?.preview.language ?? "English")
+                                .multilineTextAlignment(.leading).lineLimit(1...6).tint(.blue)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .focused($titleFocused).id(ebookDraft.titleRevision).transition(.opacity)
+                                .accessibilityIdentifier("ebook-import-title")
+                            Text(file.name).interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
+                                .lineLimit(2).accessibilityIdentifier("ebook-import-filename")
+                        }.padding(.vertical, 4)
                     } else { TextField("标题", text: $title, axis: .vertical).tint(.blue).lineLimit(1...3) }
-                    Button { path.append(.folder) } label: {
+                    Button {
+                        if file != nil { ebookDraft.takeFolder() }
+                        path.append(.folder)
+                    } label: {
                         HStack {
-                            Label("文件夹", systemImage: "folder")
-                            Spacer()
-                            if let folder {
-                                Text(folder.name).editorialFont(17, relativeTo: .body, language: folder.preview.language).foregroundStyle(.secondary).lineLimit(1)
+                            if dynamicTypeSize.isAccessibilitySize {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Label("文件夹", systemImage: "folder")
+                                    destinationName
+                                }
+                                Spacer()
                             } else {
-                                Text("选择文件夹").foregroundStyle(.secondary)
+                                Label("文件夹", systemImage: "folder")
+                                Spacer()
+                                destinationName
                             }
                             Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
                         }
@@ -133,12 +165,28 @@ struct BrowserImportSheet: View {
             }
             .navigationDestination(for: ImportStep.self) { step in
                 switch step {
-                case .folder: BrowserFolderPicker(workspace: workspace, selection: $folderID)
+                case .folder: BrowserFolderPicker(workspace: workspace, selection: folderSelection)
                 case .content:
                     ArticleEditorPage(content: $content, language: folder?.preview.language ?? "English")
                 }
             }
-            .task {
+            .interactiveDismissDisabled(busy)
+        }
+            .onChange(of: titleFocused) { if titleFocused { ebookDraft.takeTitle() } }
+            .onDisappear { ebookDraft.stop() }
+            .task(id: request.id) {
+                if let file {
+                    let metadata = await EbookImportMetadata.read(file)
+                    guard !Task.isCancelled else { return }
+                    await ebookDraft.fill(metadata: metadata, reduceMotion: reduceMotion) { field in
+                        let value = try await workspace.client.suggestEbookImport(requestID: request.id.uuidString, field: field,
+                            filename: file.name, title: metadata.title, author: metadata.author, language: metadata.language,
+                            sample: metadata.sample)
+                        if field == "folder", !workspace.writableFolders.contains(where: { $0.id == value && !$0.archived }) { return nil }
+                        return value
+                    }
+                    return
+                }
                 if let id = draft?.sourceFolderID, workspace.writableFolders.contains(where: { $0.id == id }) { folderID = id }
                 if let draft, let domain = draft.url.host {
                     do {
@@ -152,8 +200,15 @@ struct BrowserImportSheet: View {
                 }
                 if folderID == nil, workspace.writableFolders.count == 1 { folderID = workspace.writableFolders.first?.id }
             }
-            .interactiveDismissDisabled(busy)
-        }.leximorySheetStyle().presentationDetents([.large])
+        .leximorySheetStyle().presentationDetents([.large])
+    }
+    private var destinationName: some View {
+        Group {
+            if let folder {
+                Text(folder.name).id(folder.id).transition(.opacity)
+                    .editorialFont(17, relativeTo: .body, language: folder.preview.language)
+            } else { Text("选择文件夹") }
+        }.foregroundStyle(.secondary).lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
     }
     private func sectionHeading(_ title: String) -> some View {
         LeximorySectionHeader(title)
@@ -163,6 +218,8 @@ struct BrowserImportSheet: View {
     }
     private func submit() async {
         guard valid, let folder, !busy, !uncertain else { return }
+        if file != nil { ebookDraft.stop() }
+        titleFocused = false
         busy = true; error = nil
         defer { busy = false }
         var importStarted = false
@@ -173,7 +230,7 @@ struct BrowserImportSheet: View {
             }
             importStarted = true
             let text: CatalogText
-            if let file { text = try await workspace.client.uploadEbook(libraryID: folder.id, title: title, filename: file.name, data: file.data) }
+            if let file { text = try await workspace.client.uploadEbook(libraryID: folder.id, title: importTitle.trimmingCharacters(in: .whitespacesAndNewlines), filename: file.name, data: file.data) }
             else if fullText {
                 text = try await workspace.client.importArticle(libraryID: folder.id, title: title, content: content, annotate: true, onlyComments: false, generateTitle: false, requestID: requestID)
             } else if let draft {

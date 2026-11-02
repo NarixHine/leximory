@@ -33,8 +33,8 @@ struct AccountEntryContext: Identifiable, Sendable {
         case .words: "登录后即可在云端同步生词并定期复盘噢！"
         case .cloudLibrary: "登录后查看你的文件夹和已保存内容。"
         case .review: "登录后，复习你收藏的生词。"
-        case .service: "登录后使用你的账号额度。"
-        case .account: "登录后继续阅读，并查看你的学习记录。"
+        case .service: "登录后继续使用猫忆查。"
+        case .account: "收藏生词，记录学习进度。"
         }
     }
     var action: String { purpose == .words ? "登录并保存" : "登录并继续" }
@@ -142,11 +142,11 @@ struct SignInView: View {
     }
     private var benefit: String {
         switch mode {
-        case .signIn: context?.benefit ?? "登录后继续阅读，并查看你的学习记录。"
+        case .signIn: context?.benefit ?? "收藏生词，记录学习进度。"
         case .register: "创建账号，收藏生词并记录你的学习。"
         case .confirmation: "打开确认邮件中的链接，验证邮箱后继续。"
         case .recovery: "输入账号邮箱，我们会发送重设密码的链接。"
-        case .recoverySent: "如该邮箱关联了账号，你会收到重设密码的邮件。"
+        case .recoverySent: "请查看邮箱，按邮件中的提示重设密码。"
         case .newPassword: "为你的账号设置新的登录密码。"
         }
     }
@@ -382,9 +382,7 @@ private struct AccountEntryPrivacyView: View {
                 Text("账号与学习内容").interfaceFont(17, semibold: true)
                 Text("登录后，Leximory 会保存你的账号资料、收藏词汇、书签与学习记录。你可以在账号中发起删除。")
                 Text("AI 辅助学习").interfaceFont(17, semibold: true)
-                Text("使用 AI 释义时，所选词语及相关上下文会发送到服务端处理。完整电子书不会因查词而自动上传。")
-                Text("本机阅读").interfaceFont(17, semibold: true)
-                Text("无需登录即可浏览网页和打开电子书。登录不会自动上传你的浏览记录或电子书。")
+                Text("猫忆查会与 Google 和 DeepSeek 共享所选词语及附近句子，用于识别语言和生成释义。")
                 Link("联系隐私支持", destination: URL(string: "mailto:hi@leximory.com")!).frame(minHeight: 44)
             }
             .interfaceFont(17).foregroundStyle(.primary).lineSpacing(4)

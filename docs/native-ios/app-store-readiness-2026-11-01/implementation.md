@@ -5,11 +5,19 @@ The user committed and deployed the implementation at `32dbbfcbaf84fe67146588b85
 ## Implemented
 
 - Signed-out launch opens the existing Home. Websites and EPUB/PDF files work through existing components. Guest books remain in memory. Guest saving, a guest library, persistent reading marks, and account migration are absent.
-- Lazy guest AI credentials use Keychain and the existing Redis/AI stack. Five generated definitions are available per 30-day credential period. Request identities, reservations, recovery and cache hits are isolated from account quotas. Vercel global spending controls remain owned by the user.
+- Lazy guest AI credentials use Keychain and the existing Redis/AI stack. Twenty generated definitions are available per 30-day credential period. Request identities, reservations, recovery and cache hits are isolated from account quotas. Vercel global spending controls remain owned by the user.
 - 收藏词汇 opens optional authentication and saves one word only after authentication. Registration, confirmation and password recovery use the installed Auth SDK. Source metadata is captured when lookup begins. The headword is the annotation's `lemma`; selected occurrence, optional excerpt and title remain separate. No guessed short translation is displayed.
 - The account screen uses the requested title/caption, actual watercolor assets, separate light/dark variants, and the slate-blue dark palette. Existing annotation popovers and trays remain the UI used for reading.
 - Account deletion verifies the intended account and recent authentication, preserves a recoverable receipt, freezes the account and queues Inngest cleanup. It inventories owned storage before metadata removal, removes associated records and files, unlinks retained transaction records, and removes Auth last. Native cleanup uses throwing purges. Status works after sign-out. A fresh-authentication request preserves the valid session; account-scoped clients verify the identity of acquired/refreshed credentials.
 - The bundled monochrome font now explicitly supports emoji variation selectors. Its existing glyph outlines and order are identical. The bundler repeats this asset fix, so cover symbols such as `☀️` use Leximory's artwork instead of falling back to Apple Color Emoji.
+
+## Copy and allowance follow-up
+
+The first guest lookup now says “免费体验 20 次猫忆查。允许将所选词句交由第三方 AI 生成释义吗？” and keeps the existing permission button. Provider routing, upload reassurances and an extra privacy sheet are absent from this prompt. The existing privacy page identifies the AI providers. The server allowance is 20 definitions per credential period; existing credentials use the new limit after backend deployment.
+
+The account copy now describes learning actions rather than quota plumbing or implying that reading requires login. Recovery instructions are direct. Account deletion omits device-cleanup terminology, repeated irreversible-action warnings and the manual status refresh control; the existing automatic updates continue. Subscription cancellation remains an explicit user concern.
+
+Verification passed: 334 mobile tests, six focused Core tests, eight focused native checks including the first lookup consent flow, and type checks. The final app built and launched with empty launch arguments. Testing stopped at the user's request. All Vercel operations remain human-owned.
 
 ## Pin sync follow-up
 

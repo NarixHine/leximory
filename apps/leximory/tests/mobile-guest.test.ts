@@ -82,11 +82,11 @@ function fixture(t: TestContext) {
     }
 }
 
-test('guest enrollment returns a scoped random credential, no account and five lookups for thirty days', async (t) => {
+test('guest enrollment returns a scoped random credential, no account and twenty lookups for thirty days', async (t) => {
     const f = fixture(t)
     const session = await f.session()
     assert.equal(session.token.length, 43)
-    assert.equal(session.allowance.limit, 5)
+    assert.equal(session.allowance.limit, 20)
     assert.equal(session.allowance.used, 0)
     assert.equal(session.expiresAt, '2026-12-01T01:00:00.000Z')
     assert.equal(session.allowance.resetsAt, session.expiresAt)
@@ -129,10 +129,10 @@ test('real guest routes generate once for concurrent retries, replay results and
     )
 })
 
-test('guest quota is atomic, does not reset at midnight, and rejects a sixth new lookup before the model', async (t) => {
+test('guest quota is atomic, does not reset at midnight, and rejects a twenty-first new lookup before the model', async (t) => {
     const f = fixture(t)
     const { token } = await f.session()
-    for (let index = 0; index < 5; index++) {
+    for (let index = 0; index < 20; index++) {
         const response = await f.handler(
             request('/guest/definitions', token, { ...selection, requestId: randomUUID() }),
         )
@@ -143,7 +143,7 @@ test('guest quota is atomic, does not reset at midnight, and rejects a sixth new
         (await f.handler(request('/guest/definitions', token, { ...selection, requestId: randomUUID() }))).status,
         429,
     )
-    assert.equal(f.calls(), 5)
+    assert.equal(f.calls(), 20)
 })
 
 test('provider failure returns its credit once and repeated recovery cannot refund another request', async (t) => {

@@ -340,7 +340,7 @@ struct DefinitionView: View {
                                 saveFailure
                             case .generating:
                                 if requiresGuestConsent {
-                                    Text("无需登录可免费体验 5 次猫忆查。所选词语及附近句子会经 Vercel 发送至 Google 识别语言，并由 DeepSeek 生成释义。不会上传整本电子书。")
+                                    Text("免费体验 20 次猫忆查。允许将所选词句交由第三方 AI 生成释义吗？")
                                         .interfaceFont(15).foregroundStyle(.secondary)
                                     Button("允许并查词") { guestAIConsent = true }
                                         .interfaceFont(17).buttonStyle(.borderedProminent).tint(LeximoryPalette.ink)
