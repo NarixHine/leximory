@@ -401,6 +401,10 @@ struct BrowserWorkspaceView: View {
                     more
                 }
             }
+        }.overlay(alignment: .topTrailing) {
+            if !editingAddress {
+                annotationBadge.allowsHitTesting(false).accessibilityHidden(true)
+            }
         }.frame(maxWidth: 720).tint(.primary)
             .animation(motion, value: editingAddress).animation(motion, value: workspace.current.id)
     }
@@ -491,7 +495,7 @@ struct BrowserWorkspaceView: View {
                     }
                         .accessibilityIdentifier("browser-account")
                 }
-                if guest == nil { Button("文章注释队列", systemImage: "sparkles") { activitySheet = true } }
+                if guest == nil { Button(annotationQueueTitle, systemImage: "sparkles") { activitySheet = true } }
                 if let session, guest != nil, session.deletion.accepted {
                     Button("账号删除状态", systemImage: "person.crop.circle.badge.minus") { session.deletion.presented = true }
                 }
@@ -520,14 +524,23 @@ struct BrowserWorkspaceView: View {
             .accessibilityValue(workspace.readyCount > 0 ? "\(workspace.readyCount) 篇预注释已完成" : workspace.hasPending ? "正在预注释" : "")
     }
     private var moreLabel: some View {
-            Image(systemName: "ellipsis").font(.system(size: 17, weight: .medium)).frame(width: 44, height: 48).contentShape(Circle())
-                .glassEffect(chromeGlass, in: .circle)
-                .overlay(alignment: .topTrailing) {
-                    if workspace.readyCount > 0 {
-                        Text(workspace.readyCount > 99 ? "99+" : "\(workspace.readyCount)").interfaceFont(11, semibold: true, style: .caption2)
-                            .foregroundStyle(.white).padding(.horizontal, 5).frame(minWidth: 18, minHeight: 18).background(.red, in: .capsule)
-                    } else if workspace.hasPending { Circle().fill(.red).frame(width: 8, height: 8).padding(3) }
-                }
+        Image(systemName: "ellipsis").font(.system(size: 17, weight: .medium)).frame(width: 44, height: 48).contentShape(Circle())
+            .glassEffect(chromeGlass, in: .circle)
+    }
+    private var annotationQueueTitle: String {
+        let pendingCount = workspace.activities.filter { $0.state == .pending }.count
+        guard let progress = annotationQueueProgressLabel(readyCount: workspace.readyCount, pendingCount: pendingCount) else {
+            return "文章注释队列"
+        }
+        return "文章注释队列 (\(progress))"
+    }
+    @ViewBuilder private var annotationBadge: some View {
+        if workspace.readyCount > 0 {
+            Text(workspace.readyCount > 99 ? "99+" : "\(workspace.readyCount)").interfaceFont(11, semibold: true, style: .caption2)
+                .foregroundStyle(.white).padding(.horizontal, 5).frame(minWidth: 18, minHeight: 18).background(.red, in: .capsule)
+        } else if workspace.hasPending {
+            Circle().fill(.red).frame(width: 8, height: 8).padding(3)
+        }
     }
     private func chromeButton(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) { Image(systemName: symbol).font(.system(size: 17, weight: .medium)).frame(width: 44, height: 48).contentShape(Circle()).glassEffect(chromeGlass, in: .circle).glassEffectID(title, in: chromeNamespace) }
