@@ -1239,7 +1239,7 @@ private final class SelectionGlassButton: UIButton {
 
     private func updateHighlight() {
         let active = isEnabled && (isHighlighted || pointerInside)
-        let alpha: CGFloat = active ? 1 : 0
+        let alpha: CGFloat = active ? 0.6 : 0
         guard highlightSurface.alpha != alpha else { return }
         if active || !isEnabled || UIAccessibility.isReduceMotionEnabled {
             highlightSurface.layer.removeAllAnimations()

@@ -42,12 +42,17 @@ import UIKit
             }
         }
         await gate.started()
+        #expect(draft.titleAutofill == .filling)
+        #expect(draft.folderAutofill == .filling)
         if field == "title" { draft.takeTitle(); draft.title = "My title" }
         else { draft.takeFolder(); draft.folderID = "my-folder" }
+        #expect(field == "title" ? draft.titleAutofill == nil : draft.folderAutofill == nil)
         gate.finish()
         await filling.value
         #expect(draft.title == (field == "title" ? "My title" : "Suggested title"))
         #expect(draft.folderID == (field == "folder" ? "my-folder" : "suggested-folder"))
+        #expect(draft.titleAutofill == (field == "title" ? nil : .filled))
+        #expect(draft.folderAutofill == (field == "folder" ? nil : .filled))
     }
     @Test func dismissalAndSubmissionPreventAllLateAutofill() async {
         let draft = EbookImportDraft(filename: "Original.epub")
@@ -58,6 +63,8 @@ import UIKit
         await filling.value
         #expect(draft.title == "Original")
         #expect(draft.folderID == nil)
+        #expect(draft.titleAutofill == nil)
+        #expect(draft.folderAutofill == nil)
     }
     @Test func typingBeforeMetadataArrivesKeepsTheDraft() async {
         let draft = EbookImportDraft(filename: "Original.epub")
@@ -67,6 +74,14 @@ import UIKit
         }
         #expect(draft.title == "My title")
         #expect(draft.folderID == "suggested-folder")
+    }
+    @Test func unavailableSuggestionsKeepTheFilenameAndManualFolderChoice() async {
+        let draft = EbookImportDraft(filename: "My_book.epub")
+        await draft.fill(metadata: .init(), reduceMotion: true) { _ in throw URLError(.notConnectedToInternet) }
+        #expect(draft.title == "My book")
+        #expect(draft.titleAutofill == .filled)
+        #expect(draft.folderID == nil)
+        #expect(draft.folderAutofill == nil)
     }
 }
 
@@ -113,26 +128,51 @@ import UIKit
         window.rootViewController = controller; window.makeKeyAndVisible()
         defer { window.isHidden = true; window.rootViewController = nil }
         for _ in 0..<400 {
+            if await transport.requested == 2 { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(await transport.requested == 2)
+        try await Task.sleep(for: .milliseconds(250))
+        capture("loading")
+        await transport.releaseSuggestions()
+        for _ in 0..<400 {
             if await transport.completed == 2 { break }
             try await Task.sleep(for: .milliseconds(50))
         }
         #expect(await transport.completed == 2)
         try await Task.sleep(for: .milliseconds(250))
-        controller.view.layoutIfNeeded()
-        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
-        let url = URL(filePath: "/private/tmp/leximory-ebook-import-\(scenario).png")
-        try #require(image.pngData()).write(to: url)
-        Attachment.record(try #require(image.pngData()), named: "ebook-import-\(scenario).png")
+        capture("filled")
+
+        func capture(_ phase: String) {
+            controller.view.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in window.drawHierarchy(in: window.bounds, afterScreenUpdates: true) }
+            let name = "ebook-import-\(scenario)-\(phase).png"
+            if let data = image.pngData() {
+                do { try data.write(to: URL(filePath: "/private/tmp/leximory-\(name)")) }
+                catch { Issue.record(error) }
+                Attachment.record(data, named: name)
+            } else { Issue.record("Could not render ebook import") }
+        }
     }
 }
 
 private actor EbookImportTestTransport: ClientTransport {
+    private(set) var requested = 0
     private(set) var completed = 0
+    private var pending: [CheckedContinuation<Void, Never>] = []
+    private var released = false
+    func releaseSuggestions() {
+        released = true
+        pending.forEach { $0.resume() }
+        pending.removeAll()
+    }
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
         guard operationID == "suggestEbookImport", let body else { throw URLError(.unsupportedURL) }
         let data = try await Data(collecting: body, upTo: 64000)
         let input = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         let value = input?["field"] as? String == "folder" ? "novels" : "A River Journey: Notes from the Valley — M. Field"
+        requested += 1
+        if !released { await withCheckedContinuation { pending.append($0) } }
         completed += 1
         return (.init(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(try JSONSerialization.data(withJSONObject: ["value": value])))
     }

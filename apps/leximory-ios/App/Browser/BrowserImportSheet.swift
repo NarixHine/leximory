@@ -103,8 +103,11 @@ struct BrowserImportSheet: View {
                 Section {
                     if let file {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("书名").interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
-                            TextField("书名", text: Binding(get: { ebookDraft.title }, set: { value in
+                            HStack(spacing: 6) {
+                                Text("名称").interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
+                                EbookAutofillCue(state: ebookDraft.titleAutofill)
+                            }
+                            TextField("名称", text: Binding(get: { ebookDraft.title }, set: { value in
                                 ebookDraft.takeTitle(); ebookDraft.title = value
                             }), axis: .vertical)
                                 .editorialFont(17, relativeTo: .body, language: folder?.preview.language ?? "English")
@@ -112,6 +115,7 @@ struct BrowserImportSheet: View {
                                 .fixedSize(horizontal: false, vertical: true)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .focused($titleFocused).id(ebookDraft.titleRevision).transition(.opacity)
+                                .accessibilityHint("可随时修改名称")
                                 .accessibilityIdentifier("ebook-import-title")
                             Text(file.name).interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
                                 .lineLimit(2).accessibilityIdentifier("ebook-import-filename")
@@ -124,18 +128,19 @@ struct BrowserImportSheet: View {
                         HStack {
                             if dynamicTypeSize.isAccessibilitySize {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Label("文件夹", systemImage: "folder")
+                                    destinationLabel
                                     destinationName
                                 }
                                 Spacer()
                             } else {
-                                Label("文件夹", systemImage: "folder")
+                                destinationLabel
                                 Spacer()
                                 destinationName
                             }
                             Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
                         }
                     }.foregroundStyle(.primary)
+                        .accessibilityHint(file != nil && ebookDraft.folderAutofill != nil ? "可随时选择其他文件夹" : "选择文件夹")
                     if draft != nil { Toggle("本网站总是存于此文件夹", isOn: $remember).disabled(folder == nil) }
                 }
                 if file == nil && fullText {
@@ -202,13 +207,20 @@ struct BrowserImportSheet: View {
             }
         .leximorySheetStyle().presentationDetents([.large])
     }
+    private var destinationLabel: some View {
+        HStack(spacing: 6) {
+            Label("文件夹", systemImage: "folder")
+            if file != nil { EbookAutofillCue(state: ebookDraft.folderAutofill) }
+        }
+    }
     private var destinationName: some View {
         Group {
             if let folder {
                 Text(folder.name).id(folder.id).transition(.opacity)
                     .editorialFont(17, relativeTo: .body, language: folder.preview.language)
-            } else { Text("选择文件夹") }
-        }.foregroundStyle(.secondary).lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                    .foregroundStyle(.primary)
+            } else { Text("选择文件夹").foregroundStyle(.secondary) }
+        }.lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
     }
     private func sectionHeading(_ title: String) -> some View {
         LeximorySectionHeader(title)
