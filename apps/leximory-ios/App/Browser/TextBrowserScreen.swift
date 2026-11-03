@@ -465,11 +465,19 @@ struct BrowserLoadFailureView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.dynamicTypeSize) private var typeSize
 
+    private var heading: Text {
+        if let host = failure.url?.host {
+            Text("未能打开 \(Text(host).fontWeight(.regular))")
+        } else {
+            Text("网页未能打开")
+        }
+    }
+
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
                 LeximoryUnavailableView(
-                    failure.url?.host.map { "未能打开 \($0)" } ?? "网页未能打开",
+                    heading,
                     systemImage: "globe", message: failure.message
                 ) {
                     VStack(spacing: 8) {

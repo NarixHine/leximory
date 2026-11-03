@@ -1015,6 +1015,7 @@ private extension UIFont {
         ])
         button.backgroundColor = iconOnly ? UIColor.tertiaryLabel.withAlphaComponent(0.08) : .clear
         button.layer.cornerRadius = 22
+        button.configureHighlight(primary: primary, iconOnly: iconOnly, below: content)
         content.alpha = button.isEnabled ? 1 : 0.3
         button.isAccessibilityElement = true
         button.accessibilityIdentifier = (element as? UIAction)?.identifier == ReadingSelectionMenu.searchIdentifier
@@ -1198,11 +1199,54 @@ private enum ReadingMenuMotion {
 }
 
 private final class SelectionGlassButton: UIButton {
+    private let highlightSurface = UIView()
+    private var highlightInsets = UIEdgeInsets.zero
+    private var pointerInside = false
+
+    func configureHighlight(primary: Bool, iconOnly: Bool, below content: UIView) {
+        highlightInsets = iconOnly ? .zero : UIEdgeInsets(top: 4, left: primary ? 0 : 2, bottom: 4, right: primary ? 0 : 2)
+        highlightSurface.isUserInteractionEnabled = false
+        highlightSurface.backgroundColor = primary ? UIColor.white.withAlphaComponent(0.14) : .tertiarySystemFill
+        highlightSurface.alpha = 0
+        highlightSurface.layer.cornerCurve = .continuous
+        insertSubview(highlightSurface, belowSubview: content)
+        let hover = UIHoverGestureRecognizer(target: self, action: #selector(hoverChanged(_:)))
+        hover.cancelsTouchesInView = false
+        addGestureRecognizer(hover)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        highlightSurface.frame = bounds.inset(by: highlightInsets)
+        highlightSurface.layer.cornerRadius = highlightSurface.bounds.height / 2
+    }
+
     override var isHighlighted: Bool {
+        didSet { updateHighlight() }
+    }
+
+    override var isEnabled: Bool {
         didSet {
-            guard !UIAccessibility.isReduceMotionEnabled else { return }
-            UIView.animate(withDuration: 0.12, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
-                self.transform = self.isHighlighted ? CGAffineTransform(scaleX: 0.96, y: 0.96) : .identity
+            if !isEnabled { pointerInside = false }
+            updateHighlight()
+        }
+    }
+
+    @objc private func hoverChanged(_ recognizer: UIHoverGestureRecognizer) {
+        pointerInside = recognizer.state == .began || recognizer.state == .changed
+        updateHighlight()
+    }
+
+    private func updateHighlight() {
+        let active = isEnabled && (isHighlighted || pointerInside)
+        let alpha: CGFloat = active ? 1 : 0
+        guard highlightSurface.alpha != alpha else { return }
+        if active || !isEnabled || UIAccessibility.isReduceMotionEnabled {
+            highlightSurface.layer.removeAllAnimations()
+            highlightSurface.alpha = alpha
+        } else {
+            UIView.animate(withDuration: 0.15, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction, .curveEaseOut]) {
+                self.highlightSurface.alpha = alpha
             }
         }
     }

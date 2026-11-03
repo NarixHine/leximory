@@ -1,12 +1,16 @@
 import SwiftUI
 
 struct LeximoryUnavailableView<Actions: View>: View {
-    let title: String
+    let title: Text
     let systemImage: String
     let message: String?
     let actions: Actions
 
     init(_ title: String, systemImage: String, message: String? = nil, @ViewBuilder actions: () -> Actions) {
+        self.init(Text(title), systemImage: systemImage, message: message, actions: actions)
+    }
+
+    init(_ title: Text, systemImage: String, message: String? = nil, @ViewBuilder actions: () -> Actions) {
         self.title = title
         self.systemImage = systemImage
         self.message = message
@@ -16,7 +20,7 @@ struct LeximoryUnavailableView<Actions: View>: View {
     var body: some View {
         ContentUnavailableView {
             Label {
-                Text(title).editorialFont(24, relativeTo: .title2)
+                title.editorialFont(24, relativeTo: .title2)
                     .foregroundStyle(.primary)
             } icon: {
                 Image(systemName: systemImage)
