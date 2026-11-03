@@ -3,6 +3,40 @@ import WebKit
 import QuartzCore
 import LeximoryCore
 
+@MainActor struct BrowserLoadFailure {
+    let message: String
+    let url: URL?
+
+    init(message: String, url: URL? = nil) {
+        self.message = message
+        self.url = url
+    }
+
+    init(_ error: Error, fallbackURL: URL?) {
+        let failure = error as NSError
+        let failedURL = failure.userInfo[NSURLErrorFailingURLErrorKey] as? URL
+        url = (failedURL ?? fallbackURL).flatMap { TextBrowserModel.address($0.absoluteString) }
+        switch (failure.domain, failure.code) {
+        case (NSURLErrorDomain, NSURLErrorNotConnectedToInternet),
+             (NSURLErrorDomain, NSURLErrorNetworkConnectionLost):
+            message = "请检查网络连接后再试。"
+        case (NSURLErrorDomain, NSURLErrorTimedOut):
+            message = "网站响应时间过长，请稍后再试。"
+        case (NSURLErrorDomain, NSURLErrorCannotFindHost),
+             (NSURLErrorDomain, NSURLErrorDNSLookupFailed):
+            message = "未能找到这个网站，请检查网址是否正确。"
+        case (NSURLErrorDomain, NSURLErrorSecureConnectionFailed),
+             (NSURLErrorDomain, NSURLErrorServerCertificateHasBadDate),
+             (NSURLErrorDomain, NSURLErrorServerCertificateUntrusted),
+             (NSURLErrorDomain, NSURLErrorServerCertificateHasUnknownRoot),
+             (NSURLErrorDomain, NSURLErrorServerCertificateNotYetValid):
+            message = "无法与这个网站建立安全连接。"
+        default:
+            message = "这个网页暂时无法载入，请稍后再试。"
+        }
+    }
+}
+
 enum BrowserSearchEngine: String, CaseIterable, Identifiable {
     case bing, google, duckDuckGo, baidu
     static func selected(in defaults: UserDefaults = .standard) -> Self {
@@ -172,7 +206,12 @@ final class BrowserWebView: WKWebView {
     private(set) var canGoForward = false
     private(set) var navigationID = UUID()
     private(set) var pageColor: UIColor = .systemBackground
-    var error: String?
+    var error: BrowserLoadFailure?
+    @ObservationIgnored private var requestedURL: URL?
+    var recoveryURL: URL? {
+        if let error { return error.url }
+        return url
+    }
     @ObservationIgnored var committed: ((WKBackForwardListItem) -> Void)?
     @ObservationIgnored var historyGesture: ((URL) -> Bool)?
     @ObservationIgnored var navigationBegan: (() -> Void)?
@@ -258,20 +297,35 @@ final class BrowserWebView: WKWebView {
     }
     func load(_ url: URL, offset: CGFloat? = nil, animateSearch: Bool = false) {
         error = nil
+        requestedURL = url
         let navigation = web.load(URLRequest(url: url))
+        currentNavigation = navigation
         if let navigation, let offset { pendingScroll = (navigation, offset) }
         else { pendingScroll = nil }
         searchNavigation = animateSearch ? navigation : nil
     }
+    func reload() {
+        if let failedURL = error?.url {
+            load(failedURL)
+        } else {
+            error = nil
+            currentNavigation = web.reload()
+        }
+    }
     var scrollPosition: CGFloat { pendingScroll?.offset ?? web.scrollView.contentOffset.y }
     func go(to item: WKBackForwardListItem, offset: CGFloat) -> WKNavigation? {
+        error = nil
+        requestedURL = item.url
         let navigation = web.go(to: item)
+        currentNavigation = navigation
         pendingScroll = navigation.map { ($0, offset) }
         return navigation
     }
     func restoreScrollPosition(_ offset: CGFloat) {
+        if error?.url != web.url { error = nil }
         if web.isLoading, let currentNavigation { pendingScroll = (currentNavigation, offset) }
         else {
+            requestedURL = web.url
             pendingScroll = nil
             web.scrollView.setContentOffset(CGPoint(x: 0, y: offset), animated: false)
         }
@@ -341,11 +395,12 @@ final class BrowserWebView: WKWebView {
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) { failed(error, navigation: navigation) }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { failed(error, navigation: navigation) }
     private func failed(_ error: any Error, navigation: WKNavigation?) {
+        if let currentNavigation, let navigation, currentNavigation !== navigation { return }
         if pendingScroll?.navigation === navigation { pendingScroll = nil }
-        guard (error as NSError).code != NSURLErrorCancelled else { return }
         let failure = error as NSError
+        guard failure.domain != NSURLErrorDomain || failure.code != NSURLErrorCancelled else { return }
         Logger(subsystem: "com.leximory.reader", category: "browser").error("Navigation failed: host=\(self.web.url?.host ?? "unknown", privacy: .private) domain=\(failure.domain, privacy: .public) code=\(failure.code)")
-        self.error = "网页未能打开，请重试或在 Safari 中打开。"; update()
+        self.error = BrowserLoadFailure(error, fallbackURL: requestedURL ?? web.url); update()
     }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
@@ -371,6 +426,7 @@ final class BrowserWebView: WKWebView {
             }
             pendingReloadSafety = navigationAction.request.httpMethod == "GET"
                 && navigationAction.navigationType != .formSubmitted && navigationAction.navigationType != .formResubmitted
+            requestedURL = destination
         }
         return .allow
     }
@@ -442,6 +498,7 @@ struct BrowserWebContent: UIViewRepresentable {
     var reservesBottomControls = true
     func makeUIView(context: Context) -> BrowserWebView { model.web }
     func updateUIView(_ uiView: BrowserWebView, context: Context) {
+        uiView.accessibilityElementsHidden = model.error != nil
         let bottomInset: CGFloat = reservesBottomControls ? 80 : 0
         if uiView.scrollView.contentInset.bottom != bottomInset {
             uiView.scrollView.contentInset.bottom = bottomInset

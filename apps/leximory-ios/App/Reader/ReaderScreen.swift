@@ -445,7 +445,11 @@ struct DefinitionView: View {
                     .accessibilityLabel("收藏词汇").disabled(!model.isReady)
             } else if let client {
                 Button {
-                    if case .idle = model.saveState { model.requestSave(client: client, source: item.source) }
+                    if case .idle = model.saveState {
+                        var transaction = Transaction()
+                        transaction.disablesAnimations = true
+                        withTransaction(transaction) { model.requestSave(client: client, source: item.source) }
+                    }
                     else if case .saved = model.saveState, saveAcknowledged { withAnimation(actionMotion) { editing = true } }
                 } label: {
                     ZStack {

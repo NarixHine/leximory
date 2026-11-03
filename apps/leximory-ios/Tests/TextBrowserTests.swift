@@ -5,6 +5,71 @@ import SwiftUI
 @testable import Leximory
 
 @MainActor @Suite(.serialized) struct TextBrowserTests {
+    @Test(arguments: [
+        (NSURLErrorNotConnectedToInternet, "请检查网络连接后再试。"),
+        (NSURLErrorTimedOut, "网站响应时间过长，请稍后再试。"),
+        (NSURLErrorCannotFindHost, "未能找到这个网站，请检查网址是否正确。"),
+        (NSURLErrorServerCertificateUntrusted, "无法与这个网站建立安全连接。"),
+        (NSURLErrorCannotConnectToHost, "这个网页暂时无法载入，请稍后再试。")
+    ])
+    func loadFailureExplainsTheProblemWithoutTechnicalDetails(code: Int, message: String) throws {
+        let destination = try #require(URL(string: "https://unavailable.example/article"))
+        let error = NSError(domain: NSURLErrorDomain, code: code, userInfo: [NSURLErrorFailingURLErrorKey: destination])
+        let failure = BrowserLoadFailure(error, fallbackURL: URL(string: "https://previous.example"))
+        #expect(failure.url == destination)
+        #expect(failure.message == message)
+    }
+
+    @Test func retryOpensTheFailedAddressAndRetainsThePreviousDocument() async throws {
+        let model = TextBrowserModel(websiteDataStore: .nonPersistent())
+        defer { model.web.stopLoading() }
+        let navigation = BrowserTestNavigation()
+        model.web.navigationDelegate = navigation
+        try await navigation.load(model.web, html: "<html><body>A page worth keeping</body></html>")
+        let destination = try #require(URL(string: "https://unavailable.example/article"))
+        model.webView(model.web, didFailProvisionalNavigation: nil, withError:
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotConnectToHost,
+                    userInfo: [NSURLErrorFailingURLErrorKey: destination]))
+        #expect(model.recoveryURL == destination)
+        #expect(try await model.web.evaluateJavaScript("document.body.textContent") as? String == "A page worth keeping")
+
+        let retry = BrowserRecoveryNavigation()
+        model.web.navigationDelegate = retry
+        model.reload()
+        for _ in 0..<100 {
+            if retry.requestedURL != nil { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(retry.requestedURL == destination)
+        #expect(model.error == nil)
+
+        model.webView(model.web, didFailProvisionalNavigation: nil, withError:
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut,
+                    userInfo: [NSURLErrorFailingURLErrorKey: destination]))
+        model.restoreScrollPosition(0)
+        #expect(model.error == nil)
+        #expect(model.recoveryURL == model.web.url)
+
+        let currentURL = try #require(model.web.url)
+        model.webView(model.web, didFailProvisionalNavigation: nil, withError:
+            NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut,
+                    userInfo: [NSURLErrorFailingURLErrorKey: currentURL]))
+        model.restoreScrollPosition(0)
+        #expect(model.error?.url == currentURL)
+    }
+
+    @Test func cancelledAndSupersededNavigationsDoNotShowFailure() throws {
+        let model = TextBrowserModel(websiteDataStore: .nonPersistent())
+        defer { model.web.stopLoading() }
+        let first = try #require(model.web.loadHTMLString("<html>First</html>", baseURL: nil))
+        let second = try #require(model.web.loadHTMLString("<html>Second</html>", baseURL: nil))
+        model.webView(model.web, didStartProvisionalNavigation: second)
+        model.webView(model.web, didFailProvisionalNavigation: first, withError: URLError(.timedOut))
+        #expect(model.error == nil)
+        model.webView(model.web, didFailProvisionalNavigation: second, withError: URLError(.cancelled))
+        #expect(model.error == nil)
+    }
+
     @Test func extractedArticleCountsReadableLinkTextRatherThanHiddenAddresses() async throws {
         let model = TextBrowserModel(websiteDataStore: .nonPersistent())
         defer { model.web.stopLoading() }
@@ -357,6 +422,14 @@ import SwiftUI
             contentWorld: .world(name: "LeximoryBrowserSelection"))
         #expect(privateSelection == nil || privateSelection is NSNull)
         #expect(config.userContentController.userScripts.isEmpty)
+    }
+}
+
+@MainActor private final class BrowserRecoveryNavigation: NSObject, WKNavigationDelegate {
+    var requestedURL: URL?
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+        requestedURL = navigationAction.request.url
+        return .cancel
     }
 }
 

@@ -67,25 +67,17 @@ struct TextBrowserScreen: View {
                 .ignoresSafeArea(.container, edges: .bottom)
                 .ignoresSafeArea(.keyboard)
                 .backgroundExtensionEffect(isEnabled: controlsAtTop)
-            if sharedBrowser == nil && browser.url == nil && !browser.loading && !editingAddress {
+                .accessibilityHidden(browser.error != nil)
+                .allowsHitTesting(browser.error == nil)
+            if sharedBrowser == nil && browser.url == nil && browser.error == nil && !browser.loading && !editingAddress {
                 LeximoryUnavailableView("浏览网页", systemImage: "globe", message: "输入网址或关键词，阅读时选中文字即可猫忆查。")
                     .frame(maxHeight: .infinity)
             }
             if let error = browser.error {
-                VStack(spacing: 12) {
-                    Text(error).interfaceFont(16, style: .callout)
-                    Button("重试", systemImage: "arrow.clockwise") {
-                        if browser.url == nil { opened = false; openingAttempt += 1 }
-                        else { browser.web.reload() }
-                    }
-                    .interfaceFont(17, style: .body)
-                    .buttonStyle(.borderedProminent).buttonBorderShape(.capsule).controlSize(.large)
-                    .tint(LeximoryPalette.ink).foregroundStyle(LeximoryPalette.paper)
-                    .accessibilityIdentifier("browser-load-retry")
-                }.padding(20).foregroundStyle(.primary)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 24))
-                    .accessibilityIdentifier("browser-load-error")
-                    .padding(.top, 70)
+                BrowserLoadFailureView(failure: error) {
+                    if error.url == nil { browser.error = nil; opened = false; openingAttempt += 1 }
+                    else { browser.reload() }
+                }
             }
             if editingAddress {
                 Color.black.opacity(0.12).ignoresSafeArea()
@@ -100,7 +92,7 @@ struct TextBrowserScreen: View {
                     .id(definition.id)
             }
         }
-        .background(Color(uiColor: browser.pageColor).ignoresSafeArea())
+        .background(Color(uiColor: browser.error == nil ? browser.pageColor : .systemBackground).ignoresSafeArea())
         .safeAreaInset(edge: .top, spacing: 0) {
             if showsControls && controlsAtTop {
                 controls.padding(.horizontal, 16).padding(.vertical, 8)
@@ -156,10 +148,10 @@ struct TextBrowserScreen: View {
                     let details = try await client.documentDetails(textID: bookmarkID)
                     guard !Task.isCancelled else { return }
                     guard let url = details.text.bookmarkURL.flatMap(TextBrowserModel.address) else {
-                        browser.error = "书签网址无法打开。"; return
+                        browser.error = BrowserLoadFailure(message: "书签网址无法打开，请检查书签地址。"); return
                     }
                     browser.load(url)
-                } catch { browser.error = "书签暂时无法打开，请重试。" }
+                } catch { browser.error = BrowserLoadFailure(message: "书签暂时无法打开，请稍后再试。") }
             } else if restoresSession, let saved = savedPage, let url = TextBrowserModel.address(saved.url) {
                 browser.load(url, offset: saved.offset)
             } else if let homeURL, let url = TextBrowserModel.address(homeURL) {
@@ -211,7 +203,7 @@ struct TextBrowserScreen: View {
                         .glassEffectID("options", in: chrome)
                 } else {
                     Menu {
-                        if let url = browser.url {
+                        if let url = browser.recoveryURL {
                             Section {
                                 ShareLink(item: url) { Label("分享", systemImage: "square.and.arrow.up") }
                                 Button("存为书签", systemImage: "bookmark") { savingBookmark = true }
@@ -229,8 +221,8 @@ struct TextBrowserScreen: View {
                         }
                         Section {
                             Button(browser.loading ? "停止" : "重新加载", systemImage: browser.loading ? "xmark" : "arrow.clockwise") {
-                                if browser.loading { browser.web.stopLoading() } else { browser.web.reload() }
-                            }.disabled(browser.url == nil)
+                                if browser.loading { browser.web.stopLoading() } else { browser.reload() }
+                            }.disabled(browser.recoveryURL == nil)
                             if browser.canGoForward {
                                 Button("前进", systemImage: "chevron.right") { browser.web.goForward() }
                             }
@@ -465,6 +457,53 @@ final class BrowserAddressEditor {
 struct BrowserSession: Codable {
     let url: String
     let offset: CGFloat
+}
+
+struct BrowserLoadFailureView: View {
+    let failure: BrowserLoadFailure
+    let retry: () -> Void
+    @Environment(\.openURL) private var openURL
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    var body: some View {
+        GeometryReader { geometry in
+            ScrollView {
+                LeximoryUnavailableView(
+                    failure.url?.host.map { "未能打开 \($0)" } ?? "网页未能打开",
+                    systemImage: "globe", message: failure.message
+                ) {
+                    VStack(spacing: 8) {
+                        Button(action: retry) {
+                            Label("重新载入", systemImage: "arrow.clockwise")
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, minHeight: 26)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.capsule).controlSize(.large)
+                        .tint(.primary).foregroundStyle(Color(uiColor: .systemBackground))
+                        .accessibilityIdentifier("browser-load-retry")
+                        if let url = failure.url {
+                            Button { openURL(url) } label: {
+                                Label("在 Safari 中打开", systemImage: "safari")
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                                    .contentShape(.rect)
+                            }
+                            .buttonStyle(.plain).foregroundStyle(.primary)
+                            .accessibilityIdentifier("browser-load-safari")
+                        }
+                    }
+                    .frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : 240)
+                }
+                .frame(minHeight: geometry.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("browser-load-error")
+        }
+        .padding(.bottom, 88)
+        .background(Color(uiColor: .systemBackground).ignoresSafeArea())
+    }
 }
 
 @MainActor private final class BrowserModelStorage {

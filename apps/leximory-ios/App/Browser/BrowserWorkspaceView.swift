@@ -71,6 +71,7 @@ struct BrowserWorkspaceView: View {
                     usesSystemBackground: isHome && wallpapers.choice(for: HomeWallpaperAppearance(colorScheme)) == .solid) {
                     ZStack {
                         TextBrowserScreen(client: client, bookmarkID: webBookmarkID, sharedBrowser: workspace.browser, showsControls: false, restoresSession: false)
+                            .environment(\.openURL, openURL)
                             .id(ObjectIdentifier(workspace.browser))
                             .opacity(workspace.current.isWeb ? 1 : 0)
                             .blur(radius: editingAddress ? 3 : 0)
@@ -456,14 +457,14 @@ struct BrowserWorkspaceView: View {
                         Button("在 PDF 中查找", systemImage: "magnifyingglass") { beginFind(reader.findInteraction) }
                     }
                     Button("固定到主页", systemImage: "pin") { editingPin = pin }
-                    if workspace.current.isWeb, workspace.browser.url != nil {
+                    if workspace.current.isWeb, workspace.browser.recoveryURL != nil {
                         Button(workspace.browser.loading ? "停止" : "重新加载", systemImage: workspace.browser.loading ? "xmark" : "arrow.clockwise") {
-                            if workspace.browser.loading { workspace.browser.web.stopLoading() } else { workspace.browser.web.reload() }
+                            if workspace.browser.loading { workspace.browser.web.stopLoading() } else { workspace.browser.reload() }
                         }
                     }
                 }
             }
-            if workspace.current.isWeb, let url = workspace.browser.url {
+            if workspace.current.isWeb, let url = workspace.browser.recoveryURL {
                 Section {
                     ShareLink(item: url) { Label("分享", systemImage: "square.and.arrow.up") }
                     Button("在 Safari 中打开", systemImage: "safari") { openURL(url) }
