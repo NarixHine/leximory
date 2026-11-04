@@ -216,6 +216,7 @@ struct SignInFailure: LocalizedError {
     private(set) var state: State = .restoring
     private(set) var generation = 0
     let membership = MembershipStore()
+    private(set) var avatar = AccountAvatarCache()
     let guest: GuestSession
     let deletion: AccountDeletionModel
     var entry: AccountEntryContext?
@@ -405,6 +406,8 @@ struct SignInFailure: LocalizedError {
         guard generation == current, !Task.isCancelled else { throw CancellationError() }
         try await tokens.updateAvatar(url)
         guard generation == current, !Task.isCancelled else { throw CancellationError() }
+        await avatar.save(data, url: url, store: client.localStore)
+        guard generation == current, !Task.isCancelled else { throw CancellationError() }
         if var settings = await client.localStore?.value(AccountSettings.self, for: "account-settings"),
            settings.userId == state.accountID {
             settings.image = url.absoluteString
@@ -424,6 +427,7 @@ struct SignInFailure: LocalizedError {
         SavedWordsWidgetSync.activate(origin: configuration.apiURL, accountID: accountID)
     }
     private func clearStore(clearWidget: Bool = true, preservingReading: Bool = false) async {
+        avatar = AccountAvatarCache()
         if clearWidget { SavedWordsWidgetSync.clear() }
         let previous = sync
         sync = nil; scopedClient = nil; scopedAccountID = nil

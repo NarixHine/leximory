@@ -117,14 +117,19 @@ struct AccountView: View {
     }
     private func hero(_ value: AccountSettings) -> some View {
         HStack(spacing: 18) {
-            AsyncImage(url: value.image.flatMap(URL.init(string:))) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
-                Image(systemName: "person.crop.circle.fill").resizable().foregroundStyle(.secondary)
+            Group {
+                if let image = session.avatar.image(for: value.image.flatMap(URL.init(string:))) {
+                    Image(uiImage: image).resizable().scaledToFill()
+                } else {
+                    Image(systemName: "person.crop.circle.fill").resizable().foregroundStyle(.secondary)
+                }
             }
             .frame(width: 72, height: 72).clipShape(Circle())
             .overlay(Circle().strokeBorder(LeximoryPalette.secondaryBorder, lineWidth: 1))
             .accessibilityHidden(true)
+            .task(id: value.image) {
+                await session.avatar.load(url: value.image.flatMap(URL.init(string:)), store: session.client.localStore)
+            }
             VStack(alignment: .leading, spacing: 6) {
                 Text(value.username ?? "你好 👋").editorialFont(26, relativeTo: .title, language: "Chinese")
                 if let date = joinedDate(value.createdAt) {
@@ -219,10 +224,14 @@ struct AccountView: View {
         loading = true
         defer { loading = false }
         if details == nil, let cached = await session.client.localStore?.value(AccountSettings.self, for: "account-settings"), cached.userId == session.state.accountID {
+            await session.avatar.restore(url: cached.image.flatMap(URL.init(string:)), store: session.client.localStore)
+            guard !Task.isCancelled, cached.userId == session.state.accountID else { return }
             details = cached
         }
         do {
             let result = try await session.client.accountSettings()
+            guard !Task.isCancelled, result.userId == session.state.accountID else { return }
+            await session.avatar.restore(url: result.image.flatMap(URL.init(string:)), store: session.client.localStore)
             guard !Task.isCancelled, result.userId == session.state.accountID else { return }
             details = result
         } catch { }
