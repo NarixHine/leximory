@@ -5,6 +5,94 @@ import WebKit
 @testable import Leximory
 
 @MainActor struct EPUBNavigationTests {
+    @Test(.serialized, arguments: [false, true])
+    func highlightTapsRetainIdentityAndColorsWithPublisherHeadings(japanese: Bool) async throws {
+        let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
+        let book = try #require(Bundle.main.url(forResource: "reader-fixture", withExtension: "epub"))
+        let prose = try #require(Bundle.main.url(forResource: japanese ? "ChillDuanHeiSongProJP_Regular" : "LibreBaskerville", withExtension: japanese ? "otf" : "ttf"))
+        let display = try #require(Bundle.main.url(forResource: japanese ? "ChillDuanHeiSongProJP_Regular" : "EBGaramond", withExtension: japanese ? "otf" : "ttf"))
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 820, height: 1180), configuration: config)
+        web.scrollView.contentInsetAdjustmentBehavior = .never
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene); window.frame = web.frame
+        window.rootViewController = UIViewController(); window.rootViewController?.view.addSubview(web); window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey(); config.userContentController.removeScriptMessageHandler(forName: "reader") }
+        web.navigationDelegate = probe; try await probe.load(web, url: page)
+        let result = try #require(try await web.callAsyncJavaScript("""
+            const archive = await JSZip.loadAsync(bytes, {base64:true});
+            const repeated = japanese ? '<ruby>東京<rt>とうきょう</rt></ruby>の庭' : 'The river';
+            for (const entry of Object.values(archive.files).filter(e => /one.xhtml$/.test(e.name))) {
+              const doc = new DOMParser().parseFromString(await entry.async('string'), 'application/xhtml+xml');
+              doc.body.innerHTML = `<h1><span class="publisher">Heading</span></h1><p class="title"><em class="publisher">Title</em></p><p id="subtitle"><span class="publisher">Subtitle</span></p><p id="first">${repeated}</p><p id="second">${repeated}</p>`;
+              doc.getElementById('subtitle').setAttributeNS('http://www.idpf.org/2007/ops', 'epub:type', 'subtitle');
+              const style = doc.createElement('style'); style.textContent = '.publisher{font-family:serif!important}'; doc.head.append(style);
+              archive.file(entry.name, new XMLSerializer().serializeToString(doc));
+            }
+            await window.openBook(await archive.generateAsync({type:'base64'}), '', fonts, theme, []);
+            await painted(); await navigationIdle(); await chapterPainted();
+            const contents = rendition.getContents()[0], doc = contents.document;
+            const entries = ['first','second'].map((id,i) => {
+              const walker = doc.createTreeWalker(doc.getElementById(id), NodeFilter.SHOW_TEXT);
+              const nodes = []; let node;
+              while ((node = walker.nextNode())) { if (!node.parentElement.closest('rt,rp')) nodes.push(node); }
+              const range = doc.createRange(); range.setStart(nodes[0],0); range.setEnd(nodes[nodes.length-1],nodes[nodes.length-1].length);
+              return {id:i ? '42' : '-9223372036854775807', location:contents.cfiFromRange(range, bookmarkIgnoreClass),
+                quote:textWithoutRuby(range.cloneContents()), color:i ? 'blue' : 'pink'};
+            });
+            window.readerBookmarks(entries); await painted();
+            const marks = [...doc.querySelectorAll('[data-leximory-bookmark]')];
+            const first = marks.find(mark => mark.dataset.bookmarkId === entries[0].id);
+            const second = marks.find(mark => mark.dataset.bookmarkId === entries[1].id);
+            if (!first || !second) throw new Error('Missing repeated highlights');
+            const frame = rendition.manager.views.first().iframe.getBoundingClientRect(), rect = first.getClientRects()[0];
+            const tapped = window.readerTapHighlight((rect.x + rect.width / 2 + frame.x) / innerWidth,
+              (rect.y + rect.height / 2 + frame.y) / innerHeight);
+            entries[0].color = 'purple'; window.readerBookmarks(entries); await painted();
+            const sameNode = first === doc.querySelector('[data-bookmark-id="-9223372036854775807"]');
+            const purple = first.style.backgroundColor, blue = second.style.backgroundColor;
+            await window.readerTheme({...currentTheme, paper:'#100f0f', ink:'#cecdc3', mode:'dark'});
+            const headingFonts = ['h1 span','.title em','#subtitle span'].map(selector => contents.window.getComputedStyle(doc.querySelector(selector)).fontFamily);
+            const bodyFont = contents.window.getComputedStyle(doc.getElementById('first')).fontFamily;
+            const displayFaces = [...doc.fonts].filter(face => face.family.includes('LeximoryDisplay'));
+            window.readerBookmarks([...entries, {...entries[0],id:'99',color:'yellow'}]);
+            highlightBookmarks(); await painted();
+            const oneCoat = doc.querySelectorAll('[data-leximory-bookmark] [data-leximory-bookmark]').length === 0 &&
+              doc.querySelector('[data-bookmark-id="99"]')?.style.backgroundColor === 'rgba(255, 224, 102, 0.45)';
+            window.readerBookmarks(entries); await painted();
+            const uncovered = doc.querySelector('[data-bookmark-id="-9223372036854775807"]')?.style.backgroundColor === purple;
+
+            window.readerBookmarks([entries[1]]); await painted();
+            return {tapped, sameNode, purple, blue, headingFonts, bodyFont, oneCoat, uncovered,
+              displayRanges:displayFaces.map(face=>face.unicodeRange), latinRange:displayFaces.some(face => face.unicodeRange.toUpperCase().includes('24F')),
+              oneRemoved:doc.querySelectorAll('[data-leximory-bookmark]').length === 1,
+              ruby:japanese ? !!doc.querySelector('ruby rt') : true,
+              paragraphText:textWithoutRuby(doc.getElementById('first'))};
+            """, arguments: ["bytes":try Data(contentsOf: book).base64EncodedString(), "japanese":japanese,
+                "fonts":["regular":"data:font/otf;base64," + (try Data(contentsOf: prose)).base64EncodedString(),
+                         "display":"data:font/otf;base64," + (try Data(contentsOf: display)).base64EncodedString(),
+                         "displayRange":japanese ? "" : "U+0000-024F,U+1E00-1EFF,U+2000-206F"],
+                "theme":["paper":"#ffffff", "ink":"#192024", "size":"20", "leading":"1.6", "weight":"400", "writing":japanese ? "vertical-rl" : "horizontal-tb"]],
+            in: nil, contentWorld: .page) as? [String: Any])
+        #expect(probe.failure == nil)
+        #expect(result["tapped"] as? Bool == true)
+        #expect(result["sameNode"] as? Bool == true)
+        #expect(result["purple"] as? String == "rgba(189, 155, 235, 0.45)")
+        #expect(result["blue"] as? String == "rgba(128, 191, 255, 0.45)")
+        #expect((result["headingFonts"] as? [String])?.allSatisfy { $0.hasPrefix("LeximoryDisplay") } == true)
+        #expect((result["bodyFont"] as? String)?.hasPrefix("LeximoryProse") == true)
+        #expect(result["latinRange"] as? Bool == !japanese, "Display ranges: \(result["displayRanges"] ?? "none")")
+        #expect(result["oneCoat"] as? Bool == true)
+        #expect(result["uncovered"] as? Bool == true)
+        #expect(result["oneRemoved"] as? Bool == true)
+        #expect(result["ruby"] as? Bool == true)
+        #expect(result["paragraphText"] as? String == (japanese ? "東京の庭" : "The river"))
+        let tap = try #require(probe.highlightTaps.last)
+        #expect(tap["bookmarkID"] as? String == "-9223372036854775807")
+    }
+
     @Test(arguments: ["turn", "displayFailure", "turnFailure", "reflow", "highlightedBookmark", "legacyBookmark"], [false, true])
     func bookmarkJumpDoesNotDiscardNavigationOrBlockLaterTurns(scenario: String, japanese: Bool) async throws {
         let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
@@ -860,6 +948,7 @@ import WebKit
     var page: Int?
     var pages: Int?
     var selection: [String: Any]?
+    var highlightTaps: [[String: Any]] = []
     private var loaded: CheckedContinuation<Void, any Error>?
     func load(_ web: WKWebView, url: URL) async throws {
         try await withCheckedThrowingContinuation { continuation in
@@ -880,6 +969,7 @@ import WebKit
             location = body["location"] as? String
             page = body["page"] as? Int
             pages = body["pages"] as? Int
+        case "highlightTapped": highlightTaps.append(body)
         case "selected": selection = body
         default: break
         }

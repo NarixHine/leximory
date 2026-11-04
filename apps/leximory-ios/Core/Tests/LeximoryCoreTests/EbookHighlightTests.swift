@@ -50,17 +50,19 @@ struct EbookHighlightTests {
         #expect(descriptor.bookmarks == [saved])
     }
 
-    @Test func offlineEditsSurviveRelaunchAndReplayOnlyTheLatestColor() async throws {
+    @Test(arguments: ["pdf", "epub"])
+    func offlineEditsSurviveRelaunchAndReplayOnlyTheLatestColor(format: String) async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let origin = try #require(URL(string: "https://leximory.example"))
         let store = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
-        let transport = HighlightTransport(color: .sage)
+        let location = format == "pdf" ? "3" : "epubcfi(/6/2!/4/2,/1:0,/1:5)"
+        let transport = HighlightTransport(color: .sage, format: format, location: location)
         let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
         _ = try await client.ebook(textID: "book")
         await store.setOnline(false)
-        await client.editHighlight(textID: "book", bookmark: .init(id: -7, quote: "river", chapter: nil, location: "3", color: .yellow))
-        await client.editHighlight(textID: "book", bookmark: .init(id: -7, quote: "river", chapter: nil, location: "3", color: .pink))
+        await client.editHighlight(textID: "book", bookmark: .init(id: -7, quote: "river", chapter: nil, location: location, color: .yellow))
+        await client.editHighlight(textID: "book", bookmark: .init(id: -7, quote: "river", chapter: nil, location: location, color: .pink))
         #expect(await transport.sentColor == nil)
         let reopened = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
         let cached = try #require(await reopened.value(EbookDescriptor.self, for: "ebook/book"))
@@ -107,9 +109,11 @@ struct EbookHighlightTests {
         var sentBookmarkID: Int?
         func recolorWithoutRefresh() { color = .blue; failRefresh = true }
         var sentColor: String?
-        init(color: EbookHighlightColor) { self.color = color }
+        let format: String
+        let location: String
+        init(color: EbookHighlightColor, format: String = "pdf", location: String = "3") { self.color = color; self.format = format; self.location = location }
         func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
-            let bookmark = #"{"id":42,"quote":"river","chapter":null,"location":"3","createdAt":null,"color":"\#(color.rawValue)"}"#
+            let bookmark = #"{"id":42,"quote":"river","chapter":null,"location":"\#(location)","createdAt":null,"color":"\#(color.rawValue)"}"#
             let payload: String
             switch operationID {
             case "ebookBookmark":
@@ -121,12 +125,12 @@ struct EbookHighlightTests {
                 await action?()
                 sentBookmarkID = json["bookmarkId"] as? Int
                 #expect(json["quote"] as? String == "river")
-                #expect(json["location"] as? String == "3")
+                #expect(json["location"] as? String == location)
                 #expect(request.headerFields[.authorization] == "Bearer verified")
                 payload = bookmark
             case "ebook":
                 if failRefresh { throw URLError(.notConnectedToInternet) }
-                payload = #"{"text":{"id":"book","libraryId":"library","title":"Book","topics":[],"emoji":null,"createdAt":null,"format":"ebook"},"library":{"id":"library","name":"Books","language":"en","owned":true,"archived":false,"shadow":false},"url":"https://leximory.example/book.pdf","format":"pdf","expiresAt":"2026-10-19T10:00:00Z","location":"3","bookmarks":[\#(bookmark)]}"#
+                payload = #"{"text":{"id":"book","libraryId":"library","title":"Book","topics":[],"emoji":null,"createdAt":null,"format":"ebook"},"library":{"id":"library","name":"Books","language":"en","owned":true,"archived":false,"shadow":false},"url":"https://leximory.example/book.\#(format)","format":"\#(format)","expiresAt":"2026-10-19T10:00:00Z","location":"\#(location)","bookmarks":[\#(bookmark)]}"#
             default: throw URLError(.unsupportedURL)
             }
             return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(payload))

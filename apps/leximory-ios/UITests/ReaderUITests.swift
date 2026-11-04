@@ -231,6 +231,25 @@ final class ReaderUITests: XCTestCase {
         if !app.buttons["ebook-contents"].exists { reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.48)).tap() }
         XCTAssertTrue(app.buttons["ebook-contents"].waitForExistence(timeout: 5))
     }
+    @MainActor func testEPUBDictionaryOpensForSelectedText() {
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--fixtures", "--ebook-fixtures"]
+        app.launch()
+        app.buttons["library-fixture-ebooks"].tap()
+        app.buttons["text-fixture-epub"].tap()
+        let passage = app.webViews.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "We walked along the bank")).firstMatch
+        XCTAssertTrue(passage.waitForExistence(timeout: 20))
+        passage.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.5)).press(forDuration: 1.2)
+        let dictionary = app.buttons["reading-selection-辞典"]
+        XCTAssertTrue(dictionary.waitForExistence(timeout: 5))
+        if !dictionary.isHittable { app.buttons["reading-selection-更多"].tap() }
+        dictionary.tap()
+        let dictionarySettings = app.otherElements["ebook-dictionary"]
+        XCTAssertTrue(dictionarySettings.waitForExistence(timeout: 5), app.debugDescription)
+        capture(app, name: "EPUB system dictionary")
+    }
+
     @MainActor func testEPUBSelectionMenuAndQuietChrome() {
         let app = XCUIApplication()
         defer { app.terminate(); app.launchArguments = []; app.launch() }
@@ -371,6 +390,35 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(remove.waitForNonExistence(timeout: 5))
         app.buttons["ebook-bookmarks"].tap()
         XCTAssertTrue(app.staticTexts["暂无标记"].waitForExistence(timeout: 5), app.debugDescription)
+    }
+
+    @MainActor func testEPUBHighlightColorsAppearAfterTappingHighlight() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        app.launchArguments = ["--fixtures", "--ebook-fixtures", "--ebook-bookmark-fixtures"]
+        app.launch()
+        app.buttons["library-fixture-ebooks"].tap()
+        app.buttons["text-fixture-epub"].tap()
+        let passage = app.webViews.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "We walked along the bank")).firstMatch
+        XCTAssertTrue(passage.waitForExistence(timeout: 20))
+        let word = passage.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.2))
+        word.tap()
+        XCTAssertFalse(app.buttons["reading-selection-猫忆查"].exists)
+        for color in ["鼠尾草绿", "黄色", "绿色", "蓝色", "粉色", "紫色"] {
+            let swatch = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", color)).firstMatch
+            if !swatch.waitForExistence(timeout: 0.5), app.buttons["下一页"].firstMatch.isHittable { app.buttons["下一页"].firstMatch.tap() }
+            XCTAssertTrue(swatch.waitForExistence(timeout: 5), app.debugDescription)
+        }
+        capture(app, name: "EPUB tapped highlight color palette")
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "蓝色")).firstMatch.tap()
+        word.tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "蓝色")).firstMatch.waitForExistence(timeout: 5))
+        let remove = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "移除")).firstMatch
+        if !remove.exists { app.buttons["下一页"].firstMatch.tap() }
+        XCTAssertTrue(remove.waitForExistence(timeout: 5)); remove.tap()
+        word.press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["reading-selection-荧光笔"].waitForExistence(timeout: 5))
     }
 
     @MainActor func testPDFHighlightColorsAppearAfterTappingHighlight() {

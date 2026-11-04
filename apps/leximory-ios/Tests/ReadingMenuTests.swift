@@ -82,10 +82,12 @@ import LeximoryCore
         #expect(bookmark != nil)
         if offline { #expect((bookmark as? UIAction)?.attributes.contains(.disabled) == true) }
     }
-    @Test(arguments: EbookHighlightColor.allCases)
-    func pdfHighlightActionsUseSavedBookmarkAfterCreatingAndRecoloring(color: EbookHighlightColor) throws {
+    @Test(arguments: EbookHighlightColor.allCases, ["pdf", "epub"])
+    func highlightActionsUseSavedBookmarkAfterCreatingAndRecoloring(color: EbookHighlightColor, format: String) throws {
+        let previousColor = UserDefaults.standard.object(forKey: "pdfHighlightColor")
+        defer { UserDefaults.standard.set(previousColor, forKey: "pdfHighlightColor") }
         let reader = EbookReaderState()
-        reader.format = "pdf"; reader.canBookmark = true
+        reader.format = format; reader.canBookmark = true
         let selection = EbookSelection(quote: "river", context: "The river flows.", offset: 4, location: "3")
         reader.selection = selection; reader.menuSelection = selection
         let highlighter = try #require(EbookLearningMenu.actions(reader: reader).first { $0.title == "荧光笔" } as? UIAction)
@@ -187,6 +189,26 @@ import LeximoryCore
             pdf.dismissSelection()
             #expect(pdf.currentSelection == nil)
         }
+    }
+
+    @Test func epubHighlightMenuUsesTheTappedIdentityForRepeatedQuotes() throws {
+        let previousColor = UserDefaults.standard.object(forKey: "pdfHighlightColor")
+        defer { UserDefaults.standard.set(previousColor, forKey: "pdfHighlightColor") }
+        let reader = EbookReaderState(); reader.canBookmark = true
+        reader.bookmarks = [
+            EbookBookmark(id: -7, quote: "river", chapter: nil, location: "one.xhtml", color: .pink),
+            EbookBookmark(id: 42, quote: "river", chapter: nil, location: "one.xhtml", color: .blue)
+        ]
+        let selection = EbookSelection(quote: "river", context: "river", offset: 0, location: "one.xhtml", bookmarkID: -7)
+        #expect(EbookLearningMenu.bookmark(reader: reader, selection: selection)?.color == .pink)
+        let palette = try #require(EbookLearningMenu.highlightActions(reader: reader, selection: selection).first as? UIMenu)
+        let purple = try #require(palette.children.compactMap { $0 as? UIAction }.first { $0.accessibilityLabel == "紫色" })
+        UIButton(primaryAction: purple).sendActions(for: .touchUpInside)
+        let request = try #require(reader.bookmarkColorRequest)
+        #expect(request.bookmarkID == -7)
+        _ = reader.beginBookmarkColorChange(request)
+        #expect(reader.bookmarks.first?.color == .purple)
+        #expect(reader.bookmarks.last?.color == .blue)
     }
 
     @Test func browserFilteringPreservesNativeDefineAndItsOriginalAction() throws {

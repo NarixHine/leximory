@@ -44,7 +44,7 @@ struct EbookBookmarkColorRequest: Equatable {
     var canFind = false
     @ObservationIgnored var search: ((String) -> Void)?
     @ObservationIgnored weak var findInteraction: UIFindInteraction?
-    @ObservationIgnored var dismissPDFSelection: (() -> Void)?
+    @ObservationIgnored var dismissSelection: (() -> Void)?
     @ObservationIgnored var prepareForFind: (() async -> Void)?
     var bookmarkNotice: UUID?
     private(set) var bookmarkConfirmation: UUID?
@@ -586,7 +586,7 @@ struct EbookBookmarkCard: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "bookmark.fill").font(.system(size: 14))
-                    .foregroundStyle(isPDF ? Color(bookmark.color.ink.withAlphaComponent(1)) : LeximoryPalette.muted)
+                    .foregroundStyle(Color(bookmark.color.ink.withAlphaComponent(1)))
                     .accessibilityHidden(true)
                 if let chapter = bookmark.chapter?.trimmingCharacters(in: .whitespacesAndNewlines), !chapter.isEmpty {
                     Text(chapter).interfaceFont(15, style: .subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -629,6 +629,11 @@ private struct NativeEPUBReader: UIViewRepresentable {
         config.userContentController.add(context.coordinator, name: "reader")
         let web = LearningWebView(frame: .zero, configuration: config)
         web.reader = reader
+        reader.dismissSelection = { [weak web] in
+            guard let web else { return }
+            ReadingGlassMenu.dismiss(from: web)
+            Task { _ = try? await web.callAsyncJavaScript("window.readerClearSelection()", arguments: [:], in: nil, contentWorld: .page) }
+        }
         context.coordinator.pageTurn = EPUBPageTurn(web: web, reader: reader)
         context.coordinator.web = web
         context.coordinator.gestures.install(on: web, centerTap: true)
@@ -654,16 +659,18 @@ private struct NativeEPUBReader: UIViewRepresentable {
                 coordinator?.pageTurn?.prepare()
             }
         }
-        let bookmarks = reader.bookmarks.map { ["quote": $0.quote, "color": $0.color.rawValue] }
+        let bookmarks = reader.bookmarks.map { ["id":String($0.id), "location":$0.location ?? "", "quote":$0.quote, "color":$0.color.rawValue] }
         if reader.ready, bookmarks != context.coordinator.appliedBookmarks {
             context.coordinator.appliedBookmarks = bookmarks
             context.coordinator.pageTurn?.invalidateSnapshot()
             Task { [weak coordinator = context.coordinator] in
                 _ = try? await web.callAsyncJavaScript("window.readerBookmarks(quotes)", arguments: ["quotes": bookmarks], in: nil, contentWorld: .page)
+                (web as? LearningWebView)?.refreshHighlightMenu()
                 coordinator?.pageTurn?.prepare()
             }
         }
         if reader.ready, let command, command.id != context.coordinator.commandID {
+            (web as? LearningWebView)?.dismissHighlightMenu()
             context.coordinator.commandID = command.id
             context.coordinator.pageTurn?.invalidateSnapshot()
             let quote = command.action == "display" ? reader.bookmarks.first { $0.location == command.value }?.quote : nil
@@ -713,15 +720,16 @@ private struct NativeEPUBReader: UIViewRepresentable {
             let fontData = Bundle.main.url(forResource: font, withExtension: fontExtension).flatMap { try? Data(contentsOf: $0) } ?? Data()
             let boldData = parent.language == "Chinese" ? Bundle.main.url(forResource: "ChillDuanHeiSongBold", withExtension: "otf").flatMap { try? Data(contentsOf: $0) } : nil
             let italicData = Bundle.main.url(forResource: "LibreBaskerville-Italic", withExtension: "ttf").flatMap { try? Data(contentsOf: $0) } ?? Data()
-            let bookmarks = parent.reader.bookmarks.map { ["location": $0.location ?? "", "quote": $0.quote, "color": $0.color.rawValue] }
+            let bookmarks = parent.reader.bookmarks.map { ["id":String($0.id), "location": $0.location ?? "", "quote": $0.quote, "color": $0.color.rawValue] }
             let theme = theme(web)
             appliedTheme = theme
             let displayFont = cjk ? font : "EBGaramond"
             let displayData = Bundle.main.url(forResource: displayFont, withExtension: fontExtension).flatMap { try? Data(contentsOf: $0) } ?? Data()
+            let displayItalicData = cjk ? displayData : Bundle.main.url(forResource: "EBGaramond-Italic", withExtension: "ttf").flatMap { try? Data(contentsOf: $0) } ?? displayData
             Task { do {
             _ = try await web.callAsyncJavaScript("await window.openBook(bytes, location, fonts, theme, bookmarks)", arguments: [
                 "bytes": parent.data.base64EncodedString(), "location": parent.reader.location ?? "",
-                "fonts": ["regular": "data:font/\(fontExtension);base64," + fontData.base64EncodedString(), "italic": "data:font/ttf;base64," + italicData.base64EncodedString(), "display": "data:font/\(fontExtension);base64," + displayData.base64EncodedString(), "bold": boldData.map { "data:font/otf;base64," + $0.base64EncodedString() } ?? ""],
+                "fonts": ["regular": "data:font/\(fontExtension);base64," + fontData.base64EncodedString(), "italic": "data:font/ttf;base64," + italicData.base64EncodedString(), "display": "data:font/\(fontExtension);base64," + displayData.base64EncodedString(), "displayItalic": "data:font/\(fontExtension);base64," + displayItalicData.base64EncodedString(), "displayRange": cjk ? "" : "U+0000-024F,U+1E00-1EFF,U+2000-206F", "bold": boldData.map { "data:font/otf;base64," + $0.base64EncodedString() } ?? ""],
                 "theme": theme, "bookmarks": bookmarks
             ], in: nil, contentWorld: .page)
             } catch { parent.reader.loadFailure = "电子书未能加载，请重试。" } }
@@ -751,6 +759,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
                    let width = body["width"] as? Double, let height = body["height"] as? Double {
                     let bounds = CGRect(x: x, y: y, width: width, height: height)
                     if let previous = parent.reader.pageBounds, previous != bounds {
+                        (web as? LearningWebView)?.dismissHighlightMenu()
                         pageTurn?.invalidateSnapshot()
                     }
                     parent.reader.pageBounds = bounds
@@ -771,6 +780,15 @@ private struct NativeEPUBReader: UIViewRepresentable {
                 parent.reader.selection = EbookSelection(quote: quote, context: context, offset: offset, location: parent.reader.selectionLocation,
                     rect: web?.convert(CGRect(x: anchor["x"] ?? 0, y: anchor["y"] ?? 0, width: anchor["width"] ?? 1, height: anchor["height"] ?? 1), to: nil) ?? .zero)
                 parent.reader.menuSelection = parent.reader.selection
+            case "highlightTapped":
+                guard let value = body["bookmarkID"] as? String, let id = Int(value),
+                      let bookmark = parent.reader.bookmarks.first(where: { $0.id == id }),
+                      let anchor = body["rect"] as? [String: Double], let web = web as? LearningWebView else { return }
+                let rect = web.convert(CGRect(x: anchor["x"] ?? 0, y: anchor["y"] ?? 0,
+                    width: anchor["width"] ?? 1, height: anchor["height"] ?? 1), to: nil)
+                let selection = EbookSelection(quote: bookmark.quote, context: body["context"] as? String ?? bookmark.quote,
+                    offset: body["offset"] as? Int ?? 0, location: bookmark.location, bookmarkID: id, rect: rect)
+                web.presentHighlightMenu(selection: selection)
             case "selectionLocation":
                 parent.reader.selectionLocation = body["location"] as? String
                 parent.reader.selection?.location = parent.reader.selectionLocation
@@ -857,7 +875,7 @@ struct PDFReaderView: UIViewRepresentable {
         if let outline = reader.pdfOutline { outline.attach(document, reader: reader) }
         else { reader.chapters = PDFOutlineModel.chapters(document) }
         reader.findInteraction = view.findInteraction
-        reader.dismissPDFSelection = { [weak view] in view?.dismissSelection() }
+        reader.dismissSelection = { [weak view] in view?.dismissSelection() }
         reader.prepareForFind = { [weak view, weak coordinator = context.coordinator] in
             view?.dismissSelection()
             await coordinator?.drawingOverlays?.finishDrawing()

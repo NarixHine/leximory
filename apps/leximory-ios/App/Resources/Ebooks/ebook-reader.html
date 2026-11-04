@@ -70,10 +70,12 @@ function isDarkTheme(theme) {
 }
 function proseCSS(theme) {
   const vertical = theme.writing === 'vertical-rl';
+  const headings = ':is(h1,h2,h3,h4,h5,h6,[role="heading"],.title,.subtitle,.chapter-title,[epub\\:type~="title"],[epub\\:type~="subtitle"],[epub\\:type~="fulltitle"])';
+  const headingCSS = `${headings},${headings} :not(rt,rp,pre,code,kbd,samp){font-family:LeximoryDisplay,LeximoryProse,"Apple Color Emoji",serif!important}`;
   if (vertical) return `html,body{direction:ltr!important;writing-mode:vertical-rl!important;-webkit-writing-mode:vertical-rl!important;text-orientation:mixed!important;background:${theme.paper}!important;color:${theme.ink}!important}
   body{font-family:LeximoryProse,serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important}
   p,div{font-family:LeximoryProse,serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;text-rendering:optimizeLegibility}
-  h1,h2,h3,h4,h5,h6{font-family:LeximoryDisplay,LeximoryProse,serif!important}
+  ${headingCSS}
   ${isDarkTheme(theme) ? `*{color:${theme.ink}!important}` : ''}
   [data-leximory-bookmark]{background:${isDarkTheme(theme) ? 'rgb(105 170 78 / .45)' : 'rgb(183 224 143 / .45)'}!important;color:inherit!important;-webkit-box-decoration-break:clone}`;
   return `html,body{background:${theme.paper}!important;color:${theme.ink}!important;${vertical ? 'direction:ltr!important;writing-mode:vertical-rl!important;-webkit-writing-mode:vertical-rl!important;text-orientation:mixed!important;' : ''}}
@@ -86,14 +88,15 @@ function proseCSS(theme) {
   img,svg,video{max-width:100%!important;height:auto}pre{white-space:pre-wrap}a{color:${isDarkTheme(theme) ? "#a1a1aa" : "#5a715a"}}
   blockquote{margin:1em 0!important;padding-inline-start:1em!important;border-inline-start:2px solid ${isDarkTheme(theme) ? "#3f3f46" : "#9caea1"}}
   table{max-width:100%}sup,sub{font-size:0.75em!important}rt{font-size:0.55em!important}
-  pre p,[class*="poem"] p,[class*="verse"] p{white-space:pre-wrap!important;text-indent:initial!important;margin-bottom:0.25em!important}`;
+  pre p,[class*="poem"] p,[class*="verse"] p{white-space:pre-wrap!important;text-indent:initial!important;margin-bottom:0.25em!important}
+  ${headingCSS}`;
 }
 function styleContents(contents) {
   let style = contents.document.getElementById('leximory-prose');
   if (!style) { style=contents.document.createElement('style');style.id='leximory-prose';contents.document.head.append(style); }
   style.textContent=proseCSS(currentTheme);
   contents.document.querySelectorAll('[data-leximory-bookmark]').forEach(mark => {
-    mark.style.setProperty('background-color', highlightColor(entry), 'important');
+    mark.style.setProperty('background-color', highlightColor(bookmarkForMark(mark)), 'important');
   });
 }
 // Keep pronunciation out of quotes and context, matching the web selection helpers.
@@ -129,15 +132,27 @@ function selectionContext(range) {
 function highlightColor(mark) {
   return ({sage:'#BDD98173', yellow:'#FFE06673', green:'#73D99B73', blue:'#80BFFF73', pink:'#FF99BF73', purple:'#BD9BEB73'})[mark?.color || 'sage'];
 }
+const normalizeQuote = quote => quote.replace(/\s+/g, ' ').trim();
+const bookmarkKey = entry => typeof entry === 'string' ? entry : entry.id != null ? String(entry.id) : normalizeQuote(entry.quote) + (entry.location || '');
+const bookmarkForMark = mark => bookmarkQuotes.find(entry => bookmarkKey(entry) === mark.dataset.bookmarkKey);
+const highlightStates = new WeakMap();
 function highlightBookmarks() {
   if (!rendition) return;
   for (const contents of rendition.getContents()) {
     const doc = contents.document;
+    const structure = JSON.stringify(bookmarkQuotes.map(entry => [bookmarkKey(entry), entry.location || '', typeof entry === 'string' ? entry : entry.quote]));
+    let state = highlightStates.get(doc);
+    if (state?.structure !== structure) {
+      // Rebuild ranges only when saves change. Color edits keep the live nodes.
+      for (const mark of doc.querySelectorAll('[data-leximory-bookmark]')) {
+        const parent = mark.parentNode; mark.replaceWith(...mark.childNodes); parent.normalize();
+      }
+      state = {structure, resolved:new Set()}; highlightStates.set(doc, state);
+    }
     // Keep marks in place when their color changes.
-    const activeQuotes = new Set(bookmarkQuotes.map(mark => (typeof mark === 'string' ? mark : mark.quote).replace(/\s+/g,' ').trim()));
     for (const mark of doc.querySelectorAll('[data-leximory-bookmark]')) {
-      if (activeQuotes.has(mark.dataset.quote)) {
-        const entry = bookmarkQuotes.find(item => (typeof item === 'string' ? item : item.quote).replace(/\s+/g,' ').trim() === mark.dataset.quote);
+      const entry = bookmarkForMark(mark);
+      if (entry) {
         mark.style.setProperty('background-color', highlightColor(entry), 'important');
         continue;
       }
@@ -146,32 +161,89 @@ function highlightBookmarks() {
     }
     for (const entry of bookmarkQuotes) {
       const quote = typeof entry === 'string' ? entry : entry.quote;
-      const target = quote.replace(/\s+/g,' ').trim(); if (!target) continue;
-      const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
-      let node, text = '', space = false; const positions = [];
-      while ((node = walker.nextNode())) {
-        if (node.parentElement?.closest('rt,rp,script,style')) continue;
-        for(let i=0;i<node.data.length;i++) {
-          if (/\s/.test(node.data[i])) { if(text.length) space=true; continue; }
-          if(space) {text+=' ';positions.push([node,i]);space=false;}
-          text+=node.data[i];positions.push([node,i]);
-        }
+      const target = normalizeQuote(quote); if (!target) continue;
+      const key = bookmarkKey(entry);
+      if (state.resolved.has(key)) continue;
+      let range;
+      if (entry.location) {
+        try {
+          const section = book.spine.get(entry.location);
+          if (section && section.index !== contents.sectionIndex) continue;
+          const candidate = contents.range(entry.location, bookmarkIgnoreClass);
+          if (normalizeQuote(textWithoutRuby(candidate.cloneContents())) === target) range = candidate;
+        } catch (_) {}
       }
-      const index = text.indexOf(target); if(index < 0) continue;
-      const start=positions[index], end=positions[index+target.length-1];
-      if(start[0].parentElement.closest('[data-leximory-bookmark]') || end[0].parentElement.closest('[data-leximory-bookmark]')) continue;
-      const range=doc.createRange();range.setStart(start[0],start[1]);range.setEnd(end[0],end[1]+1);
-      const firstRuby=start[0].parentElement.closest('ruby'), lastRuby=end[0].parentElement.closest('ruby');
+      if (!range) {
+        const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+        let node, text = '', space = false; const positions = [];
+        while ((node = walker.nextNode())) {
+          if (node.parentElement?.closest('rt,rp,script,style')) continue;
+          for(let i=0;i<node.data.length;i++) {
+            if (/\s/.test(node.data[i])) { if(text.length) space=true; continue; }
+            if(space) {text+=' ';positions.push([node,i]);space=false;}
+            text+=node.data[i];positions.push([node,i]);
+          }
+        }
+        const index = text.indexOf(target); if(index < 0) continue;
+        const start=positions[index], end=positions[index+target.length-1];
+        range=doc.createRange();range.setStart(start[0],start[1]);range.setEnd(end[0],end[1]+1);
+      }
+      const firstRuby=range.startContainer.parentElement?.closest('ruby'), lastRuby=range.endContainer.parentElement?.closest('ruby');
       if(firstRuby) range.setStartBefore(firstRuby); if(lastRuby) range.setEndAfter(lastRuby);
       const mark=doc.createElement('span');mark.classList.add(bookmarkIgnoreClass);mark.dataset.leximoryBookmark='true';mark.dataset.quote=target;
+      mark.dataset.bookmarkKey=key; mark.dataset.bookmarkId=entry.id == null ? '' : String(entry.id);
       mark.style.setProperty('background-color',highlightColor(entry),'important');
       mark.style.setProperty('color','inherit','important');mark.style.setProperty('-webkit-box-decoration-break','clone');
-      try {mark.appendChild(range.extractContents());range.insertNode(mark);} catch (_) {}
+      try {
+        mark.appendChild(range.extractContents());
+        // Newer saves cover overlaps once, matching PDF's single-coat markers.
+        mark.querySelectorAll('[data-leximory-bookmark]').forEach(nested => nested.replaceWith(...nested.childNodes));
+        range.insertNode(mark);
+        let older;
+        while ((older = mark.parentElement.closest('[data-leximory-bookmark]'))) {
+          // Split an older marker around this save, retaining authored inline
+          // ancestors on each fragment instead of layering translucent spans.
+          const ancestors = [];
+          for (let parent = mark.parentElement; parent !== older; parent = parent.parentElement) ancestors.push(parent.cloneNode(false));
+          const before = doc.createRange(); before.selectNodeContents(older); before.setEndBefore(mark);
+          const after = doc.createRange(); after.selectNodeContents(older); after.setStartAfter(mark);
+          const leading = older.cloneNode(false), trailing = older.cloneNode(false);
+          leading.append(before.extractContents()); trailing.append(after.extractContents());
+          for (const ancestor of ancestors) { ancestor.append(...mark.childNodes); mark.append(ancestor); }
+          older.replaceWith(...(leading.hasChildNodes() ? [leading] : []), mark, ...(trailing.hasChildNodes() ? [trailing] : []));
+        }
+        state.resolved.add(key);
+      } catch (_) {}
     }
   }
 }
 const retryHighlights = () => { highlightBookmarks(); requestAnimationFrame(highlightBookmarks); setTimeout(highlightBookmarks,100); setTimeout(highlightBookmarks,500); };
 window.readerBookmarks = quotes => { bookmarkQuotes=quotes;retryHighlights(); };
+window.readerClearSelection = () => {
+  for (const contents of rendition.getContents()) contents.window.getSelection()?.removeAllRanges();
+};
+window.readerTapHighlight = (fractionX, fractionY) => {
+  if (!ready || reflowing || pageTurn) return false;
+  const x = fractionX * innerWidth, y = fractionY * innerHeight;
+  for (const view of rendition.manager.visible()) {
+    const contents = view.contents, frame = view.iframe.getBoundingClientRect();
+    if (!contents.window.getSelection()?.isCollapsed) return false;
+    const hit = contents.document.elementFromPoint(x - frame.left, y - frame.top);
+    const mark = hit?.closest('[data-leximory-bookmark]');
+    if (!mark?.dataset.bookmarkId || !bookmarkForMark(mark)) continue;
+    // The tapped fragment anchors wrapped and vertical highlights locally.
+    const bounds = [...mark.getClientRects()].find(rect =>
+      x >= rect.left + frame.left && x <= rect.right + frame.left &&
+      y >= rect.top + frame.top && y <= rect.bottom + frame.top);
+    if (!bounds) continue;
+    const range = contents.document.createRange(); range.selectNodeContents(mark);
+    const context = selectionContext(range) || {context:mark.dataset.quote, offset:0};
+    send('highlightTapped', {...context, bookmarkID:mark.dataset.bookmarkId,
+      rect:{x:bounds.x + frame.x, y:bounds.y + frame.y, width:bounds.width, height:bounds.height}});
+    return true;
+  }
+  return false;
+};
 function pageKey(event) {
   if (!ready || pageTurn || event.defaultPrevented || event.repeat || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
@@ -265,7 +337,8 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
       {'font-family':'LeximoryProse','font-weight':fonts.bold ? '100 500' : '100 900','src':`url('${fonts.regular}')`},
       ...(fonts.bold ? [{'font-family':'LeximoryProse','font-weight':'600 900','src':`url('${fonts.bold}')`}] : []),
       {'font-family':'LeximoryProse','font-style':'italic','font-weight':'100 900','src':`url('${fonts.italic}')`},
-      {'font-family':'LeximoryDisplay','font-weight':fonts.bold ? '100 500' : '100 900','src':`url('${fonts.display}')`},
+      {'font-family':'LeximoryDisplay','font-weight':fonts.bold ? '100 500' : '100 900','src':`url('${fonts.display}')`,...(fonts.displayRange ? {'unicode-range':fonts.displayRange} : {})},
+      {'font-family':'LeximoryDisplay','font-style':'italic','font-weight':'100 900','src':`url('${fonts.displayItalic || fonts.display}')`,...(fonts.displayRange ? {'unicode-range':fonts.displayRange} : {})},
       ...(fonts.bold ? [{'font-family':'LeximoryDisplay','font-weight':'600 900','src':`url('${fonts.bold}')`}] : [])
     ]});
     const flatten = (items, depth=0) => items.flatMap(item => [{title:item.label.trim(),href:item.href,depth},...flatten(item.subitems||[],depth+1)]);
@@ -275,7 +348,7 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
       contents.document.querySelectorAll('script,object,embed,form').forEach(el => el.remove());
       styleContents(contents);
       contents.document.addEventListener('keydown', pageKey);
-      await contents.document.fonts.load(`${currentTheme.size}px LeximoryProse`);
+      await Promise.all([contents.document.fonts.load(`${currentTheme.size}px LeximoryProse`), contents.document.fonts.load(`${currentTheme.size}px LeximoryDisplay`)]);
       contents.document.addEventListener('selectionchange', () => {
         try {
         const selection = contents.window.getSelection();

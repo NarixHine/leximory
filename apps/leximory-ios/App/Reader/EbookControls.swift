@@ -8,6 +8,7 @@ struct EbookSelection: Equatable {
     let context: String
     let offset: Int
     var location: String?
+    var bookmarkID: Int? = nil
     var rect = CGRect.zero
 }
 
@@ -89,12 +90,21 @@ struct EbookThemePicker: View {
         ReadingSelectionMenu.removeUnrelatedActions(from: builder)
         ReadingSelectionMenu.insertLearningActions(actions(reader: reader, includeSearch: false), into: builder,
             nativeLookupBeforeCopy: true, trailingActions: [searchAction(reader: reader)])
+        var elements = builder.menu(for: .root)?.children ?? []
+        if let web = source as? LearningWebView, let selection = reader.selection ?? reader.menuSelection {
+            let native = ReadingSelectionMenu.nativeLookupActions(in: elements)
+            func replaceDictionary(_ element: UIMenuElement) -> UIMenuElement {
+                if let menu = element as? UIMenu { return menu.replacingChildren(menu.children.map(replaceDictionary)) }
+                return native.contains { $0 === element } ? web.dictionaryAction(for: selection) : element
+            }
+            elements = elements.map(replaceDictionary)
+        }
         if let selection = reader.selection ?? reader.menuSelection,
            bookmark(reader: reader, selection: selection) != nil {
+            builder.replaceChildren(ofMenu: .root) { _ in elements }
             ReadingGlassMenu.dismiss(from: source)
             return
         }
-        let elements = builder.menu(for: .root)?.children ?? []
         builder.replaceChildren(ofMenu: .root) { _ in [] }
         if let selection = reader.selection ?? reader.menuSelection {
             ReadingGlassMenu.present(from: source, rect: source.convert(selection.rect, from: nil), elements: elements)
@@ -112,13 +122,14 @@ struct EbookThemePicker: View {
         let bookmark = UIAction(title: "荧光笔", image: UIImage(systemName: "highlighter"), attributes: reader.canEditHighlights ? [] : .disabled) { _ in
             if let selection = selection ?? reader.menuSelection {
                 reader.selectionAction = EbookSelectionAction(kind: .bookmark(reader.lastHighlightColor), selection: selection)
-                if reader.format == "pdf" { reader.dismissPDFSelection?() }
+                reader.dismissSelection?()
             }
         }
         return (reader.readOnly ? [] : [define]) + (includeBookmark ? [bookmark] : []) + (includeSearch ? [searchAction(reader: reader)] : [])
     }
     static func bookmark(reader: EbookReaderState, selection: EbookSelection) -> EbookBookmark? {
-        reader.bookmarks.last { $0.quote == selection.quote && $0.location == selection.location }
+        if let id = selection.bookmarkID { return reader.bookmarks.first { $0.id == id } }
+        return reader.bookmarks.last { $0.quote == selection.quote && $0.location == selection.location }
     }
     static func highlightActions(reader: EbookReaderState, selection: EbookSelection,
                                  includeSearch: Bool = true, dismiss: (() -> Void)? = nil) -> [UIMenuElement] {
@@ -131,7 +142,7 @@ struct EbookThemePicker: View {
                 guard let current = self.bookmark(reader: reader, selection: selection), current.id != 0,
                       reader.canEditHighlights else { return }
                 reader.bookmarkColorRequest = EbookBookmarkColorRequest(bookmarkID: current.id, color: color)
-                if let dismiss { dismiss() } else { reader.dismissPDFSelection?() }
+                if let dismiss { dismiss() } else { reader.dismissSelection?() }
             }
             action.accessibilityLabel = color.title
             return action
@@ -143,7 +154,7 @@ struct EbookThemePicker: View {
             guard let current = self.bookmark(reader: reader, selection: selection), current.id != 0,
                   reader.canEditHighlights else { return }
             reader.bookmarkRemovalRequest = current.id
-            if let dismiss { dismiss() } else { reader.dismissPDFSelection?() }
+            if let dismiss { dismiss() } else { reader.dismissSelection?() }
         }
         return [palette] + (includeSearch ? [searchAction(reader: reader)] : []) + [remove]
     }
@@ -156,8 +167,61 @@ struct EbookThemePicker: View {
     }
 }
 
-final class LearningWebView: WKWebView {
+final class LearningWebView: WKWebView, @MainActor UIEditMenuInteractionDelegate {
     var reader: EbookReaderState?
+    private lazy var highlightMenu = UIEditMenuInteraction(delegate: self)
+    private var activeHighlight: (id: UUID, selection: EbookSelection, rect: CGRect)?
+
+    func dictionaryAction(for selection: EbookSelection) -> UIAction {
+        // WebKit's lookup action cannot recover the selection in epub.js's blob
+        // iframe after its menu is replaced. Pass our captured text to UIKit.
+        UIAction(title: "辞典") { [weak self] _ in
+            guard let self, !selection.quote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+            var responder: UIResponder? = self
+            while let current = responder {
+                if let controller = current as? UIViewController {
+                    guard controller.presentedViewController == nil else { return }
+                    let dictionary = UIReferenceLibraryViewController(term: selection.quote)
+                    dictionary.view.accessibilityIdentifier = "ebook-dictionary"
+                    dictionary.popoverPresentationController?.sourceView = self
+                    dictionary.popoverPresentationController?.sourceRect = convert(selection.rect, from: nil)
+                    controller.present(dictionary, animated: true)
+                    return
+                }
+                responder = current.next
+            }
+        }
+    }
+    func presentHighlightMenu(selection: EbookSelection) {
+        guard let reader, EbookLearningMenu.bookmark(reader: reader, selection: selection) != nil else { return }
+        ReadingGlassMenu.dismiss(from: self)
+        reader.selection = nil; reader.menuSelection = selection
+        let rect = convert(selection.rect, from: nil), id = UUID()
+        activeHighlight = (id, selection, rect)
+        if highlightMenu.view == nil { addInteraction(highlightMenu) }
+        highlightMenu.presentEditMenu(with: UIEditMenuConfiguration(identifier: id as NSUUID, sourcePoint: CGPoint(x: rect.midX, y: rect.midY)))
+    }
+    func dismissHighlightMenu() {
+        highlightMenu.dismissMenu()
+        if let selection = activeHighlight?.selection, reader?.menuSelection == selection { reader?.menuSelection = nil }
+        activeHighlight = nil
+    }
+    func refreshHighlightMenu() {
+        guard let highlight = activeHighlight else { return }
+        guard let reader, EbookLearningMenu.bookmark(reader: reader, selection: highlight.selection) != nil else { dismissHighlightMenu(); return }
+        highlightMenu.reloadVisibleMenu()
+    }
+    func editMenuInteraction(_ interaction: UIEditMenuInteraction, menuFor configuration: UIEditMenuConfiguration, suggestedActions: [UIMenuElement]) -> UIMenu? {
+        guard let reader, let highlight = activeHighlight else { return nil }
+        return ReadingSelectionMenu.menu(children: EbookLearningMenu.highlightActions(reader: reader, selection: highlight.selection,
+            dismiss: { [weak self] in self?.dismissHighlightMenu() }) + [dictionaryAction(for: highlight.selection)])
+    }
+    func editMenuInteraction(_ interaction: UIEditMenuInteraction, targetRectFor configuration: UIEditMenuConfiguration) -> CGRect { activeHighlight?.rect ?? .null }
+    func editMenuInteraction(_ interaction: UIEditMenuInteraction, willDismissMenuFor configuration: UIEditMenuConfiguration, animator: any UIEditMenuInteractionAnimating) {
+        guard configuration.identifier as? UUID == activeHighlight?.id else { return }
+        if reader?.menuSelection == activeHighlight?.selection { reader?.menuSelection = nil }
+        activeHighlight = nil
+    }
     override var keyCommands: [UIKeyCommand]? {
         let paging = [
             UIKeyCommand(input: UIKeyCommand.inputLeftArrow, modifierFlags: [], action: #selector(previousKey)),
@@ -338,6 +402,19 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
     }
     @objc private func tapped(_ gesture: UITapGestureRecognizer) {
         guard let view = gesture.view else { return }
+        if let web = view as? LearningWebView {
+            guard reader.selection == nil else { return }
+            let point = gesture.location(in: web)
+            Task { [weak self, weak web] in
+                guard let self, let web else { return }
+                let handled = try? await web.callAsyncJavaScript("return window.readerTapHighlight(x,y)",
+                    arguments: ["x":point.x / max(1, web.bounds.width), "y":point.y / max(1, web.bounds.height)], in: nil, contentWorld: .page) as? Bool
+                guard handled != true, reader.selection == nil else { return }
+                web.dismissHighlightMenu()
+                if reader.gutterSide(at: point) == nil { reader.chromeVisible.toggle() }
+            }
+            return
+        }
         if let pdf = view as? LearningPDFView, pdf.presentHighlightMenu(at: gesture.location(in: view)) { return }
         if pdfSelectionActiveAtTouchDown, let pdf = view as? LearningPDFView, pdf.dismissSelection() { return }
         guard reader.selection == nil else { return }
