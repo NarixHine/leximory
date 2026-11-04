@@ -227,6 +227,32 @@ import LeximoryCore
         #expect(nativeActions.first === native)
     }
 
+    @Test func detachedDictionaryCommandKeepsItsOriginalTarget() throws {
+        let source = DictionaryCommandSource()
+        let receiver = DictionaryCommandReceiver()
+        source.commandTarget = receiver
+        let command = UICommand(title: "Define", action: #selector(DictionaryCommandReceiver.defineSelection(_:)))
+        var fallbackInvoked = false
+        let fallback = UIAction(title: "辞典") { _ in fallbackInvoked = true }
+        let actions = ReadingSelectionMenu.capturedCommands([command], from: source, dictionaryFallback: fallback)
+        source.commandTarget = nil
+        let action = try #require(actions.first as? UIAction)
+        UIButton(primaryAction: action).sendActions(for: .touchUpInside)
+        #expect(receiver.receivedCommand === command)
+        #expect(!fallbackInvoked)
+    }
+
+    @Test func dictionaryWithoutAResponderUsesCapturedTextFallback() throws {
+        let source = UIView()
+        let command = UICommand(title: "Define", action: #selector(DictionaryCommandReceiver.defineSelection(_:)))
+        var fallbackInvoked = false
+        let fallback = UIAction(title: "辞典") { _ in fallbackInvoked = true }
+        let actions = ReadingSelectionMenu.capturedCommands([command], from: source, dictionaryFallback: fallback)
+        let action = try #require(actions.first as? UIAction)
+        UIButton(primaryAction: action).sendActions(for: .touchUpInside)
+        #expect(fallbackInvoked)
+    }
+
     @Test(arguments: [(BrowserSearchEngine.bing, "Bing"), (.google, "Google"), (.duckDuckGo, "DuckDuckGo"), (.baidu, "百度")])
     func selectionSearchUsesConfiguredEngine(engine: BrowserSearchEngine, title: String) throws {
         let domain = "selection-search-" + UUID().uuidString
@@ -280,4 +306,17 @@ import LeximoryCore
         #expect(actions.map(\.title) == [ReadingSelectionMenu.lookupTitle, BrowserSearchEngine.selected().name])
     }
 
+}
+
+@MainActor private final class DictionaryCommandReceiver: NSObject {
+    var receivedCommand: UICommand?
+    @objc func defineSelection(_ command: UICommand) { receivedCommand = command }
+}
+
+@MainActor private final class DictionaryCommandSource: UIView {
+    var commandTarget: DictionaryCommandReceiver?
+    override func target(forAction action: Selector, withSender sender: Any?) -> Any? {
+        if action == #selector(DictionaryCommandReceiver.defineSelection(_:)) { return commandTarget }
+        return super.target(forAction: action, withSender: sender)
+    }
 }

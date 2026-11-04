@@ -84,6 +84,47 @@ import os
         copyAndLookupActions(elements).filter { defineTitles.contains(nativeTitle($0)) }
     }
 
+    static func capturedCommands(_ elements: [UIMenuElement], from source: UIView,
+                                 dictionaryFallback: UIAction) -> [UIMenuElement] {
+        elements.map { element in
+            if let menu = element as? UIMenu {
+                return menu.replacingChildren(capturedCommands(menu.children, from: source, dictionaryFallback: dictionaryFallback))
+            }
+            guard let command = element as? UICommand else { return element }
+            // Resolve before the native menu is suppressed. Its contextual target
+            // need not be reachable from a button in our window-hosted bar.
+            let target = source.target(forAction: command.action, withSender: command)
+                ?? UIApplication.shared.target(forAction: command.action, withSender: command)
+            if target == nil, defineTitles.contains(nativeTitle(command)) { return dictionaryFallback }
+            let action = UIAction(title: command.title, image: command.image,
+                                  discoverabilityTitle: command.discoverabilityTitle,
+                                  attributes: command.attributes, state: command.state) { [weak source, target] _ in
+                guard let source else { return }
+                command.performWithSender(source, target: target)
+            }
+            action.accessibilityLabel = command.accessibilityLabel
+            return action
+        }
+    }
+
+    static func presentDictionary(term: String, from source: UIView, rect: CGRect,
+                                  accessibilityIdentifier: String = "selection-dictionary") {
+        guard !term.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, source.window != nil else { return }
+        var responder: UIResponder? = source
+        while let current = responder {
+            if let controller = current as? UIViewController {
+                guard controller.presentedViewController == nil else { return }
+                let dictionary = UIReferenceLibraryViewController(term: term)
+                dictionary.view.accessibilityIdentifier = accessibilityIdentifier
+                dictionary.popoverPresentationController?.sourceView = source
+                dictionary.popoverPresentationController?.sourceRect = rect
+                controller.present(dictionary, animated: true)
+                return
+            }
+            responder = current.next
+        }
+    }
+
     static func searchAction(query: String?, engine: BrowserSearchEngine = .selected(), perform: ((String) -> Void)?) -> UIAction {
         let query = query?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return UIAction(title: engine.name, image: UIImage(systemName: "magnifyingglass"), identifier: searchIdentifier, attributes: query.isEmpty || perform == nil ? .disabled : []) { _ in

@@ -392,12 +392,7 @@ struct DefinitionView: View {
     var body: some View {
         trayContent
         .onChange(of: streamedCharacterCount) { _, count in
-            let previousPulse = streamFeedback.pulse
-            streamFeedback.update(characterCount: count, enabled: model.isGenerating && feedbackAllowed)
-            guard streamFeedback.pulse != previousPulse else { return }
-            if streamImpact == nil { streamImpact = UIImpactFeedbackGenerator(style: .soft) }
-            streamImpact?.impactOccurred(intensity: 0.5)
-            streamImpact?.prepare()
+            updateStreamFeedback(characterCount: count)
         }
         .sensoryFeedback(.success, trigger: model.saveState) { old, new in
             old == .saving && new == .saved && feedbackAllowed
@@ -420,6 +415,15 @@ struct DefinitionView: View {
             else if let client { model.startGeneration(client: client, source: item.source) }
         }
         .onDisappear { streamImpact = nil; model.dismiss() }
+    }
+    private func updateStreamFeedback(characterCount: Int) {
+        let previousPulse = streamFeedback.pulse
+        streamFeedback.update(characterCount: characterCount, enabled: model.isGenerating && feedbackAllowed)
+        guard streamFeedback.pulse != previousPulse else { return }
+        let impact = streamImpact ?? UIImpactFeedbackGenerator(style: .soft)
+        streamImpact = impact
+        impact.impactOccurred(intensity: 0.5)
+        impact.prepare()
     }
     private func acknowledgeSave() async {
         saveAcknowledged = false
