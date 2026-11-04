@@ -1,5 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { createClient } from '@supabase/supabase-js'
+import { Redis } from '@upstash/redis'
+import type { Database } from '@repo/supabase/types'
+import { createManagementStore } from '../server/mobile/management-store'
 import { mobileSubjectSchema } from '@repo/schema/mobile'
 import { createManagementOperations, textRevision, type ManagementStore } from '../server/mobile/management'
 import type { CatalogStore, LibraryRow, TextRow } from '../server/mobile/catalog'
@@ -510,5 +514,171 @@ test('article edits pass through an HTTP server with an 8 KB request-header limi
     } finally {
         server.closeAllConnections()
         await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
+    }
+})
+
+function persistenceFixture(t: import('node:test').TestContext, failure = '') {
+    const reads = [
+        { id: 1, location: 'page:12' },
+        { id: 2, location: null },
+        { id: 3, location: 'page:30' },
+    ]
+    const bookmarks = [
+        { id: 4, location: 'page:8', quote: 'Keep this excerpt' },
+        { id: 5, location: null, quote: 'An excerpt without a location' },
+    ]
+    const files = new Map<string, Blob>([['epub', new Blob(['original EPUB'])]])
+    let stored = { ...article, has_ebook: true }
+    let failed = false
+    const database = createClient<Database>('https://database.test', 'test-key', {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: {
+            fetch: async (input, init) => {
+                const url = new URL(String(input))
+                if (url.pathname.startsWith('/storage/')) {
+                    if (init?.method === 'DELETE') {
+                        for (const key of JSON.parse(String(init.body)).prefixes) files.delete(key.split('.').at(-1))
+                        return Response.json([])
+                    }
+                    const extension = url.pathname.split('.').at(-1)!
+                    if (init?.method === 'POST') {
+                        const file = init.body instanceof FormData ? init.body.get('') : null
+                        assert.ok(file instanceof Blob)
+                        files.set(extension, file)
+                        return Response.json({ Key: url.pathname })
+                    }
+                    const file = files.get(extension)
+                    return file ? new Response(file) : Response.json({ message: 'Object not found' }, { status: 404 })
+                }
+                const table = url.pathname.split('/').at(-1)
+                assert.equal(url.searchParams.get(table === 'texts' ? 'id' : 'text'), 'eq.article')
+                if (init?.method === 'PATCH') {
+                    if (!failed && (failure === table || (failure === 'texts+release' && table === 'texts'))) {
+                        failed = true
+                        return Response.json({ code: 'WRITE_FAILED', message: table + ' unavailable' }, { status: 503 })
+                    }
+                    const body = JSON.parse(String(init.body))
+                    if (table === 'texts') {
+                        assert.equal(url.searchParams.get('lib'), 'eq.folder')
+                        assert.equal(url.searchParams.get('bookmark_url'), 'is.null')
+                        stored = { ...stored, ...body }
+                        return Response.json(stored)
+                    }
+                    const rows = table === 'reads' ? reads : bookmarks
+                    for (const row of rows) {
+                        const id = url.searchParams.get('id')
+                        if (id?.startsWith('eq.') && id !== 'eq.' + row.id) continue
+                        if (id?.startsWith('in.') && !id.slice(4, -1).split(',').includes(String(row.id))) continue
+                        if (url.searchParams.get('location') === 'is.null' && row.location !== null) continue
+                        if (
+                            url.searchParams.get('location')?.startsWith('eq.') &&
+                            url.searchParams.get('location') !== 'eq.' + row.location
+                        )
+                            continue
+                        row.location = body.location
+                    }
+                    return new Response(null, { status: 204 })
+                }
+                assert.equal(init?.method, 'GET')
+                const rows = table === 'reads' ? reads : bookmarks
+                return Response.json(
+                    rows.filter(
+                        (row) => row.location !== null && row.id > Number(url.searchParams.get('id')?.slice(3) ?? 0),
+                    ),
+                )
+            },
+        },
+    })
+    const lease = new Redis({
+        url: 'https://lease.fixture.invalid',
+        token: 'fixture',
+        enableAutoPipelining: false,
+        retry: { retries: 0 },
+    })
+    t.mock.method(globalThis, 'fetch', async (_input: unknown, init?: RequestInit) => {
+        const command = JSON.parse(String(init?.body))
+        if (command[0].toUpperCase() === 'SET') {
+            assert.ok(command.includes(120))
+            return Response.json({ result: 'OK' })
+        }
+        assert.equal(command[0].toUpperCase(), 'EVAL')
+        if (failure === 'release' || failure === 'texts+release')
+            return Response.json({ error: 'Redis unavailable' }, { status: 503 })
+        return Response.json({ result: 1 })
+    })
+    return { store: createManagementStore({ database, lease }), reads, bookmarks, files, stored: () => stored }
+}
+
+test('committed edits succeed even when lease release fails', async (t) => {
+    const f = persistenceFixture(t, 'release')
+    const saved = await f.store.edit(article, {
+        title: 'Saved title',
+        topics: [],
+        emoji: null,
+        content: article.content,
+    })
+    assert.equal(saved.title, 'Saved title')
+    assert.equal(f.stored().title, 'Saved title')
+})
+
+test('lease release failure preserves the original mutation failure', async (t) => {
+    const f = persistenceFixture(t, 'texts+release')
+    await assert.rejects(
+        f.store.edit(article, { title: 'Rejected', topics: [], emoji: null, content: article.content }),
+        { code: 'WRITE_FAILED' },
+    )
+})
+
+test('ebook replacement and removal restore locations and bytes when publication fails', async (t) => {
+    for (const operation of ['replace', 'remove']) {
+        for (const stage of ['reads', 'bookmarks', 'texts']) {
+            await t.test(operation + ': ' + stage, async (t) => {
+                const f = persistenceFixture(t, stage)
+                const before = structuredClone({ reads: f.reads, bookmarks: f.bookmarks })
+                await assert.rejects(
+                    operation === 'replace'
+                        ? f.store.replaceEbook(
+                              { ...article, has_ebook: true },
+                              new File(['%PDF-new'], 'book.pdf', { type: 'application/pdf' }),
+                          )
+                        : f.store.removeEbook({ ...article, has_ebook: true }),
+                    { code: 'WRITE_FAILED' },
+                )
+                assert.deepEqual(f.reads, before.reads)
+                assert.deepEqual(f.bookmarks, before.bookmarks)
+                assert.equal(await f.files.get('epub')?.text(), 'original EPUB')
+                assert.equal(f.files.has('pdf'), false)
+                assert.equal(f.stored().has_ebook, true)
+            })
+        }
+    }
+})
+
+test('successful ebook replacement and removal clear locations and retain excerpts', async (t) => {
+    for (const operation of ['replace', 'remove']) {
+        await t.test(operation, async (t) => {
+            const f = persistenceFixture(t)
+            if (operation === 'replace')
+                await f.store.replaceEbook(
+                    { ...article, has_ebook: true },
+                    new File(['%PDF-new'], 'book.pdf', { type: 'application/pdf' }),
+                )
+            else await f.store.removeEbook({ ...article, has_ebook: true })
+            assert.deepEqual(
+                f.reads.map((row) => row.location),
+                [null, null, null],
+            )
+            assert.deepEqual(
+                f.bookmarks.map((row) => row.location),
+                [null, null],
+            )
+            assert.deepEqual(
+                f.bookmarks.map((row) => row.quote),
+                ['Keep this excerpt', 'An excerpt without a location'],
+            )
+            assert.equal(f.stored().has_ebook, operation === 'replace')
+            assert.equal(f.files.has('epub'), false)
+            assert.equal(f.files.has('pdf'), operation === 'replace')
+        })
     }
 })

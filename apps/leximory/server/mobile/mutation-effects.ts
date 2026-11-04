@@ -5,7 +5,7 @@ import { revalidateTag } from 'next/cache'
 import { z } from 'zod'
 
 type MutationEffect = {
-    name: 'cache.invalidate' | 'article.receipt' | 'annotation.progress'
+    name: 'cache.invalidate' | 'article.receipt' | 'annotation.progress' | 'lease.release'
     run(): void | Promise<void>
 }
 

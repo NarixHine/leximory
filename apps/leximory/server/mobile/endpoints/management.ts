@@ -2,14 +2,16 @@ import 'server-only'
 import { mobileEndpoint } from '../http'
 import { verify } from './verify'
 import { createManagementOperations } from '../management'
-import { managementStore } from '../management-store'
+import { createManagementStore } from '../management-store'
+import { supabase } from '@repo/supabase'
+import { redis } from '@repo/kv/redis'
 import { authoringStore } from '../authoring-store'
 import { catalogStore } from '../store'
 
 const operations = createManagementOperations({
     catalog: catalogStore,
     authoring: authoringStore,
-    management: managementStore,
+    management: createManagementStore({ database: supabase, lease: redis }),
 })
 export const editableText = mobileEndpoint(verify, operations.editableText, 60000)
 export const editText = mobileEndpoint(verify, operations.editText, 60000)
