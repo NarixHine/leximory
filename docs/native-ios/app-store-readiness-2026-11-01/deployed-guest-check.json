@@ -1,5 +1,5 @@
 {
-  "baseURL": "https://leximory-git-codex-build-the-premium-leximory-ios-leximory.vercel.app/api/mobile/v1",
+  "baseURL": "https://leximory.com/api/mobile/v1",
   "checks": [
     {
       "operation": "session",
