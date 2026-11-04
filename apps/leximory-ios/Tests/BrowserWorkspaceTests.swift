@@ -470,6 +470,54 @@ private final class ScrollHistoryServer: Sendable {
         #expect(workspace.completionID == "article")
         #expect(workspace.readyCount == 0)
     }
+    @Test(arguments: ["article", "ebook"])
+    func annotationCompletionUpdatesBookmarksAndPinsAcrossRelaunch(format: String) async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let namespace = "workspace-test." + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: namespace))
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            defaults.removePersistentDomain(forName: namespace)
+            for prefix in ["browser.annotations.", "browser.recent.", "browser.recent-web.", "recent-access."] {
+                UserDefaults.standard.removeObject(forKey: prefix + namespace)
+            }
+        }
+        let origin = try #require(URL(string: "https://workspace.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: namespace)
+        let transport = WorkspaceTransport(format: format)
+        let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "verified" }, localStore: store)
+        let initial = try await client.documentDetails(textID: "article")
+        await store.save([initial.library], for: "libraries")
+        await store.upsertText(initial.text)
+        let workspace = BrowserWorkspaceModel(client: client, namespace: namespace, pinDefaults: defaults)
+        await workspace.refresh(online: false)
+        await workspace.imported(initial.text, annotating: true)
+        var pin = try #require(workspace.currentPin)
+        pin.title = "My reading"
+        workspace.savePin(pin)
+        workspace.visit(.bookmarks)
+        await transport.complete()
+        await workspace.poll()
+        let updated = try #require(workspace.texts["folder"]?.first)
+        #expect(updated.emoji == "🌲")
+        #expect(updated.topics == ["Nature", "Travel"])
+        #expect(workspace.activities.first?.text == updated)
+        #expect(workspace.recentTexts.first == updated)
+        #expect(workspace.homePins.first?.destination == .document(updated))
+        #expect(workspace.homePins.first?.title == "My reading")
+        await workspace.refresh(online: false)
+        #expect(workspace.texts["folder"]?.first == updated)
+        workspace.go(-1)
+        #expect(workspace.currentPin?.destination == .document(updated))
+        workspace.deletePin(try #require(workspace.homePins.first))
+        workspace.savePin(try #require(workspace.currentPin))
+        #expect(workspace.homePins.first?.destination == .document(updated))
+        let reopened = BrowserWorkspaceModel(client: client, namespace: namespace, pinDefaults: defaults)
+        await reopened.refresh(online: false)
+        #expect(reopened.texts["folder"]?.first == updated)
+        #expect(reopened.activities.first?.text == updated)
+        #expect(reopened.homePins.first?.destination == .document(updated))
+    }
     @Test func aLateOpenDoesNotReplaceANewerDestination() async throws {
         let transport = WorkspaceTransport()
         let namespace = "workspace-test." + UUID().uuidString
@@ -545,8 +593,10 @@ private final class ScrollHistoryServer: Sendable {
             if delayed { delayed = false; try await Task.sleep(for: .milliseconds(200)) }
             guard operationID == "document" else { throw URLError(.unsupportedURL) }
             let status = completed ? "completed" : "annotating"
+            let topics = completed ? "[\"Nature\",\"Travel\"]" : "[]"
+            let emoji = completed ? "\"🌲\"" : "null"
             let json = """
-            {"text":{"id":"article","libraryId":"folder","title":"Along the river","topics":[],"emoji":null,"createdAt":null,"format":"\(format)"},
+            {"text":{"id":"article","libraryId":"folder","title":"Along the river","topics":\(topics),"emoji":\(emoji),"createdAt":null,"format":"\(format)"},
              "library":{"id":"folder","name":"Reading","language":"en","owned":true,"archived":false,"shadow":false},"annotationProgress":"\(status)",
              "document":{"version":1,"revision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","source":"Along the river.","blocks":[{"id":"block","kind":"paragraph","sourceRange":{"location":0,"length":16},"displayText":"Along the river.","spans":[]}]}}
             """

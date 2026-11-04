@@ -216,6 +216,16 @@ public actor LocalReadingStore {
         texts.removeAll { $0.id == text.id }; texts.insert(text, at: 0)
         save(texts, for: "texts/\(text.libraryId)")
     }
+    public func saveDocument(_ details: RemoteDocument, ifUnchanged version: Int) {
+        let key = "document/\(details.text.id)"
+        guard !closed, versions[key, default: 0] == version else { return }
+        let text = details.text
+        var texts = value([CatalogText].self, for: "texts/\(text.libraryId)") ?? []
+        if let index = texts.firstIndex(where: { $0.id == text.id }) { texts[index] = text }
+        else { texts.insert(text, at: 0) }
+        save(texts, for: "texts/\(text.libraryId)")
+        save(details, for: key)
+    }
     public func upsertWord(_ word: SavedWord, ifUnchanged version: Int? = nil) {
         if let version, versions["word/\(word.id)", default: 0] != version { return }
         versions["word/\(word.id)", default: 0] += 1

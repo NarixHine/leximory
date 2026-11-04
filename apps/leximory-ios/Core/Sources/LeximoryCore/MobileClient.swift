@@ -555,7 +555,7 @@ public struct MobileClient: Sendable {
         let payload = try await client.document(path: .init(textId: textID)).ok.body.json
         let result = try mapped(payload, to: RemoteDocument.self)
         try result.document?.validate()
-        await localStore?.save(result, for: "document/\(textID)", ifUnchanged: version)
+        await localStore?.saveDocument(result, ifUnchanged: version)
         return result
     }
     public func document(textID: String) async throws -> ReadingDocument {

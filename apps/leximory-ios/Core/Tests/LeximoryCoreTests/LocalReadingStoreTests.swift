@@ -5,6 +5,25 @@ import OpenAPIRuntime
 @testable import LeximoryCore
 
 struct LocalReadingStoreTests {
+    @Test func documentMetadataUpdatesTheCatalogWithoutReorderingAndRejectsRemovedDocuments() async throws {
+        let root = try root(); defer { try? FileManager.default.removeItem(at: root) }
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "metadata")
+        let first = CatalogText(id: "first", libraryId: "library", title: "First", topics: [], emoji: nil, createdAt: nil, format: "article")
+        let initial = CatalogText(id: "article", libraryId: "library", title: "Forest", topics: [], emoji: nil, createdAt: nil, format: "article")
+        let updated = CatalogText(id: "article", libraryId: "library", title: "Forest", topics: ["Nature"], emoji: "🌲", createdAt: nil, format: "article")
+        let library = CatalogLibrary(id: "library", name: "Reading", language: "en", owned: true, archived: false, shadow: false)
+        await store.reconcileTexts([first, initial], libraryID: "library")
+        let details = RemoteDocument(text: updated, library: library, document: nil, annotationProgress: "completed")
+        await store.saveDocument(details, ifUnchanged: 0)
+        let reopened = try LocalReadingStore(root: root, origin: origin, accountID: "metadata")
+        #expect(await reopened.value([CatalogText].self, for: "texts/library") == [first, updated])
+        #expect(await reopened.value(RemoteDocument.self, for: "document/article")?.text == updated)
+        let version = await store.version(for: "document/article")
+        await store.deleteText(updated)
+        await store.saveDocument(details, ifUnchanged: version)
+        #expect(await store.value([CatalogText].self, for: "texts/library") == [first])
+        #expect(await store.value(RemoteDocument.self, for: "document/article") == nil)
+    }
     @Test func onlyCompleteCollectionsCanSkipTheNetworkAcrossRelaunches() async throws {
         let root = try root(); defer { try? FileManager.default.removeItem(at: root) }
         let store = try LocalReadingStore(root: root, origin: origin, accountID: "collections")

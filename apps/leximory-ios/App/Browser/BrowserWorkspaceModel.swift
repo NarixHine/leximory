@@ -140,7 +140,7 @@ struct BrowserEntry: Identifiable {
 
 enum AnnotationActivityState: String, Codable { case pending, ready, failed }
 struct AnnotationActivity: Identifiable, Codable {
-    let text: CatalogText
+    var text: CatalogText
     var state: AnnotationActivityState
     var seen = false
     var id: String { text.id }
@@ -717,6 +717,36 @@ struct AnnotationActivity: Identifiable, Codable {
     }
     func recordDocument(_ details: RemoteDocument) {
         documents[details.text.id] = details
+        let text = details.text
+        if texts[text.libraryId]?.first(where: { $0.id == text.id }) != text {
+            catalogMutation += 1
+            folderRequests[text.libraryId] = UUID()
+            if let index = texts[text.libraryId]?.firstIndex(where: { $0.id == text.id }) {
+                texts[text.libraryId]?[index] = text
+            } else { texts[text.libraryId, default: []].insert(text, at: 0) }
+        }
+        if let index = activities.firstIndex(where: { $0.id == text.id }) {
+            activities[index].text = text
+            persistActivities()
+        }
+        persistRecentReading()
+        if recentlyOpened[text.libraryId]?.id.rawValue == text.id {
+            recentlyOpened[text.libraryId] = text.preview
+            persistRecentlyOpened()
+        }
+        history.transform { entry in
+            guard entry.textID == text.id else { return entry }
+            var entry = entry; entry.resource = .document(details)
+            return entry
+        }
+        let changedPins = homePins.compactMap { pin -> BrowserHomePin? in
+            guard case .document(let previous) = pin.destination,
+                  previous.id == text.id, previous != text else { return nil }
+            var pin = pin; pin.destination = .document(text)
+            if pin.title == previous.title { pin.title = text.title }
+            return pin
+        }
+        for pin in changedPins { savePin(pin) }
     }
     func recordArticleAudio(textID: String, revision documentRevision: String, audioID: String) {
         guard var details = documents[textID], details.document?.revision == documentRevision else { return }
@@ -736,7 +766,7 @@ struct AnnotationActivity: Identifiable, Codable {
             if let cached = await client.cachedDocument(textID: text.id) { details = cached }
             else { details = try await client.documentDetails(textID: text.id) }
             guard openRequest == request, !Task.isCancelled else { return }
-            documents[text.id] = details
+            recordDocument(details)
             if details.text.format == "bookmark", let url = details.text.bookmarkURL.flatMap(TextBrowserModel.address) {
                 openURL(url, bookmarkID: text.id)
             } else { visit(.document(details)) }
@@ -896,8 +926,8 @@ struct AnnotationActivity: Identifiable, Codable {
             do {
                 let mutation = catalogMutation
                 let details = try await client.documentDetails(textID: activity.id)
-                guard catalogMutation == mutation, activities.contains(where: { $0.id == activity.id }) else { continue }
-                documents[activity.id] = details
+                guard !Task.isCancelled, catalogMutation == mutation, activities.contains(where: { $0.id == activity.id }) else { continue }
+                recordDocument(details)
                 track(details)
                 pollAttempts[activity.id, default: 0] += 1
                 if pollAttempts[activity.id, default: 0] >= 150, let index = activities.firstIndex(where: { $0.id == activity.id && $0.state == .pending }) {

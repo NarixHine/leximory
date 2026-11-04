@@ -247,6 +247,8 @@ struct BrowserHomeView: View {
                                 Group {
                                     if let url = pin.iconURL, let image = pinImages[url] {
                                         Image(uiImage: image).resizable().scaledToFit()
+                                    } else if case .document(let text) = pin.destination {
+                                        BrowserTextIcon(text: text).foregroundStyle(LeximoryPalette.ink)
                                     } else {
                                         Image(systemName: pin.symbol).font(.system(size: 21))
                                             .foregroundStyle(LeximoryPalette.ink)
