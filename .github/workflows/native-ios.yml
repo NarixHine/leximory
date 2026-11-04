@@ -32,6 +32,11 @@ jobs:
                   node-version: 22
                   cache: pnpm
             - run: pnpm install --frozen-lockfile --ignore-scripts
+            - name: Install Lua for guest Redis tests
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install --yes lua5.4
+                  lua -v
             - run: pnpm --dir apps/leximory run test:mobile
             - run: pnpm --dir packages/api run generate
             - run: git diff --exit-code -- apps/leximory-ios/Core/Sources/LeximoryCore/openapi.json apps/leximory-ios/Core/Tests/LeximoryCoreTests/Fixtures/definition-stream.ndjson
