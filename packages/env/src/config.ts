@@ -69,6 +69,11 @@ export const ACTION_QUOTA_COST = {
     story: 2,
     chat: 0.5,
     evaluation: 0.01,
+    pdfOutline: 1,
+    reviewTranslation: 0.01,
+    reviewConversation: 0.01,
+    languageDetection: 0.01,
+    bookmarkEmoji: 0.01,
     locationDetection: 0.2,
     location: 0.05,
     pouncepen: {

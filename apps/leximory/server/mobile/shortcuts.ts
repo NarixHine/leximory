@@ -44,7 +44,7 @@ export function createShortcutOperations(dependencies: {
                 const saved = await dependencies.shortcuts.begin(subject, requestId, word, lease, signal)
                 if (saved) return checkedResponse(shortcutWordResultSchema, saved)
                 const context = '[[' + word + ']]'
-                const language = await dependencies.detectLanguage(context, word)
+                const language = await dependencies.detectLanguage(context, word, subject.userId)
                 signal.throwIfAborted()
                 const generate = await prepareDefinition(dependencies.definitions, {
                     subject,

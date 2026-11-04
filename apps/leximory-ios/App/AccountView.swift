@@ -44,7 +44,6 @@ struct AccountView: View {
                     if let details {
                         hero(details)
                         stats(details)
-                        AccountActivityCalendar(details: details)
                         preferences(details)
                         management(details)
                         AccountActionCostTable()
@@ -409,6 +408,10 @@ private struct AccountActionCostTable: View {
         Row(id: "word-annotation", action: "🐈 猫忆查", cost: "0.25 词点"),
         Row(id: "ebook-icon", action: "电子书图标生成", cost: "0.01 词点"),
         Row(id: "pdf-outline", action: "PDF 目录生成", cost: "1 词点"),
+        Row(id: "review-translation", action: "翻译练习反馈", cost: "0.01 词点"),
+        Row(id: "review-conversation", action: "对话练习反馈", cost: "0.01 词点"),
+        Row(id: "language-detection", action: "语言识别", cost: "0.01 词点"),
+        Row(id: "bookmark-icon", action: "书签图标生成", cost: "0.01 词点"),
         Row(id: "article-audio", action: "文章朗读生成", cost: "1 语点"),
     ]
     var body: some View {

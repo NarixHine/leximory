@@ -1,20 +1,18 @@
 import XCTest
 
 final class AccountUITests: XCTestCase {
-    @MainActor func testFutureCalendarDaysDoNotReportWordCounts() {
+    @MainActor func testAccountKeepsManagementWithoutActivityCalendar() {
         let app = XCUIApplication()
         defer { app.terminate(); app.launchArguments = []; app.launch() }
         app.launchArguments = ["--account-fixtures"]
         app.launch()
-        let future = app.staticTexts["2026-10-13"]
-        let today = app.staticTexts["2026-10-12，入库词汇 36 个，今天"]
-        for _ in 0..<4 where !today.isHittable { app.swipeUp() }
-        XCTAssertTrue(future.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["2026-10-13，入库词汇 0 个"].exists)
-        XCTAssertTrue(today.exists)
-        XCTAssertTrue(app.staticTexts["2026-10-11，入库词汇 33 个"].exists)
-        app.swipeUp()
-        capture("Account calendar keeps future days neutral")
+        XCTAssertTrue(app.staticTexts["猫忆读者"].waitForExistence(timeout: 10))
+        let username = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "用户名")).firstMatch
+        for _ in 0..<4 where !username.isHittable { app.swipeUp() }
+        XCTAssertTrue(username.isHittable)
+        XCTAssertFalse(app.staticTexts["2026-10-12，入库词汇 36 个，今天"].exists)
+        XCTAssertFalse(app.staticTexts["2026-10-11，入库词汇 33 个"].exists)
+        capture("Account management without activity heatmap")
     }
 
     @MainActor func testAccountReplicatesSummaryAndNativeEditors() throws {
@@ -98,6 +96,10 @@ final class AccountUITests: XCTestCase {
             ("word-annotation", "🐈 猫忆查", "0.25 词点"),
             ("ebook-icon", "电子书图标生成", "0.01 词点"),
             ("pdf-outline", "PDF 目录生成", "1 词点"),
+            ("review-translation", "翻译练习反馈", "0.01 词点"),
+            ("review-conversation", "对话练习反馈", "0.01 词点"),
+            ("language-detection", "语言识别", "0.01 词点"),
+            ("bookmark-icon", "书签图标生成", "0.01 词点"),
             ("article-audio", "文章朗读生成", "1 语点"),
         ] {
             let row = app.descendants(matching: .any)["account-action-cost-\(id)"].firstMatch

@@ -1,6 +1,8 @@
 import 'server-only'
+import { ACTION_QUOTA_COST } from '@repo/env/config'
 import { mobileEndpoint } from '../http'
 import { verify } from './verify'
+import { requireCommentaryQuota } from '../quota-store'
 import { createReviewOperations } from '../review'
 import { getTimelineData } from '@/server/db/review'
 import { checkReview } from '@/server/review/check'
@@ -14,6 +16,7 @@ const operations = createReviewOperations({
     start: startReview,
     translation: submitReviewTranslation,
     conversation: submitReviewConversation,
+    charge: (userId, action, signal) => requireCommentaryQuota(userId, ACTION_QUOTA_COST[action], signal),
 })
 
 export const reviewTimeline = mobileEndpoint(verify, operations.reviewTimeline, 60000)

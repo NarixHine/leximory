@@ -1,5 +1,8 @@
 import 'server-only'
 import { redis } from '@repo/kv/redis'
+import { getMembership } from '@repo/user/membership'
+import { PLAN_COMMENTARY_QUOTA } from '@repo/env/config'
+import { MobileError } from './errors'
 import { invalidateMutationCaches } from './mutation-effects'
 import { mobileMutationID } from './vocabulary-save'
 
@@ -25,4 +28,12 @@ export async function chargeCommentaryQuota(input: {
     )
     if (allowed === 1) invalidateMutationCaches(`quota:${input.userId}:commentary`)
     return allowed === 1 || allowed === 2
+}
+
+export async function requireCommentaryQuota(userId: string, cost: number, signal?: AbortSignal): Promise<void> {
+    signal?.throwIfAborted()
+    const { plan } = await getMembership(userId, signal)
+    if (!(await chargeCommentaryQuota({ userId, cost, limit: PLAN_COMMENTARY_QUOTA[plan] }))) {
+        throw new MobileError('quota_exceeded')
+    }
 }

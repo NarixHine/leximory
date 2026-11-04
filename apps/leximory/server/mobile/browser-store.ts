@@ -1,4 +1,6 @@
 import { checkedResponse } from './http'
+import { ACTION_QUOTA_COST } from '@repo/env/config'
+import { requireCommentaryQuota } from './quota-store'
 import { detectLanguage } from './language-detection'
 import { shadowLibrary } from './shadow-library'
 import 'server-only'
@@ -15,7 +17,7 @@ import { mobileMutationID } from './vocabulary-save'
 import { MobileError } from './errors'
 import { summarizeText, textRowSchema } from './catalog'
 
-async function metadata(input: string): Promise<{ title: string; emoji: string }> {
+async function metadata(input: string, userId: string): Promise<{ title: string; emoji: string }> {
     let title = browserURL(input).hostname
     let description = ''
     const signal = AbortSignal.timeout(12000)
@@ -83,6 +85,7 @@ async function metadata(input: string): Promise<{ title: string; emoji: string }
     let emoji = '🌐'
     if (!signal.aborted) {
         try {
+            await requireCommentaryQuota(userId, ACTION_QUOTA_COST.bookmarkEmoji, signal)
             const result = await generateText({ ...emojiPrompt(title + '\n' + description), abortSignal: signal })
             const selected = result.text.trim()
             if (isValidEmoji(selected)) emoji = selected
@@ -134,7 +137,7 @@ export const browserStore: BrowserStore = {
                 throw new MobileError('invalid_input')
             return summarizeText(checkedResponse(textRowSchema, existing.data))
         }
-        const details = await metadata(input.url)
+        const details = await metadata(input.url, subject.userId)
         const title = input.title ?? details.title
         const emoji = details.emoji
         await supabase

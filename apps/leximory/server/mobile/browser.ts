@@ -35,7 +35,7 @@ export const browserReceiptSchema = z.object({
 })
 export type BrowserReceipt = z.infer<typeof browserReceiptSchema>
 export interface BrowserStore {
-    detectLanguage(context: string, quote: string): Promise<Lang>
+    detectLanguage(context: string, quote: string, userId: string): Promise<Lang>
     rules(userId: string): Promise<z.infer<typeof domainRuleSchema>[]>
     setRule(userId: string, domain: string, libraryId: string | null): Promise<void>
     putReceipt(id: string, receipt: BrowserReceipt): Promise<void>
@@ -150,7 +150,7 @@ export function createBrowserOperations(dependencies: {
                 input.context.slice(input.offset + input.quote.length)
             let language: Lang
             try {
-                language = library?.lang ?? (await store.detectLanguage(context, input.quote))
+                language = library?.lang ?? (await store.detectLanguage(context, input.quote, subject.userId))
             } catch (error) {
                 console.error('mobile.browser.failed', {
                     traceId,

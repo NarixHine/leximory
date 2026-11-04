@@ -9,9 +9,8 @@ import { z } from 'zod'
 import { pdfOutlineResultSchema } from '@repo/api'
 import { redis } from '@repo/kv/redis'
 import { supabase } from '@repo/supabase'
-import { getMembership } from '@repo/user/membership'
-import { PLAN_COMMENTARY_QUOTA } from '@repo/env/config'
-import { invalidateMutationCaches } from './mutation-effects'
+import { ACTION_QUOTA_COST } from '@repo/env/config'
+import { requireCommentaryQuota } from './quota-store'
 import { miniAI } from '@/server/ai/config'
 import { MobileError } from './errors'
 import { mobileMutationID } from './vocabulary-save'
@@ -58,9 +57,7 @@ export const pdfOutlineStore: PDFOutlineStore = {
                 if (existing.fingerprint !== fingerprint) throw new MobileError('invalid_input')
                 return existing.result
             }
-            const { plan } = await getMembership(scope.userId, signal)
-            const used = Number((await redis.get(`user:${scope.userId}:commentary_quota`)) ?? 0)
-            if (used + 1 > PLAN_COMMENTARY_QUOTA[plan]) throw new MobileError('quota_exceeded')
+            await requireCommentaryQuota(scope.userId, ACTION_QUOTA_COST.pdfOutline, signal)
             const { output } = await generateText({
                 ...miniAI,
                 output: Output.object({ schema: pdfOutlineModelSchema }),
@@ -138,28 +135,18 @@ export const pdfOutlineStore: PDFOutlineStore = {
             }
             const revision = input.requestId
             signal.throwIfAborted()
-            const { plan } = await getMembership(scope.userId, signal)
             const result = await redis.eval(
                 publishPDFOutlineScript,
-                [
-                    outlinePointerKey(scope.textId, scope.sourceVersion),
-                    `user:${scope.userId}:commentary_quota`,
-                    receiptKey,
-                    historyKey,
-                ],
+                [outlinePointerKey(scope.textId, scope.sourceVersion), receiptKey, historyKey],
                 [
                     input.baseRevision ?? '',
                     JSON.stringify({ path, revision }),
-                    input.generationId ? 1 : 0,
-                    PLAN_COMMENTARY_QUOTA[plan],
                     JSON.stringify({ fingerprint, revision, path }),
                     history,
                 ],
             )
-            if (result === 0) throw new MobileError('quota_exceeded')
             if (result === -1) throw new MobileError('stale_revision')
             if (result !== 1 && result !== 2) throw new MobileError('service_unavailable')
-            invalidateMutationCaches(`quota:${scope.userId}:commentary`)
             return signedResult(scope, revision, path)
         })
     },

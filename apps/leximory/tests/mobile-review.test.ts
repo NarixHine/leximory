@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { MobileError } from '../server/mobile/errors'
 import { createReviewOperations } from '../server/mobile/review'
 import { testMobileHandler } from './helpers/mobile'
 import type { BearerVerifier } from '../server/mobile/auth'
@@ -10,7 +11,14 @@ const verify: BearerVerifier = async () => ({ kind: 'authenticated', subject })
 const unused = async () => {
     throw new Error('Unexpected review operation')
 }
-const dependencies = { timeline: unused, check: unused, start: unused, translation: unused, conversation: unused }
+const dependencies = {
+    charge: async () => {},
+    timeline: unused,
+    check: unused,
+    start: unused,
+    translation: unused,
+    conversation: unused,
+}
 const request = (path: string, body?: unknown) =>
     new Request(`https://leximory.test/api/mobile/v1/review${path}`, {
         method: body === undefined ? 'GET' : 'POST',
@@ -252,4 +260,30 @@ test('native submissions reject ownership fields and oversized text before the b
         { date: '2026-10-12', lang: 'en', index: 0, submission: 'a'.repeat(501) },
     ])
         assert.equal((await handler(request('/translation', payload))).status, 400)
+})
+
+test('exhausted review feedback returns quota_exceeded before accepting a submission', async () => {
+    const handler = testMobileHandler(
+        createReviewOperations({
+            ...dependencies,
+            charge: async (userId, action) => {
+                assert.equal(userId, subject.userId)
+                assert.ok(action === 'reviewTranslation' || action === 'reviewConversation')
+                throw new MobileError('quota_exceeded')
+            },
+        }),
+        verify,
+    )
+    for (const path of ['/translation', '/conversation']) {
+        const response = await handler(
+            request(path, {
+                date: '2026-10-12',
+                lang: 'en',
+                submission: 'A quiet place',
+                ...(path === '/translation' ? { index: 0 } : {}),
+            }),
+        )
+        assert.equal(response.status, 429)
+        assert.equal((await response.json()).error.code, 'quota_exceeded')
+    }
 })

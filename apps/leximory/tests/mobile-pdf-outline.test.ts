@@ -180,7 +180,7 @@ test('quota exhaustion and storage failures remain typed failures at their affec
 
 const lua = spawnSync('lua', ['-v'])
 test(
-    'publication Lua atomically charges once, rejects exhaustion and stale writers, and restores for free',
+    'publication Lua saves charged generations and restores without charging, rejecting stale writers',
     { skip: lua.error ? 'Lua runtime unavailable' : false },
     () => {
         // Run the production transaction in Lua. Only the external Redis commands are in memory.
@@ -196,23 +196,20 @@ redis = { call = function(command, key, value)
   else error(command) end
 end }
 local publish = assert(load([==[${publishPDFOutlineScript}]==]))
-KEYS = { 'pointer', 'quota', 'receipt-one', 'history' }
-ARGV = { '', '{"path":"one.pdf","revision":"one"}', '1', '2', 'saved-one', 'history-one' }
-assert(publish() == 1)
-assert(data.quota == '1' and ttl.quota == 2592000 and data.history == 'history-one')
-assert(publish() == 2 and data.quota == '1')
--- A competing successful operation consumes the last shared unit.
+KEYS = { 'pointer', 'receipt-one', 'history' }
+ARGV = { '', '{"path":"one.pdf","revision":"one"}', 'saved-one', 'history-one' }
 data.quota = '2'
-KEYS[3] = 'receipt-two'; ARGV[1] = 'one'; ARGV[2] = '{"path":"two.pdf","revision":"two"}'
-assert(publish() == 0 and data.quota == '2' and not data['receipt-two'])
-assert(data.pointer:find('one.pdf', 1, true))
--- Undo and redo can publish while exhausted and retain the reset deadline.
-ARGV[3] = '0'; ARGV[6] = ''
-assert(publish() == 1 and data.quota == '2' and ttl.quota == 2592000 and data.history == 'history-one')
-KEYS[3] = 'stale'; ARGV[1] = 'one'; ARGV[3] = '1'
+assert(publish() == 1)
+assert(data.quota == '2' and data.history == 'history-one')
+assert(publish() == 2 and data.quota == '2')
+-- Save and undo are free even after generation consumes the last unit.
+KEYS[2] = 'receipt-two'; ARGV[1] = 'one'; ARGV[2] = '{"path":"two.pdf","revision":"two"}'
+ARGV[3] = 'saved-two'; ARGV[4] = ''
+assert(publish() == 1 and data.quota == '2' and data.history == 'history-one')
+KEYS[2] = 'stale'; ARGV[1] = 'one'
 assert(publish() == -1 and not data.stale and data.quota == '2')
--- A lost-response retry succeeds despite exhausted quota and a newer revision.
-KEYS[3] = 'receipt-one'
+-- A lost-response retry succeeds despite a newer revision.
+KEYS[2] = 'receipt-one'
 assert(publish() == 2 and data.quota == '2')
 print('publication verified')
 `

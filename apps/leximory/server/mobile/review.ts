@@ -23,9 +23,15 @@ type ReviewDependencies = {
     start: ReviewBackendOperation
     translation: ReviewBackendOperation
     conversation: ReviewBackendOperation
+    charge(userId: string, action: 'reviewTranslation' | 'reviewConversation', signal: AbortSignal): Promise<void>
 }
 
-async function forwardSubmission(context: MobileContext, operation: ReviewBackendOperation, schema: z.ZodType) {
+async function forwardSubmission(
+    context: MobileContext,
+    operation: ReviewBackendOperation,
+    schema: z.ZodType,
+    charge?: () => Promise<void>,
+) {
     query(context.request, [])
     const input = schema.parse(await jsonBody(context.request, 8192, context.signal))
     const headers = new Headers(context.request.headers)
@@ -38,6 +44,7 @@ async function forwardSubmission(context: MobileContext, operation: ReviewBacken
         body,
         signal: context.signal,
     })
+    await charge?.()
     const response = await operation(request, context.subject.userId)
     if (!response.ok) throw mobileErrorFromStatus(response.status)
     return checkedResponse(z.object({ success: z.boolean() }), await response.json())
@@ -82,8 +89,12 @@ export function createReviewOperations(dependencies: ReviewDependencies) {
         },
         reviewStart: async (context) => forwardSubmission(context, dependencies.start, reviewStartSchema),
         reviewTranslation: async (context) =>
-            forwardSubmission(context, dependencies.translation, reviewTranslationSchema),
+            forwardSubmission(context, dependencies.translation, reviewTranslationSchema, () =>
+                dependencies.charge(context.subject.userId, 'reviewTranslation', context.signal),
+            ),
         reviewConversation: async (context) =>
-            forwardSubmission(context, dependencies.conversation, reviewConversationSchema),
+            forwardSubmission(context, dependencies.conversation, reviewConversationSchema, () =>
+                dependencies.charge(context.subject.userId, 'reviewConversation', context.signal),
+            ),
     } satisfies Record<string, MobileOperation>
 }
