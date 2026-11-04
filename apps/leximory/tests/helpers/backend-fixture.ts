@@ -18,6 +18,15 @@ export async function startBackendFixture() {
     const folders = new Map<string, z.infer<typeof folderRow> & { starred_by: null }>()
     const words = new Map<string, string>()
     const values = new Map<string, unknown>()
+    values.set(
+        `review:${userId}:2026-10-12:en`,
+        JSON.stringify({
+            stage: 'complete',
+            story: 'A {{quiet||quiet||安静的}} place.',
+            translations: [],
+            conversation: null,
+        }),
+    )
     const events: { id: string; name: string; data: unknown; environment: string | undefined }[] = []
     const requests: string[] = []
     let profile: { archived_libs: string[] | null; lexicoin: number } | null = null

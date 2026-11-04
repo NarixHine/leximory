@@ -91,6 +91,7 @@ test(
                 'guest/definitions',
                 'guest/definitions/[requestId]',
                 'vocabulary',
+                'review/check',
             ]) {
                 const destination = join(root, 'app/api/mobile/v1', path)
                 await mkdir(destination, { recursive: true })
@@ -157,6 +158,13 @@ test(
             })
             assert.equal(saveDenied.status, 401)
             const headers = { authorization: 'Bearer runtime-test' }
+            const review = await fetch(origin + '/api/mobile/v1/review/check?date=2026-10-12&lang=en', {
+                headers: { authorization: 'Bearer fixture-token' },
+            })
+            assert.equal(review.status, 200, output + '\n' + (await review.clone().text()))
+            const snapshot = await review.json()
+            assert.equal(snapshot.exists, true)
+            assert.equal(snapshot.storyDocument.blocks[0].displayText, 'A quiet place.')
             for (const method of ['GET', 'POST']) {
                 const response = await fetch(origin + '/api/static', { method, headers })
                 assert.equal(response.status, 200, output + '\n' + (await response.clone().text()))

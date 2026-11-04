@@ -92,8 +92,12 @@ struct EbookThemePicker: View {
             nativeLookupBeforeCopy: true, trailingActions: [searchAction(reader: reader)])
         var elements = builder.menu(for: .root)?.children ?? []
         if let web = source as? LearningWebView, let selection = reader.selection ?? reader.menuSelection {
-            elements = ReadingSelectionMenu.capturedCommands(elements, from: web,
-                dictionaryFallback: web.dictionaryAction(for: selection))
+            let native = ReadingSelectionMenu.nativeLookupActions(in: elements)
+            func replaceDictionary(_ element: UIMenuElement) -> UIMenuElement {
+                if let menu = element as? UIMenu { return menu.replacingChildren(menu.children.map(replaceDictionary)) }
+                return native.contains { $0 === element } ? web.dictionaryAction(for: selection) : element
+            }
+            elements = elements.map(replaceDictionary)
         }
         if let selection = reader.selection ?? reader.menuSelection,
            bookmark(reader: reader, selection: selection) != nil {
@@ -169,10 +173,22 @@ final class LearningWebView: WKWebView, @MainActor UIEditMenuInteractionDelegate
     private var activeHighlight: (id: UUID, selection: EbookSelection, rect: CGRect)?
 
     func dictionaryAction(for selection: EbookSelection) -> UIAction {
+        // Use the captured EPUB selection for the dictionary fallback.
         UIAction(title: "辞典") { [weak self] _ in
-            guard let self else { return }
-            ReadingSelectionMenu.presentDictionary(term: selection.quote, from: self,
-                rect: convert(selection.rect, from: nil), accessibilityIdentifier: "ebook-dictionary")
+            guard let self, !selection.quote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+            var responder: UIResponder? = self
+            while let current = responder {
+                if let controller = current as? UIViewController {
+                    guard controller.presentedViewController == nil else { return }
+                    let dictionary = UIReferenceLibraryViewController(term: selection.quote)
+                    dictionary.view.accessibilityIdentifier = "ebook-dictionary"
+                    dictionary.popoverPresentationController?.sourceView = self
+                    dictionary.popoverPresentationController?.sourceRect = convert(selection.rect, from: nil)
+                    controller.present(dictionary, animated: true)
+                    return
+                }
+                responder = current.next
+            }
         }
     }
     func presentHighlightMenu(selection: EbookSelection) {

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { Request as FrameworkRequest } from 'next/dist/compiled/@edge-runtime/primitives/fetch'
 import { MobileError } from '../server/mobile/errors'
 import { createReviewOperations } from '../server/mobile/review'
 import { testMobileHandler } from './helpers/mobile'
@@ -89,6 +90,35 @@ test('native stories preserve embedded vocabulary in the existing reader contrac
     assert.equal(data.storyDocument.blocks[0].spans[0].kind, 'definition')
     assert.equal(data.storyDocument.blocks[0].spans[0].definition, '安静的')
     assert.equal(response.headers.get('cache-control'), 'private, no-store')
+})
+
+test('review checks preserve identity, headers and cancellation across Fetch implementations', async () => {
+    for (const cancel of [false, true]) {
+        const controller = new AbortController()
+        const input = new FrameworkRequest('https://leximory.test/api/mobile/v1/review/check?date=2026-10-12&lang=en', {
+            headers: { authorization: 'Bearer valid', 'x-client': 'native-ios' },
+            signal: controller.signal,
+        })
+        const handler = testMobileHandler(
+            createReviewOperations({
+                ...dependencies,
+                check: async (forwarded, owner) => {
+                    assert.equal(owner, subject.userId)
+                    assert.equal(forwarded.url, input.url)
+                    assert.equal(forwarded.method, 'GET')
+                    assert.equal(forwarded.headers.get('authorization'), 'Bearer valid')
+                    assert.equal(forwarded.headers.get('x-client'), 'native-ios')
+                    if (cancel) controller.abort()
+                    assert.equal(forwarded.signal.aborted, cancel)
+                    return Response.json({ exists: false, inProgress: false })
+                },
+            }),
+            verify,
+        )
+        const response = await handler(input)
+        assert.equal(response.status, cancel ? 503 : 200)
+        if (!cancel) assert.deepEqual(await response.json(), { exists: false, inProgress: false, storyDocument: null })
+    }
 })
 
 test('native timeline separates display words from definition markup', async () => {

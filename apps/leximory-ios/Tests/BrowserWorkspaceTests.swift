@@ -868,30 +868,57 @@ private final class ScrollHistoryServer: Sendable {
                     selection: ReviewSelection(date: "2026-10-12", language: "en"))
     }
 
+    @Test func initialStateIdentifiesLoadingBeforeAnyResponse() {
+        #expect(model(LoadingTransport(mode: .failure)).loadState == .loading)
+    }
+
     @Test func repeatedFailuresRecoverWithoutAbandoningTheReview() async {
         let transport = LoadingTransport(mode: .failure)
         let review = model(transport)
         review.drafts["translation-0"] = "My answer"
         await review.observe(pause: { _ in
-            if await transport.reads == 4 { await transport.setMode(.complete) }
-            if await transport.reads == 5 { throw CancellationError() }
+            if await transport.reads == 3 { await transport.setMode(.complete) }
+            if await transport.reads == 4 { throw CancellationError() }
         })
-        #expect(await transport.reads == 5)
+        #expect(await transport.reads == 4)
         #expect(review.snapshot?.translations?.first?.keyword == "hello")
         #expect(review.drafts["translation-0"] == "My answer")
         #expect(review.error == nil)
+        #expect(review.loadState == .ready)
     }
 
-    @Test func cachedExercisesRemainAvailableDuringRepeatedFailures() async {
-        let transport = LoadingTransport(mode: .complete)
+    @Test(arguments: [false, true]) func exhaustedFirstLoadOffersRetryAndPreservesDrafts(serverFailure: Bool) async {
+        let transport = LoadingTransport(mode: serverFailure ? .unavailable : .failure)
         let review = model(transport)
+        review.drafts["translation-0"] = "My answer"
+        await review.observe(pause: { _ in })
+        #expect(await transport.reads == 4)
+        #expect(review.loadState == .unavailable("暂时无法打开复习，请稍后重试。"))
+        review.retryLoading()
+        #expect(review.loadState == .loading)
+        #expect(review.loadAttempt == 1)
+        await transport.setMode(.complete)
         await review.observe(pause: { _ in throw CancellationError() })
+        #expect(review.loadState == .ready)
+        #expect(review.drafts["translation-0"] == "My answer")
+    }
+
+    @Test func cachedExercisesRemainAvailableDuringRepeatedFailures() async throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let origin = try #require(URL(string: "https://review.test"))
+        let store = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
+        let transport = LoadingTransport(mode: .complete)
+        await model(transport, store: store).observe(pause: { _ in throw CancellationError() })
         await transport.setMode(.failure)
+        let review = model(transport, store: store)
         await review.observe(pause: { _ in
             if await transport.reads >= 5 { throw CancellationError() }
         })
         #expect(review.snapshot?.translations?.first?.keyword == "hello")
         #expect(review.error == nil)
+        #expect(review.loadState == .ready)
+        #expect(await store.status().online)
     }
 
     @Test func transientReadFailureRecoversWithoutNotifying() async throws {
@@ -919,16 +946,33 @@ private final class ScrollHistoryServer: Sendable {
         #expect(review.error == nil)
     }
 
-    @Test func delayedGenerationStillArrivesAfterNinetyPolls() async {
+    @Test func generationShowsPreparationAndEventuallyArrives() async {
         let transport = LoadingTransport(mode: .stalled)
         let review = model(transport)
         await review.observe(pause: { _ in
-            if await transport.reads == 90 { await transport.setMode(.complete) }
-            if await transport.reads == 91 { throw CancellationError() }
+            if await transport.reads == 3 { await transport.setMode(.complete) }
+            if await transport.reads == 4 { throw CancellationError() }
         })
-        #expect(await transport.reads == 91)
+        #expect(await transport.reads == 4)
         #expect(review.snapshot?.translations?.first?.keyword == "hello")
         #expect(review.error == nil)
+        #expect(review.loadState == .ready)
+    }
+
+    @Test func stalledPreparationStopsAndCanBeRetried() async {
+        let transport = LoadingTransport(mode: .stalled)
+        let review = model(transport)
+        var instant = Date(timeIntervalSince1970: 0)
+        await review.observe(now: {
+            defer { instant.addTimeInterval(30) }
+            return instant
+        }, pause: { _ in })
+        #expect(await transport.reads == 4)
+        #expect(review.loadState == .unavailable("练习还没有准备好，请稍后重试。"))
+        review.retryLoading()
+        await transport.setMode(.complete)
+        await review.observe(pause: { _ in throw CancellationError() })
+        #expect(review.loadState == .ready)
     }
 
     @Test func partialExercisesAreAvailableBeforeGenerationCompletes() async {
@@ -938,10 +982,11 @@ private final class ScrollHistoryServer: Sendable {
         #expect(review.snapshot?.exists == false)
         #expect(review.snapshot?.translations?.first?.keyword == "hello")
         #expect(review.error == nil)
+        #expect(review.loadState == .preparing)
     }
 
     private actor LoadingTransport: ClientTransport {
-        enum Mode { case failure, transient, complete, vanished, stalled, partial }
+        enum Mode { case failure, unavailable, transient, complete, vanished, stalled, partial }
         var mode: Mode
         private(set) var reads = 0
         private(set) var starts = 0
@@ -953,6 +998,9 @@ private final class ScrollHistoryServer: Sendable {
                 return (HTTPResponse(status: .ok), HTTPBody(#"{"success":true}"#))
             }
             reads += 1
+            if mode == .unavailable {
+                return (HTTPResponse(status: .serviceUnavailable), HTTPBody(#"{"error":{"code":"service_unavailable","message":"Temporarily unavailable","retryable":true}}"#))
+            }
             if mode == .failure || (mode == .transient && reads == 1) { throw URLError(.networkConnectionLost) }
             if mode == .stalled {
                 return (HTTPResponse(status: .ok), HTTPBody(#"{"exists":false,"inProgress":true}"#))

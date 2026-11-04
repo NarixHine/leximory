@@ -133,7 +133,6 @@ final class BrowserWebView: WKWebView {
         // replace the selection used by a newer menu or a different document.
         let request = selectionRequest
         var capturedSelection: BrowserSelection?
-        var capturedRect = CGRect.zero
         capture { [weak self] selection in
             guard self?.selectionRequest == request else { return }
             capturedSelection = selection
@@ -159,19 +158,7 @@ final class BrowserWebView: WKWebView {
             }
         }
         ReadingSelectionMenu.insertLearningActions([action], into: builder, trailingActions: [searchAction])
-        let dictionaryFallback = UIAction(title: "辞典") { [weak self] _ in
-            guard let self, selectionRequest == request else { return }
-            if let capturedSelection {
-                ReadingSelectionMenu.presentDictionary(term: capturedSelection.quote, from: self, rect: capturedRect)
-            } else {
-                capture { [weak self] selection in
-                    guard let self, self.selectionRequest == request, let selection else { return }
-                    ReadingSelectionMenu.presentDictionary(term: selection.quote, from: self, rect: capturedRect)
-                }
-            }
-        }
-        let elements = ReadingSelectionMenu.capturedCommands(builder.menu(for: .root)?.children ?? [],
-            from: self, dictionaryFallback: dictionaryFallback)
+        let elements = builder.menu(for: .root)?.children ?? []
         builder.replaceChildren(ofMenu: .root) { _ in [] }
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -181,7 +168,6 @@ final class BrowserWebView: WKWebView {
             let scale = scrollView.zoomScale
             let rect = CGRect(x: value["x", default: 0] * scale, y: value["y", default: 0] * scale,
                               width: value["width", default: 0] * scale, height: value["height", default: 0] * scale)
-            capturedRect = rect
             ReadingGlassMenu.present(from: self, rect: rect, elements: elements)
         }
     }

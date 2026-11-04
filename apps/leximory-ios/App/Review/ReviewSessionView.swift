@@ -22,7 +22,10 @@ struct ReviewSessionView: View {
                         .padding(.horizontal, 12).padding(.top, 88).padding(.bottom, chromeHeight + 16)
                         .frame(maxWidth: 920).frame(maxWidth: .infinity)
                 }.scrollBounceBehavior(.basedOnSize).accessibilityIdentifier("review-session-scroll")
-                Text(learningLanguageName(model.selection.language)).interfaceFont(16).padding(.top, 12)
+                VStack(spacing: 12) {
+                    Text(learningLanguageName(model.selection.language)).interfaceFont(16)
+                    loadStatus
+                }.padding(.top, 12).padding(.horizontal, 20)
                 if let exercise = model.exercise {
                     let usableHeight = max(160, min(geometry.size.height, keyboardTop ?? geometry.size.height) - chromeHeight - 56)
                     ReviewExerciseView(model: model, index: { if case .translation(let index) = exercise { return index }; return nil }(), availableHeight: usableHeight)
@@ -38,7 +41,31 @@ struct ReviewSessionView: View {
                 if !active { model.exercise = nil; cat.stop(); onProgress() }
             }
             .onChange(of: scenePhase) { _, phase in if phase != .active { cat.stop() } }
-            .task(id: scenePhase == .active && resourceActive) { if scenePhase == .active && resourceActive { await model.observe() } }
+            .task(id: ReviewObservation(active: scenePhase == .active && resourceActive, attempt: model.loadAttempt)) {
+                if scenePhase == .active && resourceActive { await model.observe() }
+            }
+    }
+
+    @ViewBuilder private var loadStatus: some View {
+        switch model.loadState {
+        case .loading, .preparing:
+            HStack(spacing: 10) {
+                ProgressView().tint(.secondary)
+                Text(model.loadState == .loading ? "正在打开复习" : "正在准备练习")
+                    .interfaceFont(15).foregroundStyle(.secondary)
+            }.accessibilityElement(children: .combine).accessibilityIdentifier("review-loading")
+        case .unavailable(let message):
+            VStack(spacing: 12) {
+                Text(message).interfaceFont(15).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                Button("重试", action: model.retryLoading)
+                    .interfaceFont(15).buttonStyle(.borderedProminent).controlSize(.large).tint(LeximoryPalette.ink)
+                    .accessibilityIdentifier("review-retry")
+            }.padding(16).background(LeximoryPalette.paper, in: .rect(cornerRadius: 20))
+        case .empty:
+            Text("这一天还没有复习练习").interfaceFont(15).foregroundStyle(.secondary)
+        case .ready:
+            EmptyView()
+        }
     }
 
     private func lawn(width: CGFloat, availableHeight: CGFloat) -> some View {
@@ -94,6 +121,11 @@ struct ReviewSessionView: View {
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { model.exercise = item }
         if let point = taskPoints[target] { cat.move(to: point, reduceMotion: reduceMotion) }
     }
+}
+
+private struct ReviewObservation: Equatable {
+    let active: Bool
+    let attempt: Int
 }
 
 private struct ReviewTranslationItem: Identifiable {

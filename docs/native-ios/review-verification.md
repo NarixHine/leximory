@@ -4,17 +4,19 @@ The iOS Home card 每日复习 opens an account-scoped timeline inside the brows
 
 The native flow retains the web artwork, copy, evaluation feedback and progress rules. At least 60% of translations must be complete to unlock writing. Completing writing sets progress to 100%. Timeline and lawn are browser resources. 连词成文 is omitted from iOS. Word pills use 16 pt prose text, 16 pt horizontal padding, and a 44 pt minimum height. Word pills open an in-place translation tray, with a compact input above the persistent address bar. Keyboard avoidance applies to the tray and input; the lawn keeps its geometry. The persistent back chevron dismisses trays first, then leaves the lawn. Home leaves the lawn and Back restores it. There are no duplicate review close or cancel controls. The loading indicator overlays the lawn to preserve its initial position. Empty lawn taps move the 100 pt white cat using the web sprite and distance-based motion phases. Timeline definitions use the existing vocabulary editor.
 
+The lawn shows a labeled spinner immediately while opening a review and while exercises prepare. Initial request failures retry automatically up to four attempts; exhausted recovery shows an inline retry action. Empty preparation stops waiting after two minutes and offers retry. Existing exercises and drafts stay available during background request failures. Partial exercises can be opened before preparation finishes. Loading feedback overlays the scene without shifting the lawn or covering workspace navigation.
+
 ## API
 
 All native requests require a verified Supabase bearer token. The mobile adapter passes the verified owner to the shared server review operations. The web routes retain their session authentication and error responses.
 
-| Endpoint under `/api/mobile/v1/review` | Method | Purpose |
-| --- | --- | --- |
-| `/` | GET | Dated words, per-language progress, pagination |
-| `/check` | GET | Generation and evaluation state |
-| `/start` | POST | Existing review generation workflow |
-| `/translation` | POST | Existing translation submission and evaluation |
-| `/conversation` | POST | Existing writing submission, including the server-side unlock gate |
+| Endpoint under `/api/mobile/v1/review` | Method | Purpose                                                            |
+| -------------------------------------- | ------ | ------------------------------------------------------------------ |
+| `/`                                    | GET    | Dated words, per-language progress, pagination                     |
+| `/check`                               | GET    | Generation and evaluation state                                    |
+| `/start`                               | POST   | Existing review generation workflow                                |
+| `/translation`                         | POST   | Existing translation submission and evaluation                     |
+| `/conversation`                        | POST   | Existing writing submission, including the server-side unlock gate |
 
 The adapter separates vocabulary labels from their serialized annotations. It projects story Markdown through the existing native reader contract. Account-scoped caches support reading offline. Submission and editing controls disable offline. Pending evaluations recover on foregrounding. A lost submission response triggers a read before another submission is allowed.
 

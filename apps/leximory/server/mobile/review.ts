@@ -79,7 +79,8 @@ export function createReviewOperations(dependencies: ReviewDependencies) {
         },
         reviewCheck: async ({ request, subject, signal }) => {
             reviewSelectionSchema.parse(query(request, ['date', 'lang']))
-            const response = await dependencies.check(new Request(request, { signal }), subject.userId)
+            const forwarded = new Request(request.url, { method: 'GET', headers: request.headers, signal })
+            const response = await dependencies.check(forwarded, subject.userId)
             if (!response.ok) throw mobileErrorFromStatus(response.status)
             const payload = checkedResponse(checkPayload, await response.json())
             return checkedResponse(reviewSnapshotSchema, {

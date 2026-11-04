@@ -201,12 +201,33 @@ extension ReviewUITests {
         let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "复习进度 24%")).firstMatch
         XCTAssertTrue(day.waitForExistence(timeout: 10)); day.tap()
         XCTAssertTrue(app.otherElements["review-lawn"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.descendants(matching: .any)["review-loading"].waitForExistence(timeout: 2))
         XCTAssertTrue(app.buttons["browser-address"].isHittable)
         XCTAssertFalse(app.otherElements["reading-loading-scene"].exists)
         XCTAssertFalse(app.staticTexts["复习暂时无法打开"].exists)
         XCTAssertTrue(app.buttons["review-task-discover"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.descendants(matching: .any)["review-loading"].exists)
         XCTAssertFalse(app.staticTexts["复习暂时无法打开"].exists)
         app.buttons["review-task-discover"].tap()
         XCTAssertTrue(app.textViews["你的翻译"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor func testExhaustedLoadingOffersRetryAndRecoversInPlace() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--browser-workspace-fixtures", "--review-retry-fixture"]
+        app.launch()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        XCTAssertTrue(app.buttons["browser-review"].waitForExistence(timeout: 15))
+        app.buttons["browser-review"].tap()
+        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "复习进度 24%")).firstMatch
+        XCTAssertTrue(day.waitForExistence(timeout: 10)); day.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["review-loading"].waitForExistence(timeout: 2))
+        let retry = app.buttons["review-retry"]
+        XCTAssertTrue(retry.waitForExistence(timeout: 25))
+        XCTAssertFalse(app.descendants(matching: .any)["review-loading"].exists)
+        XCTAssertTrue(app.buttons["browser-address"].isHittable)
+        retry.tap()
+        XCTAssertTrue(app.buttons["review-task-discover"].waitForExistence(timeout: 10))
+        XCTAssertFalse(retry.exists)
     }
 }
