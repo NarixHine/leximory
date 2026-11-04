@@ -32,7 +32,7 @@ struct BrowserImportRequest: Identifiable {
     }
 }
 
-private enum ImportStep: Hashable { case folder, content }
+private enum ImportStep: Hashable { case folder }
 
 struct BrowserImportSheet: View {
     let request: BrowserImportRequest
@@ -41,6 +41,7 @@ struct BrowserImportSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.nativeSync) private var sync
     @State private var title: String
+    @State private var editor = ArticleEditorController()
     @State private var content: String
     @State private var folderID: String?
     @State private var fullText = true
@@ -145,12 +146,18 @@ struct BrowserImportSheet: View {
                 }
                 if file == nil && fullText {
                     Section {
-                        ArticleMarkdownPreview(content: content, language: folder?.preview.language ?? "English")
-                        Button("编辑全文", systemImage: "pencil") { path.append(.content) }
+                        ArticleEditorSurface(content: content, language: folder?.preview.language ?? "English", controller: editor, disabled: busy) { content = $0 }
+                            .id(ObjectIdentifier(editor))
+                            .frame(minHeight: 360, idealHeight: 480)
+                            .listRowInsets(EdgeInsets())
+                            .accessibilityIdentifier("browser-import-editor")
+                        if editor.failed {
+                            Button("重新打开正文", systemImage: "arrow.clockwise") { editor = ArticleEditorController() }
+                        }
                         if contentTooLong, let limit { Text("全文共 \(content.utf16.count) 字符，超过此文件夹的 \(limit) 字符上限。请编辑后重试。").foregroundStyle(.secondary) }
                         if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { Text("未能提取正文。可以存为链接，或手动编辑全文。").foregroundStyle(.secondary) }
                     } header: {
-                        sectionHeading("全文预览")
+                        sectionHeading("编辑全文")
                     }
                 }
                 if let error { Section { Text(error).foregroundStyle(.secondary).accessibilityAddTraits(.updatesFrequently) } }
@@ -163,7 +170,7 @@ struct BrowserImportSheet: View {
                     ToolbarItem(placement: .confirmationAction) {
                         Button { confirmImport() } label: {
                             if busy { ProgressView() } else { Text(file == nil && fullText ? "导入" : request.confirmation) }
-                        }.disabled(!valid || busy || uncertain || sync?.online == false)
+                        }.disabled(!valid || busy || uncertain || (file == nil && fullText && !editor.ready) || sync?.online == false)
                             .accessibilityIdentifier("browser-import-submit")
                     }
                 }
@@ -171,8 +178,6 @@ struct BrowserImportSheet: View {
             .navigationDestination(for: ImportStep.self) { step in
                 switch step {
                 case .folder: BrowserFolderPicker(workspace: workspace, selection: folderSelection)
-                case .content:
-                    ArticleEditorPage(content: $content, language: folder?.preview.language ?? "English")
                 }
             }
             .interactiveDismissDisabled(busy)
@@ -234,6 +239,16 @@ struct BrowserImportSheet: View {
         titleFocused = false
         busy = true; error = nil
         defer { busy = false }
+        if file == nil && fullText {
+            do {
+                editor.web?.endEditing(true)
+                content = try await editor.markdown()
+            } catch {
+                self.error = "正文未能读取，请重试。"
+                return
+            }
+            guard valid else { return }
+        }
         var importStarted = false
         do {
             if let domain = draft?.url.host, remember || initialRuleFolderID != nil {

@@ -163,7 +163,7 @@ window.lexiEditor = {
             },
             onUpdate() {
                 changed = true
-                bridge('change')
+                bridge('change', { markdown: getMarkdownFromEditor(editor) })
             },
             onSelectionUpdate() {
                 bridge('selection')

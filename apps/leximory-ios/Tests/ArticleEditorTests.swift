@@ -29,6 +29,25 @@ import HTTPTypes
         #expect(markdown.contains("New words."))
         _ = session.coordinator
     }
+    @Test func inlineEditsUpdateTheImportDraftWithoutApplyingAnotherScreen() async throws {
+        var draft = "A river."
+        let session = try await open(draft, contentChanged: { draft = $0 })
+        defer { session.web.configuration.userContentController.removeScriptMessageHandler(forName: "editor") }
+        _ = try await session.web.callAsyncJavaScript("window.lexiEditor.insertText(' New words.');", arguments: [:], in: nil, contentWorld: .page)
+        for _ in 0..<100 {
+            if draft.contains("New words.") { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(draft == "A river. New words.")
+        #expect(try await session.controller.markdown() == draft)
+        session.controller.command("undo")
+        for _ in 0..<100 {
+            if draft == "A river." { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(draft == "A river.")
+        _ = session.coordinator
+    }
     @Test func unsupportedStructuresAndHostileHTMLRemainInertAndLossless() async throws {
         let table = "| A | B |\n|---|---|\n| x | y |"
         let ruby = "<ruby>漢<rt>かん</rt></ruby>"
@@ -125,9 +144,9 @@ import HTTPTypes
             return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(source))
         }
     }
-    private func open(_ source: String) async throws -> (web: WKWebView, controller: ArticleEditorController, coordinator: ArticleEditorWebView.Coordinator) {
+    private func open(_ source: String, contentChanged: ((String) -> Void)? = nil) async throws -> (web: WKWebView, controller: ArticleEditorController, coordinator: ArticleEditorWebView.Coordinator) {
         let controller = ArticleEditorController()
-        let wrapper = ArticleEditorWebView(source: source, language: "English", fontSize: 17, controller: controller)
+        let wrapper = ArticleEditorWebView(source: source, language: "English", fontSize: 17, controller: controller, contentChanged: contentChanged)
         let coordinator = wrapper.makeCoordinator()
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .nonPersistent()

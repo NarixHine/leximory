@@ -21,25 +21,10 @@ struct ArticleEditorPage: View {
     @State private var controller = ArticleEditorController()
     @State private var error: String?
     @State private var committing = false
-    @ScaledMetric(relativeTo: .body) private var size = 17.0
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         VStack(spacing: 0) {
-            ScrollView(.horizontal) {
-                HStack(spacing: 4) {
-                    formatting("标题", symbol: "textformat.size", command: "heading")
-                    formatting("粗体", symbol: "bold", command: "bold")
-                    formatting("斜体", symbol: "italic", command: "italic")
-                    formatting("引用", symbol: "text.quote", command: "quote")
-                    formatting("列表", symbol: "list.bullet", command: "list")
-                    Divider().frame(height: 20)
-                    formatting("撤销", symbol: "arrow.uturn.backward", command: "undo")
-                    formatting("重做", symbol: "arrow.uturn.forward", command: "redo")
-                }.padding(.horizontal, 12)
-            }.scrollIndicators(.hidden).disabled(!controller.ready || committing)
-            Divider()
-            ArticleEditorWebView(source: content, language: language, fontSize: size, controller: controller)
-                .overlay { if !controller.ready && !controller.failed { ProgressView() } }
+            ArticleEditorSurface(content: content, language: language, controller: controller, disabled: committing)
             if let error { Text(error).interfaceFont(14).foregroundStyle(.secondary).padding(12) }
             if controller.failed {
                 Text("正文未能打开，请返回后重试。").interfaceFont(14).foregroundStyle(.secondary).padding()
@@ -64,6 +49,34 @@ struct ArticleEditorPage: View {
             .navigationBarBackButtonHidden()
 
     }
+}
+
+struct ArticleEditorSurface: View {
+    let content: String
+    let language: String
+    let controller: ArticleEditorController
+    var disabled = false
+    var contentChanged: ((String) -> Void)?
+    @ScaledMetric(relativeTo: .body) private var size = 17.0
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView(.horizontal) {
+                HStack(spacing: 4) {
+                    formatting("标题", symbol: "textformat.size", command: "heading")
+                    formatting("粗体", symbol: "bold", command: "bold")
+                    formatting("斜体", symbol: "italic", command: "italic")
+                    formatting("引用", symbol: "text.quote", command: "quote")
+                    formatting("列表", symbol: "list.bullet", command: "list")
+                    Divider().frame(height: 20)
+                    formatting("撤销", symbol: "arrow.uturn.backward", command: "undo")
+                    formatting("重做", symbol: "arrow.uturn.forward", command: "redo")
+                }.padding(.horizontal, 12)
+            }.scrollIndicators(.hidden).disabled(!controller.ready || disabled)
+            Divider()
+            ArticleEditorWebView(source: content, language: language, fontSize: size, controller: controller, contentChanged: contentChanged)
+                .overlay { if !controller.ready && !controller.failed { ProgressView() } }
+        }.background(LeximoryPalette.paper).tint(.primary).allowsHitTesting(!disabled)
+    }
     private func formatting(_ title: String, symbol: String, command: String) -> some View {
         Button(title, systemImage: symbol) { controller.command(command) }
             .labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44).accessibilityIdentifier("article-format-" + command)
@@ -75,6 +88,7 @@ struct ArticleEditorWebView: UIViewRepresentable {
     let language: String
     let fontSize: Double
     let controller: ArticleEditorController
+    var contentChanged: ((String) -> Void)?
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -85,19 +99,20 @@ struct ArticleEditorWebView: UIViewRepresentable {
         web.isOpaque = false; web.backgroundColor = .clear; web.scrollView.backgroundColor = .clear
         web.navigationDelegate = context.coordinator
         web.scrollView.keyboardDismissMode = .interactive
+        controller.ready = false; controller.failed = false
         controller.web = web
         if let url = Bundle.main.url(forResource: "editor", withExtension: "html") {
             web.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
         } else { controller.failed = true }
         return web
     }
-    func updateUIView(_ web: WKWebView, context: Context) {}
+    func updateUIView(_ web: WKWebView, context: Context) { context.coordinator.parent = self }
     static func dismantleUIView(_ web: WKWebView, coordinator: Coordinator) {
         web.configuration.userContentController.removeScriptMessageHandler(forName: "editor")
         web.navigationDelegate = nil
     }
     final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
-        let parent: ArticleEditorWebView
+        var parent: ArticleEditorWebView
         init(_ parent: ArticleEditorWebView) { self.parent = parent }
         func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
             guard message.frameInfo.isMainFrame, let event = message.body as? [String: Any], let kind = event["kind"] as? String else { return }
@@ -114,6 +129,7 @@ struct ArticleEditorWebView: UIViewRepresentable {
                     } catch { parent.controller.failed = true }
                 }
             } else if kind == "loaded" { parent.controller.ready = true }
+            else if kind == "change", let markdown = event["markdown"] as? String { parent.contentChanged?(markdown) }
         }
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) { parent.controller.failed = true }
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { parent.controller.failed = true }
