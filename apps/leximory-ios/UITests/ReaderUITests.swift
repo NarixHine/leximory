@@ -316,20 +316,20 @@ final class ReaderUITests: XCTestCase {
         XCTAssertEqual(reader.value as? String, opening)
         reader.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5)).tap()
         XCTAssertEqual(reader.value as? String, opening)
-        reader.coordinate(withNormalizedOffset: CGVector(dx: 1 - 35 / reader.frame.width, dy: 0.5)).tap()
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 1 - 10 / reader.frame.width, dy: 0.5)).tap()
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", opening!), object: reader)], timeout: 5) == .completed)
         let second = reader.value as? String
         // Two-column iPad pagination can reach this short fixture's final
         // chapter in one turn. A further tap must clamp there.
         let atFinalSpread = second?.contains("The garden") == true
-        reader.coordinate(withNormalizedOffset: CGVector(dx: 1 - 35 / reader.frame.width, dy: 0.5)).tap()
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 1 - 10 / reader.frame.width, dy: 0.5)).tap()
         if atFinalSpread {
             XCTAssertEqual(reader.value as? String, second)
         } else {
             XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", second!), object: reader)], timeout: 5) == .completed)
         }
         // The empty left gutter returns to the preceding spread.
-        reader.coordinate(withNormalizedOffset: CGVector(dx: 35 / reader.frame.width, dy: 0.5)).tap()
+        reader.coordinate(withNormalizedOffset: CGVector(dx: 10 / reader.frame.width, dy: 0.5)).tap()
         let preceding = atFinalSpread ? opening! : second!
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", preceding), object: reader)], timeout: 5) == .completed)
         capture(app, name: "EPUB tap zones in reading direction")

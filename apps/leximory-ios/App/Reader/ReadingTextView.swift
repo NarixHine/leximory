@@ -931,14 +931,14 @@ private extension UIFont {
     private func makeButton(_ element: UIMenuElement, dismisses: Bool = true, iconOnly: Bool = false) -> UIButton {
         let primary = element.title == ReadingSelectionMenu.lookupTitle
         let button = SelectionGlassButton(type: .custom)
-        if let action = element as? UIAction {
-            button.addAction(action, for: .touchUpInside)
-            button.isEnabled = !action.attributes.contains(.disabled)
-        } else if let command = element as? UICommand {
-            button.isEnabled = !command.attributes.contains(.disabled)
+        if let leaf = element as? any UIMenuLeaf {
+            button.isEnabled = !leaf.attributes.contains(.disabled)
             button.addAction(UIAction { [weak self] _ in
-                guard let source = self?.source else { return }
-                UIApplication.shared.sendAction(command.action, to: nil, from: source, for: nil)
+                guard let self, let source else { return }
+                // Let UIKit execute the original leaf, including native lookup
+                // context. Sending only its selector loses that command state.
+                leaf.performWithSender(source, target: nil)
+                if dismisses { close() }
             }, for: .touchUpInside)
         }
         let destructive = (element as? UIAction)?.attributes.contains(.destructive) == true
@@ -1022,11 +1022,6 @@ private extension UIFont {
             ? "reading-selection-web-search"
             : "reading-selection-" + (element.title.isEmpty ? ((element as? UIAction)?.discoverabilityTitle ?? "color") : element.title)
         button.accessibilityLabel = element.accessibilityLabel ?? (element.title.isEmpty ? (element as? UIAction)?.discoverabilityTitle : element.title)
-        if dismisses {
-            button.addAction(UIAction { [weak self] _ in
-                self?.close()
-            }, for: .touchUpInside)
-        }
         return button
     }
 

@@ -40,12 +40,13 @@ struct AccountView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 12) {
                     if let details {
                         hero(details)
                         stats(details)
-                        preferences(details)
+                        preferences
                         management(details)
+                        accountActions(details)
                         AccountActionCostTable()
                     } else if loading {
                         ProgressView("正在打开账号").frame(maxWidth: .infinity).padding(.top, 80)
@@ -136,7 +137,7 @@ struct AccountView: View {
                         .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
                 }
             }
-        }.padding(.vertical, 8)
+        }
     }
 
     private func joinedDate(_ value: String) -> Date? {
@@ -167,52 +168,60 @@ struct AccountView: View {
             }
         }
     }
-    private func preferences(_ value: AccountSettings) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
-            LeximorySectionHeader("英语偏好")
+    private var preferences: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            AccountCardTitle("英语偏好")
             Picker("英语偏好", selection: Binding(get: { details?.accent ?? "AmE" }, set: { accent in
                 perform { try await session.client.setAccountAccent(accent) }
             })) {
                 Text("美式英语").tag("AmE")
                 Text("英式英语").tag("BrE")
             }.pickerStyle(.segmented).disabled(editingUnavailable)
-        }.padding(20).background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
+        }.padding(16).background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
     }
     private func management(_ value: AccountSettings) -> some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
+            AccountCardTitle("账号管理")
+                .padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 8)
             editRow("用户名", value: value.username, symbol: "person", field: .username)
-            Divider()
+            accountRowDivider
             PhotosPicker(selection: $photo, matching: .images) {
-                HStack { Label("头像", systemImage: "photo"); Spacer(); Image(systemName: "chevron.right").foregroundStyle(.tertiary) }
-                    .frame(minHeight: 52).contentShape(Rectangle())
+                AccountSettingsRow("头像", symbol: "photo")
             }.buttonStyle(.plain).disabled(editingUnavailable)
-            Divider()
+            accountRowDivider
             editRow("邮箱", value: value.email, symbol: "envelope", field: .email)
-            Divider()
+            accountRowDivider
             editRow("密码", value: nil, symbol: "lock", field: .password)
-            Divider()
+            accountRowDivider
             ShareLink(item: session.client.webURL.appending(path: "profile/\(value.userId)"), subject: Text("Leximory"), message: Text("我在 Leximory 上学语言")) {
-                HStack { Label("分享学习进度", systemImage: "square.and.arrow.up"); Spacer() }.frame(minHeight: 52)
+                AccountSettingsRow("分享学习进度", symbol: "square.and.arrow.up", showsDisclosure: false)
             }.buttonStyle(.plain)
-            Divider()
-            Button("退出登录", role: .destructive) { confirmsSignOut = true }
-                .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading).disabled(busy)
-            Divider()
-            Button("删除账号", role: .destructive) {
+        }.background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
+    }
+    private var accountRowDivider: some View {
+        Divider().padding(.leading, 48).padding(.trailing, 16)
+    }
+    private func accountActions(_ value: AccountSettings) -> some View {
+        VStack(spacing: 0) {
+            Button(role: .destructive) { confirmsSignOut = true } label: {
+                Text("退出登录")
+                    .padding(.vertical, 14).frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                    .padding(.horizontal, 16).contentShape(.rect)
+            }.disabled(busy)
+            Divider().padding(.horizontal, 16)
+            Button(role: .destructive) {
                 session.deletion.prepare(userID: value.userId)
                 session.deletion.presented = true
-            }
-                .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading).disabled(editingUnavailable)
-        }.padding(.horizontal, 20).background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
+            } label: {
+                Text("删除账号")
+                    .padding(.vertical, 14).frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+                    .padding(.horizontal, 16).contentShape(.rect)
+            }.disabled(editingUnavailable)
+        }.background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
     }
     private func editRow(_ title: String, value: String?, symbol: String, field: AccountEditor.Field) -> some View {
         Button { editor = field } label: {
-            HStack {
-                Label(title, systemImage: symbol)
-                Spacer()
-                if let value { Text(value).foregroundStyle(.secondary).lineLimit(1) }
-                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
-            }.frame(minHeight: 52).contentShape(Rectangle())
+            AccountSettingsRow(title, symbol: symbol, value: value)
         }.buttonStyle(.plain).disabled(editingUnavailable)
     }
     private func load() async {
@@ -249,6 +258,57 @@ struct AccountView: View {
     }
 }
 
+private struct AccountCardTitle: View {
+    let title: String
+    init(_ title: String) { self.title = title }
+
+    var body: some View {
+        Text(title)
+            .interfaceFont(17)
+            .foregroundStyle(.primary)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+private struct AccountSettingsRow: View {
+    let title: String
+    let symbol: String
+    let value: String?
+    let showsDisclosure: Bool
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    nonisolated init(_ title: String, symbol: String, value: String? = nil, showsDisclosure: Bool = true) {
+        self.title = title
+        self.symbol = symbol
+        self.value = value
+        self.showsDisclosure = showsDisclosure
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol)
+                .frame(width: 20).foregroundStyle(.secondary).accessibilityHidden(true)
+            LabeledContent {
+                if let value {
+                    Text(value).foregroundStyle(.secondary)
+                        .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+                }
+            } label: {
+                Text(title).foregroundStyle(.primary)
+            }
+            if showsDisclosure {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.tertiary).accessibilityHidden(true)
+            }
+        }
+        .interfaceFont(17)
+        .padding(.vertical, 12).frame(maxWidth: .infinity, minHeight: 52)
+        .padding(.horizontal, 16).contentShape(.rect)
+    }
+}
+
 private struct MembershipEntryLabel: View {
     let details: AccountSettings
     let unavailable: Bool
@@ -264,16 +324,14 @@ private struct MembershipEntryLabel: View {
         VStack(alignment: .leading, spacing: 16) {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 12) {
-                    Text("订阅计划")
+                    subscriptionTitle
                     if !details.hasPaidMembership { planCaption }
                 }.fixedSize()
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("订阅计划")
+                    subscriptionTitle
                     if !details.hasPaidMembership { planCaption }
                 }
             }
-            .interfaceFont(13, style: .subheadline)
-            .foregroundStyle(foreground.opacity(0.8))
 
             if typeSize.isAccessibilitySize {
                 headline(size: details.hasPaidMembership ? 30 : 26)
@@ -295,7 +353,7 @@ private struct MembershipEntryLabel: View {
             }
             action.opacity(unavailable ? 0.55 : 1)
         }
-        .padding(20).frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16).frame(maxWidth: .infinity, alignment: .leading)
         .foregroundStyle(foreground)
         .background {
             GeometryReader { geometry in
@@ -310,8 +368,16 @@ private struct MembershipEntryLabel: View {
         .contentShape(.rect(cornerRadius: 24))
     }
 
+    private var subscriptionTitle: some View {
+        Text("订阅计划")
+            .interfaceFont(17)
+            .accessibilityAddTraits(.isHeader)
+    }
+
     private var planCaption: some View {
-        Text(details.membershipTitle).editorialFont(18, relativeTo: .headline, language: nil)
+        Text(details.membershipTitle)
+            .editorialFont(18, relativeTo: .headline, language: nil)
+            .foregroundStyle(foreground.opacity(0.8))
     }
 
     private func headline(size: CGFloat) -> some View {
@@ -370,29 +436,48 @@ private struct MembershipEntryButtonStyle: ButtonStyle {
 private struct AccountQuotaCard: View {
     let title: String
     let allowance: Account.Allowance
+    @ScaledMetric(relativeTo: .body) private var ringSize: CGFloat = 88
     private var fraction: Double { allowance.limit > 0 ? min(max(allowance.used / allowance.limit, 0), 1) : 0 }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top) {
-                Text(title).interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
-                Spacer(minLength: 4)
-                ZStack {
-                    Circle().stroke(LeximoryPalette.secondaryBorder.opacity(0.5), lineWidth: 3)
-                    Circle().trim(from: 0, to: fraction).stroke(LeximoryPalette.ink, style: StrokeStyle(lineWidth: 3, lineCap: .round)).rotationEffect(.degrees(-90))
-                    Text("\(Int(fraction * 100))%").interfaceFont(11, style: .caption2)
-                }.frame(width: 40, height: 40).accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 16) {
+            AccountCardTitle(title)
+            ring.frame(maxWidth: .infinity)
+            usage
+            if allowance.resetsIn > 0 {
+                Text("\(Duration.seconds(allowance.resetsIn).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated)))后重置")
+                    .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer(minLength: 12)
-            VStack(alignment: .leading, spacing: 6) {
-                Text("\(Int(allowance.used)) / \(Int(allowance.limit))").interfaceFont(22, style: .title2).monospacedDigit()
-                if allowance.resetsIn > 0 {
-                    Text("\(Duration.seconds(allowance.resetsIn).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated)))后重置")
-                        .interfaceFont(12, style: .caption1).foregroundStyle(.secondary)
-                }
-            }
-        }.frame(maxWidth: .infinity, minHeight: 116, alignment: .leading).padding(16)
+        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(16)
             .background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
             .accessibilityElement(children: .combine)
+    }
+
+    private var usage: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text("\(Int(allowance.used))").interfaceFont(34, style: .largeTitle)
+            Text("/ \(Int(allowance.limit))").interfaceFont(17).foregroundStyle(.secondary)
+        }
+        .monospacedDigit()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(Int(allowance.used)) / \(Int(allowance.limit))")
+    }
+
+    private var ring: some View {
+        ZStack {
+            Circle().stroke(LeximoryPalette.sage.opacity(0.08), lineWidth: 4)
+            if fraction > 0 {
+                Circle().trim(from: 0, to: fraction)
+                    .stroke(LeximoryPalette.sage.opacity(0.55), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            }
+            Text("\(Int(fraction * 100))%")
+                .interfaceFont(17).foregroundStyle(.primary)
+                .lineLimit(1).minimumScaleFactor(0.5).padding(12)
+        }
+        .frame(width: min(ringSize, 120), height: min(ringSize, 120))
+        .accessibilityHidden(true)
     }
 }
 
@@ -416,7 +501,7 @@ private struct AccountActionCostTable: View {
     ]
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            LeximorySectionHeader("操作额度消耗")
+            AccountCardTitle("操作额度消耗")
             if typeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: 16) {
                     ForEach(rows) { row in
@@ -434,7 +519,7 @@ private struct AccountActionCostTable: View {
                     GridRow {
                         Text("操作").frame(maxWidth: .infinity, alignment: .leading)
                         Text("每次消耗").gridColumnAlignment(.trailing)
-                    }.interfaceFont(12, style: .caption1).foregroundStyle(.secondary)
+                    }.interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
                         .accessibilityHidden(true)
                     Divider().gridCellUnsizedAxes(.horizontal)
                     ForEach(rows) { row in

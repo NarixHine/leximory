@@ -75,6 +75,6 @@ export const locationAI = {
  * Dynamic per-word annotation
  */
 export const wordAI = {
-    model: 'deepseek/deepseek-v4.1-flash-1017-fast',
+    model: 'deepseek/deepseek-v4.1-flash-1017',
     reasoning: 'none',
 } as const

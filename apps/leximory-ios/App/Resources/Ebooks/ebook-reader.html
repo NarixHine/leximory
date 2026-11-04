@@ -2,7 +2,7 @@
 <html lang="zh-Hans"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src blob: data: file:; font-src file: data:; frame-src blob:; connect-src blob: file:;">
-<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 24px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 88px),616px);margin:0 auto}body[data-writing="vertical-rl"] #book{width:min(calc(100% - 88px),1100px)}@media(min-width:760px) and (orientation:landscape){body:not([data-writing="vertical-rl"]) #book{width:min(calc(100% - 88px),1232px)}}iframe{border:0}</style>
+<style>html,body{height:100%;margin:0;background:#fff;color:#192024}body{box-sizing:border-box;padding:56px 0 24px;overflow:hidden;position:fixed;inset:0}#book{height:100%;width:min(calc(100% - 88px),616px);margin:0 auto}body[data-writing="vertical-rl"] #book{width:min(calc(100% - 88px),1100px)}@media(min-width:760px) and (orientation:landscape){body:not([data-writing="vertical-rl"]) #book{width:min(calc(100% - 88px),1232px)}}@media(max-width:759px){body:not([data-writing="vertical-rl"]) #book{width:min(calc(100% - 40px),560px)}}iframe{border:0}</style>
 <script src="jszip.min.js"></script><script src="epub.min.js"></script></head>
 <body><div id="book"></div><script>
 let book, rendition, selected, ready = false, currentTheme, pageTurn, reportLocation, pendingTheme, bookmarkQuotes = [], reflowing = false, resizeAnchor = null, reportedCFI;
@@ -68,9 +68,11 @@ function sanitizeDocument(source, svg = false) {
 function isDarkTheme(theme) {
   return theme.mode ? theme.mode === 'dark' : theme.paper.toLowerCase() === '#100f0f';
 }
-function proseCSS(theme) {
+const headingElements = 'h1,h2,h3,h4,h5,h6,[role="heading"],.title,.subtitle,.chapter-title,[epub\\:type~="title"],[epub\\:type~="subtitle"],[epub\\:type~="fulltitle"]';
+const paginationGap = () => currentTheme.writing !== 'vertical-rl' && innerWidth < 760 ? 0 : undefined;
+function proseCSS(theme, latinHeadings = false) {
   const vertical = theme.writing === 'vertical-rl';
-  const headings = ':is(h1,h2,h3,h4,h5,h6,[role="heading"],.title,.subtitle,.chapter-title,[epub\\:type~="title"],[epub\\:type~="subtitle"],[epub\\:type~="fulltitle"])';
+  const headings = `:is(${headingElements})`;
   const headingCSS = `${headings},${headings} :not(rt,rp,pre,code,kbd,samp){font-family:LeximoryDisplay,LeximoryProse,"Apple Color Emoji",serif!important}`;
   if (vertical) return `html,body{direction:ltr!important;writing-mode:vertical-rl!important;-webkit-writing-mode:vertical-rl!important;text-orientation:mixed!important;background:${theme.paper}!important;color:${theme.ink}!important}
   body{font-family:LeximoryProse,serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important}
@@ -78,23 +80,43 @@ function proseCSS(theme) {
   ${headingCSS}
   ${isDarkTheme(theme) ? `*{color:${theme.ink}!important}` : ''}
   [data-leximory-bookmark]{background:${isDarkTheme(theme) ? 'rgb(105 170 78 / .45)' : 'rgb(183 224 143 / .45)'}!important;color:inherit!important;-webkit-box-decoration-break:clone}`;
-  return `html,body{background:${theme.paper}!important;color:${theme.ink}!important;${vertical ? 'direction:ltr!important;writing-mode:vertical-rl!important;-webkit-writing-mode:vertical-rl!important;text-orientation:mixed!important;' : ''}}
+  return `html,body{-webkit-text-size-adjust:100%!important;text-size-adjust:100%!important;background:${theme.paper}!important;color:${theme.ink}!important;${vertical ? 'direction:ltr!important;writing-mode:vertical-rl!important;-webkit-writing-mode:vertical-rl!important;text-orientation:mixed!important;' : ''}}
   body{box-sizing:border-box!important;padding:12px 28px!important;margin:0!important;font-family:LeximoryProse,"Apple Color Emoji",serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;font-weight:${theme.weight}!important}
-  p,li,blockquote,dd,dt{font-family:LeximoryProse,"Apple Color Emoji",serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;color:${theme.ink}!important;letter-spacing:0!important}
+  p,[data-leximory-paragraph],li,blockquote,dd,dt{font-family:LeximoryProse,"Apple Color Emoji",serif!important;font-size:${theme.size}px!important;line-height:${theme.leading}!important;color:${theme.ink}!important;letter-spacing:0!important}
   p{margin:0!important;margin-block-end:0.95em!important;text-indent:0!important;text-align:start!important}
+  [data-leximory-paragraph]{margin-block-end:0.95em!important;text-indent:0!important;text-align:start!important}
   p span,li span,blockquote span{font-family:inherit!important;font-size:inherit!important;line-height:inherit!important;letter-spacing:inherit!important}
   h1,h2,h3,h4,h5,h6{font-family:LeximoryDisplay,LeximoryProse,"Apple Color Emoji",serif!important;line-height:1.3!important;color:${theme.ink}!important;letter-spacing:-0.015em!important;margin:0!important;margin-block:1.3em 0.7em!important}
-  h1{font-size:1.65em!important}h2{font-size:1.35em!important}h3{font-size:1.15em!important}
+  h1{font-size:${latinHeadings ? 1.75 : 1.65}em!important}h2{font-size:${latinHeadings ? 1.4 : 1.35}em!important}h3{font-size:${latinHeadings ? 1.2 : 1.15}em!important}
   img,svg,video{max-width:100%!important;height:auto}pre{white-space:pre-wrap}a{color:${isDarkTheme(theme) ? "#a1a1aa" : "#5a715a"}}
   blockquote{margin:1em 0!important;padding-inline-start:1em!important;border-inline-start:2px solid ${isDarkTheme(theme) ? "#3f3f46" : "#9caea1"}}
   table{max-width:100%}sup,sub{font-size:0.75em!important}rt{font-size:0.55em!important}
   pre p,[class*="poem"] p,[class*="verse"] p{white-space:pre-wrap!important;text-indent:initial!important;margin-bottom:0.25em!important}
-  ${headingCSS}`;
+  ${headingCSS}
+  ${innerWidth < 760 || innerHeight < 500 ? `
+    p,[data-leximory-paragraph]{margin-block-end:0.65em!important}
+    h1,h2,h3,h4,h5,h6{line-height:1.15!important;margin-block:1em 0.45em!important;text-wrap:balance}
+    h1{font-size:${latinHeadings ? 1.55 : 1.45}em!important}h2{font-size:${latinHeadings ? 1.3 : 1.25}em!important}h3{font-size:${latinHeadings ? 1.15 : 1.1}em!important}
+    h1:first-child,h2:first-child,h3:first-child{margin-block-start:0!important}
+  ` : ''}`;
+}
+function markProseParagraphs(doc) {
+  if (currentTheme.writing === 'vertical-rl') return;
+  // Converters often use named divs for paragraphs. Keep wrappers, indexes,
+  // captions and lists intact; only opt actual prose blocks into reader styles.
+  for (const element of doc.querySelectorAll('div')) {
+    const paragraph = element.getAttribute('role') === 'paragraph' || [...element.classList].some(name =>
+      /^(?:para(?:no)?indent\d*|para(?:graph)?|body[-_]?text)$/i.test(name));
+    if (!paragraph || element.closest('nav,table,figure,pre,li,[class*="poem"],[class*="verse"]') ||
+        element.querySelector('div,p,section,article,blockquote,table,ul,ol,dl,h1,h2,h3,h4,h5,h6')) continue;
+    element.setAttribute('data-leximory-paragraph', '');
+  }
 }
 function styleContents(contents) {
+  markProseParagraphs(contents.document);
   let style = contents.document.getElementById('leximory-prose');
   if (!style) { style=contents.document.createElement('style');style.id='leximory-prose';contents.document.head.append(style); }
-  style.textContent=proseCSS(currentTheme);
+  style.textContent=proseCSS(currentTheme, !!preloadConfiguration?.fonts?.displayRange);
   contents.document.querySelectorAll('[data-leximory-bookmark]').forEach(mark => {
     mark.style.setProperty('background-color', highlightColor(bookmarkForMark(mark)), 'important');
   });
@@ -323,7 +345,7 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     const initial = document.getElementById('book').getBoundingClientRect();
     // Fixed dimensions keep epub.js's own window-resize listener from also firing
     // and clearing the view; every reflow goes through resizeBook.
-    rendition = book.renderTo('book', {width:Math.round(initial.width),height:Math.round(initial.height),spread:theme.writing === 'vertical-rl' ? 'none' : 'auto',minSpreadWidth:672,flow:'paginated',allowScriptedContent:true,ignoreClass:bookmarkIgnoreClass});
+    rendition = book.renderTo('book', {width:Math.round(initial.width),height:Math.round(initial.height),gap:paginationGap(),spread:theme.writing === 'vertical-rl' ? 'none' : 'auto',minSpreadWidth:672,flow:'paginated',allowScriptedContent:true,ignoreClass:bookmarkIgnoreClass});
     // epub.js 0.3.93 emits displayerror without rejecting its display promise.
     // Settle that promise so its render queue can accept the next navigation.
     rendition.on('displayerror', error => {
@@ -346,6 +368,13 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
     send('contents',{items:flatten(navigation.toc)});
     rendition.hooks.content.register(async contents => {
       contents.document.querySelectorAll('script,object,embed,form').forEach(el => el.remove());
+      if (fonts.displayRange) {
+        // Override the browser's default heading bold, below every publisher
+        // rule. Authored weights and <strong>/<b> retain their own cascade.
+        const defaults = contents.document.createElement('style');
+        defaults.textContent = `:where(${headingElements}){font-weight:400}`;
+        contents.document.head.prepend(defaults);
+      }
       styleContents(contents);
       contents.document.addEventListener('keydown', pageKey);
       await Promise.all([contents.document.fonts.load(`${currentTheme.size}px LeximoryProse`), contents.document.fonts.load(`${currentTheme.size}px LeximoryDisplay`)]);
@@ -477,6 +506,8 @@ function installReflow() {
       resizeAnchor ||= anchorPosition();
       while (pending) {
         const next = pending; pending = null;
+        rendition.getContents().forEach(styleContents);
+        rendition.settings.gap = rendition.manager.settings.gap = paginationGap();
         resize(next.width, next.height);
         await restorePosition(resizeAnchor);
         await painted();

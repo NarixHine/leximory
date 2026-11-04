@@ -127,14 +127,34 @@ struct EbookScreen: View {
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("ebook.prose.size") private var fontSize = 18.0
     @AppStorage("ebook.prose.leading") private var lineHeight = 1.6
+    @AppStorage("ebook.compact.prose.size") private var compactFontSize: Double?
+    @AppStorage("ebook.compact.prose.leading") private var compactLineHeight: Double?
     @AppStorage("ebook.japanese.prose.size") private var japaneseFontSize = 24.0
     @AppStorage("ebook.japanese.prose.leading") private var japaneseLineHeight = 1.7
-    private var proseSize: Binding<Double> { language == "Japanese" ? $japaneseFontSize : $fontSize }
-    private var proseLeading: Binding<Double> { language == "Japanese" ? $japaneseLineHeight : $lineHeight }
+    private var proseSize: Binding<Double> {
+        if language == "Japanese" { return $japaneseFontSize }
+        if !usesCompactTypography { return $fontSize }
+        return Binding(get: {
+            if let compactFontSize { return compactFontSize }
+            if fontSize != 18 { return fontSize }
+            return language == "Chinese" ? 18 : 17
+        }, set: { compactFontSize = $0 })
+    }
+    private var proseLeading: Binding<Double> {
+        if language == "Japanese" { return $japaneseLineHeight }
+        if !usesCompactTypography { return $lineHeight }
+        return Binding(get: {
+            if let compactLineHeight { return compactLineHeight }
+            if lineHeight != 1.6 || language == "Chinese" { return lineHeight }
+            return 1.5
+        }, set: { compactLineHeight = $0 })
+    }
     @Environment(\.nativeSync) private var sync
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    private var usesCompactTypography: Bool { sizeClass != .regular || verticalSizeClass == .compact }
     @Environment(\.browserWorkspace) private var workspace
     @Environment(\.browserChromeHeight) private var browserChromeHeight
     @Environment(\.browserResourceActive) private var resourceActive
@@ -144,7 +164,7 @@ struct EbookScreen: View {
             if let data {
                 if format == "pdf" { NativePDFReader(data: data, reader: reader, command: reader.command, notes: notes, notesRevision: notes?.revision ?? 0, drawingEnabled: notes?.drawing == true)
                     .id(contentID).ignoresSafeArea(.container, edges: [.top, .bottom]) }
-                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && sizeClass == .regular ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: appearance, bottomChromeHeight: browserChromeHeight).id(contentID).ignoresSafeArea(.container, edges: [.top, .bottom]) }
+                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && !usesCompactTypography ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: appearance, bottomChromeHeight: browserChromeHeight).id(contentID).ignoresSafeArea(.container, edges: [.top, .bottom]) }
             }
             if refreshingContent && loading {
                 ProgressView().padding(18)
@@ -427,7 +447,7 @@ struct EbookScreen: View {
                         }
                         EbookThemePicker(selection: $appearance)
                         VStack(alignment: .leading, spacing: 12) { Text("字号"); Slider(value: proseSize, in: 16...30, step: 1).accessibilityLabel("字号") }
-                        VStack(alignment: .leading, spacing: 12) { Text("行距"); Slider(value: proseLeading, in: 1.5...2.2, step: 0.1).accessibilityLabel("行距") }
+                        VStack(alignment: .leading, spacing: 12) { Text("行距"); Slider(value: proseLeading, in: language == "Japanese" ? 1.5...2.2 : 1.3...2.2, step: language == "Japanese" ? 0.1 : 0.05).accessibilityLabel("行距") }
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("缩放").interfaceFont(14).foregroundStyle(LeximoryPalette.muted)

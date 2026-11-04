@@ -26,9 +26,9 @@ import WebKit
             const repeated = japanese ? '<ruby>東京<rt>とうきょう</rt></ruby>の庭' : 'The river';
             for (const entry of Object.values(archive.files).filter(e => /one.xhtml$/.test(e.name))) {
               const doc = new DOMParser().parseFromString(await entry.async('string'), 'application/xhtml+xml');
-              doc.body.innerHTML = `<h1><span class="publisher">Heading</span></h1><p class="title"><em class="publisher">Title</em></p><p id="subtitle"><span class="publisher">Subtitle</span></p><p id="first">${repeated}</p><p id="second">${repeated}</p>`;
+              doc.body.innerHTML = `<h1><span class="publisher">Heading</span></h1><h2 class="authored-bold"><span>Authored bold</span></h2><h3><strong>Semantic bold</strong></h3><p class="title"><em class="publisher">Title</em></p><p id="subtitle"><span class="publisher">Subtitle</span></p><p id="first">${repeated}</p><p id="second">${repeated}</p>`;
               doc.getElementById('subtitle').setAttributeNS('http://www.idpf.org/2007/ops', 'epub:type', 'subtitle');
-              const style = doc.createElement('style'); style.textContent = '.publisher{font-family:serif!important}'; doc.head.append(style);
+              const style = doc.createElement('style'); style.textContent = '.publisher{font-family:serif!important}.authored-bold{font-weight:700}'; doc.head.append(style);
               archive.file(entry.name, new XMLSerializer().serializeToString(doc));
             }
             await window.openBook(await archive.generateAsync({type:'base64'}), '', fonts, theme, []);
@@ -56,6 +56,7 @@ import WebKit
             await window.readerTheme({...currentTheme, paper:'#100f0f', ink:'#cecdc3', mode:'dark'});
             const headingFonts = ['h1 span','.title em','#subtitle span'].map(selector => contents.window.getComputedStyle(doc.querySelector(selector)).fontFamily);
             const bodyFont = contents.window.getComputedStyle(doc.getElementById('first')).fontFamily;
+            const headingWeights = ['h1 span','h2 span','h3 strong'].map(selector => contents.window.getComputedStyle(doc.querySelector(selector)).fontWeight);
             const displayFaces = [...doc.fonts].filter(face => face.family.includes('LeximoryDisplay'));
             window.readerBookmarks([...entries, {...entries[0],id:'99',color:'yellow'}]);
             highlightBookmarks(); await painted();
@@ -65,7 +66,7 @@ import WebKit
             const uncovered = doc.querySelector('[data-bookmark-id="-9223372036854775807"]')?.style.backgroundColor === purple;
 
             window.readerBookmarks([entries[1]]); await painted();
-            return {tapped, sameNode, purple, blue, headingFonts, bodyFont, oneCoat, uncovered,
+            return {tapped, sameNode, purple, blue, headingFonts, headingWeights, bodyFont, oneCoat, uncovered,
               displayRanges:displayFaces.map(face=>face.unicodeRange), latinRange:displayFaces.some(face => face.unicodeRange.toUpperCase().includes('24F')),
               oneRemoved:doc.querySelectorAll('[data-leximory-bookmark]').length === 1,
               ruby:japanese ? !!doc.querySelector('ruby rt') : true,
@@ -83,6 +84,7 @@ import WebKit
         #expect(result["blue"] as? String == "rgba(128, 191, 255, 0.45)")
         #expect((result["headingFonts"] as? [String])?.allSatisfy { $0.hasPrefix("LeximoryDisplay") } == true)
         #expect((result["bodyFont"] as? String)?.hasPrefix("LeximoryProse") == true)
+        if !japanese { #expect(result["headingWeights"] as? [String] == ["400", "700", "700"]) }
         #expect(result["latinRange"] as? Bool == !japanese, "Display ranges: \(result["displayRanges"] ?? "none")")
         #expect(result["oneCoat"] as? Bool == true)
         #expect(result["uncovered"] as? Bool == true)
@@ -502,7 +504,7 @@ import WebKit
         return zip(a, b).reduce(0.0) { $0 + abs(Double($1.0) - Double($1.1)) } / Double(a.count) / 255
     }
 
-    @Test(arguments: [390, 760, 820, 1366], [false, true])
+    @Test(arguments: [320, 390, 430, 600, 760, 820, 1366], [false, true])
     func columnsRespectLanguageAndGuttersRejectPublisherContent(width: Int, japanese: Bool) async throws {
         let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
         let book = try #require(Bundle.main.url(forResource: japanese ? "japanese-fixture" : "reader-fixture", withExtension: "epub"))
@@ -525,8 +527,8 @@ import WebKit
             await window.openBook(changed, '', fonts, theme, []);
             """, arguments: [
             "bytes": try Data(contentsOf: book).base64EncodedString(), "japanese": japanese,
-            "fonts": ["regular": fontURL, "italic": fontURL, "display": fontURL],
-            "theme": ["paper": "#ffffff", "ink": "#192024", "size": "20", "leading": "1.6", "weight": "400", "writing": japanese ? "vertical-rl" : "horizontal-tb"]
+            "fonts": ["regular": fontURL, "italic": fontURL, "display": fontURL, "displayRange":japanese ? "" : "U+0000-024F,U+1E00-1EFF,U+2000-206F"],
+            "theme": ["paper": "#ffffff", "ink": "#192024", "size": !japanese && width < 760 ? "17" : "20", "leading": !japanese && width < 760 ? "1.5" : "1.6", "weight": "400", "writing": japanese ? "vertical-rl" : "horizontal-tb"]
         ], in: nil, contentWorld: .page)
         #expect(probe.failure == nil); #expect(probe.ready)
         let checks = try #require(try await web.callAsyncJavaScript("""
@@ -544,8 +546,9 @@ import WebKit
             pointer('pointerdown', innerWidth - x); pointer('pointerup', innerWidth - x);
             pointer('pointerdown', x); pointer('pointerup', x + 30);
             pointer('pointerdown', x); pointer('pointercancel', x); pointer('pointerup', x);
-            const generousLeftGutter = window.readerGutter(35 / innerWidth, y / innerHeight);
-            const generousRightGutter = window.readerGutter((innerWidth - 35) / innerWidth, y / innerHeight);
+            const edge = Math.min(35, bounds.left / 2);
+            const generousLeftGutter = window.readerGutter(edge / innerWidth, y / innerHeight);
+            const generousRightGutter = window.readerGutter((innerWidth - edge) / innerWidth, y / innerHeight);
             const emptyGutter = window.readerGutter(x / innerWidth, y / innerHeight);
             const overflow = document.createElement('span');
             overflow.textContent = 'WORDS';
@@ -561,10 +564,20 @@ import WebKit
             const textRange = doc.createRange(); textRange.selectNodeContents(title);
             const text = [...textRange.getClientRects()].find(rect => rect.width > 0 && rect.height > 0);
             const textTap = window.readerGutter((iframe.left + text.x + text.width / 2) / innerWidth, (iframe.top + text.y + text.height / 2) / innerHeight);
-            return {columns:rendition.manager.layout.divisor,marked,emptyGutter,generousLeftGutter,generousRightGutter,wordTap,textTap,oldRectangleWouldTurn,
+            const paragraphStyle = contents.window.getComputedStyle(doc.querySelector('p'));
+            return {fontSize:parseFloat(paragraphStyle.fontSize), leading:parseFloat(paragraphStyle.lineHeight), paragraphGap:parseFloat(paragraphStyle.marginBlockEnd), headingSize:parseFloat(contents.window.getComputedStyle(title).fontSize), textInset:iframe.left + text.left, columns:rendition.manager.layout.divisor,marked,emptyGutter,generousLeftGutter,generousRightGutter,wordTap,textTap,oldRectangleWouldTurn,
               remaining:doc.querySelectorAll('[data-leximory-bookmark]').length,
               intact:before === textWithoutRuby(doc.body)};
             """, arguments: [:], in: nil, contentWorld: .page) as? [String: Any])
+        if !japanese && width < 760 {
+            let inset = try #require(checks["textInset"] as? Double)
+            #expect(checks["fontSize"] as? Double == 17)
+            #expect(abs((checks["leading"] as? Double ?? 0) - 25.5) <= 0.1)
+            #expect(abs((checks["paragraphGap"] as? Double ?? 0) - 11.05) <= 0.1)
+            #expect(abs((checks["headingSize"] as? Double ?? 0) - 26.35) <= 0.1)
+            let expected = max(20, Double(width - 560) / 2)
+            #expect(abs(inset - expected) <= 1, "Compact EPUB text inset at \(width) pt: \(inset), expected \(expected)")
+        }
         #expect(probe.pageTaps == ["left", "right"], "Gutter input sends one action per tap and none for drags, cancellation or publisher content")
         #expect(checks["columns"] as? Int == (!japanese && width >= 760 && width > 1000 ? 2 : 1))
         #expect((checks["marked"] as? Int ?? 0) > 0)
