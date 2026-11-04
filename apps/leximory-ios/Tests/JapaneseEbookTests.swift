@@ -647,6 +647,108 @@ import WebKit
         #expect(rubyChecks["rubyIntact"] as? Bool == true)
     }
 
+    @Test(.serialized, .timeLimit(.minutes(1)), arguments: [false, true])
+    func rotationKeepsTheSameTextVisible(japanese: Bool) async throws {
+        let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
+        let book = try #require(Bundle.main.url(forResource: "japanese-fixture", withExtension: "epub"))
+        let font = try #require(Bundle.main.url(forResource: "ChillDuanHeiSongProJP_Regular", withExtension: "otf"))
+        let fontURL = "data:font/otf;base64," + (try Data(contentsOf: font)).base64EncodedString()
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
+        let portrait = CGRect(x: 0, y: 0, width: 820, height: 1180)
+        let web = WKWebView(frame: portrait, configuration: config)
+        web.scrollView.contentInsetAdjustmentBehavior = .never
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene); window.frame = portrait
+        window.rootViewController = UIViewController(); window.rootViewController?.view.addSubview(web); window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey(); config.userContentController.removeScriptMessageHandler(forName: "reader") }
+        web.navigationDelegate = probe; try await probe.load(web, url: page)
+        _ = try await web.callAsyncJavaScript("""
+            let data = bytes;
+            if (!japanese) {
+              const archive = await JSZip.loadAsync(bytes, {base64:true});
+              for (const entry of Object.values(archive.files)) {
+                if (entry.name.endsWith('.opf') || entry.name.endsWith('.xhtml')) {
+                  archive.file(entry.name, (await entry.async('string')).replaceAll('direction:rtl', 'direction:ltr').replaceAll('page-progression-direction="rtl"', 'page-progression-direction="ltr"'));
+                }
+              }
+              data = await archive.generateAsync({type:'base64'});
+            }
+            await window.openBook(data, '', fonts, theme, []);
+            """, arguments: [
+            "bytes": try Data(contentsOf: book).base64EncodedString(), "japanese":japanese,
+            "fonts": ["regular":fontURL, "italic":fontURL, "display":fontURL],
+            "theme": ["paper":"#ffffff", "ink":"#192024", "size":"24", "leading":"1.7", "weight":"400", "writing":japanese ? "vertical-rl" : "horizontal-tb"]
+        ], in: nil, contentWorld: .page)
+        try #require(probe.ready && probe.failure == nil)
+        // Choose the first visible glyph independently of epub.js's page/CFI mapping.
+        let anchor = try #require(try await web.callAsyncJavaScript("""
+            await navigationIdle(); await chapterPainted();
+            const m = rendition.manager;
+            for (let i = 0; i < 5; i++) await rendition.next();
+            await chapterPainted();
+            const view = m.views.first(), doc = view.contents.document;
+            const frame = view.iframe.getBoundingClientRect(), viewport = m.container.getBoundingClientRect();
+            const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+            let node;
+            while ((node = walker.nextNode())) {
+              if (node.parentElement.closest('rt,rp,script,style')) continue;
+              for (let i = 0; i < node.length; i++) {
+                if (!node.data[i].trim()) continue;
+                const r = doc.createRange(); r.setStart(node, i); r.setEnd(node, i + 1);
+                const b = r.getBoundingClientRect();
+                if (b.width > 0 && b.height > 0 && b.left + frame.left >= viewport.left &&
+                    b.right + frame.left <= viewport.right && b.top + frame.top >= viewport.top && b.bottom + frame.top <= viewport.bottom) {
+                  return {cfi:view.contents.cfiFromRange(r, bookmarkIgnoreClass), quote:r.toString()};
+                }
+              }
+            }
+            throw new Error('No visible reading anchor');
+            """, arguments: [:], in: nil, contentWorld: .page) as? [String: String])
+        let cfi = try #require(anchor["cfi"])
+        let check = """
+            const deadline = performance.now() + 2000;
+            while ((innerWidth !== width || innerHeight !== height) && performance.now() < deadline) await new Promise(resolve => setTimeout(resolve, 10));
+            if (innerWidth !== width || innerHeight !== height) throw new Error(`Viewport ${innerWidth}x${innerHeight}, expected ${width}x${height}`);
+            resizeBook(); await painted(); await navigationIdle(); await chapterPainted();
+            const m = rendition.manager, view = m.views.first();
+            const r = view.contents.range(cfi, bookmarkIgnoreClass), b = r.getBoundingClientRect();
+            const frame = view.iframe.getBoundingClientRect(), viewport = m.container.getBoundingClientRect();
+            const vertical = m.settings.axis === 'vertical';
+            const extent = vertical ? m.layout.height : m.layout.delta;
+            const offset = vertical ? m.container.scrollTop : m.container.scrollLeft;
+            return {visible:b.right + frame.left > viewport.left && b.left + frame.left < viewport.right &&
+                b.bottom + frame.top > viewport.top && b.top + frame.top < viewport.bottom,
+                quote:r.toString(), aligned:Math.abs(offset / extent - Math.round(offset / extent)) < 0.01,
+                href:rendition.currentLocation().start.href, offset, extent};
+            """
+        for step in 0..<8 {
+            web.frame = step % 2 == 0 ? CGRect(x: 0, y: 0, width: 1180, height: 620) : portrait
+            let state = try #require(try await web.callAsyncJavaScript(check, arguments: ["cfi":cfi, "width":web.frame.width, "height":web.frame.height], in: nil, contentWorld: .page) as? [String: Any])
+            #expect(state["visible"] as? Bool == true, "Rotation \(step), Japanese \(japanese): \(state)")
+            #expect(state["quote"] as? String == anchor["quote"])
+            #expect(state["aligned"] as? Bool == true)
+            #expect(state["href"] as? String == "one.xhtml")
+        }
+        for size in ["28", "20", "24"] {
+            _ = try await web.callAsyncJavaScript("await window.readerTheme({...currentTheme, size});", arguments: ["size":size], in: nil, contentWorld: .page)
+            let state = try #require(try await web.callAsyncJavaScript(check, arguments: ["cfi":cfi, "width":web.frame.width, "height":web.frame.height], in: nil, contentWorld: .page) as? [String: Any])
+            #expect(state["visible"] as? Bool == true, "Font size \(size), Japanese \(japanese): \(state)")
+            #expect(state["aligned"] as? Bool == true)
+        }
+        // Resize again before the previous reflow can finish, then navigate.
+        let burst = try #require(try await web.callAsyncJavaScript("""
+            for (const [w,h] of [[700,420],[1092,540],[732,1100]]) rendition.resize(w,h);
+            await navigationIdle();
+            await window.readerCommand('display', book.spine.last().href);
+            await chapterPainted();
+            await rendition.resize(900,650);
+            return rendition.currentLocation().start.href;
+            """, arguments: [:], in: nil, contentWorld: .page) as? String)
+        #expect(burst == "two.xhtml")
+    }
+
     @Test func resizingKeepsChapterPosition() async throws {
         let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
         let book = try #require(Bundle.main.url(forResource: "japanese-fixture", withExtension: "epub"))
