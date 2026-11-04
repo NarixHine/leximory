@@ -67,7 +67,11 @@ export function createAccountDeletionOperations(store: AccountDeletionStore, now
             if (existing) {
                 if (existing.userId !== subject.userId || existing.receiptDigest !== digest)
                     throw new MobileError('invalid_input')
-                return status(existing)
+                if (existing.status !== 'completed') {
+                    await store.freeze(existing)
+                    await store.enqueue(existing)
+                }
+                return status(existing.status === 'completed' ? existing : { ...existing, status: 'pending' })
             }
             // The caller's bearer has already been verified by the ordinary mobile auth boundary.
             requireRecentAuthentication(bearer(request), subject.userId, now())

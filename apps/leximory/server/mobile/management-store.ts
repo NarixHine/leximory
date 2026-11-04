@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto'
 import type { redis } from '@repo/kv/redis'
 import { changeEbookFile } from './ebook-file-change'
 import { ebookFiles } from './ebook-storage'
+import { removePDFOutlineArtifacts } from './pdf-outline-cleanup'
 import type { supabase } from '@repo/supabase'
 import { invalidateMutationCaches, mutationEffects } from './mutation-effects'
 import { editTextRecord } from './text-edit-store'
@@ -19,7 +20,7 @@ export function createManagementStore({
     lease,
 }: {
     database: Pick<typeof supabase, 'from' | 'storage'>
-    lease: Pick<typeof redis, 'set' | 'eval'>
+    lease: Pick<typeof redis, 'set' | 'eval' | 'scan' | 'get' | 'del'>
 }): ManagementStore {
     async function publishEbook(id: string, publish: () => Promise<void>) {
         const locations = z.array(z.object({ id: z.number().int(), location: z.string() }))
@@ -108,6 +109,7 @@ export function createManagementStore({
         },
         async remove(text) {
             const removeRecord = async () => {
+                await removePDFOutlineArtifacts(database, lease, text.id)
                 await database
                     .from('texts')
                     .delete()

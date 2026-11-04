@@ -528,6 +528,20 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '') {
         { id: 5, location: null, quote: 'An excerpt without a location' },
     ]
     const files = new Map<string, Blob>([['epub', new Blob(['original EPUB'])]])
+    const outlines = new Set(['pdf-outlines/article/version/saved.pdf', 'pdf-outlines/article/old/previous.pdf'])
+    const publication = new Map<string, unknown>([
+        ['mobile:pdf-outline:pointer', { path: 'pdf-outlines/article/version/saved.pdf', revision: 'saved' }],
+        [
+            'mobile:pdf-outline:pointer:history',
+            {
+                before: { path: 'ebooks/article.pdf', digest: 'a' },
+                after: { path: 'pdf-outlines/article/version/saved.pdf', digest: 'b' },
+            },
+        ],
+        ['mobile:pdf-outline-receipt:saved', { path: 'ebooks/article.pdf', revision: 'undo' }],
+        ['mobile:pdf-outline:other', { path: 'pdf-outlines/other/version/saved.pdf', revision: 'other' }],
+    ])
+    let deleted = false
     let stored = { ...article, has_ebook: true }
     let failed = false
     const database = createClient<Database>('https://database.test', 'test-key', {
@@ -535,9 +549,40 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '') {
         global: {
             fetch: async (input, init) => {
                 const url = new URL(String(input))
+                if (url.pathname === '/storage/v1/object/list/user-files') {
+                    if (!failed && failure === 'outline-list') {
+                        failed = true
+                        return Response.json({ message: 'listing unavailable' }, { status: 503 })
+                    }
+                    const { prefix, offset, limit } = JSON.parse(String(init?.body))
+                    const children = new Map<string, { id: string | null; name: string }>()
+                    for (const path of outlines) {
+                        if (!path.startsWith(prefix + '/')) continue
+                        const tail = path.slice(prefix.length + 1)
+                        const name = tail.split('/')[0]!
+                        children.set(name, { name, id: tail.includes('/') ? null : name })
+                    }
+                    return Response.json([...children.values()].slice(offset, offset + limit))
+                }
                 if (url.pathname.startsWith('/storage/')) {
                     if (init?.method === 'DELETE') {
-                        for (const key of JSON.parse(String(init.body)).prefixes) files.delete(key.split('.').at(-1))
+                        const paths: string[] = JSON.parse(String(init.body)).prefixes
+                        if (
+                            !failed &&
+                            failure === 'outline-remove' &&
+                            paths.some((path) => path.startsWith('pdf-outlines/'))
+                        ) {
+                            failed = true
+                            return Response.json({ message: 'removal unavailable' }, { status: 503 })
+                        }
+                        for (const key of paths) {
+                            if (key.startsWith('pdf-outlines/')) outlines.delete(key)
+                            else {
+                                const extension = key.split('.').at(-1)
+                                assert.ok(extension)
+                                files.delete(extension)
+                            }
+                        }
                         return Response.json([])
                     }
                     const extension = url.pathname.split('.').at(-1)!
@@ -552,6 +597,17 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '') {
                 }
                 const table = url.pathname.split('/').at(-1)
                 assert.equal(url.searchParams.get(table === 'texts' ? 'id' : 'text'), 'eq.article')
+                if (init?.method === 'DELETE') {
+                    assert.equal(table, 'texts')
+                    if (!failed && failure === 'delete-text') {
+                        failed = true
+                        return Response.json({ code: 'DELETE_FAILED', message: 'rejected' }, { status: 503 })
+                    }
+                    assert.equal(outlines.size, 0, 'Derived files must be removed before ownership')
+                    assert.deepEqual([...publication.keys()], ['mobile:pdf-outline:other'])
+                    deleted = true
+                    return new Response(null, { status: 204 })
+                }
                 if (init?.method === 'PATCH') {
                     if (!failed && (failure === table || (failure === 'texts+release' && table === 'texts'))) {
                         failed = true
@@ -601,12 +657,40 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '') {
             assert.ok(command.includes(120))
             return Response.json({ result: 'OK' })
         }
-        assert.equal(command[0].toUpperCase(), 'EVAL')
+        const name = command[0].toUpperCase()
+        if (name === 'SCAN') {
+            const pattern = command[command.indexOf('match') + 1]
+            return Response.json({
+                result: [0, [...publication.keys()].filter((key) => key.startsWith(pattern.slice(0, -1)))],
+            })
+        }
+        if (name === 'GET')
+            return Response.json({
+                result: Buffer.from(JSON.stringify(publication.get(command[1]))).toString('base64'),
+            })
+        if (name === 'DEL') {
+            if (!failed && failure === 'outline-state') {
+                failed = true
+                return Response.json({ error: 'Redis unavailable' }, { status: 503 })
+            }
+            for (const key of command.slice(1)) publication.delete(key)
+            return Response.json({ result: 1 })
+        }
+        assert.equal(name, 'EVAL')
         if (failure === 'release' || failure === 'texts+release')
             return Response.json({ error: 'Redis unavailable' }, { status: 503 })
         return Response.json({ result: 1 })
     })
-    return { store: createManagementStore({ database, lease }), reads, bookmarks, files, stored: () => stored }
+    return {
+        store: createManagementStore({ database, lease }),
+        reads,
+        bookmarks,
+        files,
+        outlines,
+        publication,
+        deleted: () => deleted,
+        stored: () => stored,
+    }
 }
 
 test('committed edits succeed even when lease release fails', async (t) => {
@@ -682,3 +766,24 @@ test('successful ebook replacement and removal clear locations and retain excerp
         })
     }
 })
+
+test('text deletion removes derived PDFs and publication state before ownership through the production SDKs', async (t) => {
+    const f = persistenceFixture(t)
+    await f.store.remove({ ...article, has_ebook: true })
+    assert.equal(f.deleted(), true)
+    assert.equal(f.files.size, 0)
+    assert.equal(f.outlines.size, 0)
+    assert.deepEqual([...f.publication.keys()], ['mobile:pdf-outline:other'])
+})
+
+for (const stage of ['outline-list', 'outline-remove', 'outline-state', 'delete-text']) {
+    test(`text deletion retains ownership and can retry after ${stage} fails`, async (t) => {
+        const f = persistenceFixture(t, stage)
+        await assert.rejects(f.store.remove({ ...article, has_ebook: true }))
+        assert.equal(f.deleted(), false)
+        assert.equal(await f.files.get('epub')?.text(), 'original EPUB')
+        await f.store.remove({ ...article, has_ebook: true })
+        assert.equal(f.deleted(), true)
+        assert.equal(f.outlines.size, 0)
+    })
+}

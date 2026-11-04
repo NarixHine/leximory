@@ -71,7 +71,7 @@ test('deletion acceptance is replayable and never accepts a client user identity
     assert.deepEqual(calls, [])
     assert.deepEqual(await (await handler(request())).json(), { requestId, status: 'pending' })
     assert.deepEqual(await (await handler(request())).json(), { requestId, status: 'pending' })
-    assert.deepEqual(calls, ['begin', 'freeze', 'enqueue'])
+    assert.deepEqual(calls, ['begin', 'freeze', 'enqueue', 'freeze', 'enqueue'])
     assert.equal((await handler(request({ requestId, receiptToken: 'b'.repeat(64) }))).status, 400)
 })
 
@@ -304,4 +304,41 @@ test('SDK storage failure leaves metadata available for a safe retry', async () 
     await assert.rejects(fixture.persistence.files(manifest, userId))
     assert.ok(fixture.tables.texts?.some((row) => row.id === 'own-book'))
     assert.equal(fixture.authDeleted(), false)
+})
+
+for (const stage of ['freeze', 'enqueue'] as const) {
+    test(`POST replay resumes deletion acceptance after ${stage} fails`, async () => {
+        const h = deletionHarness()
+        const original = h.store[stage]
+        let fail = true
+        h.store[stage] = async (record) => {
+            if (fail) {
+                fail = false
+                throw new Error('Temporary acceptance failure')
+            }
+            await original(record)
+        }
+        assert.equal((await h.handler(h.request())).status, 503)
+        const accepted = await h.handler(h.request())
+        assert.equal(accepted.status, 200)
+        assert.deepEqual(await accepted.json(), { requestId, status: 'pending' })
+        assert.equal(h.calls.filter((call) => call === 'enqueue').length, 1)
+        assert.equal(h.calls.filter((call) => call === 'freeze').length, stage === 'freeze' ? 1 : 2)
+        assert.equal(h.calls.filter((call) => call === 'begin').length, 1)
+    })
+}
+
+test('POST replay keeps reporting failed acceptance and never requeues completed deletion', async () => {
+    const h = deletionHarness()
+    h.store.enqueue = async () => {
+        throw new Error('Queue unavailable')
+    }
+    assert.equal((await h.handler(h.request())).status, 503)
+    assert.equal((await h.handler(h.request())).status, 503)
+    const record = await h.store.read(requestId)
+    assert.ok(record)
+    h.store.read = async () => ({ ...record, status: 'completed' })
+    const calls = [...h.calls]
+    assert.deepEqual(await (await h.handler(h.request())).json(), { requestId, status: 'completed' })
+    assert.deepEqual(h.calls, calls)
 })
