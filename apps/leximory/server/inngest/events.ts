@@ -24,6 +24,7 @@ export const articleImportEventSchema = z
         onlyComments: z.boolean(),
         userId: z.string().min(1).max(128),
         generateTitle: z.boolean().optional(),
+        source: z.literal('ios').optional(),
     })
     .strict()
 

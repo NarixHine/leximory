@@ -10,6 +10,7 @@ import { supabase } from '@repo/supabase'
 import { redis } from '@repo/kv/redis'
 import { invalidateMutationCaches } from './mutation-effects'
 import { emojiPrompt } from '@/server/ai/text-metadata'
+import { mobileNanoAI } from './ai-config'
 import { isValidEmoji } from '@/lib/utils'
 import { assertPublicArticleURL } from './article-url'
 import { browserReceiptSchema, browserURL, type BrowserStore } from './browser'
@@ -86,7 +87,11 @@ async function metadata(input: string, userId: string): Promise<{ title: string;
     if (!signal.aborted) {
         try {
             await requireCommentaryQuota(userId, ACTION_QUOTA_COST.bookmarkEmoji, signal)
-            const result = await generateText({ ...emojiPrompt(title + '\n' + description), abortSignal: signal })
+            const result = await generateText({
+                ...emojiPrompt(title + '\n' + description),
+                ...mobileNanoAI,
+                abortSignal: signal,
+            })
             const selected = result.text.trim()
             if (isValidEmoji(selected)) emoji = selected
         } catch {

@@ -12,7 +12,14 @@ import type { MutationEffects } from './mutation-effects'
 type ArticleImport = AuthoringStore['article']
 type AnnotationEvent = {
     id: string
-    data: { article: string; userId: string; textId: string; onlyComments: boolean; generateTitle: boolean }
+    data: {
+        article: string
+        userId: string
+        textId: string
+        onlyComments: boolean
+        generateTitle: boolean
+        source: 'ios'
+    }
 }
 
 export function createArticleImporter(dependencies: {
@@ -84,6 +91,7 @@ export function createArticleImporter(dependencies: {
                 dependencies.enqueue({
                     id: 'mobile-article-' + id,
                     data: {
+                        source: 'ios',
                         article: input.content,
                         userId: subject.userId,
                         textId: id,

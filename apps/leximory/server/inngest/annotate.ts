@@ -7,6 +7,7 @@ import { getLibIdAndLangOfText, setTextAnnotationProgress, updateText } from '..
 import { getSubsStatus } from '../db/subs'
 import { articleAnnotationPrompt } from '../ai/annotate'
 import { nanoAI } from '../ai/config'
+import { mobileMiniAI, mobileNanoAI } from '../mobile/ai-config'
 import { generateText } from 'ai'
 import { revalidateTag } from 'next/cache'
 import { fixDumbPunctuation } from '@repo/utils'
@@ -148,11 +149,15 @@ export const annotateFullArticle = inngest.createFunction(
         const { topicsConfig, emojiConfig, titleConfig, annotationConfigs } = await step.run(
             'get-annotate-configs',
             async () => {
-                const topicsConfig = topicsPrompt(article)
-                const emojiConfig = emojiPrompt(article)
-                const titleConfig = generateTitle ? titlePrompt(article) : undefined
+                const metadataAI = event.data.source === 'ios' ? mobileNanoAI : nanoAI
+                const topicsConfig = { ...topicsPrompt(article), ...metadataAI }
+                const emojiConfig = { ...emojiPrompt(article), ...metadataAI }
+                const titleConfig = generateTitle ? { ...titlePrompt(article), ...metadataAI } : undefined
                 const annotationConfigs = await Promise.all(
-                    chunks.map((chunk) => articleAnnotationPrompt(lang, chunk, onlyComments, userId, true)),
+                    chunks.map(async (chunk) => {
+                        const config = await articleAnnotationPrompt(lang, chunk, onlyComments, userId, true)
+                        return event.data.source === 'ios' ? { ...config, ...mobileMiniAI } : config
+                    }),
                 )
                 return { topicsConfig, emojiConfig, titleConfig, annotationConfigs }
             },
