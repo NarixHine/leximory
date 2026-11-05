@@ -37,6 +37,12 @@ struct AccountView: View {
 
     private var editingUnavailable: Bool { busy || session.sync?.online == false }
 
+    private var failurePresented: Binding<Bool> {
+        Binding(get: { failure != nil }, set: { if !$0 { failure = nil } })
+    }
+    private var noticePresented: Binding<Bool> {
+        Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })
+    }
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -95,10 +101,10 @@ struct AccountView: View {
                 Button("退出登录", role: .destructive) { playback.stop(); Task { await session.signOut() } }
                 Button("取消", role: .cancel) { }
             }
-            .alert("操作未完成", isPresented: Binding(get: { failure != nil }, set: { if !$0 { failure = nil } })) {
+            .alert("操作未完成", isPresented: failurePresented) {
                 Button("好", role: .cancel) { failure = nil }
             } message: { Text(failure ?? "") }
-            .alert("账号", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
+            .alert("账号", isPresented: noticePresented) {
                 Button("好", role: .cancel) { notice = nil }
             } message: { Text(notice ?? "") }
         }

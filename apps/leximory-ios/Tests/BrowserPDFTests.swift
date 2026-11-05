@@ -13,15 +13,16 @@ import WebKit
         }
         let server = try await PDFTestServer(data: data)
         defer { server.listener.cancel() }
-        let browser = TextBrowserModel(websiteDataStore: .nonPersistent())
+        let fixture = try pdfBrowser()
+        defer { fixture.cleanup() }
+        let browser = fixture.model
+        let host = try WebViewTestHost(browser.web)
+        defer { host.close() }
         let cookie = try #require(HTTPCookie(properties: [.domain: "127.0.0.1", .path: "/", .name: "LeximoryPDFTest", .value: "verified"]))
         await browser.web.configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
         browser.load(server.url)
-        for _ in 0..<100 {
-            if browser.isPDF, !browser.loading { break }
-            try await Task.sleep(for: .milliseconds(50))
-        }
-        #expect(browser.isPDF)
+        try await WebViewTestHost.waitUntil { (browser.isPDF && !browser.loading) || browser.error != nil }
+        try #require(browser.isPDF)
         #expect(browser.url?.pathExtension == "")
         let file = try await browser.pdfFile()
         #expect(file.name == "Original document.pdf")
@@ -31,28 +32,39 @@ import WebKit
         #expect(request.confirmation == "保存")
         #expect(BrowserImportRequest(source: .ebook(file)).title == "打开电子书")
         browser.load(server.url.deletingLastPathComponent().appending(path: "actually-html.pdf"))
-        for _ in 0..<100 {
-            if browser.url?.path == "/actually-html.pdf", !browser.loading { break }
-            try await Task.sleep(for: .milliseconds(50))
-        }
+        try await WebViewTestHost.waitUntil { (browser.url?.path == "/actually-html.pdf" && !browser.loading) || browser.error != nil }
+        try #require(browser.url?.path == "/actually-html.pdf" && !browser.loading)
         #expect(browser.isPDF == false)
     }
 
     @Test func oversizedPDFIsRejectedBeforeChoosingADestination() async throws {
         let server = try await PDFTestServer(data: Data("%PDF-1.7".utf8), length: BrowserEbookFile.maximumSize + 1)
         defer { server.listener.cancel() }
-        let browser = TextBrowserModel(websiteDataStore: .nonPersistent())
+        let fixture = try pdfBrowser()
+        defer { fixture.cleanup() }
+        let browser = fixture.model
+        let host = try WebViewTestHost(browser.web)
+        defer { host.close() }
         let cookie = try #require(HTTPCookie(properties: [.domain: "127.0.0.1", .path: "/", .name: "LeximoryPDFTest", .value: "verified"]))
         await browser.web.configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
         browser.load(server.url.deletingLastPathComponent().appending(path: "article"))
-        for _ in 0..<100 {
-            if browser.url?.path == "/article", !browser.loading { break }
-            try await Task.sleep(for: .milliseconds(50))
-        }
+        try await WebViewTestHost.waitUntil { (browser.url?.path == "/article" && !browser.loading) || browser.error != nil }
+        try #require(browser.url?.path == "/article" && !browser.loading)
         await #expect(throws: URLError(.dataLengthExceedsMaximum)) {
             try await BrowserPDFDownload().file(from: browser.web, url: server.url)
         }
     }
+    private func pdfBrowser() throws -> (model: TextBrowserModel, cleanup: () -> Void) {
+        let suite = "BrowserPDFTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        var choice = BrowserBlockingPreferences()
+        choice.enabled = false
+        defaults.set(try JSONEncoder().encode(choice), forKey: BrowserAdBlocker.preferencesKey)
+        let blocker = BrowserAdBlocker(defaults: defaults)
+        let model = TextBrowserModel(websiteDataStore: .nonPersistent(), adBlocker: blocker)
+        return (model, { defaults.removePersistentDomain(forName: suite) })
+    }
+
 }
 
 private final class PDFTestServer {

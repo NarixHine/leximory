@@ -6,7 +6,7 @@ import OpenAPIRuntime
 import HTTPTypes
 @testable import Leximory
 
-@MainActor struct ArticleEditorTests {
+@MainActor @Suite(.serialized) struct ArticleEditorTests {
     @Test func visualEditorPreservesAnnotationsAudioAndMarkdownWhenEditing() async throws {
         let source = "# River\n\nA {{bank||bank||河岸||古英语||embankment}} beside **water** and &&small&&.\n\n:::audio_123\nListen to the river.\n:::\n\n- First\n- Second"
         let session = try await open(source)
@@ -153,12 +153,11 @@ import HTTPTypes
         configuration.userContentController.add(coordinator, name: "editor")
         let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 700), configuration: configuration)
         web.navigationDelegate = coordinator; controller.web = web
+        let host = try WebViewTestHost(web)
+        defer { host.close() }
         let url = try #require(Bundle.main.url(forResource: "editor", withExtension: "html"))
         web.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
-        for _ in 0..<500 {
-            if controller.ready || controller.failed { break }
-            try await Task.sleep(for: .milliseconds(20))
-        }
+        try await WebViewTestHost.waitUntil { controller.ready || controller.failed }
         #expect(controller.failed == false)
         try #require(controller.ready)
         return (web, controller, coordinator)

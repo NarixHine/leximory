@@ -390,32 +390,49 @@ struct DefinitionView: View {
         .background(topTrayHeight == nil ? LeximoryPalette.annotationSurface : Color.clear).accessibilityIdentifier("definition-tray")
         .accessibilityAction(.escape) { if let closeTray { closeTray() } else { dismiss() } }
     }
-    var body: some View {
+    private var feedbackContent: some View {
         trayContent
-        .onChange(of: streamedCharacterCount) { _, count in
-            updateStreamFeedback(characterCount: count)
-        }
-        .sensoryFeedback(.success, trigger: model.saveState) { old, new in
-            old == .saving && new == .saved && feedbackAllowed
-        }
-        .onChange(of: model.isReady) { _, ready in
-            if ready, allowsFeedback, scenePhase == .active, UIAccessibility.isVoiceOverRunning {
-                UIAccessibility.post(notification: .announcement, argument: "释义已显示")
+            .onChange(of: streamedCharacterCount) { _, count in
+                updateStreamFeedback(characterCount: count)
+            }
+            .sensoryFeedback(.success, trigger: model.saveState) { old, new in
+                shouldPlaySaveFeedback(from: old, to: new)
+            }
+            .onChange(of: model.isReady) { _, ready in
+                announceDefinition(ready: ready)
+            }
+    }
+    var body: some View {
+        feedbackContent
+            .task(id: model.saveState) { await acknowledgeSave() }
+            .task(id: lookupTaskID) { await loadDefinition() }
+            .onDisappear(perform: dismissDefinition)
+    }
+    private var lookupTaskID: String {
+        "\(item.id):\(lookupAttempt):\(guest == nil || guestAIConsent)"
+    }
+    private func shouldPlaySaveFeedback(from old: DefinitionModel.SaveState, to new: DefinitionModel.SaveState) -> Bool {
+        old == .saving && new == .saved && feedbackAllowed
+    }
+    private func announceDefinition(ready: Bool) {
+        guard ready, allowsFeedback, scenePhase == .active, UIAccessibility.isVoiceOverRunning else { return }
+        UIAccessibility.post(notification: .announcement, argument: "释义已显示")
+    }
+    private func loadDefinition() async {
+        if sync?.online == false, item.definition == nil { model.offline() }
+        else if let guest {
+            guard !requiresGuestConsent else { return }
+            model.startGeneration { () async throws -> (events: AsyncThrowingStream<DefinitionEvent, Error>, target: BrowserTarget?) in
+                let selection = try item.source.guestSelection(title: item.sourceTitle, language: language)
+                let events = try await guest.lookup(selection)
+                return (events: events, target: nil)
             }
         }
-        .task(id: model.saveState) { await acknowledgeSave() }
-        .task(id: "\(item.id):\(lookupAttempt):\(guest == nil || guestAIConsent)") {
-            if sync?.online == false, item.definition == nil { model.offline() }
-            else if let guest {
-                guard !requiresGuestConsent else { return }
-                model.startGeneration {
-                    let selection = try item.source.guestSelection(title: item.sourceTitle, language: language)
-                    return (try await guest.lookup(selection), nil)
-                }
-            }
-            else if let client { model.startGeneration(client: client, source: item.source) }
-        }
-        .onDisappear { streamImpact = nil; model.dismiss() }
+        else if let client { model.startGeneration(client: client, source: item.source) }
+    }
+    private func dismissDefinition() {
+        streamImpact = nil
+        model.dismiss()
     }
     private func updateStreamFeedback(characterCount: Int) {
         let previousPulse = streamFeedback.pulse

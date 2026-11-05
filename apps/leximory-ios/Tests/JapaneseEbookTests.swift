@@ -4,7 +4,7 @@ import UIKit
 import WebKit
 @testable import Leximory
 
-@MainActor struct EPUBNavigationTests {
+@MainActor @Suite(.serialized) struct EPUBNavigationTests {
     @Test(.serialized, arguments: [false, true])
     func highlightTapsRetainIdentityAndColorsWithPublisherHeadings(japanese: Bool) async throws {
         let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
@@ -175,7 +175,7 @@ import WebKit
     }
 }
 
-@MainActor struct JapaneseEbookTests {
+@MainActor @Suite(.serialized) struct JapaneseEbookTests {
     @Test func pageNumbersCountVisibleSpreadsForTapsSwipesAndResize() async throws {
         let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
         let book = try #require(Bundle.main.url(forResource: "reader-fixture", withExtension: "epub"))

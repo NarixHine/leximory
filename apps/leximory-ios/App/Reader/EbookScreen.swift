@@ -216,7 +216,7 @@ struct EbookScreen: View {
             if edge == .leading { reader.navigate(reader.rightToLeft ? "next" : "previous") }
         }
     }
-    private var readerLifecycle: some View {
+    private var readerActivity: some View {
         readerPresentation
         .onChange(of: sync?.online) { _, _ in
             reader.offline = sync?.online == false && !ProcessInfo.processInfo.arguments.contains("--ebook-read-only")
@@ -234,27 +234,17 @@ struct EbookScreen: View {
         }
         .onChange(of: scenePhase) { _, phase in if phase != .active { notes?.flush() } }
         .onChange(of: reader.backRequest) { _, _ in if let workspace { workspace.go(-1) } else { dismiss() } }
-        .onChange(of: resourceActive, initial: true) { _, active in
-            if active {
-                workspace?.ebookReader = reader; workspace?.ebookTextID = article.id.rawValue
-                reader.search = workspace.map { workspace in { [weak workspace] query in workspace?.search(query) } }
-                if let notes { sync?.activePDF = notes.document; sync?.scheduleNotes() }
-            } else { reader.search = nil; definition = nil; tray = nil; positionSaver?.flush(); notes?.deactivate() }
-        }
+        .onChange(of: resourceActive, initial: true) { _, active in updateResourceActivity(active) }
+    }
+    private var readerSelectionLifecycle: some View {
+        readerActivity
         .onChange(of: reader.trayRequest) { _, request in
             guard resourceActive, let request else { return }
             tray = EbookTray(rawValue: request); reader.trayRequest = nil
         }
 
         .onDisappear { positionSaver?.flush(); notes?.deactivate() }
-        .onChange(of: reader.selectionAction?.id) { _, _ in
-            guard let action = reader.selectionAction else { return }
-            switch action.kind {
-            case .define:
-                definition = DefinitionPresentation(source: .ebook(textID: article.id.rawValue, quote: action.selection.quote, context: action.selection.context, offset: action.selection.offset), definition: nil, sourceTitle: article.title)
-            case .bookmark(let color): Task { await saveBookmark(action.selection, color: color) }
-            }
-        }
+        .onChange(of: reader.selectionAction?.id) { _, _ in handleSelectionAction() }
         .onChange(of: reader.bookmarkColorRequest) { _, request in
             reader.bookmarkColorRequest = nil
             guard let request, let previous = reader.beginBookmarkColorChange(request) else { return }
@@ -266,6 +256,9 @@ struct EbookScreen: View {
             guard let id, reader.canEditHighlights, let bookmark = reader.beginBookmarkRemoval(id) else { return }
             Task { await client?.editHighlight(textID: article.id.rawValue, bookmark: bookmark, removed: true) }
         }
+    }
+    private var readerLifecycle: some View {
+        readerSelectionLifecycle
         .task(id: article.id) { await load() }
         .task(id: resourceActive) {
             guard resourceActive, let client, let loadedBook = reader.book else { return }
@@ -276,6 +269,27 @@ struct EbookScreen: View {
         .onChange(of: reader.location) { previous, location in
             guard !reader.readOnly, reader.ready, previous != location, let location else { return }
             positionSaver?.schedule(location)
+        }
+    }
+    private func updateResourceActivity(_ active: Bool) {
+        if active {
+            workspace?.ebookReader = reader
+            workspace?.ebookTextID = article.id.rawValue
+            if let workspace {
+                reader.search = { [weak workspace] (query: String) in workspace?.search(query) }
+            } else { reader.search = nil }
+            if let notes { sync?.activePDF = notes.document; sync?.scheduleNotes() }
+        } else {
+            reader.search = nil; definition = nil; tray = nil
+            positionSaver?.flush(); notes?.deactivate()
+        }
+    }
+    private func handleSelectionAction() {
+        guard let action = reader.selectionAction else { return }
+        switch action.kind {
+        case .define:
+            definition = DefinitionPresentation(source: .ebook(textID: article.id.rawValue, quote: action.selection.quote, context: action.selection.context, offset: action.selection.offset), definition: nil, sourceTitle: article.title)
+        case .bookmark(let color): Task { await saveBookmark(action.selection, color: color) }
         }
     }
     var body: some View {

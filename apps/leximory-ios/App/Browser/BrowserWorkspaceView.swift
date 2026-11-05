@@ -55,6 +55,7 @@ struct BrowserWorkspaceView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.displayScale) private var displayScale
     @Namespace private var chromeNamespace
 
     init(client: MobileClient, namespace: String, playback: PlaybackController, session: AccountSession? = nil, guest: GuestSession? = nil, pendingText: Binding<TextID?>, pendingHome: Binding<Bool> = .constant(false), initialWorkspace: BrowserWorkspaceModel? = nil) {
@@ -64,7 +65,17 @@ struct BrowserWorkspaceView: View {
     }
     private var webBookmarkID: String? { if case .web(let page) = workspace.current.resource { page.bookmarkID } else { nil } }
     private var motion: Animation? { reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.86) }
-    var body: some View {
+    private func handleKeyboardHidden() {
+        if editingAddress, addressEditor.field?.isFirstResponder != true { finishEditing() }
+    }
+    private var pinIconTaskID: [String] {
+        var values: [String] = [scenePhase == .active ? "active" : "inactive", sync?.online == false ? "offline" : "online"]
+        for pin in workspace.homePins {
+            values.append(pin.id.uuidString + (pin.iconURL?.absoluteString ?? ""))
+        }
+        return values
+    }
+    private var workspaceNavigation: some View {
         NavigationStack {
             GeometryReader { geometry in
                 HomeWallpaperSurface(wallpaper: isHome ? wallpapers[HomeWallpaperAppearance(colorScheme)] : nil,
@@ -128,6 +139,9 @@ struct BrowserWorkspaceView: View {
             .toolbar(.hidden, for: .tabBar)
             .disabled(clearingData)
         }
+    }
+    private var workspacePresentation: some View {
+        workspaceNavigation
         .ignoresSafeArea(keepsReadingViewport ? .keyboard : [], edges: .bottom)
         .overlay(alignment: .bottom) {
                 controls.padding(.horizontal, 12).padding(.bottom, 8)
@@ -190,11 +204,13 @@ struct BrowserWorkspaceView: View {
             }
             Button("取消", role: .cancel) {}
         } message: { Text("将清除浏览记录、Cookie 和网站数据，并退出网站登录。书签和词汇会保留。") }
+    }
+    private var workspaceCaching: some View {
+        workspacePresentation
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
-            if editingAddress, addressEditor.field?.isFirstResponder != true { finishEditing() }
+            handleKeyboardHidden()
         }
-        .task(id: [scenePhase == .active ? "active" : "inactive", sync?.online == false ? "offline" : "online"]
-            + workspace.homePins.map { $0.id.uuidString + ($0.iconURL?.absoluteString ?? "") }) {
+        .task(id: pinIconTaskID) {
             guard scenePhase == .active else { return }
             await workspace.cachePinIcons()
         }
@@ -209,6 +225,9 @@ struct BrowserWorkspaceView: View {
                 do { try await Task.sleep(for: .seconds(15)) } catch { return }
             }
         }
+    }
+    private var workspaceRequests: some View {
+        workspaceCaching
         .task(id: sync?.revision) { await workspace.refresh(online: sync == nil) }
         .task(id: editingAddress ? workspace.addressSearchFolders.map(\.id) + [sync?.online == false ? "offline" : "online"] : []) {
             guard editingAddress else { return }
@@ -237,6 +256,9 @@ struct BrowserWorkspaceView: View {
             workspace.visit(.home)
             pendingHome = false
         }
+    }
+    private var workspaceFind: some View {
+        workspaceRequests
         .task(id: findRequest) {
             guard let request = findRequest, let interaction = findInteraction else { return }
             // Let the menu finish dismissing before presenting UIKit's find controls.
@@ -257,6 +279,9 @@ struct BrowserWorkspaceView: View {
             guard findRequest == request else { return }
             finding = false; findInteraction = nil
         }
+    }
+    var body: some View {
+        workspaceFind
         .task(id: workspace.completionID) {
             guard workspace.completionID != nil else { return }
             withAnimation(motion) { completionNotice = true }
@@ -495,7 +520,12 @@ struct BrowserWorkspaceView: View {
                     }
                         .accessibilityIdentifier("browser-account")
                 }
-                if guest == nil { Button(annotationQueueTitle, systemImage: "sparkles") { activitySheet = true } }
+                if guest == nil {
+                    Button { activitySheet = true } label: {
+                        Label { Text("文章注释队列") } icon: { annotationQueueIcon }
+                    }
+                    .accessibilityValue(annotationActivityValue)
+                }
                 if let session, guest != nil, session.deletion.accepted {
                     Button("账号删除状态", systemImage: "person.crop.circle.badge.minus") { session.deletion.presented = true }
                 }
@@ -521,18 +551,27 @@ struct BrowserWorkspaceView: View {
         .menuOrder(.fixed)
         .buttonStyle(.plain).accessibilityLabel("更多")
             .accessibilityIdentifier("browser-more")
-            .accessibilityValue(workspace.readyCount > 0 ? "\(workspace.readyCount) 篇预注释已完成" : workspace.hasPending ? "正在预注释" : "")
+            .accessibilityValue(annotationActivityValue)
     }
     private var moreLabel: some View {
         Image(systemName: "ellipsis").font(.system(size: 17, weight: .medium)).frame(width: 44, height: 48).contentShape(Circle())
             .glassEffect(chromeGlass, in: .circle)
     }
-    private var annotationQueueTitle: String {
-        let pendingCount = workspace.activities.filter { $0.state == .pending }.count
-        guard let progress = annotationQueueProgressLabel(readyCount: workspace.readyCount, pendingCount: pendingCount) else {
-            return "文章注释队列"
-        }
-        return "文章注释队列 (\(progress))"
+    private var annotationActivityValue: String {
+        workspace.readyCount > 0 ? "\(workspace.readyCount) 篇预注释已完成" : workspace.hasPending ? "正在预注释" : ""
+    }
+    private var annotationQueueIcon: Image {
+        guard workspace.readyCount > 0 || workspace.hasPending else { return Image(systemName: "tray") }
+        let renderer = ImageRenderer(content:
+            Image(systemName: "tray")
+                .font(.system(size: 22)).foregroundStyle(.primary)
+                .frame(width: 34, height: 32, alignment: .bottomLeading)
+                .overlay(alignment: .topTrailing) { annotationBadge.fixedSize() }
+                .environment(\.colorScheme, colorScheme)
+        )
+        renderer.scale = displayScale
+        guard let image = renderer.uiImage else { return Image(systemName: "tray") }
+        return Image(uiImage: image).renderingMode(.original)
     }
     @ViewBuilder private var annotationBadge: some View {
         if workspace.readyCount > 0 {
