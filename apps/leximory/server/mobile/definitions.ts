@@ -2,6 +2,7 @@ import { randomUUID, createHash } from 'node:crypto'
 import { z } from 'zod'
 import { definitionSchema, vocabularyInputSchema, ebookSelectionSchema, resourceID } from '@repo/api'
 import { occurrenceSchema, type MobileSubject, type Occurrence } from '@repo/schema/mobile'
+import { LangSchema } from '@repo/schema/library'
 import type { Lang } from '@repo/schema/library'
 import { createCatalog, type CatalogStore } from './catalog'
 import { renderDocument, resolveOccurrence, OccurrenceError } from './render-document'
@@ -11,7 +12,13 @@ import { prepareDefinition, definitionResponse } from './definition-generation'
 
 export type CompletedDefinition = z.infer<typeof definitionSchema>
 export const receiptSchema = z
-    .object({ subject: z.string(), occurrence: occurrenceSchema, definition: definitionSchema })
+    .object({
+        subject: z.string(),
+        occurrence: occurrenceSchema,
+        definition: definitionSchema,
+        context: z.string().optional(),
+        language: LangSchema.optional(),
+    })
     .strict()
 export type Receipt = z.infer<typeof receiptSchema>
 export interface DefinitionServices {
@@ -108,6 +115,8 @@ export function createDefinitionOperations(dependencies: {
                     services.complete(requestId, {
                         subject: context.subject.userId,
                         occurrence: resolved.occurrence,
+                        context: resolved.context,
+                        language: library.lang,
                         definition,
                     }),
             })

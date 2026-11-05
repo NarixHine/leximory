@@ -44,6 +44,67 @@ enum DefinitionSource {
         case ready(Definition, completionID: String?)
         case failed(String, preview: Definition?)
     }
+    enum ElaborationState {
+        case idle
+        case streaming(String)
+        case ready(String)
+        case failed(String, preview: String)
+        var text: String {
+            switch self {
+            case .idle: ""
+            case .streaming(let text), .ready(let text): text
+            case .failed(_, let preview): preview
+            }
+        }
+        var isStreaming: Bool { if case .streaming = self { true } else { false } }
+    }
+    private(set) var elaboration: ElaborationState = .idle
+    @ObservationIgnored private var elaborationTask: Task<Void, Never>?
+    private var elaborationRequestID = UUID().uuidString
+    var completionID: String? { if case .ready(_, let id) = state { id } else { nil } }
+
+    @discardableResult func elaborate(stream: @escaping @MainActor () -> AsyncThrowingStream<DefinitionEvent, Error>) -> Task<Void, Never>? {
+        guard elaborationTask == nil, isReady else { return nil }
+        if case .ready = elaboration { return nil }
+        let retained = elaboration.text
+        elaboration = .streaming(retained)
+        let task = Task {
+            defer { elaborationTask = nil }
+            var buffer = ""
+            var recovering = !retained.isEmpty
+            do {
+                for try await event in stream() {
+                    try Task.checkCancellation()
+                    switch event {
+                    case .started:
+                        recovering = !elaboration.text.isEmpty
+                        buffer = ""
+                    case .delta(_, let text):
+                        buffer += text
+                        if !recovering { elaboration = .streaming(buffer) }
+                    case .completed(_, let result):
+                        elaboration = .ready(result.definition)
+                        return
+                    case .failed(_, let error): throw DefinitionFailure(message: error.message)
+                    }
+                }
+                throw URLError(.cannotParseResponse)
+            } catch {
+                guard !Task.isCancelled else { return }
+                let cause = MobileClient.cause(of: error)
+                elaboration = .failed((cause as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message
+                    ?? "参考未能完成，请重试。", preview: elaboration.text)
+            }
+        }
+        elaborationTask = task
+        return task
+    }
+    func elaborate(client: MobileClient, source: DefinitionSource) {
+        guard let completionID else { return }
+        let browser: Bool
+        switch source { case .browser, .webpage: browser = true; case .article, .ebook: browser = false }
+        elaborate { client.elaborateDefinition(completionID: completionID, browser: browser, requestID: self.elaborationRequestID) }
+    }
     enum SaveState: Equatable { case idle, queued, saving, saved, uncertain }
     private(set) var state: State
     private(set) var browserTarget: BrowserTarget?
@@ -82,6 +143,7 @@ enum DefinitionSource {
         return task
     }
     func dismiss() {
+        elaborationTask?.cancel()
         // An explicit save outlives the tray. An ordinary lookup does not.
         if saveState != .queued && saveState != .saving { generationTask?.cancel() }
     }

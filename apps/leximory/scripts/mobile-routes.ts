@@ -42,6 +42,7 @@ async function main() {
             'browserRules',
             'browserRule',
         ],
+        elaboration: ['elaborateDefinition'],
         definitions: ['definitions', 'vocabulary', 'ebookDefinitions', 'ebookVocabulary'],
         ebooks: ['ebook', 'ebookPosition', 'ebookBookmark', 'removeEbookBookmark'],
         'pdf-outline': ['generatePDFOutline', 'savePDFOutline'],

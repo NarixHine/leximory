@@ -666,6 +666,13 @@ public struct MobileClient: Sendable {
                     range: .init(location: selection.range.location, length: selection.range.length)))).ok.body.application_x_hyphen_ndjson
         }
     }
+    public func elaborateDefinition(completionID: String, browser: Bool, requestID: String) -> AsyncThrowingStream<DefinitionEvent, Error> {
+        definitionStream {
+            try await client.elaborateDefinition(body: .json(.init(completionId: completionID,
+                requestId: requestID, source: browser ? .browser : .text))).ok.body.application_x_hyphen_ndjson
+        }
+    }
+
     private func definitionStream(body: @escaping @Sendable () async throws -> HTTPBody) -> AsyncThrowingStream<DefinitionEvent, Error> {
         DefinitionStreaming.events(body: body)
     }

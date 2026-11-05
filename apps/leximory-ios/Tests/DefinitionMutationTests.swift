@@ -4,6 +4,42 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor struct DefinitionMutationTests {
+    @Test func elaborationStreamsSeparatelyAndNeverEntersSavedVocabulary() async throws {
+        let model = DefinitionModel(embedded: definition)
+        let channel = AsyncThrowingStream<DefinitionEvent, Error>.makeStream()
+        let task = try #require(model.elaborate { channel.stream })
+        channel.continuation.yield(.started("reference"))
+        channel.continuation.yield(.delta("reference", "**岸边**的补充。"))
+        channel.continuation.yield(.completed("reference", Definition(lemma: "bank", definition: "**岸边**的补充。")))
+        channel.continuation.finish()
+        await task.value
+        #expect(model.elaboration.text == "**岸边**的补充。")
+        #expect(model.visibleDefinition == definition)
+        #expect(model.elaborate { channel.stream } == nil)
+        let save = try #require(model.save { _ in try self.receipt() })
+        await save.value
+        #expect(model.editor?.draft.note == definition)
+    }
+    @Test func elaborationFailureKeepsPartialTextAndRecoveryDoesNotReplayIt() async throws {
+        let model = DefinitionModel(embedded: definition)
+        let first = AsyncThrowingStream<DefinitionEvent, Error>.makeStream()
+        let task = try #require(model.elaborate { first.stream })
+        first.continuation.yield(.started("first"))
+        first.continuation.yield(.delta("first", "已有参考"))
+        first.continuation.finish(throwing: URLError(.networkConnectionLost))
+        await task.value
+        #expect(model.elaboration.text == "已有参考")
+        let second = AsyncThrowingStream<DefinitionEvent, Error>.makeStream()
+        let retry = try #require(model.elaborate { second.stream })
+        #expect(model.elaboration.text == "已有参考")
+        second.continuation.yield(.started("second"))
+        second.continuation.yield(.delta("second", "替换"))
+        second.continuation.yield(.completed("second", Definition(lemma: "bank", definition: "完整参考")))
+        second.continuation.finish()
+        await retry.value
+        #expect(model.elaboration.text == "完整参考")
+        #expect(model.visibleDefinition == definition)
+    }
     private var definition: Definition { Definition(lemma: "bank", definition: "河岸") }
     @Test(.timeLimit(.minutes(1))) func generatedDefinitionIsReadyBeforeTheConnectionCloses() async throws {
         let model = DefinitionModel(embedded: nil)

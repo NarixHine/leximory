@@ -4,6 +4,9 @@ import { LangSchema } from '@repo/schema/library'
 import { renderDocumentSchema, mobileErrorSchema, occurrenceSchema } from '@repo/schema/mobile'
 
 export const resourceID = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/)
+export const elaborationInputSchema = z
+    .object({ completionId: resourceID, requestId: resourceID, source: z.enum(['text', 'browser']) })
+    .strict()
 export const pageInput = z.object({ cursor: z.string().max(1024).optional() }).strict()
 export const librarySchema = z
     .object({
@@ -558,6 +561,23 @@ export const mobileContract = {
         .route({ method: 'POST', path: '/shortcuts/words' })
         .input(shortcutWordSchema)
         .output(shortcutWordResultSchema),
+    elaborateDefinition: oc
+        .route({
+            method: 'POST',
+            path: '/definitions/elaborate',
+            spec: (spec) => ({
+                ...spec,
+                responses: {
+                    ...spec.responses,
+                    200: {
+                        description: 'Ephemeral elaboration using definition stream frames',
+                        content: { 'application/x-ndjson': { schema: { type: 'string', format: 'binary' } } },
+                    },
+                },
+            }),
+        })
+        .input(elaborationInputSchema)
+        .output(z.string()),
     browserDefinitions: oc
         .route({
             method: 'POST',

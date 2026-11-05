@@ -3,6 +3,17 @@ import UIKit
 @testable import Leximory
 
 @MainActor struct AnnotationPhoneticsTests {
+    @Test func elaborationMarkdownPreservesEmphasisAndIndentsWrappedBullets() throws {
+        let layout = AnnotationMarkdownLayout(content: "**背景**与 *nuance*。\n\n- 文化细节。\n- 用法区别。", size: 17, language: "English", blockFormatting: true)
+        #expect(layout.attributed.string == "背景与 nuance。\n• 文化细节。\n• 用法区别。")
+        let text = layout.attributed.string as NSString
+        let bullet = text.range(of: "• 文化细节。")
+        let style = try #require(layout.attributed.attribute(.paragraphStyle, at: bullet.location, effectiveRange: nil) as? NSParagraphStyle)
+        #expect(style.headIndent > 0)
+        #expect(style.paragraphSpacing == 8)
+        let font = try #require(layout.attributed.attribute(.font, at: text.range(of: "nuance").location, effectiveRange: nil) as? UIFont)
+        #expect(font.fontDescriptor.symbolicTraits.contains(.traitItalic))
+    }
     @Test func phoneticsHaveSquareBracketsAndKeepTheirIPATypeface() throws {
         let content = "**notice** `ˈnəʊtɪs`，注意；`nəˈtiːs`。"
         let layout = AnnotationMarkdownLayout(content: content, size: 20, language: "English")

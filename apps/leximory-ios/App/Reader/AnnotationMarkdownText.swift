@@ -5,10 +5,11 @@ struct AnnotationMarkdownText: View {
     let content: String
     let size: CGFloat
     let language: String
+    var blockFormatting = false
     @ScaledMetric(relativeTo: .body) private var scale = 1.0
 
     var body: some View {
-        RubyAnnotationText(content: content, size: size * scale, language: language)
+        RubyAnnotationText(content: content, size: size * scale, language: language, blockFormatting: blockFormatting)
     }
 }
 
@@ -17,7 +18,7 @@ struct AnnotationMarkdownText: View {
     let attributed: NSAttributedString
     let rubies: [Ruby]
 
-    init(content: String, size: CGFloat, language: String) {
+    init(content: String, size: CGFloat, language: String, blockFormatting: Bool = false) {
         let pattern = #"<ruby\b[^>]*>([\s\S]*?)<rt\b[^>]*>([\s\S]*?)</rt>([\s\S]*?)</ruby>"#
         let regex = try! NSRegularExpression(pattern: pattern, options: .caseInsensitive)
         let source = content as NSString
@@ -30,6 +31,10 @@ struct AnnotationMarkdownText: View {
             let pronunciation = Self.plain(source.substring(with: match.range(at: 2)))
             tokens.append((token, base, pronunciation))
             masked = (masked as NSString).replacingCharacters(in: match.range, with: token)
+        }
+        if blockFormatting {
+            masked = masked.replacingOccurrences(of: #"(?m)^\s*[-*+] +"#, with: "• ", options: .regularExpression)
+                .replacingOccurrences(of: #"\n[ \t]*\n+"#, with: "\n", options: .regularExpression)
         }
         let parsed = (try? AttributedString(markdown: masked, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(masked)
         let output = NSMutableAttributedString()
@@ -73,6 +78,19 @@ struct AnnotationMarkdownText: View {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = rubies.isEmpty ? 3 : size * 0.65
         output.addAttribute(.paragraphStyle, value: paragraph, range: NSRange(location: 0, length: output.length))
+        if blockFormatting {
+            let text = output.string as NSString
+            text.enumerateSubstrings(in: NSRange(location: 0, length: text.length), options: .byParagraphs) { line, range, _, _ in
+                let style = NSMutableParagraphStyle()
+                style.lineSpacing = 3
+                style.paragraphSpacing = 8
+                if line?.hasPrefix("• ") == true {
+                    style.headIndent = size * 0.9
+                    style.tabStops = [NSTextTab(textAlignment: .left, location: size * 0.9)]
+                }
+                output.addAttribute(.paragraphStyle, value: style, range: range)
+            }
+        }
         self.attributed = output; self.rubies = rubies
     }
 
@@ -101,6 +119,7 @@ private struct RubyAnnotationText: UIViewRepresentable {
     let content: String
     let size: CGFloat
     let language: String
+    let blockFormatting: Bool
     @Environment(\.browserWorkspace) private var workspace
 
     func makeUIView(context: Context) -> AnnotationRubyTextView {
@@ -115,7 +134,7 @@ private struct RubyAnnotationText: UIViewRepresentable {
     }
     func updateUIView(_ view: AnnotationRubyTextView, context: Context) {
         view.workspace = workspace
-        let layout = AnnotationMarkdownLayout(content: content, size: size, language: language)
+        let layout = AnnotationMarkdownLayout(content: content, size: size, language: language, blockFormatting: blockFormatting)
         view.rubies = layout.rubies
         view.rubyFont = LeximoryTypography.proseUI(size * 0.48, language: "Japanese")
         view.textContainerInset = UIEdgeInsets(top: layout.rubies.isEmpty ? 0 : view.rubyFont.lineHeight, left: 0, bottom: 0, right: 0)

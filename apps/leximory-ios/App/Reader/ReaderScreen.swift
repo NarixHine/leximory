@@ -334,6 +334,7 @@ struct DefinitionView: View {
                                 if let etymology = definition.etymology, !etymology.isEmpty { section("语源", content: etymology) }
                                 if let cognates = definition.cognates, !cognates.isEmpty { section("同源词", content: cognates) }
                             }
+                            if item.isDynamic { elaborationSection }
                             switch model.state {
                             case .ready:
                                 definitionActions
@@ -379,7 +380,7 @@ struct DefinitionView: View {
             .frame(height: topTrayHeight != nil ? trayHeight : nil)
             .clipped()
         }
-        .animation(reduceMotion || model.isGenerating ? nil : .timingCurve(0.32, 0.72, 0, 1, duration: 0.24), value: trayHeight)
+        .animation(reduceMotion || model.isGenerating || model.elaboration.isStreaming ? nil : .timingCurve(0.32, 0.72, 0, 1, duration: 0.24), value: trayHeight)
         .frame(width: isPopover ? 400 : nil)
         .frame(idealHeight: isPopover ? max(120, min(contentHeight, 520)) : nil,
                maxHeight: isPopover ? max(120, min(contentHeight, 520)) : nil,
@@ -470,11 +471,54 @@ struct DefinitionView: View {
                     .animation(actionMotion, value: saveAcknowledged)
 
             }
+            if item.isDynamic {
+                Button {
+                    if let client { model.elaborate(client: client, source: item.source) }
+                    else { account?.entry = AccountEntryContext(purpose: .service) }
+                } label: {
+                    Image(systemName: "questionmark.circle.dashed")
+                        .font(.system(size: 22)).frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)
+                .accessibilityLabel("进一步了解")
+                .accessibilityHint("生成参考，消耗一次语境查词额度")
+                .accessibilityIdentifier("definition-elaborate")
+                .disabled(!model.isReady || model.elaboration.isStreaming || elaborationComplete || sync?.online == false
+                    || (client != nil && model.completionID == nil) || (client == nil && guest == nil))
+            }
             if let dictionaryURL {
                 DictionaryLink(url: dictionaryURL, client: client) {
                     if let closeTray { closeTray() } else { dismiss() }
                 }
             }
+        }
+    }
+    private var elaborationComplete: Bool {
+        if case .ready = model.elaboration { true } else { false }
+    }
+    @ViewBuilder private var elaborationSection: some View {
+        if case .idle = model.elaboration {} else {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Text("参考").interfaceFont(14).foregroundStyle(.secondary)
+                    if model.elaboration.isStreaming {
+                        ProgressView().controlSize(.mini).tint(.secondary)
+                            .accessibilityLabel("正在生成参考")
+                    }
+                }
+                if !model.elaboration.text.isEmpty {
+                    AnnotationMarkdownText(content: model.elaboration.text, size: bodySize, language: language, blockFormatting: true)
+                        .foregroundStyle(LeximoryPalette.ink)
+                }
+                if case .failed(let message, _) = model.elaboration {
+                    Text(message).interfaceFont(13).foregroundStyle(.secondary)
+                    Button("重试", systemImage: "arrow.clockwise") {
+                        if let client { model.elaborate(client: client, source: item.source) }
+                    }.interfaceFont(14).disabled(sync?.online == false)
+                }
+            }
+            .padding(.top, 4)
+            .accessibilityIdentifier("definition-elaboration")
         }
     }
     private var actionMotion: Animation? {
