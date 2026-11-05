@@ -17,6 +17,9 @@ on:
                 '.github/workflows/mobile-release.yml',
             ]
     workflow_dispatch:
+concurrency:
+    group: native-ios-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
 permissions:
     contents: read
 jobs:
@@ -41,26 +44,74 @@ jobs:
             - run: pnpm --dir packages/api run generate
             - run: git diff --exit-code -- apps/leximory-ios/Core/Sources/LeximoryCore/openapi.json apps/leximory-ios/Core/Tests/LeximoryCoreTests/Fixtures/definition-stream.ndjson
             - run: pnpm --dir apps/leximory run check-types
-    simulator:
+    native_core:
+        name: Native core
         runs-on: macos-26
+        timeout-minutes: 20
         steps:
             - uses: actions/checkout@v4
             - run: swift test --package-path apps/leximory-ios/Core --disable-automatic-resolution
+    simulator_tests:
+        name: Simulator (${{ matrix.device }}, ${{ matrix.suite }})
+        runs-on: macos-26
+        timeout-minutes: 90
+        strategy:
+            fail-fast: false
+            matrix:
+                device: [iPhone, iPad]
+                suite: [unit, browser, reader, app]
+        steps:
+            - uses: actions/checkout@v4
             - run: apps/leximory-ios/scripts/generate-project.sh
-            - name: Test iPhone and iPad
-              shell: bash
+            - name: Select simulator
+              id: destination
+              env:
+                  DEVICE_FAMILY: ${{ matrix.device }}
+              run: |
+                  destination=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; family=sys.argv[1]; devices=json.load(sys.stdin)["devices"]; print(next(d["udid"] for runtime,rows in devices.items() if "iOS-26" in runtime for d in rows if d["name"].startswith(family)))' "$DEVICE_FAMILY")
+                  echo "SIMULATOR_ID=$destination" >> "$GITHUB_ENV"
+            - name: Test suite
+              env:
+                  TEST_SUITE: ${{ matrix.suite }}
+                  DEVICE_FAMILY: ${{ matrix.device }}
               run: |
                   set -euo pipefail
-                  test_status=0
-                  for family in iPhone iPad; do
-                    destination=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; family=sys.argv[1]; devices=json.load(sys.stdin)["devices"]; print(next(d["udid"] for runtime,rows in devices.items() if "iOS-26" in runtime for d in rows if d["name"].startswith(family)))' "$family")
-                    if ! xcodebuild test -quiet -project apps/leximory-ios/Leximory.xcodeproj -scheme Leximory -destination "platform=iOS Simulator,id=$destination" -skipPackagePluginValidation -parallel-testing-enabled NO CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES -resultBundlePath "results-$family.xcresult"; then
-                      test_status=1
-                    fi
-                  done
-                  exit "$test_status"
+                  case "$TEST_SUITE" in
+                    unit)
+                      filters=(-only-testing:LeximoryTests -skip-testing:LeximoryTests/LocalStoreKitTests)
+                      ;;
+                    browser)
+                      filters=(-only-testing:LeximoryUITests/BrowserWorkspaceUITests -only-testing:LeximoryUITests/BrowserAdBlockingUITests -only-testing:LeximoryUITests/TextBrowserUITests)
+                      ;;
+                    reader)
+                      filters=(-only-testing:LeximoryUITests/ReaderUITests -only-testing:LeximoryUITests/ArticleAudioUITests)
+                      ;;
+                    app)
+                      filters=(-only-testing:LeximoryUITests -skip-testing:LeximoryUITests/BrowserWorkspaceUITests -skip-testing:LeximoryUITests/BrowserAdBlockingUITests -skip-testing:LeximoryUITests/TextBrowserUITests -skip-testing:LeximoryUITests/ReaderUITests -skip-testing:LeximoryUITests/ArticleAudioUITests)
+                      ;;
+                    *) exit 1 ;;
+                  esac
+                  xcodebuild test -quiet -project apps/leximory-ios/Leximory.xcodeproj -scheme Leximory "${filters[@]}" -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -skipPackagePluginValidation -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 300 CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES -resultBundlePath "results-$DEVICE_FAMILY-$TEST_SUITE.xcresult"
+            - name: Test local StoreKit
+              if: ${{ !cancelled() && matrix.suite == 'unit' && steps.destination.outcome == 'success' }}
+              env:
+                  DEVICE_FAMILY: ${{ matrix.device }}
+              run: |
+                  xcodebuild test -quiet -project apps/leximory-ios/Leximory.xcodeproj -scheme Leximory-StoreKit-Local -only-testing:LeximoryTests/LocalStoreKitTests -destination "platform=iOS Simulator,id=$SIMULATOR_ID" -skipPackagePluginValidation -parallel-testing-enabled NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 300 CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES -resultBundlePath "results-$DEVICE_FAMILY-storekit.xcresult"
             - uses: actions/upload-artifact@v4
               if: always()
               with:
-                  name: simulator-results
+                  name: simulator-results-${{ matrix.device }}-${{ matrix.suite }}
                   path: results-*.xcresult
+    simulator:
+        runs-on: ubuntu-latest
+        if: always()
+        needs: [native_core, simulator_tests]
+        steps:
+            - name: Require every native check
+              env:
+                  CORE_RESULT: ${{ needs.native_core.result }}
+                  SIMULATOR_RESULT: ${{ needs.simulator_tests.result }}
+              run: |
+                  test "$CORE_RESULT" = success
+                  test "$SIMULATOR_RESULT" = success

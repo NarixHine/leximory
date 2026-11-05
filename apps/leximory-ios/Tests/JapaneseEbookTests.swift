@@ -886,7 +886,7 @@ import WebKit
         // the reader back a page or two until it reached the chapter start.
         for step in 0..<6 {
             web.frame = step % 2 == 0 ? CGRect(x: 0, y: 0, width: 700, height: 500) : CGRect(x: 0, y: 0, width: 1180, height: 820)
-            _ = try await web.callAsyncJavaScript("await new Promise(r => setTimeout(r, 500)); await painted();", arguments: [:], in: nil, contentWorld: .page)
+            _ = try await web.callAsyncJavaScript("await painted(); await navigationIdle(); await painted();", arguments: [:], in: nil, contentWorld: .page)
         }
         let after = try #require(try await web.callAsyncJavaScript(readState, arguments: [:], in: nil, contentWorld: .page) as? [String: Any])
         let beforeProgress = Double((before["page"] as? Int ?? 1) - 1) / Double(max(1, (before["total"] as? Int ?? 1) - 1))

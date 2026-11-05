@@ -371,8 +371,8 @@ final class BrowserWorkspaceUITests: XCTestCase {
             app.buttons["browser-more"].tap()
             let export = app.buttons["导出电子书"]
             XCTAssertTrue(export.waitForExistence(timeout: 5)); XCTAssertTrue(export.isEnabled); export.tap()
-            XCTAssertTrue(app.otherElements["ActivityListView"].waitForExistence(timeout: 10))
-            XCTAssertTrue(app.navigationBars["\(title).\(format)"].exists)
+            let exportedFile = app.navigationBars["\(title).\(format)"]
+            XCTAssertTrue(exportedFile.waitForExistence(timeout: 10))
             XCTAssertTrue(app.cells.containing(NSPredicate(format: "label CONTAINS[c] %@ OR label CONTAINS %@ OR label CONTAINS %@",
                 "Files", "文件", "ファイル")).firstMatch.exists)
             let capture = XCTAttachment(screenshot: app.screenshot())
@@ -382,7 +382,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
             } else {
                 app.swipeDown()
             }
-            expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.otherElements["ActivityListView"])
+            expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: exportedFile)
             waitForExpectations(timeout: 5)
             XCTAssertTrue(app.buttons["browser-more"].waitForExistence(timeout: 5))
             XCTAssertEqual(app.staticTexts["ebook-page-position"].value as? String, position)
