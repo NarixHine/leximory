@@ -4,6 +4,24 @@ import Testing
 @testable import LeximoryCore
 
 @Suite struct ReviewCatRunTests {
+    @Test func catFootprintStaysInsideThePaintedInterior() {
+        let lawn = CGRect(x: 30, y: 200, width: 360, height: 644)
+        let bounds = ReviewCatRun.movementBounds(in: lawn)
+        let interior = lawn.insetBy(dx: 28.8, dy: 51.52)
+        for center in [CGPoint(x: bounds.minX, y: bounds.minY), CGPoint(x: bounds.maxX, y: bounds.maxY)] {
+            for degrees in stride(from: -75.0, through: 75.0, by: 15) {
+                let transform = CGAffineTransform(rotationAngle: degrees * .pi / 180)
+                for x in [-ReviewCatRun.width / 2, ReviewCatRun.width / 2] {
+                    for y in [-ReviewCatRun.height / 2, ReviewCatRun.height / 2] {
+                        let corner = CGPoint(x: x, y: y).applying(transform)
+                        #expect(interior.contains(CGPoint(x: center.x + corner.x, y: center.y + corner.y)))
+                    }
+                }
+            }
+        }
+        #expect(bounds.minY > 300)
+        #expect(bounds.maxY < 744)
+    }
     @Test func webSpriteSizeAndTravelSpeed() {
         #expect(ReviewCatRun.height == 100)
         #expect(abs(ReviewCatRun.width - 183.203125) < 0.001)

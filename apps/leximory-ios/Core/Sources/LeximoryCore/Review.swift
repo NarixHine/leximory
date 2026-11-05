@@ -38,6 +38,25 @@ public struct ReviewSnapshot: Codable, Sendable {
     public let story: String?
     public let translations: [ReviewTranslation]?
     public let conversation: ReviewConversation?
+    /// Generation publishes partial snapshots. An omitted item is not a deletion.
+    public func preservingStreamedContent(from previous: ReviewSnapshot?) -> ReviewSnapshot {
+        guard let previous else { return self }
+        var items = translations ?? []
+        for (index, old) in (previous.translations ?? []).enumerated() {
+            if !items.indices.contains(index) { items.append(old); continue }
+            let new = items[index]
+            guard new.keyword == old.keyword || new.keyword.isEmpty else { continue }
+            items[index] = ReviewTranslation(
+                prompt: new.prompt.isEmpty ? old.prompt : new.prompt,
+                answer: new.answer.isEmpty ? old.answer : new.answer,
+                keyword: new.keyword.isEmpty ? old.keyword : new.keyword,
+                submission: new.submission ?? old.submission,
+                status: new.status ?? old.status, feedback: new.feedback ?? old.feedback)
+        }
+        return ReviewSnapshot(exists: exists, inProgress: inProgress,
+                              story: story ?? previous.story,
+                              translations: items, conversation: conversation ?? previous.conversation)
+    }
     public var completedTranslations: Int { (translations ?? []).filter { $0.status == .complete }.count }
     public var requiredTranslations: Int { Int(ceil(Double(translations?.count ?? 0) * 0.6)) }
     public var conversationUnlocked: Bool { !(translations ?? []).isEmpty && completedTranslations >= requiredTranslations }

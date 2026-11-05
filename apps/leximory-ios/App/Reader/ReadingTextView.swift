@@ -10,6 +10,7 @@ import os
     static let lookupTitle = "猫忆查"
     static let searchIdentifier = UIAction.Identifier("com.leximory.selection.web-search")
     static var lookupImage: UIImage? { UIImage(systemName: "pawprint.fill") }
+    static var dictionaryImage: UIImage? { UIImage(systemName: "character.book.closed") }
 
     static func menu(children: [UIMenuElement], options: UIMenu.Options = []) -> UIMenu {
         let menu = UIMenu(options: options, children: children)
@@ -71,8 +72,13 @@ import os
                 return [element]
             }
             if defineTitles.contains(nativeTitle(element)) {
-                if let action = element as? UIAction { action.title = "辞典" }
-                else if let command = element as? UICommand { command.title = "辞典" }
+                if let action = element as? UIAction {
+                    action.title = "辞典"
+                    action.image = action.image ?? dictionaryImage
+                } else if let command = element as? UICommand {
+                    command.title = "辞典"
+                    command.image = command.image ?? dictionaryImage
+                }
                 element.accessibilityLabel = "辞典"
                 return [element]
             }
@@ -962,7 +968,7 @@ private extension UIFont {
         icon.contentMode = .scaleAspectFit; icon.tintColor = ink
         icon.widthAnchor.constraint(equalToConstant: element.title.isEmpty ? 24 : 17).isActive = true
         icon.heightAnchor.constraint(equalToConstant: element.title.isEmpty ? 24 : 17).isActive = true
-        if primary || element.title == "荧光笔" || iconOnly || element.title.isEmpty {
+        if primary || element.title == "荧光笔" || element.title == "辞典" || iconOnly || element.title.isEmpty {
             content.addArrangedSubview(icon)
         }
         if !iconOnly && !element.title.isEmpty {

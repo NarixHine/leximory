@@ -1,6 +1,26 @@
 import XCTest
 
 final class ReviewUITests: XCTestCase {
+    @MainActor func testStreamingKeepsActivePromptAndDraft() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--browser-workspace-fixtures", "--review-stream-fixture"]
+        app.launch()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        let card = app.buttons["browser-review"]
+        XCTAssertTrue(card.waitForExistence(timeout: 15)); card.tap()
+        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "复习进度 24%")).firstMatch
+        XCTAssertTrue(day.waitForExistence(timeout: 10)); day.tap()
+        let word = app.buttons["review-task-discover"]
+        XCTAssertTrue(word.waitForExistence(timeout: 10)); word.tap()
+        let input = app.textViews["你的翻译"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5)); input.tap()
+        input.typeText("We found a quiet place.")
+        XCTAssertTrue(app.buttons["review-task-wonder"].waitForExistence(timeout: 12))
+        XCTAssertEqual(input.value as? String, "We found a quiet place.")
+        XCTAssertTrue(app.textViews["我们在河边发现了一个安静的地方。"].exists)
+        XCTAssertFalse(app.buttons["修改回答"].exists)
+    }
+
     @MainActor func testHomeTimelineTranslationAndWriting() {
         let app = XCUIApplication()
         app.launchArguments = ["--browser-workspace-fixtures"]
@@ -16,14 +36,14 @@ final class ReviewUITests: XCTestCase {
         XCTAssertTrue(day.waitForExistence(timeout: 10)); day.tap()
         let scene = app.otherElements["review-lawn"]
         XCTAssertTrue(scene.waitForExistence(timeout: 5))
-        let sceneFrame = scene.frame
         XCTAssertTrue(app.buttons["review-task-discover"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["review-task-连词成文"].exists)
         XCTAssertTrue(app.buttons["browser-address"].isHittable)
         XCTAssertFalse(app.buttons["返回"].exists)
         XCTAssertFalse(app.buttons["取消"].exists)
-        XCTAssertEqual(scene.frame.minY, sceneFrame.minY, accuracy: 1)
-        let wordFrame = app.buttons["review-task-discover"].frame
+        let taskFrames = ["discover", "wonder", "river", "quiet", "connection"].map {
+            ("review-task-" + $0, app.buttons["review-task-" + $0].frame)
+        }
         let lawn = XCTAttachment(screenshot: app.screenshot()); lawn.name = "Review lawn"; lawn.lifetime = .keepAlways; add(lawn)
         app.buttons["review-task-discover"].tap()
         let editor = app.textViews["你的翻译"]
@@ -41,17 +61,21 @@ final class ReviewUITests: XCTestCase {
         }, evaluatedWith: composer)
         wait(for: [movedAboveKeyboard], timeout: 5)
         let keyboardLayout = XCTAttachment(screenshot: app.screenshot()); keyboardLayout.name = "Review keyboard keeps lawn geometry"; keyboardLayout.lifetime = .keepAlways; add(keyboardLayout)
-        XCTAssertEqual(scene.frame.width, sceneFrame.width, accuracy: 1)
-        XCTAssertEqual(scene.frame.height, sceneFrame.height, accuracy: 1)
-        XCTAssertEqual(scene.frame.minY, sceneFrame.minY, accuracy: 1)
-        XCTAssertEqual(app.buttons["review-task-discover"].frame.minX, wordFrame.minX, accuracy: 1)
-        XCTAssertEqual(app.buttons["review-task-discover"].frame.minY, wordFrame.minY, accuracy: 1)
+        for (identifier, frame) in taskFrames {
+            let current = app.buttons[identifier].frame
+            XCTAssertEqual(current.minX, frame.minX, accuracy: 1)
+            XCTAssertEqual(current.minY, frame.minY, accuracy: 1)
+            XCTAssertEqual(current.width, frame.width, accuracy: 1)
+            XCTAssertEqual(current.height, frame.height, accuracy: 1)
+        }
         XCTAssertLessThan(composer.frame.maxY, restingComposer.maxY - 100)
         XCTAssertLessThanOrEqual(composer.frame.maxY, app.keyboards.firstMatch.frame.minY)
         editor.typeText("We find a quiet place by the river.\n")
         XCTAssertTrue(app.staticTexts["你的回答"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["意思传达得很清楚。"].waitForExistence(timeout: 12))
-        XCTAssertTrue(app.staticTexts["参考译文"].exists)
+        XCTAssertTrue(app.staticTexts["参考译文"].waitForExistence(timeout: 12))
+        XCTAssertFalse(app.staticTexts["意思传达得很清楚。"].exists)
+        XCTAssertFalse(app.textViews["意思传达得很清楚。"].exists)
+        XCTAssertFalse(app.staticTexts["点按标记处查看建议"].exists)
         XCTAssertFalse(app.buttons["参考译文"].exists)
         XCTAssertTrue(app.textViews["We discovered a quiet place by the river."].exists)
         XCTAssertFalse(app.staticTexts["We found"].exists, "Corrections appear in the answer popover, not separate cards")
@@ -59,12 +83,9 @@ final class ReviewUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["润色建议"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.textViews["We found"].exists)
         let correction = XCTAttachment(screenshot: app.screenshot()); correction.name = "Inline correction popover"; correction.lifetime = .keepAlways; add(correction)
-        app.staticTexts["English"].tap()
-        app.buttons["修改回答"].tap()
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
-        editor.typeText("\n")
-        XCTAssertTrue(app.staticTexts["你的回答"].waitForExistence(timeout: 10))
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08)).tap()
+        XCTAssertFalse(app.buttons["修改回答"].exists)
+        XCTAssertFalse(app.images["checkmark.seal"].exists)
         app.buttons["后退"].tap()
         let writing = app.buttons["每日练笔"]
         if !writing.isHittable { app.swipeUp() }
@@ -84,7 +105,7 @@ final class ReviewUITests: XCTestCase {
 extension ReviewUITests {
     @MainActor func testDarkLargeTextReviewKeepsTasksReachable() {
         let app = XCUIApplication()
-        app.launchArguments = ["--browser-workspace-fixtures", "-AppleInterfaceStyle", "Dark", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launchArguments = ["--browser-workspace-fixtures", "--dark-appearance", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
         defer { app.terminate(); app.launchArguments = []; app.launch() }
         let card = app.buttons["browser-review"]
@@ -118,6 +139,10 @@ extension ReviewUITests {
         XCTAssertTrue(day.waitForExistence(timeout: 10)); day.tap()
         XCTAssertTrue(app.buttons["review-task-discover"].waitForExistence(timeout: 10))
         XCUIDevice.shared.orientation = .landscapeLeft
+        let landscapeReady = expectation(for: NSPredicate { _, _ in
+            app.frame.width > app.frame.height
+        }, evaluatedWith: app)
+        wait(for: [landscapeReady], timeout: 10)
         let word = app.buttons["review-task-connection"]
         let scroll = app.scrollViews["review-session-scroll"]
         XCTAssertTrue(scroll.waitForExistence(timeout: 5))
@@ -139,6 +164,10 @@ extension ReviewUITests {
         guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("Square cards require an iPad-sized window.") }
         let app = XCUIApplication()
         XCUIDevice.shared.orientation = .landscapeLeft
+        let landscapeReady = expectation(for: NSPredicate { _, _ in
+            app.frame.width > app.frame.height
+        }, evaluatedWith: app)
+        wait(for: [landscapeReady], timeout: 10)
         app.launchArguments = ["--browser-workspace-fixtures"]
         app.launch()
         defer { XCUIDevice.shared.orientation = .portrait; app.terminate(); app.launchArguments = []; app.launch() }

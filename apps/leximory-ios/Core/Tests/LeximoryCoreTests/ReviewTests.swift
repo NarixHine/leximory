@@ -5,6 +5,28 @@ import OpenAPIRuntime
 @testable import LeximoryCore
 
 struct ReviewTests {
+    @Test func partialPollKeepsTheOpenExerciseAndItsEvaluation() throws {
+        let decoder = JSONDecoder()
+        let previous = try decoder.decode(ReviewSnapshot.self, from: Data(#"{"exists":false,"inProgress":true,"translations":[{"prompt":"翻译这句话。","answer":"A quiet place.","keyword":"quiet","submission":"A quiet place.","status":"complete","feedback":{"rationale":"表达自然。","badPairs":[]}}]}"#.utf8))
+        let partial = try decoder.decode(ReviewSnapshot.self, from: Data(#"{"exists":false,"inProgress":true,"translations":[{"prompt":"","answer":"","keyword":"quiet"},{"prompt":"河边。","answer":"By the river.","keyword":"river"}]}"#.utf8))
+        let merged = partial.preservingStreamedContent(from: previous)
+        #expect(merged.translations?.count == 2)
+        #expect(merged.translations?.first?.prompt == "翻译这句话。")
+        #expect(merged.translations?.first?.submission == "A quiet place.")
+        #expect(merged.translations?.first?.feedback?.rationale == "表达自然。")
+        let omitted = try decoder.decode(ReviewSnapshot.self, from: Data(#"{"exists":true,"inProgress":false}"#.utf8))
+        #expect(omitted.preservingStreamedContent(from: merged).translations?.count == 2)
+    }
+
+    @Test func newEvaluationReplacesThePreviousFeedback() throws {
+        let decoder = JSONDecoder()
+        let old = try decoder.decode(ReviewSnapshot.self, from: Data(#"{"exists":true,"inProgress":false,"translations":[{"prompt":"翻译。","answer":"We found it.","keyword":"find","submission":"We find it.","status":"pending"}]}"#.utf8))
+        let new = try decoder.decode(ReviewSnapshot.self, from: Data(#"{"exists":true,"inProgress":false,"translations":[{"prompt":"翻译。","answer":"We found it.","keyword":"find","submission":"We find it.","status":"complete","feedback":{"badPairs":[{"original":"find","improved":"found"}]}}]}"#.utf8))
+        let merged = new.preservingStreamedContent(from: old)
+        #expect(merged.translations?.first?.status == .complete)
+        #expect(merged.translations?.first?.feedback?.badPairs.first?.improved == "found")
+    }
+
     @Test(arguments: [(0, false, 1), (1, false, 12), (2, false, 24), (3, true, 36), (5, true, 60)])
     func translationsUnlockWritingAtSixtyPercent(completed: Int, unlocked: Bool, percentage: Int) throws {
         let items = (0..<5).map { index in

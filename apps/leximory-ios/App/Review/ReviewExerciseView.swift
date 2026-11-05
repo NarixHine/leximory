@@ -6,14 +6,14 @@ struct ReviewExerciseView: View {
     let index: Int?
     let availableHeight: CGFloat
     @State private var contentHeight: CGFloat = 160
-    @State private var editing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var focused = false
     @FocusState private var writingFocused: Bool
     @Environment(\.nativeSync) private var sync
     @ScaledMetric(relativeTo: .body) private var editorHeight: CGFloat = 50
     @ScaledMetric(relativeTo: .caption) private var translationFontSize: CGFloat = 16
-    private var translationFont: UIFont { LeximoryTypography.face("SpaceMono-Regular", size: translationFontSize) }
-    private var inputHeight: CGFloat { index == nil ? editorHeight : max(editorHeight, translationFont.lineHeight * 2 + 16) }
+    private var translationFont: UIFont { LeximoryTypography.proseUI(translationFontSize, language: learningLanguageName(model.selection.language)) }
+    private var inputHeight: CGFloat { index == nil ? editorHeight : max(60, max(editorHeight, translationFont.lineHeight * 2 + 16)) }
 
     private var key: String { index.map { "translation-\($0)" } ?? "conversation" }
     private var translation: ReviewTranslation? {
@@ -22,7 +22,8 @@ struct ReviewExerciseView: View {
     }
     private var conversation: ReviewConversation? { index == nil ? model.snapshot?.conversation : nil }
     private var status: ReviewStatus { translation?.status ?? conversation?.status ?? .idle }
-    private var savedSubmission: String? { translation?.submission ?? conversation?.submission }
+    private var savedSubmission: String? { model.pendingAnswer(index: index) ?? translation?.submission ?? conversation?.submission }
+    private var evaluating: Bool { model.pendingAnswer(index: index) != nil || status == .pending }
     private var feedback: ReviewFeedback? { translation?.feedback ?? conversation?.feedback }
     private var locked: Bool { index == nil && model.snapshot?.conversationUnlocked != true }
     private var limit: Int { index == nil ? 1200 : 500 }
@@ -38,9 +39,12 @@ struct ReviewExerciseView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 14) {
-                        Text(index == nil ? "每日练笔" : "TRANSLATION")
-                            .font(ReviewStyle.mono(12)).foregroundStyle(ReviewStyle.meta)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        HStack(spacing: 10) {
+                            Image(systemName: index == nil ? "square.and.pencil" : "character.bubble")
+                                .font(.headline.weight(.regular)).accessibilityHidden(true)
+                            Text(index == nil ? "每日练笔" : "翻译练习")
+                                .displayFont(20, relativeTo: .headline)
+                        }.foregroundStyle(ReviewStyle.word)
                         AnnotationMarkdownText(content: translation?.prompt ?? conversation?.prompt ?? "", size: 16, language: index == nil ? learningLanguageName(model.selection.language) : "Chinese")
                         if let translation {
                             Text("（\(translation.keyword)）").font(LeximoryTypography.prose(16, language: learningLanguageName(model.selection.language))).foregroundStyle(ReviewStyle.word)
@@ -52,29 +56,33 @@ struct ReviewExerciseView: View {
                     }
                     if locked {
                         VStack(alignment: .leading, spacing: 12) {
-                            Label("完成六成翻译，小黑猫就会轻声回应。", systemImage: "lock")
+                            Label("完成 60% 翻译即可与小黑猫谈心！", systemImage: "lock")
                             Text("完成翻译 \(model.snapshot?.completedTranslations ?? 0)/\(model.snapshot?.translations?.count ?? 0)")
                                 .foregroundStyle(.secondary)
                         }.interfaceFont(16).padding(22)
                             .frame(maxWidth: .infinity, alignment: .leading).background(LeximoryPalette.cover, in: .rect(cornerRadius: 24))
                     }
-                    if let submission = savedSubmission, !editing {
+                    if let submission = savedSubmission {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("你的回答").interfaceFont(13).foregroundStyle(.secondary)
                                 Spacer()
-                                if status == .pending { ProgressView(); Text("正在点评").interfaceFont(13).foregroundStyle(.secondary) }
-                                if status == .complete { Image(systemName: "checkmark.seal").foregroundStyle(LeximoryPalette.sage) }
+                                if evaluating { ProgressView().controlSize(.small); Text("正在点评").interfaceFont(13).foregroundStyle(.secondary) }
                             }
-                            ReviewAnnotatedAnswer(content: submission, feedback: feedback, language: learningLanguageName(model.selection.language))
-                            if let rationale = feedback?.rationale, !rationale.isEmpty {
-                                Label(rationale, systemImage: "checkmark.seal").interfaceFont(16)
+                            ReviewAnnotatedAnswer(content: submission, feedback: evaluating ? nil : feedback, language: learningLanguageName(model.selection.language))
+                            if !evaluating, status == .complete, let feedback, feedback.badPairs.isEmpty {
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Image(systemName: "checkmark.seal")
+                                    if let rationale = feedback.rationale, !rationale.isEmpty {
+                                        Text(rationale).interfaceFont(16)
+                                    }
+                                }.foregroundStyle(ReviewStyle.success)
                             }
                             if status == .failed {
                                 Text("点评暂时无法完成，请重新提交。")
                                     .interfaceFont(15).foregroundStyle(.secondary)
                             }
-                        }
+                        }.transition(.opacity.combined(with: .offset(y: 8)))
                     }
                     if let reply = conversation?.reply, status == .complete {
                         VStack(alignment: .leading, spacing: 12) {
@@ -89,24 +97,21 @@ struct ReviewExerciseView: View {
                             AnnotationMarkdownText(content: translation.answer, size: 18, language: learningLanguageName(model.selection.language))
                         }.accessibilityIdentifier("review-reference-answer")
                     }
-                    if savedSubmission != nil && !editing && status != .failed {
-                        Button("修改回答", systemImage: "pencil") {
-                            editing = true
-                            if index == nil { writingFocused = true } else { focused = true }
-                        }
-                            .interfaceFont(16).disabled(sync?.online == false || locked || model.submitting || model.awaitingConfirmation || status == .pending)
-                    }
                     if let error = model.error { Text(error).interfaceFont(15).foregroundStyle(.secondary) }
-                }.padding(22).frame(maxWidth: .infinity, alignment: .leading)
+                }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
-            }.frame(height: min(contentHeight, max(90, availableHeight - inputHeight - 48)))
+            }.frame(height: min(contentHeight, max(90, availableHeight - (savedSubmission == nil || status == .failed ? inputHeight + 48 : 0))))
                 .scrollBounceBehavior(.basedOnSize).scrollDismissesKeyboard(.interactively)
-                .background(LeximoryPalette.shell.opacity(0.96), in: .rect(cornerRadius: 32))
-                .overlay { RoundedRectangle(cornerRadius: 32).strokeBorder(ReviewStyle.segment, lineWidth: 7) }
+                .background(LeximoryPalette.shell, in: .rect(cornerRadius: 32))
+                .overlay { RoundedRectangle(cornerRadius: 32).strokeBorder(ReviewStyle.segment, lineWidth: 1) }
                 .accessibilityIdentifier("review-translation-tray")
             Spacer(minLength: 0)
-            if savedSubmission == nil || editing || status == .failed { composer }
+            if savedSubmission == nil || status == .failed {
+                composer.transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }.frame(maxWidth: 640).frame(maxWidth: .infinity).tint(.primary)
+            .animation(reduceMotion ? nil : .spring(response: 0.46, dampingFraction: 0.9), value: savedSubmission != nil)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.28), value: status)
     }
 
     private var composer: some View {
@@ -114,7 +119,7 @@ struct ReviewExerciseView: View {
             ZStack(alignment: .topLeading) {
                 if draft.wrappedValue.isEmpty {
                     Text(index == nil ? "写给小黑猫的话……" : model.selection.language == "zh" ? "译成文言文……" : "Your translation here ...")
-                        .font(ReviewStyle.mono(16)).foregroundStyle(LeximoryPalette.secondaryLabel)
+                        .font(LeximoryTypography.prose(16, language: learningLanguageName(model.selection.language))).foregroundStyle(LeximoryPalette.secondaryLabel)
                         .padding(.horizontal, 5).padding(.top, 8).allowsHitTesting(false)
                 }
                 if index != nil {
@@ -122,7 +127,7 @@ struct ReviewExerciseView: View {
                         enabled: sync?.online != false && !model.submitting && !model.awaitingConfirmation && status != .pending, submit: submit)
                         .frame(height: inputHeight)
                 } else {
-                    TextEditor(text: draft).tint(.blue).font(ReviewStyle.mono(16)).frame(height: inputHeight)
+                    TextEditor(text: draft).tint(.blue).font(LeximoryTypography.prose(16, language: learningLanguageName(model.selection.language))).frame(height: inputHeight)
                         .scrollContentBackground(.hidden).focused($writingFocused)
                         .disabled(sync?.online == false || locked || model.submitting || model.awaitingConfirmation || status == .pending)
                         .accessibilityLabel("写给小黑猫的话")
@@ -133,10 +138,10 @@ struct ReviewExerciseView: View {
                     if model.submitting || model.awaitingConfirmation { ProgressView().tint(LeximoryPalette.paper) }
                     else { Image(systemName: "arrow.up").font(.system(size: 16)) }
                 }.foregroundStyle(LeximoryPalette.paper).frame(width: 32, height: 32)
-                    .background(LeximoryPalette.ink, in: .circle).frame(width: 44, height: 44)
+                    .background(ReviewStyle.word, in: .circle).frame(width: 44, height: 44)
             }.buttonStyle(.plain).disabled(!canSubmit).opacity(canSubmit ? 1 : 0.4).accessibilityLabel("提交")
         }.padding(12).frame(maxWidth: 640)
-            .background(ReviewStyle.today, in: .rect(cornerRadius: 32))
+            .background(ReviewStyle.composer, in: .rect(cornerRadius: 32))
             .overlay { RoundedRectangle(cornerRadius: 32).strokeBorder(ReviewStyle.segment, lineWidth: 1) }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("review-composer")
@@ -145,7 +150,8 @@ struct ReviewExerciseView: View {
         guard canSubmit else { return }
         focused = false
         writingFocused = false
-        Task { await model.submit(index: index, text: draft.wrappedValue); editing = false }
+        let text = draft.wrappedValue
+        Task { await model.submit(index: index, text: text) }
     }
 }
 
@@ -172,7 +178,8 @@ private struct ReviewTranslationInput: UIViewRepresentable {
         context.coordinator.input = self
         context.coordinator.updating = true
         defer { context.coordinator.updating = false }
-        if view.text != text { view.text = text }
+        // UIKit owns live edits, selection and IME composition until focus leaves.
+        if !view.isFirstResponder, view.text != text { view.text = text }
         view.wantsFocus = focused
         if view.font != font { view.font = font }
         view.textColor = .label

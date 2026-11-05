@@ -18,11 +18,17 @@ enum ReviewLoadState: Equatable {
     private(set) var loadAttempt = 0
     private(set) var error: String?
     private(set) var submitting = false
+    private var confirmationUnresolved = false
     var awaitingConfirmation: Bool { pendingSubmission != nil }
     private var pendingSubmission: (index: Int?, text: String, sentAt: Date)?
     var drafts: [String: String] = [:]
     var exercise: ReviewExercise?
     init(client: MobileClient, selection: ReviewSelection) { self.client = client; self.selection = selection }
+
+    func pendingAnswer(index: Int?) -> String? {
+        guard let pendingSubmission, pendingSubmission.index == index else { return nil }
+        return pendingSubmission.text
+    }
 
     func retryLoading() {
         loadState = .loading
@@ -47,13 +53,13 @@ enum ReviewLoadState: Equatable {
                 let value = try await client.reviewSnapshot(selection)
                 try Task.checkCancellation()
                 accept(value)
-                await client.localStore?.save(value, for: "review/" + selection.id)
+                await client.localStore?.save(snapshot ?? value, for: "review/" + selection.id)
                 try Task.checkCancellation()
                 if !value.exists && !value.inProgress {
                     try await client.startReview(selection)
                     try Task.checkCancellation()
                 }
-                error = nil
+                if !confirmationUnresolved { error = nil }
                 failures = 0
                 if !hasExercises && !value.exists && now().timeIntervalSince(startedAt) >= 120 {
                     loadState = .unavailable("练习还没有准备好，请稍后重试。")
@@ -76,8 +82,8 @@ enum ReviewLoadState: Equatable {
     }
 
     private func accept(_ value: ReviewSnapshot) {
-        snapshot = value
-        loadState = value.inProgress || !value.exists ? .preparing : hasExercises ? .ready : .empty
+        snapshot = value.preservingStreamedContent(from: snapshot)
+        loadState = hasExercises ? .ready : value.inProgress || !value.exists ? .preparing : .empty
         guard let pendingSubmission else { return }
         let saved: String?
         if let index = pendingSubmission.index {
@@ -85,8 +91,13 @@ enum ReviewLoadState: Equatable {
                 items.indices.contains(index) ? items[index].submission : nil
             }
         } else { saved = value.conversation?.submission }
-        if saved == pendingSubmission.text || Date().timeIntervalSince(pendingSubmission.sentAt) > 30 {
+        if saved == pendingSubmission.text {
             self.pendingSubmission = nil
+            confirmationUnresolved = false
+            error = nil
+        } else if Date().timeIntervalSince(pendingSubmission.sentAt) > 30 {
+            confirmationUnresolved = true
+            error = "暂时无法确认提交结果。你的回答已保留，请稍后查看。"
         }
     }
 
@@ -100,8 +111,8 @@ enum ReviewLoadState: Equatable {
             try await client.submitReview(selection, index: index, submission: text)
             let current = try await client.reviewSnapshot(selection)
             accept(current)
-            await client.localStore?.save(current, for: "review/" + selection.id)
-            error = nil
+            await client.localStore?.save(snapshot ?? current, for: "review/" + selection.id)
+            if !confirmationUnresolved { error = nil }
         } catch {
             if Task.isCancelled || MutationRetry.isRetryable(error) { return }
             if let failure = error as? ReviewHTTPError, (400..<500).contains(failure.status) {

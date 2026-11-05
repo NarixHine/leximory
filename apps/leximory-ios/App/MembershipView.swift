@@ -180,7 +180,7 @@ struct MembershipView: View {
             }
             if case .restoreFailed(let message) = store.action {
                 Text(message).accessibilityIdentifier("membership-error")
-                Link("联系支持", destination: URL(string: "mailto:hi@leximory.com")!).frame(minHeight: 44)
+                Link("联系支持", destination: URL(string: "mailto:billing@leximory.com")!).frame(minHeight: 44)
             }
         }
         .interfaceFont(12, style: .footnote)
@@ -203,7 +203,7 @@ struct MembershipView: View {
             if details.membership?.provider == .legacy || (details.membership == nil && details.hasPaidMembership) {
                 Text("已有会员权益可在此继续使用。如需确认原订阅或取消续订，请联系支持，避免重复订阅。")
                     .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
-                Link("联系支持", destination: URL(string: "mailto:hi@leximory.com")!).frame(minHeight: 44)
+                Link("联系支持", destination: URL(string: "mailto:billing@leximory.com")!).frame(minHeight: 44)
             }
 
         }.padding(22).frame(maxWidth: .infinity, alignment: .leading)
@@ -231,8 +231,8 @@ private struct MembershipPrivacyView: View {
                     Text("Leximory 使用你的账号资料提供登录和个人资料功能，并保存书签、词汇与学习记录。使用 AI 注解或朗读时，相关文本会发送到服务端处理。")
                     Text("订阅与付款").interfaceFont(17, semibold: true, style: .headline)
                     Text("App Store 购买由 Apple 处理。Leximory 需要购买记录来确认会员权益，不会收到你的银行卡信息。")
-                    Text("如需了解或处理个人数据，请联系 hi@leximory.com。")
-                    Link("联系隐私支持", destination: URL(string: "mailto:hi@leximory.com")!).frame(minHeight: 44)
+                    Text("如需了解或处理个人数据，请联系 privacy@leximory.com。")
+                    Link("联系隐私支持", destination: URL(string: "mailto:privacy@leximory.com")!).frame(minHeight: 44)
                 }.padding(24).frame(maxWidth: 600).frame(maxWidth: .infinity)
             }
                 .navigationTitle("隐私说明").navigationBarTitleDisplayMode(.inline)

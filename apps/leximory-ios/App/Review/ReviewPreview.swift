@@ -50,6 +50,13 @@ actor ReviewFixtureTransport: ClientTransport {
                 }
             }
             payload = ["exists": true, "inProgress": false, "stage": "complete", "story": "A quiet story", "translations": translations, "conversation": conversation]
+            if ProcessInfo.processInfo.arguments.contains("--review-stream-fixture"), reads < 4, pendingIndex == nil {
+                payload["exists"] = false
+                payload["inProgress"] = true
+                payload["translations"] = reads == 2 ? [] : Array(translations.prefix(3))
+                payload["conversation"] = NSNull()
+            }
+
         } else {
             let words = translations.enumerated().map { index, item in ["id": "review-\(index)", "word": item["keyword"]!, "lang": "en", "lib": "fixture", "fields": ["original": item["keyword"]!, "lemma": item["keyword"]!, "definition": "A word remembered from your reading."]] }
             let completed = translations.filter { $0["status"] as? String == "complete" }.count

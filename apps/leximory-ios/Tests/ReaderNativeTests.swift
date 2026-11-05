@@ -10,6 +10,41 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor @Suite(.serialized) struct NativeTextSelectionTests {
+    @Test(arguments: [false, true])
+    func dictionaryIconAppearsInTheSelectionRail(command: Bool) async throws {
+        let dictionary: UIMenuElement = command
+            ? UICommand(title: "Look Up", action: NSSelectorFromString("_define:"))
+            : UIAction(title: "Look Up") { _ in }
+        let elements = ReadingSelectionMenu.copyAndLookupActions([UIMenu(children: [dictionary])])
+        #expect(elements.first === dictionary)
+        #expect(dictionary.title == "辞典")
+        #expect(dictionary.image != nil)
+
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let controller = UIViewController()
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        let source = controller.view!
+        defer {
+            ReadingGlassMenu.dismiss(from: source)
+            window.isHidden = true
+            previous?.makeKey()
+        }
+        ReadingGlassMenu.present(from: source, rect: CGRect(x: 100, y: 300, width: 60, height: 24), elements: elements)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        window.layoutIfNeeded()
+        func descendants(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(descendants) }
+        let button = try #require(descendants(window).first { $0.accessibilityIdentifier == "reading-selection-辞典" } as? UIButton)
+        let icon = try #require(descendants(button).compactMap { $0 as? UIImageView }.first { $0.image != nil })
+        #expect(!icon.isHidden)
+        #expect(icon.bounds.width > 0 && icon.bounds.height > 0)
+    }
+
     @Test(arguments: [UIUserInterfaceStyle.light, .dark])
     func selectionStaysBlueInsideNeutralSheets(appearance: UIUserInterfaceStyle) async throws {
         let document = try FixtureArticle.samples[0].document()
@@ -97,20 +132,20 @@ import LeximoryCore
 
     @Test func reviewCatKeepsItsLeftwardPoseAfterStoppingResizingAndNearbyTaps() throws {
         let driver = ReviewCatDriver()
-        driver.resize(CGSize(width: 600, height: 400))
-        driver.move(to: CGPoint(x: 100, y: 300), reduceMotion: false)
+        driver.resize(CGSize(width: 800, height: 600), lawn: CGRect(x: 0, y: 0, width: 800, height: 600))
+        driver.move(to: CGPoint(x: 300, y: 360), reduceMotion: false)
         driver.finish(try #require(driver.journey?.id))
-        driver.resize(CGSize(width: 300, height: 200))
-        driver.move(to: CGPoint(x: 52, y: 152), reduceMotion: false)
+        driver.resize(CGSize(width: 600, height: 400), lawn: CGRect(x: 0, y: 0, width: 600, height: 400))
+        driver.move(to: CGPoint(x: 226, y: 241), reduceMotion: false)
         let resting = driver.sample(at: Date())
         #expect(driver.journey == nil)
-        #expect(resting.position == CGPoint(x: 50, y: 150))
+        #expect(resting.position == CGPoint(x: 225, y: 240))
         #expect(resting.facingLeft)
         let nose = CGPoint(x: 1, y: 0).applying(resting.spriteTransform)
         #expect(nose.x < 0 && nose.y > 0)
-        driver.move(to: CGPoint(x: 20, y: 50), reduceMotion: true)
+        driver.move(to: CGPoint(x: 200, y: 180), reduceMotion: true)
         let instant = driver.sample(at: Date())
-        #expect(instant.position == CGPoint(x: 20, y: 50))
+        #expect(instant.position == CGPoint(x: 200, y: 180))
         #expect(instant.facingLeft)
         #expect(CGPoint(x: 1, y: 0).applying(instant.spriteTransform).y < 0)
     }

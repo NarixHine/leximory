@@ -174,7 +174,7 @@ final class LearningWebView: WKWebView, @MainActor UIEditMenuInteractionDelegate
 
     func dictionaryAction(for selection: EbookSelection) -> UIAction {
         // Use the captured EPUB selection for the dictionary fallback.
-        UIAction(title: "辞典") { [weak self] _ in
+        UIAction(title: "辞典", image: ReadingSelectionMenu.dictionaryImage) { [weak self] _ in
             guard let self, !selection.quote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
             var responder: UIResponder? = self
             while let current = responder {

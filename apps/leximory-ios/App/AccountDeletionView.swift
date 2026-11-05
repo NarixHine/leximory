@@ -25,7 +25,7 @@ struct AccountDeletionView: View {
                 if let failure = authenticationFailure ?? model.failure {
                     Text(failure).interfaceFont(15, style: .subheadline).foregroundStyle(.red)
                 }
-                Link("联系支持", destination: URL(string: "mailto:hi@leximory.com")!).frame(minHeight: 44)
+                Link("联系支持", destination: URL(string: "mailto:support@leximory.com")!).frame(minHeight: 44)
             }
             .interfaceFont(17).lineSpacing(4).padding(28)
             .frame(maxWidth: 520).frame(maxWidth: .infinity)

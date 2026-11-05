@@ -170,7 +170,7 @@ final class BrowserWebView: WKWebView {
             let rect = CGRect(x: value["x", default: 0] * scale, y: value["y", default: 0] * scale,
                               width: value["width", default: 0] * scale, height: value["height", default: 0] * scale)
             let nativeDictionary = ReadingSelectionMenu.nativeLookupActions(in: elements)
-            let dictionary = UIAction(title: "辞典") { [weak self] _ in
+            let dictionary = UIAction(title: "辞典", image: ReadingSelectionMenu.dictionaryImage) { [weak self] _ in
                 guard let self, self.selectionRequest == request else { return }
                 self.presentDictionary(term: quote)
             }

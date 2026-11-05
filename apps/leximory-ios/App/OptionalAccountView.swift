@@ -24,7 +24,7 @@ struct AccountEntryContext: Identifiable, Sendable {
         switch purpose {
         case .words: "登录解锁词汇本"
         case .cloudLibrary: "把喜欢的内容留下来"
-        case .review: "把遇见的词，留给明天"
+        case .review: "温故而知新"
         case .account, .service: "继续语言学习之旅"
         }
     }
@@ -32,9 +32,9 @@ struct AccountEntryContext: Identifiable, Sendable {
         switch purpose {
         case .words: "登录后即可在云端同步生词并定期复盘噢！"
         case .cloudLibrary: "登录后查看你的文件夹和已保存内容。"
-        case .review: "登录后，复习你收藏的生词。"
+        case .review: "登录后，复习你保存的生词。"
         case .service: "登录后继续使用猫忆查。"
-        case .account: "收藏生词，记录学习进度。"
+        case .account: "保存生词，记录学习进度。"
         }
     }
     var action: String { purpose == .words ? "登录并保存" : "登录并继续" }
@@ -157,10 +157,10 @@ struct SignInView: View {
         switch mode {
         case .signIn: context?.benefit ?? "收藏生词，记录学习进度。"
         case .register: "创建账号，收藏生词并记录你的学习。"
-        case .confirmation: "打开确认邮件中的链接，验证邮箱后继续。"
-        case .recovery: "输入账号邮箱，我们会发送重设密码的链接。"
-        case .recoverySent: "请查看邮箱，按邮件中的提示重设密码。"
-        case .newPassword: "为你的账号设置新的登录密码。"
+        case .confirmation: "打开确认邮件、验证邮箱后继续。"
+        case .recovery: "输入账号邮箱，以接收重设密码的链接。"
+        case .recoverySent: "请按邮件中的提示重设密码。"
+        case .newPassword: "设置新的登录密码。"
         }
     }
 
@@ -410,10 +410,10 @@ private struct AccountEntryPrivacyView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 Text("账号与学习内容").interfaceFont(17, semibold: true)
-                Text("登录后，Leximory 会保存你的账号资料、收藏词汇、书签与学习记录。你可以在账号中发起删除。")
+                Text("登录后，Leximory 会保存你的账号资料、收藏词汇、书签与学习记录。你可以在账号中删除。")
                 Text("AI 辅助学习").interfaceFont(17, semibold: true)
-                Text("猫忆查会与 Google 和 DeepSeek 共享所选词语及附近句子，用于识别语言和生成释义。")
-                Link("联系隐私支持", destination: URL(string: "mailto:hi@leximory.com")!).frame(minHeight: 44)
+                Text("猫忆查会向第三方 AI 提供商发送所选词语及附近句子，用于识别语言和生成释义。")
+                Link("联系隐私支持", destination: URL(string: "mailto:privacy@leximory.com")!).frame(minHeight: 44)
             }
             .interfaceFont(17).foregroundStyle(.primary).lineSpacing(4)
             .padding(24).frame(maxWidth: 600).frame(maxWidth: .infinity)

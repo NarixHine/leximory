@@ -10,21 +10,25 @@ import LeximoryCore
     private(set) var journey: Journey?
     private var position = CGPoint.zero
     private var size = CGSize.zero
+    private var movementBounds = CGRect.zero
     private var angle = 0.0
     private var facingLeft = false
 
-    func resize(_ newSize: CGSize) {
-        guard newSize != size, newSize.width > 0, newSize.height > 0 else { return }
+    func resize(_ newSize: CGSize, lawn: CGRect) {
+        let bounds = ReviewCatRun.movementBounds(in: lawn)
+        guard (newSize != size || bounds != movementBounds), newSize.width > 0, newSize.height > 0 else { return }
+        movementBounds = bounds
         let current = sample(at: Date())
         position = size == .zero ? CGPoint(x: newSize.width / 2, y: newSize.height / 2)
             : CGPoint(x: current.position.x / size.width * newSize.width, y: current.position.y / size.height * newSize.height)
+        position = constrained(position)
         angle = current.angle; facingLeft = current.facingLeft
         size = newSize; journey = nil
     }
     func move(to target: CGPoint, reduceMotion: Bool) {
         let current = sample(at: Date())
         position = current.position; angle = current.angle; facingLeft = current.facingLeft
-        let target = CGPoint(x: min(size.width, max(0, target.x)), y: min(size.height, max(0, target.y)))
+        let target = constrained(target)
         let motion = ReviewCatRun(from: position, to: target, previousAngle: angle)
         if reduceMotion {
             position = target
@@ -32,6 +36,10 @@ import LeximoryCore
             journey = nil; return
         }
         journey = motion.duration == 0 ? nil : Journey(motion: motion)
+    }
+    private func constrained(_ point: CGPoint) -> CGPoint {
+        CGPoint(x: min(movementBounds.maxX, max(movementBounds.minX, point.x)),
+                y: min(movementBounds.maxY, max(movementBounds.minY, point.y)))
     }
     func finish(_ id: UUID) {
         guard let journey, journey.id == id else { return }

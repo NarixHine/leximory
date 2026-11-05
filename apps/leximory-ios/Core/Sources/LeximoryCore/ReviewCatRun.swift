@@ -21,6 +21,13 @@ public struct ReviewCatRun: Sendable {
     }
     public static let height: CGFloat = 100
     public static let width: CGFloat = height * 469 / 256
+    /// Reserve the irregular painted perimeter and the sprite's full rotated footprint.
+    public static func movementBounds(in lawn: CGRect) -> CGRect {
+        let radius = hypot(width, height) / 2
+        let insetX = min(lawn.width / 2, lawn.width * 0.08 + radius)
+        let insetY = min(lawn.height / 2, lawn.height * 0.08 + radius)
+        return lawn.insetBy(dx: insetX, dy: insetY)
+    }
     public static let speed = 350.0
     public static let turnDuration = 0.2
     public static let landingDuration = 0.15

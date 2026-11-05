@@ -24,11 +24,10 @@ struct ReviewTimelineView: View {
         Group {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Label("FORMING CONNECTIONS", systemImage: "cablecar")
-                            .font(ReviewStyle.mono(14)).tracking(0.7).foregroundStyle(ReviewStyle.meta)
-                        Text("回忆旧知，创造新知").displayFont(22, relativeTo: .title3).foregroundStyle(LeximoryPalette.ink)
-                    }.padding(.leading, dateWidth + 24)
+                    Text("回忆旧知，创造新知")
+                        .displayFont(30, relativeTo: .largeTitle)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
                     if days.count > 1 {
                         Chart(Array(days.reversed().enumerated()), id: \.element.id) { index, day in
                             AreaMark(x: .value("日期", index), y: .value("词汇", day.count))

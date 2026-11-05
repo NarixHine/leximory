@@ -15,6 +15,8 @@ enum LeximoryPalette {
     static let illustration = Color(uiColor: adaptive(light: 0x9CAEA1, dark: 0x878580))
 
     static let wordHighlightUI = adaptive(light: 0xBDD981, dark: 0x878580).withAlphaComponent(0.45)
+    static let evaluationPraiseUI = adaptive(light: 0xE0EADC, dark: 0x344238)
+    static let evaluationCorrectionUI = adaptive(light: 0xF0E5C5, dark: 0x4B4330)
 
     static let readingInkUI = adaptive(light: 0x434943, dark: 0xCECDC3)
 

@@ -8,11 +8,13 @@ enum ReviewStyle {
     static let pill = color(0xF5F7F5, 0x27272A)
     static let segment = color(0xE7ECE7, 0x3F3F46)
     static let today = color(0xFCFCFD, 0x18181B)
+    static let composer = LeximoryPalette.cover
+    static let success = LeximoryPalette.sage
     static let todayBorder = color(0xF3F4F6, 0x27272A)
     static let chart = color(0x6B7280, 0xA1A1AA)
 
     static func mono(_ size: CGFloat) -> Font {
-        Font(UIFontMetrics(forTextStyle: .caption1).scaledFont(for: LeximoryTypography.face("SpaceMono-Regular", size: size)))
+        .custom("SpaceMono-Regular", size: size, relativeTo: .caption)
     }
     private static func color(_ light: UInt32, _ dark: UInt32) -> Color {
         Color(uiColor: UIColor { traits in
@@ -68,7 +70,7 @@ struct ReviewProgressView: View {
                 if showThresholds {
                     HStack(spacing: 0) {
                         ForEach(["0%", "1%", "30%", "60%"], id: \.self) { label in
-                            Text(label).frame(width: 35)
+                            Text(label).lineLimit(1).minimumScaleFactor(0.75).frame(width: 35)
                         }
                     }.font(ReviewStyle.mono(12)).foregroundStyle(ReviewStyle.meta)
                 }

@@ -44,10 +44,10 @@ struct ReviewAnnotatedAnswer: View {
             value.addAttributes([.backgroundColor: color, .link: link], range: range)
         }
         for (index, pair) in (feedback?.goodPairs ?? []).enumerated() {
-            highlight(pair.original, color: UIColor.systemPink.withAlphaComponent(0.14), url: "leximory-review://praise/\(index)")
+            highlight(pair.original, color: LeximoryPalette.evaluationPraiseUI, url: "leximory-review://praise/\(index)")
         }
         for (index, pair) in (feedback?.badPairs ?? []).enumerated() {
-            highlight(pair.original, color: UIColor.systemYellow.withAlphaComponent(0.25), url: "leximory-review://correction/\(index)")
+            highlight(pair.original, color: LeximoryPalette.evaluationCorrectionUI, url: "leximory-review://correction/\(index)")
         }
         return value
     }
