@@ -857,6 +857,7 @@ import WebKit
         let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
         let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
         let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: config)
+        web.scrollView.contentInsetAdjustmentBehavior = .never
         let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let window = UIWindow(windowScene: scene); window.frame = web.frame
         window.rootViewController = UIViewController(); window.rootViewController?.view.addSubview(web); window.isHidden = false
@@ -886,12 +887,17 @@ import WebKit
         // the reader back a page or two until it reached the chapter start.
         for step in 0..<6 {
             web.frame = step % 2 == 0 ? CGRect(x: 0, y: 0, width: 700, height: 500) : CGRect(x: 0, y: 0, width: 1180, height: 820)
-            _ = try await web.callAsyncJavaScript("await painted(); await navigationIdle(); await painted();", arguments: [:], in: nil, contentWorld: .page)
+            _ = try await web.callAsyncJavaScript("""
+                const deadline = performance.now() + 2000;
+                while ((innerWidth !== width || innerHeight !== height) && performance.now() < deadline) await new Promise(resolve => setTimeout(resolve, 10));
+                if (innerWidth !== width || innerHeight !== height) throw new Error(`Viewport ${innerWidth}x${innerHeight}, expected ${width}x${height}`);
+                resizeBook(); await painted(); await navigationIdle(); await chapterPainted();
+                """, arguments: ["width":web.frame.width, "height":web.frame.height], in: nil, contentWorld: .page)
         }
         let after = try #require(try await web.callAsyncJavaScript(readState, arguments: [:], in: nil, contentWorld: .page) as? [String: Any])
         let beforeProgress = Double((before["page"] as? Int ?? 1) - 1) / Double(max(1, (before["total"] as? Int ?? 1) - 1))
         let afterProgress = Double((after["page"] as? Int ?? 1) - 1) / Double(max(1, (after["total"] as? Int ?? 1) - 1))
-        #expect(beforeProgress - afterProgress < 0.15, "resize drifted back \(beforeProgress - afterProgress) of the chapter")
+        #expect(beforeProgress - afterProgress < 0.15, "resize drifted back \(beforeProgress - afterProgress) of the chapter; before: \(before), after: \(after)")
         // The restored scroll must sit on a whole page so no split column shows.
         let offset = after["offset"] as? Double ?? 0
         let extent = after["extent"] as? Double ?? 1
