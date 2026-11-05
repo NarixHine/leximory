@@ -65,16 +65,16 @@ struct ReviewProgressView: View {
         let state = value < 1 ? 0 : value < 30 ? 1 : value < 60 ? 2 : 3
         HStack(spacing: 8) {
             if let language { Text(language.uppercased()).font(ReviewStyle.mono(14)).foregroundStyle(ReviewStyle.language) }
-                HStack(spacing: 2) {
-                    ForEach(1...3, id: \.self) { step in
-                        UnevenRoundedRectangle(topLeadingRadius: step == 1 ? 4 : 0,
-                                               bottomLeadingRadius: step == 1 ? 4 : 0,
-                                               bottomTrailingRadius: step == 3 ? 4 : 0,
-                                               topTrailingRadius: step == 3 ? 4 : 0)
-                            .fill(state >= step ? ReviewStyle.meta : ReviewStyle.segment)
-                            .frame(width: 32, height: 8)
-                    }
+            HStack(spacing: 2) {
+                ForEach(1...3, id: \.self) { step in
+                    UnevenRoundedRectangle(topLeadingRadius: step == 1 ? 4 : 0,
+                                           bottomLeadingRadius: step == 1 ? 4 : 0,
+                                           bottomTrailingRadius: step == 3 ? 4 : 0,
+                                           topTrailingRadius: step == 3 ? 4 : 0)
+                        .fill(state >= step ? ReviewStyle.meta : ReviewStyle.segment)
+                        .frame(width: 32, height: 8)
                 }
+            }
             Image(systemName: conversationCompleted ? "star.fill" : state >= 3 ? "star" : "cursorarrow.rays")
                 .font(.system(size: 16, weight: .regular)).foregroundStyle(ReviewStyle.meta)
         }.accessibilityElement(children: .ignore).accessibilityLabel("复习进度 \(value)%")
