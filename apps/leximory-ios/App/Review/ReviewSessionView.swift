@@ -22,13 +22,7 @@ struct ReviewSessionView: View {
                         .padding(.horizontal, 12).padding(.top, 100).padding(.bottom, chromeHeight + 16)
                         .frame(maxWidth: 920).frame(maxWidth: .infinity)
                 }.scrollBounceBehavior(.basedOnSize).accessibilityIdentifier("review-session-scroll")
-                VStack(spacing: 12) {
-                    if let snapshot = model.snapshot, snapshot.exists || snapshot.translations?.isEmpty == false {
-                        ReviewProgressView(value: snapshot.percentage, conversationCompleted: snapshot.conversation?.status == .complete, showThresholds: true)
-                            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-                    }
-                    loadStatus
-                }.padding(.top, 12).padding(.horizontal, 20)
+                loadStatus.padding(.top, 12).padding(.horizontal, 20)
                 if let exercise = model.exercise {
                     let usableHeight = max(160, min(geometry.size.height, keyboardTop ?? geometry.size.height) - chromeHeight - 76)
                     ReviewExerciseView(model: model, index: { if case .translation(let index) = exercise { return index }; return nil }(), availableHeight: usableHeight)

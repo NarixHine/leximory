@@ -60,20 +60,11 @@ struct ReviewProgressView: View {
     let value: Int
     var language: String? = nil
     var conversationCompleted = false
-    var showThresholds = false
 
     var body: some View {
         let state = value < 1 ? 0 : value < 30 ? 1 : value < 60 ? 2 : 3
         HStack(spacing: 8) {
             if let language { Text(language.uppercased()).font(ReviewStyle.mono(14)).foregroundStyle(ReviewStyle.language) }
-            VStack(spacing: 4) {
-                if showThresholds {
-                    HStack(spacing: 0) {
-                        ForEach(["0%", "1%", "30%", "60%"], id: \.self) { label in
-                            Text(label).lineLimit(1).minimumScaleFactor(0.75).frame(width: 35)
-                        }
-                    }.font(ReviewStyle.mono(12)).foregroundStyle(ReviewStyle.meta)
-                }
                 HStack(spacing: 2) {
                     ForEach(1...3, id: \.self) { step in
                         UnevenRoundedRectangle(topLeadingRadius: step == 1 ? 4 : 0,
@@ -84,9 +75,8 @@ struct ReviewProgressView: View {
                             .frame(width: 32, height: 8)
                     }
                 }
-            }
-            if !showThresholds { Image(systemName: conversationCompleted ? "star.fill" : state >= 3 ? "star" : "cursorarrow.rays")
-                .font(.system(size: 16, weight: .regular)).foregroundStyle(ReviewStyle.meta) }
+            Image(systemName: conversationCompleted ? "star.fill" : state >= 3 ? "star" : "cursorarrow.rays")
+                .font(.system(size: 16, weight: .regular)).foregroundStyle(ReviewStyle.meta)
         }.accessibilityElement(children: .ignore).accessibilityLabel("复习进度 \(value)%")
     }
 }
