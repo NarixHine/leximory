@@ -162,13 +162,37 @@ final class BrowserWebView: WKWebView {
         builder.replaceChildren(ofMenu: .root) { _ in [] }
         Task { @MainActor [weak self] in
             guard let self else { return }
-            let script = "const s = getSelection(); if (!s || s.isCollapsed || !s.rangeCount) return null; const r = s.getRangeAt(0).getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height};"
-            guard let value = try? await callAsyncJavaScript(script, arguments: [:], in: nil, contentWorld: Self.world) as? [String: Double],
-                  selectionRequest == request else { return }
+            let script = "const s = getSelection(); if (!s || s.isCollapsed || !s.rangeCount) return null; const r = s.getRangeAt(0).getBoundingClientRect(); return {quote:s.toString(),rect:{x:r.x,y:r.y,width:r.width,height:r.height}};"
+            guard let snapshot = try? await callAsyncJavaScript(script, arguments: [:], in: nil, contentWorld: Self.world) as? [String: Any],
+                  let quote = snapshot["quote"] as? String, !quote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  let value = snapshot["rect"] as? [String: Double], selectionRequest == request else { return }
             let scale = scrollView.zoomScale
             let rect = CGRect(x: value["x", default: 0] * scale, y: value["y", default: 0] * scale,
                               width: value["width", default: 0] * scale, height: value["height", default: 0] * scale)
-            ReadingGlassMenu.present(from: self, rect: rect, elements: elements)
+            let nativeDictionary = ReadingSelectionMenu.nativeLookupActions(in: elements)
+            let dictionary = UIAction(title: "辞典") { [weak self] _ in
+                guard let self, self.selectionRequest == request else { return }
+                self.presentDictionary(term: quote)
+            }
+            func replaceDictionary(_ element: UIMenuElement) -> UIMenuElement {
+                if let menu = element as? UIMenu { return menu.replacingChildren(menu.children.map(replaceDictionary)) }
+                return nativeDictionary.contains { $0 === element } ? dictionary : element
+            }
+            ReadingGlassMenu.present(from: self, rect: rect, elements: elements.map(replaceDictionary))
+        }
+    }
+    private func presentDictionary(term: String) {
+        guard window != nil else { return }
+        var responder: UIResponder? = self
+        while let current = responder {
+            if let controller = current as? UIViewController {
+                guard controller.presentedViewController == nil else { return }
+                let dictionary = UIReferenceLibraryViewController(term: term)
+                dictionary.view.accessibilityIdentifier = "browser-dictionary"
+                controller.present(dictionary, animated: true)
+                return
+            }
+            responder = current.next
         }
     }
     private func capture(_ completion: @escaping (BrowserSelection?) -> Void) {

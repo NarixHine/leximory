@@ -133,6 +133,23 @@ final class BrowserWorkspaceUITests: XCTestCase {
         selectText()
     }
 
+    @MainActor func testWebDictionaryOpensSystemDefinitions() throws {
+        let page = try BrowserPageServer()
+        defer { page.listener.cancel() }
+        let app = launch(); defer { restore(app) }
+        app.buttons["browser-address"].tap()
+        let input = app.textFields["browser-address-input"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        input.typeText(page.url + "\n")
+        let heading = app.webViews.staticTexts["A quiet forest"].firstMatch
+        XCTAssertTrue(heading.waitForExistence(timeout: 15))
+        heading.press(forDuration: 1)
+        let dictionary = app.buttons["reading-selection-辞典"]
+        XCTAssertTrue(dictionary.waitForExistence(timeout: 5), app.debugDescription)
+        dictionary.tap()
+        XCTAssertTrue(app.otherElements["browser-dictionary"].waitForExistence(timeout: 5), app.debugDescription)
+    }
+
     @MainActor func testWebSelectionUsesCustomGlassMenu() throws {
         let page = try BrowserPageServer()
         defer { page.listener.cancel() }

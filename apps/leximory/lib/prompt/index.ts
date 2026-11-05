@@ -98,17 +98,27 @@ const WORD_GUIDE_MOBILE_EN = `# 核心指令
 - 原文形式：照抄确定后的原文片段（不含标点）
 - 原形：保留语境词性，普通复数、时态还原为词典形（apostles → apostle）；有独立词义或语义色彩的形式保留（形容词 simplified 保留，被动动词 was simplified by… 还原为 simplify；brethren 保留其群体、宗教或古雅色彩）。短语给出完整短语
 - 先确定第二栏原形，再据此给出词性、中英文释义、音标和词源；单复数、时态也须一致，不得沿用选中形式（如 apostle 按单数释义和注音）
-- 原形释义：**词性 中文释义** \`音标\` 英文释义: *自造例句*
+- 原形释义：**词性 中文释义** \`音标\` 英文释义: *自造例句*；原句中存在固定搭配或支配结构时，音标后加 *(搭配)*，否则省略。
 - 词源：原义与构词，形如 语源“原义”: ***词素*** (义) + ***词素*** (义)
 - 同语根词：形如 ***词素*** (义) → **派生词** (中文)；没有词源或同源词时省略相应末尾字段，不要输出空字段
 
 ## 示例
 
-{{children||child||**n. 孩子** \`tʃaɪld\` a young human being: *The child waved at me.*}}
+{{children||child||**n. 孩子** \`tʃaɪld\` *(pl. **children**)* a young human being: *The child waved at me.*}}
 
-{{walked||walk||**v. 步行** \`wɔːk\` move on foot: *We walk to school every day.*}}
+She is [[capable]] of solving the problem. 的输出示例：
+{{capable||capable||**adj. 有能力的** \`ˈkeɪpəbl\` *(be capable of)* having the ability to do something: *He is capable of working independently.*}}
 
 {{bridge the gap||bridge the gap||**phr. 弥合差距** \`brɪdʒ ðə ɡæp\` reduce the difference between two things or groups: *The scholarship aims to bridge the gap between rich and poor schools.*||由“架桥”引申为“消除隔阂”: ***bridge*** (桥) + ***gap*** (缺口)||***bridge*** (桥) → **bridge**head (桥头堡)}}
+
+It [[transpires]] that the apparent error was deliberate.
+{{transpires||transpire||**v. 被发现；显露** \`trænˈspaɪə\` become known: *It later transpired that the documents were forged.*||原指水汽透出，后引申为消息泄露：拉丁 ***trans-*** (穿过) + ***spirare*** (呼吸)||***spir-*** (呼吸) → in**spir**e (启发)}}
+
+I was [[obsessed]] with the idea that I was going to die.
+{{obsessed||obsessed||**adj. 被某念头困扰的** \`əbˈsest\` *(be obsessed with)* unable to stop thinking about something: *He was obsessed with the fear of making a mistake.*||由 obsess 的过去分词转为形容词；拉丁 obsidere“围困”：***ob-*** (对着) + ***sedere*** (坐)||***sed-/sess-*** (坐) → **sed**entary (久坐的)}}
+
+It can [[dawn]] on us that our efforts are not in vain.
+{{dawn||dawn||**v. 开始变得明白** \`dɔːn\` *(dawn on somebody)* begin to become clear to someone: *It dawned on Mara that she had misread the timetable.*||由“天亮”引申为“开始明白”}}
 
 earthly [[sojourn]] 的输出示例：
 {{sojourn||sojourn||**n. 逗留；暂居（此处指寄居尘世）** \`ˈsɒdʒɜːn\` a temporary stay: *Her sojourn in Rome lasted a week.*}}`

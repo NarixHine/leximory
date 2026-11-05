@@ -105,6 +105,44 @@ for (const { language, lemmas, fieldCounts } of [
     })
 }
 
+test('mobile English usage example preserves the word lemma and parenthesized phrase through parsing', () => {
+    const output = mobileWordGuide('en').match(/^\{\{capable\|\|[^\n]+\}\}$/m)?.[0]
+    assert.ok(output)
+    const definition = parseGeneratedDefinition(output)
+    assert.equal(definition.lemma, 'capable')
+    assert.equal(
+        definition.definition,
+        '**adj. 有能力的** `ˈkeɪpəbl` *(be capable of)* having the ability to do something: *He is capable of working independently.*',
+    )
+})
+
+test('adapted English article shots preserve contextual senses, lemmas, usage and optional fields', () => {
+    const guide = mobileWordGuide('en')
+    const examples = [...guide.matchAll(/^\{\{[^\n]+\}\}$/gm)].map(([output]) => parseGeneratedDefinition(output))
+    const transpire = examples.find(({ lemma }) => lemma === 'transpire')
+    const obsessed = examples.find(({ lemma }) => lemma === 'obsessed')
+    const dawn = examples.find(({ lemma }) => lemma === 'dawn')
+    assert.ok(transpire && obsessed && dawn)
+    assert.equal(
+        transpire.definition,
+        '**v. 被发现；显露** `trænˈspaɪə` become known: *It later transpired that the documents were forged.*',
+    )
+    assert.match(transpire.etymology ?? '', /spirare/)
+    assert.match(transpire.cognates ?? '', /in\*\*spir\*\*e/)
+    assert.equal(
+        obsessed.definition,
+        '**adj. 被某念头困扰的** `əbˈsest` *(be obsessed with)* unable to stop thinking about something: *He was obsessed with the fear of making a mistake.*',
+    )
+    assert.match(obsessed.etymology ?? '', /过去分词转为形容词/)
+    assert.match(obsessed.cognates ?? '', /\*\*sed\*\*entary/)
+    assert.equal(
+        dawn.definition,
+        '**v. 开始变得明白** `dɔːn` *(dawn on somebody)* begin to become clear to someone: *It dawned on Mara that she had misread the timetable.*',
+    )
+    assert.equal(dawn.etymology, '由“天亮”引申为“开始明白”')
+    assert.equal(dawn.cognates, null)
+})
+
 test('mobile English sojourn example uses the checked British noun pronunciation', () => {
     const guide = mobileWordGuide('en')
     const output = guide.match(/^\{\{sojourn\|\|[^\n]+\}\}$/m)?.[0]
