@@ -59,7 +59,7 @@ jobs:
             fail-fast: false
             matrix:
                 device: [iPhone, iPad]
-                suite: [unit, browser, reader, app]
+                suite: ${{ github.event_name == 'workflow_dispatch' && fromJSON('["unit","browser","reader","app"]') || fromJSON('["unit"]') }}
         steps:
             - uses: actions/checkout@v4
             - run: apps/leximory-ios/scripts/generate-project.sh

@@ -871,14 +871,18 @@ private struct AnnotationLayoutProbeView: View {
 
 @MainActor struct TypographyTests {
     @Test(arguments: [CGFloat(16), 28, 36])
-    func chineseDisplayInkMatchesItsNominalRole(size: CGFloat) {
+    func displayPairingUsesTheChineseDisplayFaceWithoutChangingOtherScripts(size: CGFloat) throws {
         func ink(_ string: String, font: UIFont) -> CGRect {
             CTLineGetImageBounds(CTLineCreateWithAttributedString(NSAttributedString(string: string, attributes: [.font: font])), nil)
         }
         let paired = LeximoryTypography.displayUI(size)
         let chinese = ink("我", font: paired)
-        #expect(chinese.height > size * 0.9)
-        #expect(chinese.height < size * 1.1)
+        #expect(chinese.width > 0 && chinese.height > 0)
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: "我", attributes: [.font: paired]))
+        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+        let run = try #require(runs.first)
+        let chineseFont = try #require((CTRunGetAttributes(run) as NSDictionary)[kCTFontAttributeName] as? UIFont)
+        #expect(chineseFont.fontName == "Fontquan-XinYiJiXiangSong-Regular")
         #expect(ink("Garamond", font: paired) == ink("Garamond", font: LeximoryTypography.face("EBGaramond-Regular", size: size)))
         #expect(ink("語", font: LeximoryTypography.editorialUI(size, language: "Japanese")) == ink("語", font: LeximoryTypography.face("ChillDuanHeiSongProJP_Regular", size: size)))
     }

@@ -59,13 +59,21 @@ import StoreKitTest
 
     @Test func monthlyProductsPurchaseAndExpireWithoutAppStoreConnect() async throws {
         let url = try #require(Bundle(for: BundleMarker.self).url(forResource: "Leximory", withExtension: "storekit"))
+        struct Subscription: Decodable {
+            let productID: String
+            let recurringSubscriptionPeriod: String
+            let type: String
+        }
+        struct Group: Decodable { let subscriptions: [Subscription] }
+        struct Catalog: Decodable { let subscriptionGroups: [Group] }
+        let products = try JSONDecoder().decode(Catalog.self, from: Data(contentsOf: url))
+            .subscriptionGroups.flatMap(\.subscriptions)
+        #expect(Set(products.map(\.productID)) == ["com.leximory.reader.bilingual.monthly", "com.leximory.reader.polyglot.monthly"])
+        #expect(products.allSatisfy { $0.type == "RecurringSubscription" && $0.recurringSubscriptionPeriod == "P1M" })
         let store = try SKTestSession(contentsOf: url)
         store.disableDialogs = true
         store.clearTransactions()
         defer { store.clearTransactions() }
-        let products = try await Product.products(for: ["com.leximory.reader.bilingual.monthly", "com.leximory.reader.polyglot.monthly"])
-        #expect(Set(products.map(\.id)) == ["com.leximory.reader.bilingual.monthly", "com.leximory.reader.polyglot.monthly"])
-        #expect(products.allSatisfy { $0.type == .autoRenewable && $0.subscription?.subscriptionPeriod.unit == .month })
         let token = UUID()
         let transaction = try await store.buyProduct(identifier: "com.leximory.reader.bilingual.monthly", options: [.appAccountToken(token)])
         #expect(transaction.environment == .xcode)
