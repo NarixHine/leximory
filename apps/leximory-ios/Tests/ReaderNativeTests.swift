@@ -693,6 +693,43 @@ import LeximoryCore
         try await Task.sleep(for: .milliseconds(150))
         #expect(abs(scroll.contentOffset.y - 240) < 1)
     }
+    @Test func cappedAnnotationReservesUpwardSwipesForScrollingUntilTheBottom() async throws {
+        let document = try FixtureArticle.samples[0].document()
+        let selection = try ReaderLayout(document: document).selection(NSRange(location: 0, length: 4), document: document, textID: TextID(rawValue: "fixture"))
+        let definition = Definition(lemma: "word", definition: String(repeating: "A long annotation must remain reachable.\n", count: 80))
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        var canDismiss = true
+        let host = UIHostingController(rootView:
+            DefinitionView(item: DefinitionPresentation(source: .article(selection), definition: definition),
+                           client: nil, language: "English", isPopover: false, topTrayHeight: 600,
+                           onScrollPermission: { canDismiss = $0 })
+                .frame(width: 390, height: 600, alignment: .top))
+        window.rootViewController = host
+        window.isHidden = false
+        defer { window.isHidden = true }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(300))
+        host.view.layoutIfNeeded()
+        func scrollView(in view: UIView) -> UIScrollView? {
+            if let scroll = view as? UIScrollView, !(scroll is UITextView) { return scroll }
+            return view.subviews.lazy.compactMap { scrollView(in: $0) }.first
+        }
+        let scroll = try #require(scrollView(in: host.view))
+        #expect(scroll.bounds.height <= 600 * 0.78 + 1)
+        #expect(scroll.contentSize.height > scroll.bounds.height)
+        #expect(!canDismiss, "An upward swipe must scroll the overflowing annotation at its top")
+        scroll.setContentOffset(CGPoint(x: 0, y: 240), animated: false)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(!canDismiss)
+        let bottom = scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom
+        scroll.setContentOffset(CGPoint(x: 0, y: bottom), animated: false)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(canDismiss, "Only a new swipe at the bottom may dismiss the tray")
+        scroll.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(!canDismiss)
+    }
     @Test func topAnnotationGrowthKeepsReaderViewportAndTopEdgeFixed() async throws {
         let document = try FixtureArticle.samples[0].document()
         let layout = ReaderLayout(document: document)
@@ -705,11 +742,12 @@ import LeximoryCore
         window.isHidden = false
         defer { window.isHidden = true }
         host.view.layoutIfNeeded()
-        try await Task.sleep(for: .milliseconds(150))
+        try await Task.sleep(for: .milliseconds(450))
         let readerFrame = probe.readerFrame
         let shortTray = probe.trayFrame
         #expect(readerFrame.height > 0)
         #expect(shortTray.height > 0)
+        #expect(probe.canDismiss)
         probe.text = String(repeating: "A long streamed annotation should scroll inside its tray.\n", count: 80)
         try await Task.sleep(for: .milliseconds(250))
         host.view.layoutIfNeeded()
@@ -717,6 +755,7 @@ import LeximoryCore
         #expect(abs(probe.trayFrame.minY - shortTray.minY) < 1)
         #expect(probe.trayFrame.height > shortTray.height)
         #expect(probe.trayFrame.height <= 900 * 0.78 + 1)
+        #expect(!probe.canDismiss)
     }
     @Test func playbackProgressFollowsAudioAfterAControlAdjustment() async throws {
         let playback = PlaybackController()
@@ -809,6 +848,7 @@ import LeximoryCore
     var text = "A short definition."
     var readerFrame: CGRect = .zero
     var trayFrame: CGRect = .zero
+    var canDismiss = true
 }
 
 private struct AnnotationLayoutProbeView: View {
@@ -820,7 +860,8 @@ private struct AnnotationLayoutProbeView: View {
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { probe.readerFrame = $0 }
             .overlay(alignment: .top) {
                 DefinitionView(item: DefinitionPresentation(source: source, definition: Definition(lemma: "word", definition: probe.text)),
-                               client: nil, language: "English", isPopover: false, topTrayHeight: 900, closeTray: {})
+                               client: nil, language: "English", isPopover: false, topTrayHeight: 900, closeTray: {},
+                               onScrollPermission: { probe.canDismiss = $0 })
                     .id(probe.text)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { probe.trayFrame = $0 }
             }

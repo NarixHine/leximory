@@ -371,8 +371,8 @@ struct DefinitionView: View {
                 .scrollDisabled(trayDragging)
                 .scrollBounceBehavior(.basedOnSize)
                 .onScrollGeometryChange(for: Bool.self) { geometry in
-                    geometry.contentOffset.y <= -geometry.contentInsets.top + 1
-                } action: { _, atTop in onScrollPermission?(atTop) }
+                    geometry.visibleRect.maxY >= geometry.contentSize.height - 1
+                } action: { _, atBottom in onScrollPermission?(atBottom) }
                 .scrollDismissesKeyboard(.interactively)
                 .ignoresSafeArea(.container, edges: isPopover || topTrayHeight != nil ? [] : .bottom)
                 .onGeometryChange(for: CGFloat.self) { _ in safeAreaBottom } action: { if !editing { bottomSafeArea = $0 } }
@@ -481,15 +481,10 @@ struct DefinitionView: View {
                 }
                 .buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)
                 .accessibilityLabel("进一步了解")
-                .accessibilityHint("生成参考，消耗一次语境查词额度")
+                .accessibilityHint("了解更多，消耗一次语境查词额度")
                 .accessibilityIdentifier("definition-elaborate")
                 .disabled(!model.isReady || model.elaboration.isStreaming || elaborationComplete || sync?.online == false
                     || (client != nil && model.completionID == nil) || (client == nil && guest == nil))
-            }
-            if let dictionaryURL {
-                DictionaryLink(url: dictionaryURL, client: client) {
-                    if let closeTray { closeTray() } else { dismiss() }
-                }
             }
         }
     }
@@ -503,7 +498,7 @@ struct DefinitionView: View {
                     Text("参考").interfaceFont(14).foregroundStyle(.secondary)
                     if model.elaboration.isStreaming {
                         ProgressView().controlSize(.mini).tint(.secondary)
-                            .accessibilityLabel("正在生成参考")
+                            .accessibilityLabel("正在补充说明")
                     }
                 }
                 if !model.elaboration.text.isEmpty {
@@ -555,18 +550,6 @@ struct DefinitionView: View {
         case .saved: !saveAcknowledged
         }
     }
-    private var dictionaryURL: URL? {
-        let base: URL?
-        switch language {
-        case "English": base = URL(string: "https://www.etymonline.com/word/")
-        case "Chinese": base = URL(string: "https://www.zdic.net/hans/")
-        case "French": base = URL(string: "https://www.cnrtl.fr/definition/")
-        case "Japanese":
-            return URL(string: "https://jisho.org/search/")?.appending(path: lemma)
-        default: base = nil
-        }
-        return base?.appending(path: lemma)
-    }
     private func section(_ title: String, content: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title).interfaceFont(14).foregroundStyle(.secondary)
@@ -602,7 +585,8 @@ struct DefinitionTopTray: View {
     @State private var laidOut = false
     @State private var displacement: CGFloat = 0
     @State private var dragging = false
-    @State private var canMove = true
+    @State private var atScrollBottom = true
+    @GestureState private var startedAtScrollBottom: Bool?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var settling: Animation {
@@ -618,7 +602,7 @@ struct DefinitionTopTray: View {
                     .accessibilityHidden(true)
                 DefinitionView(item: item, client: client, language: language, isPopover: false,
                                topTrayHeight: geometry.size.height, closeTray: dismissTray,
-                               trayDragging: dragging, onScrollPermission: { canMove = $0 },
+                               trayDragging: dragging, onScrollPermission: { atScrollBottom = $0 },
                                allowsFeedback: presented && dismissal == nil && !dragging)
                     .frame(width: min(LeximoryLayout.annotationMeasure, geometry.size.width - 24))
                     .clipShape(RoundedRectangle(cornerRadius: 36, style: .continuous))
@@ -652,10 +636,14 @@ struct DefinitionTopTray: View {
 
     private var moveGesture: some Gesture {
         DragGesture(minimumDistance: 8, coordinateSpace: .named("annotation-tray"))
+            .updating($startedAtScrollBottom) { _, atBottom, _ in
+                // Reaching the bottom mid-swipe must not turn a scroll into dismissal.
+                if atBottom == nil { atBottom = atScrollBottom }
+            }
             .onChanged { value in
                 let distance = value.translation.height
                 guard dismissal == nil,
-                      dragging || (canMove && distance < 0 && abs(distance) > abs(value.translation.width)) else { return }
+                      dragging || ((startedAtScrollBottom ?? atScrollBottom) && distance < 0 && abs(distance) > abs(value.translation.width)) else { return }
                 dragging = true
                 // Follow upward movement one-to-one; use Vaul's damping beyond the resting edge.
                 var transaction = Transaction()

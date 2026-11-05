@@ -93,7 +93,7 @@ enum DefinitionSource {
                 guard !Task.isCancelled else { return }
                 let cause = MobileClient.cause(of: error)
                 elaboration = .failed((cause as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message
-                    ?? "参考未能完成，请重试。", preview: elaboration.text)
+                    ?? "暂时未能获取更多信息。", preview: elaboration.text)
             }
         }
         elaborationTask = task
