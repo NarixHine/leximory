@@ -14,7 +14,7 @@ import {
     deleteText,
     uploadEbook,
 } from '@/server/db/text'
-import { inngest } from '@/server/inngest/client'
+import { publishArticleImport } from '@/server/inngest/client'
 import { wordAnnotationInstructions, wordAnnotationPrompt } from '@/lib/prompt'
 import { AnnotationProgress } from '@/lib/types'
 import { getAnnotationCache, setAnnotationCache } from '@/server/db/ai-cache'
@@ -41,10 +41,7 @@ const WORD_ANNOTATION_CACHE_VERSION = 'v2'
 
 /** Cache key for a tap-to-define annotation: version + language + the marked chunk. */
 function commentHash(prompt: string, lang: Lang) {
-    return crypto
-        .createHash('sha256')
-        .update(`${WORD_ANNOTATION_CACHE_VERSION}:${lang}:${prompt}`)
-        .digest('hex')
+    return crypto.createHash('sha256').update(`${WORD_ANNOTATION_CACHE_VERSION}:${lang}:${prompt}`).digest('hex')
 }
 
 /** Re-chunks a word annotation stream so the popover fills word by word, not token by token. */
@@ -163,8 +160,7 @@ export async function removeText({ id }: { id: string }) {
 /** Uploads an EPUB or PDF ebook, attaches it to a text, and auto-fills its emoji. */
 export async function saveEbook(id: string, form: FormData) {
     const ebook = form.get('ebook') as File
-    const isEpub =
-        ebook.type === 'application/epub+zip' || ebook.name.toLowerCase().endsWith('.epub')
+    const isEpub = ebook.type === 'application/epub+zip' || ebook.name.toLowerCase().endsWith('.epub')
     const isPdf = ebook.type === 'application/pdf' || ebook.name.toLowerCase().endsWith('.pdf')
     if (!isEpub && !isPdf) {
         throw new Error('Not a supported ebook file')
@@ -218,8 +214,7 @@ export async function generate({
         return { error: `本月 ${await maxCommentaryQuota()} 词点额度耗尽。` }
     }
 
-    await inngest.send({
-        name: 'app/article.imported',
+    await publishArticleImport({
         data: { article, userId, textId, onlyComments, generateTitle },
     })
 }
@@ -272,13 +267,7 @@ export async function getAnnotationProgressAction(id: string) {
 }
 
 /** Updates the annotation progress for a text. */
-export async function setAnnotationProgressAction({
-    id,
-    progress,
-}: {
-    id: string
-    progress: AnnotationProgress
-}) {
+export async function setAnnotationProgressAction({ id, progress }: { id: string; progress: AnnotationProgress }) {
     const text = await getTextWithLib(id)
     await Kilpi.texts.write(text).authorize().assert()
     await setTextAnnotationProgress({ id, progress })
@@ -298,15 +287,7 @@ export async function addText({ title, lib }: { title: string; lib: string }) {
 }
 
 /** Creates a text with content, generates annotations, and redirects. */
-export async function addAndGenerateText({
-    title,
-    content,
-    lib,
-}: {
-    title: string
-    content: string
-    lib: string
-}) {
+export async function addAndGenerateText({ title, content, lib }: { title: string; content: string; lib: string }) {
     const libData = await getLib({ id: lib })
     await Kilpi.libraries.write(libData).authorize().assert()
     const id = await createText({ lib, title, content })

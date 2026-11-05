@@ -3,6 +3,7 @@ import CryptoKit
 
 /// One backend/account partition. Closing a partition prevents late requests from recreating it.
 public actor LocalReadingStore {
+    private var syncingHighlights = false
     public struct Status: Sendable {
         public let online: Bool
         public let bytes: Int
@@ -121,7 +122,7 @@ public actor LocalReadingStore {
         versions[key, default: 0] += 1
         manifest.entries[key] = Entry(digest: digest, bytes: data.count, accessed: Date(), readable: readable)
         while manifest.entries.values.reduce(0, { $0 + $1.bytes }) > budget,
-              let oldest = manifest.entries.filter({ $0.key != key && $0.key != "account" }).min(by: {
+              let oldest = manifest.entries.filter({ $0.key != key && $0.key != "account" && $0.key != "highlight-edits" }).min(by: {
                   let left = Self.isCatalog($0.key), right = Self.isCatalog($1.key)
                   return left == right ? $0.value.accessed < $1.value.accessed : !left
               })?.key {
@@ -130,10 +131,11 @@ public actor LocalReadingStore {
         try persist(); storageFailure = false; notify()
     }
     private static func isCatalog(_ key: String) -> Bool {
-        key == "libraries" || key.hasPrefix("texts/") || key.hasPrefix("words/")
+        key == "libraries" || key.hasPrefix("texts/") || key.hasPrefix("words/") || key.hasPrefix("complete/")
     }
     public func remove(_ key: String) {
         guard !closed else { return }
+        if key == "libraries" || key.hasPrefix("texts/") { remove("complete/\(key)") }
         manifest.entries.removeValue(forKey: key)
         versions[key, default: 0] += 1
         try? FileManager.default.removeItem(at: file(key)); try? persist(); notify()
@@ -141,12 +143,42 @@ public actor LocalReadingStore {
     public func removeText(_ id: String) {
         for key in ["document/\(id)", "ebook/\(id)", "book/\(id)", "book-source/\(id)"] { remove(key) }
     }
+    public func saveBook(_ data: Data, source: String, textID: String, ifUnchanged version: Int) throws {
+        guard versions["book/\(textID)", default: 0] == version else { throw CancellationError() }
+        try saveData(data, for: "book/\(textID)")
+        save(source, for: "book-source/\(textID)")
+    }
+    public func applyTextEdit(_ text: CatalogText, content: String) {
+        let documentKey = "document/\(text.id)"
+        if let cached = value(RemoteDocument.self, for: documentKey), cached.document?.source == content {
+            save(RemoteDocument(text: text, library: cached.library, document: cached.document, annotationProgress: cached.annotationProgress, fullArticleAudioId: cached.fullArticleAudioId), for: documentKey)
+        } else { remove(documentKey) }
+        let bookKey = "ebook/\(text.id)"
+        if let book = value(EbookDescriptor.self, for: bookKey) {
+            save(EbookDescriptor(text: text, library: book.library, url: book.url, format: book.format,
+                                 expiresAt: book.expiresAt, location: book.location, bookmarks: book.bookmarks, outlineRevision: book.outlineRevision, sourceVersion: book.sourceVersion), for: bookKey)
+        }
+        upsertText(text)
+    }
+    public func deleteText(_ text: CatalogText) {
+        removeText(text.id)
+        let key = "texts/\(text.libraryId)"
+        save((value([CatalogText].self, for: key) ?? []).filter { $0.id != text.id }, for: key)
+    }
+    public func deleteWord(id: String, libraryID: String) {
+        let key = "words/\(libraryID)"
+        remove("word/\(id)")
+        save((value([SavedWord].self, for: key) ?? []).filter { $0.id != id }, for: key)
+        if let timeline = value(ReviewTimeline.self, for: "review-timeline") {
+            save(ReviewTimeline(days: timeline.days.removingWord(id), nextCursor: timeline.nextCursor), for: "review-timeline")
+        }
+    }
     public func removeLibrary(_ id: String) {
         if let texts = value([CatalogText].self, for: "texts/\(id)") { for text in texts { removeText(text.id) } }
         remove("texts/\(id)"); remove("words/\(id)")
     }
-    public func reconcileLibraries(_ libraries: [CatalogLibrary], ifUnchanged version: Int? = nil) {
-        if let version, versions["libraries", default: 0] != version { return }
+    @discardableResult public func reconcileLibraries(_ libraries: [CatalogLibrary], ifUnchanged version: Int? = nil) -> [CatalogLibrary] {
+        if let version, versions["libraries", default: 0] != version { return value([CatalogLibrary].self, for: "libraries") ?? [] }
         let ids = Set(libraries.map(\.id))
         for key in Array(manifest.entries.keys) where key.hasPrefix("texts/") || key.hasPrefix("words/") {
             let id = String(key.split(separator: "/").last ?? "")
@@ -160,14 +192,18 @@ public actor LocalReadingStore {
             if let book = value(EbookDescriptor.self, for: key), !ids.contains(book.library.id) { removeText(book.text.id) }
         }
         save(libraries, for: "libraries")
+        save(true, for: "complete/libraries")
+        return libraries
     }
-    public func reconcileTexts(_ texts: [CatalogText], libraryID: String, ifUnchanged version: Int? = nil) {
-        if let version, versions["texts/\(libraryID)", default: 0] != version { return }
+    @discardableResult public func reconcileTexts(_ texts: [CatalogText], libraryID: String, ifUnchanged version: Int? = nil) -> [CatalogText] {
+        if let version, versions["texts/\(libraryID)", default: 0] != version { return value([CatalogText].self, for: "texts/\(libraryID)") ?? [] }
         let ids = Set(texts.map(\.id))
         if let previous = value([CatalogText].self, for: "texts/\(libraryID)") {
             for text in previous where !ids.contains(text.id) { removeText(text.id) }
         }
         save(texts, for: "texts/\(libraryID)")
+        save(true, for: "complete/texts/\(libraryID)")
+        return texts
     }
     public func setArchived(libraryID: String, archived: Bool) {
         guard var libraries = value([CatalogLibrary].self, for: "libraries"),
@@ -180,7 +216,19 @@ public actor LocalReadingStore {
         texts.removeAll { $0.id == text.id }; texts.insert(text, at: 0)
         save(texts, for: "texts/\(text.libraryId)")
     }
-    public func upsertWord(_ word: SavedWord) {
+    public func saveDocument(_ details: RemoteDocument, ifUnchanged version: Int) {
+        let key = "document/\(details.text.id)"
+        guard !closed, versions[key, default: 0] == version else { return }
+        let text = details.text
+        var texts = value([CatalogText].self, for: "texts/\(text.libraryId)") ?? []
+        if let index = texts.firstIndex(where: { $0.id == text.id }) { texts[index] = text }
+        else { texts.insert(text, at: 0) }
+        save(texts, for: "texts/\(text.libraryId)")
+        save(details, for: key)
+    }
+    public func upsertWord(_ word: SavedWord, ifUnchanged version: Int? = nil) {
+        if let version, versions["word/\(word.id)", default: 0] != version { return }
+        versions["word/\(word.id)", default: 0] += 1
         var words = value([SavedWord].self, for: "words/\(word.libraryId)") ?? []
         if let index = words.firstIndex(where: { $0.id == word.id }) { words[index] = word }
         else { words.insert(word, at: 0) }
@@ -190,17 +238,105 @@ public actor LocalReadingStore {
     public func updateEbookLocation(textID: String, location: String) {
         guard let book = value(EbookDescriptor.self, for: "ebook/\(textID)") else { return }
         save(EbookDescriptor(text: book.text, library: book.library, url: book.url, format: book.format,
-                             expiresAt: book.expiresAt, location: location, bookmarks: book.bookmarks), for: "ebook/\(textID)")
+                             expiresAt: book.expiresAt, location: location, bookmarks: book.bookmarks, outlineRevision: book.outlineRevision, sourceVersion: book.sourceVersion), for: "ebook/\(textID)")
+    }
+    public func saveEbookBookmark(textID: String, bookmark: EbookBookmark) {
+        guard let book = value(EbookDescriptor.self, for: "ebook/\(textID)") else { return }
+        var bookmarks = book.bookmarks
+        if let index = bookmarks.firstIndex(where: { $0.id == bookmark.id }) { bookmarks[index] = bookmark }
+        else { bookmarks.append(bookmark) }
+        save(EbookDescriptor(text: book.text, library: book.library, url: book.url, format: book.format,
+                             expiresAt: book.expiresAt, location: book.location, bookmarks: bookmarks,
+                             outlineRevision: book.outlineRevision, sourceVersion: book.sourceVersion), for: "ebook/\(textID)")
     }
     public func removeEbookBookmark(textID: String, bookmarkID: Int) {
         guard let book = value(EbookDescriptor.self, for: "ebook/\(textID)") else { return }
         save(EbookDescriptor(text: book.text, library: book.library, url: book.url, format: book.format,
                              expiresAt: book.expiresAt, location: book.location,
-                             bookmarks: book.bookmarks.filter { $0.id != bookmarkID }), for: "ebook/\(textID)")
+                             bookmarks: book.bookmarks.filter { $0.id != bookmarkID }, outlineRevision: book.outlineRevision, sourceVersion: book.sourceVersion), for: "ebook/\(textID)")
     }
-    public func close() {
-        closed = true; online = false; manifest = Manifest()
-        try? FileManager.default.removeItem(at: directory)
+    private struct HighlightEdit: Codable, Sendable {
+        var textID: String
+        var bookmark: EbookBookmark
+        var remoteID: Int?
+        var removed: Bool
+        var revision = UUID()
+        var dirty = true
+    }
+    private var highlightEdits: [HighlightEdit] {
+        get { value([HighlightEdit].self, for: "highlight-edits") ?? [] }
+        set { save(newValue, for: "highlight-edits") }
+    }
+    public func editHighlight(textID: String, bookmark: EbookBookmark, removed: Bool = false) {
+        guard !closed else { return }
+        var edits = highlightEdits
+        let index = edits.firstIndex { $0.textID == textID && $0.bookmark.id == bookmark.id }
+        let edit = HighlightEdit(textID: textID, bookmark: bookmark,
+                                 remoteID: index.flatMap { edits[$0].remoteID } ?? (bookmark.id > 0 ? bookmark.id : nil), removed: removed)
+        if let index { edits[index] = edit } else { edits.append(edit) }
+        highlightEdits = edits
+        if removed { removeEbookBookmark(textID: textID, bookmarkID: bookmark.id) }
+        else { saveEbookBookmark(textID: textID, bookmark: bookmark) }
+    }
+    public func integrateHighlights(_ remote: EbookDescriptor, textID: String, baseline: Int) -> EbookDescriptor {
+        if version(for: "ebook/\(textID)") != baseline,
+           let cached = value(EbookDescriptor.self, for: "ebook/\(textID)") { return cached }
+        let result = overlayHighlights(remote, textID: textID)
+        save(result, for: "ebook/\(textID)")
+        return result
+    }
+    public func overlayHighlights(_ book: EbookDescriptor, textID: String) -> EbookDescriptor {
+        var bookmarks = book.bookmarks
+        for edit in highlightEdits where edit.textID == textID {
+            bookmarks.removeAll { $0.id == edit.bookmark.id || $0.id == edit.remoteID }
+            if !edit.removed { bookmarks.append(edit.bookmark) }
+        }
+        return EbookDescriptor(text: book.text, library: book.library, url: book.url, format: book.format,
+                               expiresAt: book.expiresAt, location: book.location, bookmarks: bookmarks,
+                               outlineRevision: book.outlineRevision, sourceVersion: book.sourceVersion)
+    }
+    public func syncHighlights(client: MobileClient) async throws {
+        guard !syncingHighlights, !closed else { return }
+        syncingHighlights = true
+        defer { syncingHighlights = false }
+        while let edit = highlightEdits.first(where: { $0.dirty }) {
+            try requireOnline()
+            var remoteID = edit.remoteID
+            if remoteID == nil {
+                // Recover a create whose response was lost before attempting another insert.
+                let remote = try await client.remoteEbook(textID: edit.textID)
+                remoteID = remote.bookmarks.first { $0.quote == edit.bookmark.quote && $0.location == edit.bookmark.location }?.id
+            }
+            if edit.removed {
+                if let remoteID {
+                    let remote = try await client.remoteEbook(textID: edit.textID)
+                    if remote.bookmarks.contains(where: { $0.id == remoteID }) {
+                        try await client.deleteRemoteHighlight(textID: edit.textID, bookmarkID: remoteID)
+                    }
+                }
+            } else {
+                remoteID = try await client.saveRemoteHighlight(textID: edit.textID, bookmark: edit.bookmark, remoteID: remoteID).id
+            }
+            guard !closed else { return }
+            var edits = highlightEdits
+            if let index = edits.firstIndex(where: { $0.textID == edit.textID && $0.bookmark.id == edit.bookmark.id }) {
+                edits[index].remoteID = remoteID
+                if edits[index].revision == edit.revision { edits[index].dirty = false }
+                highlightEdits = edits
+            }
+        }
+    }
+    public func close(preservingData: Bool = false) {
+        closed = true; online = false
+        if !preservingData {
+            manifest = Manifest()
+            try? FileManager.default.removeItem(at: directory)
+        }
         notify(); for listener in listeners.values { listener.finish() }; listeners.removeAll()
+    }
+    public func purge() throws {
+        close(preservingData: true)
+        manifest = Manifest()
+        if FileManager.default.fileExists(atPath: directory.path) { try FileManager.default.removeItem(at: directory) }
     }
 }

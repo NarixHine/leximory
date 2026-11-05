@@ -2,6 +2,10 @@ import 'server-only'
 import { EN_ANNOTATION_PROMPT } from '@repo/service/prompts'
 import { Lang } from '@repo/env/config'
 import { NOT_LISTED_PROMPT } from './nl.prompt'
+import { NOT_LISTED_MOBILE_WORD_PROMPT } from './nl-word.prompt'
+import { FRENCH_MOBILE_WORD_PROMPT } from './fr-word.prompt'
+import { JAPANESE_MOBILE_WORD_PROMPT } from './ja-word.prompt'
+import { CLASSICAL_CHINESE_MOBILE_WORD_PROMPT } from './zh-word.prompt'
 import { JAPANESE_PROMPT } from './ja.prompt'
 import { CHINESE_PROMPT } from './zh.prompt'
 import { FRENCH_PROMPT } from './fr.prompt'
@@ -73,36 +77,51 @@ bridge the gap||bridge the gap||**phr. 弥合差距** \`brɪdʒ ðə ɡæp\` red
  * Mobile definition path: the same trim, but the mobile client parses `{{原文形式||…}}`
  * (see `parseGeneratedDefinition`), so the format section and the examples use braces, the field
  * names are the mobile ones, and empty trailing fields are omitted rather than left blank.
- * Edited as a pair with WORD_GUIDE_EN: both describe one chunk, the output contract differs.
+ * Both guides describe one chunk; mobile has its own lexical guidance and output contract.
  */
 const WORD_GUIDE_MOBILE_EN = `# 核心指令
 
-你将看到一个英文句子，句中只有一个用 [[ ]] 标出的语块。你只需要为这一个语块生成注解。
+你将看到一个英文句子，句中只有一段用 [[ ]] 标出的用户选中文字。你只需要为这段选中文字生成注解。按上下文理解所选词语，避免假设把选中部分属于一个完整意群；若明显因操作误差多选或漏选少量字符，可据上下文修正。仅按规定格式输出注解。
 
-- 若被标记的是常见搭配，注解整个搭配（如注解 on side 而非只注解 side）
-- 释义必须贴合该语块在本句中的具体含义；多义词只注解语境义
+- 若被标记的是常见搭配，注解整个搭配（如完整注解 bridge the gap，而非只注解 gap）
+- 根据语境选择相关义项，先释所选词语本身的一般词义，再注明本句更具体的含义或所指。不要把未选中的修饰语含义并入词义；选中整个短语时才整体释义
 - 例句必须自造，不得照抄原句
-- 语源与同语根词必须真实可考；没有把握就留空该字段，严禁编造
-- 禁止输出原句，禁止注解 [[ ]] 以外的任何内容
-- 若语块是常见词或泛指词（如 the South、the Administration），释义必须点明它在本句中的具体所指
+- 语源与同语根词必须真实可考；没有把握就省略相应末尾字段，严禁编造
+- 只注解确定后的目标，不输出原句或无关内容
 
 ## 输出格式
 
 只输出一行，整行用双花括号包住这个语块，字段之间用 || 分隔，前后不要任何多余内容：
 
-{{原文形式||原形||语境释义||词源||同语根词}}
+{{原文形式||原形||原形释义||词源||同语根词}}
 
-- 原文形式：与句中完全一致（不含标点）
-- 原形：词典形，短语给出完整短语
-- 语境释义：**词性 中文释义** \`音标\` 英文释义: *自造例句*
+- 原文形式：照抄确定后的原文片段（不含标点）
+- 原形：保留语境词性，普通复数、时态还原为词典形（apostles → apostle）；有独立词义或语义色彩的形式保留（形容词 simplified 保留，被动动词 was simplified by… 还原为 simplify；brethren 保留其群体、宗教或古雅色彩）。短语给出完整短语
+- 先确定第二栏原形，再据此给出词性、中英文释义、音标和词源；单复数、时态也须一致，不得沿用选中形式（如 apostle 按单数释义和注音）
+- 原形释义：**词性 中文释义** \`音标\` 英文释义: *自造例句*；原句中存在固定搭配或支配结构时，音标后加 *(搭配)*，否则省略。
 - 词源：原义与构词，形如 语源“原义”: ***词素*** (义) + ***词素*** (义)
 - 同语根词：形如 ***词素*** (义) → **派生词** (中文)；没有词源或同源词时省略相应末尾字段，不要输出空字段
 
 ## 示例
 
-{{transpires||transpire||**v. 被表明是** \`trænˈspaɪə\` happen; become known: *It later transpired that he had left.*||语源“升腾”: ***trans-*** (across) + ***spire*** (breathe)||***trans-*** (across) → **trans**fer (转移); ***spire*** (breathe) → in**spire** (鼓舞)}}
+{{children||child||**n. 孩子** \`tʃaɪld\` *(pl. **children**)* a young human being: *The child waved at me.*}}
 
-{{bridge the gap||bridge the gap||**phr. 弥合差距** \`brɪdʒ ðə ɡæp\` reduce the difference between two things or groups: *The scholarship aims to bridge the gap between rich and poor schools.*||由“架桥”引申为“消除隔阂”: ***bridge*** (桥) + ***gap*** (缺口)||***bridge*** (桥) → **bridge**head (桥头堡)}}`
+She is [[capable]] of solving the problem. 的输出示例：
+{{capable||capable||**adj. 有能力的** \`ˈkeɪpəbl\` *(be capable of)* having the ability to do something: *He is capable of working independently.*}}
+
+{{bridge the gap||bridge the gap||**phr. 弥合差距** \`brɪdʒ ðə ɡæp\` reduce the difference between two things or groups: *The scholarship aims to bridge the gap between rich and poor schools.*||由“架桥”引申为“消除隔阂”: ***bridge*** (桥) + ***gap*** (缺口)||***bridge*** (桥) → **bridge**head (桥头堡)}}
+
+It [[transpires]] that the apparent error was deliberate.
+{{transpires||transpire||**v. 被发现；显露** \`trænˈspaɪə\` become known: *It later transpired that the documents were forged.*||原指水汽透出，后引申为消息泄露：拉丁 ***trans-*** (穿过) + ***spirare*** (呼吸)||***spir-*** (呼吸) → in**spir**e (启发)}}
+
+I was [[obsessed]] with the idea that I was going to die.
+{{obsessed||obsessed||**adj. 被某念头困扰的** \`əbˈsest\` *(be obsessed with)* unable to stop thinking about something: *He was obsessed with the fear of making a mistake.*||由 obsess 的过去分词转为形容词；拉丁 obsidere“围困”：***ob-*** (对着) + ***sedere*** (坐)||***sed-/sess-*** (坐) → **sed**entary (久坐的)}}
+
+It can [[dawn]] on us that our efforts are not in vain.
+{{dawn||dawn||**v. 开始变得明白** \`dɔːn\` *(dawn on somebody)* begin to become clear to someone: *It dawned on Mara that she had misread the timetable.*||由“天亮”引申为“开始明白”}}
+
+earthly [[sojourn]] 的输出示例：
+{{sojourn||sojourn||**n. 逗留；暂居（此处指寄居尘世）** \`ˈsɒdʒɜːn\` a temporary stay: *Her sojourn in Rome lasted a week.*}}`
 
 /**
  * Guide for annotating one marked chunk. English uses the trimmed guide (see WORD_GUIDE_EN);
@@ -110,9 +129,16 @@ const WORD_GUIDE_MOBILE_EN = `# 核心指令
  */
 export const wordGuide = (lang: Lang) => (lang === 'en' ? WORD_GUIDE_EN : instruction[lang])
 
-/** Guide for the mobile definition path: same trim, braced output contract. */
-export const mobileWordGuide = (lang: Lang) =>
-    lang === 'en' ? WORD_GUIDE_MOBILE_EN : instruction[lang]
+const MOBILE_WORD_GUIDES = {
+    en: WORD_GUIDE_MOBILE_EN,
+    fr: FRENCH_MOBILE_WORD_PROMPT,
+    ja: JAPANESE_MOBILE_WORD_PROMPT,
+    zh: CLASSICAL_CHINESE_MOBILE_WORD_PROMPT,
+    nl: NOT_LISTED_MOBILE_WORD_PROMPT,
+} satisfies Record<Lang, string>
+
+/** Mobile guides define one selected chunk and each language's braced field contract. */
+export const mobileWordGuide = (lang: Lang) => MOBILE_WORD_GUIDES[lang]
 
 /** System prompt for the single-chunk (tap-to-define) annotation path. */
 export const wordAnnotationInstructions = (lang: Lang) => `

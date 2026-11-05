@@ -1,0 +1,84 @@
+import XCTest
+
+final class HomeWallpaperUITests: XCTestCase {
+    @MainActor func testWallpaperPreviewKeepsBlurAlignedInBothAppearances() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--browser-workspace-fixtures", "--workspace-recent-card-fixtures", "--workspace-multiple-pins"]
+        app.launch()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        XCTAssertTrue(app.buttons["browser-more"].waitForExistence(timeout: 15))
+        let home = XCTAttachment(screenshot: app.screenshot())
+        home.name = "Restored Home"; home.lifetime = .keepAlways; add(home)
+        app.buttons["browser-more"].tap()
+        app.buttons["主页壁纸"].tap()
+        XCTAssertTrue(app.otherElements["wallpaper-preview"].waitForExistence(timeout: 5))
+        let light = XCTAttachment(screenshot: app.screenshot())
+        light.name = "Light wallpaper preview"; light.lifetime = .keepAlways; add(light)
+        let picker = app.segmentedControls["wallpaper-appearance"]
+        picker.buttons["深色"].tap()
+        XCTAssertTrue(picker.buttons["深色"].isSelected)
+        let dark = XCTAttachment(screenshot: app.screenshot())
+        dark.name = "Dark wallpaper preview"; dark.lifetime = .keepAlways; add(dark)
+        app.buttons["wallpaper-close"].tap()
+    }
+
+    @MainActor func testWallpaperSelectionPersistsBothAppearancesAndResetsIndependently() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--browser-workspace-fixtures"]
+        app.launch()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
+        XCTAssertTrue(app.buttons["browser-more"].waitForExistence(timeout: 15))
+        app.buttons["browser-more"].tap()
+        app.buttons["主页壁纸"].tap()
+        XCTAssertTrue(app.buttons["wallpaper-close"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["wallpaper-reset"].isEnabled)
+        let picker = app.segmentedControls["wallpaper-appearance"]
+        XCTAssertFalse(app.buttons["wallpaper-solid"].exists)
+        try choosePhoto(in: app, index: 0)
+        XCTAssertTrue(app.buttons["wallpaper-reset"].isEnabled)
+        XCTAssertEqual(app.otherElements["wallpaper-preview"].value as? String, "自选照片")
+        app.buttons["wallpaper-choose-photo"].tap()
+        XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 5))
+        app.buttons["Cancel"].tap()
+        XCTAssertEqual(app.otherElements["wallpaper-preview"].value as? String, "自选照片")
+        picker.buttons["深色"].tap()
+        XCTAssertEqual(app.otherElements["wallpaper-preview"].value as? String, "默认")
+        try choosePhoto(in: app, index: 1)
+        app.buttons["wallpaper-close"].tap()
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Home with custom wallpaper"; screenshot.lifetime = .keepAlways; add(screenshot)
+        app.terminate()
+        app.launchArguments = ["--browser-workspace-fixtures", "--dark-appearance"]
+        app.launch()
+        XCTAssertTrue(app.buttons["browser-more"].waitForExistence(timeout: 15))
+        let darkScreenshot = XCTAttachment(screenshot: app.screenshot())
+        darkScreenshot.name = "Dark Home with separate wallpaper"; darkScreenshot.lifetime = .keepAlways; add(darkScreenshot)
+        app.buttons["browser-more"].tap()
+        app.buttons["主页壁纸"].tap()
+        XCTAssertTrue(app.buttons["wallpaper-close"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.otherElements["wallpaper-preview"].value as? String, "自选照片")
+        XCTAssertTrue(picker.buttons["深色"].isSelected)
+        app.buttons["wallpaper-reset"].tap()
+        XCTAssertEqual(app.otherElements["wallpaper-preview"].value as? String, "默认")
+        picker.buttons["浅色"].tap()
+        XCTAssertEqual(app.otherElements["wallpaper-preview"].value as? String, "自选照片")
+        app.buttons["wallpaper-reset"].tap()
+        XCTAssertEqual(app.otherElements["wallpaper-preview"].value as? String, "默认")
+        app.buttons["wallpaper-close"].tap()
+        app.buttons["browser-bookmarks"].tap()
+        app.buttons["browser-more"].tap()
+        XCTAssertFalse(app.buttons["主页壁纸"].exists)
+    }
+
+    @MainActor private func choosePhoto(in app: XCUIApplication, index: Int) throws {
+        app.buttons["wallpaper-choose-photo"].tap()
+        let photos = app.images.matching(identifier: "PXGGridLayout-Info")
+        guard photos.firstMatch.waitForExistence(timeout: 10) else {
+            throw XCTSkip("The simulator needs sample photos to exercise the system picker.")
+        }
+        try XCTSkipIf(photos.count <= index, "The simulator needs sample photos to exercise the system picker.")
+        photos.element(boundBy: index).tap()
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: app.buttons["wallpaper-reset"])
+        waitForExpectations(timeout: 15)
+    }
+}

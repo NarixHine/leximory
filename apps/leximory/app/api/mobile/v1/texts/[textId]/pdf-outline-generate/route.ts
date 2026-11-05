@@ -1,0 +1,1 @@
+export { generatePDFOutline as POST } from '@/server/mobile/endpoints/pdf-outline'

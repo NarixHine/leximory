@@ -9,7 +9,112 @@ import CoreText
 import LeximoryCore
 @testable import Leximory
 
+@MainActor @Suite(.serialized) struct NativeTextSelectionTests {
+    @Test(arguments: [UIUserInterfaceStyle.light, .dark])
+    func selectionStaysBlueInsideNeutralSheets(appearance: UIUserInterfaceStyle) async throws {
+        let document = try FixtureArticle.samples[0].document()
+        let editor = BrowserAddressEditor()
+        let content = VStack {
+            TextField("标题", text: .constant("Field notes")).tint(.blue)
+            BrowserAddressField(address: "猫 A", editor: editor, submit: {}).frame(height: 48)
+            ReadingTextView(document: document, textID: TextID(rawValue: "selection-test"), jumpToEnd: false, onDefine: { _, _, _ in })
+                .frame(height: 300)
+            AnnotationMarkdownText(content: "A quiet forest", size: 17, language: "English")
+        }.leximorySheetStyle()
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        window.overrideUserInterfaceStyle = appearance
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let host = UIHostingController(rootView: content)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer {
+            editor.field?.wantsFocus = false
+            editor.field?.resignFirstResponder()
+            window.isHidden = true
+            previous?.makeKey()
+        }
+        try await Task.sleep(for: .milliseconds(200))
+        host.view.layoutIfNeeded()
+        func descendants(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(descendants) }
+        let textControls = descendants(host.view).filter { $0 is UITextField || $0 is UITextView }
+        #expect(textControls.count >= 4)
+        for view in textControls {
+            let actual = view.tintColor.resolvedColor(with: view.traitCollection)
+            let expected = UIColor.systemBlue.resolvedColor(with: view.traitCollection)
+            func components(_ color: UIColor) -> [CGFloat] {
+                var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+                #expect(color.getRed(&red, green: &green, blue: &blue, alpha: &alpha))
+                return [red, green, blue, alpha]
+            }
+            #expect(zip(components(actual), components(expected)).allSatisfy { abs($0 - $1) < 0.001 },
+                    "Native selection tint for \(type(of: view))")
+        }
+    }
+}
+
 @MainActor struct ReaderNativeTests {
+    @Test func metadataEditsRefreshTheExistingReaderHeader() async throws {
+        let document = try FixtureArticle.samples[0].document()
+        let original = FixtureArticle(id: TextID(rawValue: "metadata-test"), title: "Original title", subtitle: "", resource: "reader", topics: ["Before"], coverEmoji: "🌿")
+        let edited = FixtureArticle(id: original.id, title: "Updated title", subtitle: "", resource: "reader", topics: ["After"], coverEmoji: "📖")
+        func reader(_ article: FixtureArticle) -> ReadingTextView {
+            ReadingTextView(document: document, article: article, textID: article.id, jumpToEnd: false, onDefine: { _, _, _ in })
+        }
+        func textView(in view: UIView) -> RubyTextView? {
+            if let reader = view as? RubyTextView { return reader }
+            return view.subviews.lazy.compactMap { textView(in: $0) }.first
+        }
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKey() }
+        let host = UIHostingController(rootView: reader(original))
+        window.rootViewController = host
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        window.makeKeyAndVisible()
+        host.view.frame = window.bounds
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        let view = try #require(textView(in: host.view))
+        let header = try #require(view.headerView)
+        let before = tapPixels(header)
+        let body = view.attributedText.string
+        view.selectedRange = NSRange(location: 10, length: 4)
+        view.setContentOffset(CGPoint(x: 0, y: 500), animated: false)
+        let offset = view.contentOffset
+        host.rootView = reader(edited)
+        try await Task.sleep(for: .milliseconds(150))
+        host.view.layoutIfNeeded()
+        #expect(textView(in: host.view) === view)
+        #expect(view.headerView === header)
+        #expect(pixelDifference(before, tapPixels(header)) > 0.005)
+        #expect(view.attributedText.string == body)
+        #expect(view.selectedRange == NSRange(location: 10, length: 4))
+        #expect(abs(view.contentOffset.y - offset.y) < 1)
+    }
+
+    @Test func reviewCatKeepsItsLeftwardPoseAfterStoppingResizingAndNearbyTaps() throws {
+        let driver = ReviewCatDriver()
+        driver.resize(CGSize(width: 600, height: 400))
+        driver.move(to: CGPoint(x: 100, y: 300), reduceMotion: false)
+        driver.finish(try #require(driver.journey?.id))
+        driver.resize(CGSize(width: 300, height: 200))
+        driver.move(to: CGPoint(x: 52, y: 152), reduceMotion: false)
+        let resting = driver.sample(at: Date())
+        #expect(driver.journey == nil)
+        #expect(resting.position == CGPoint(x: 50, y: 150))
+        #expect(resting.facingLeft)
+        let nose = CGPoint(x: 1, y: 0).applying(resting.spriteTransform)
+        #expect(nose.x < 0 && nose.y > 0)
+        driver.move(to: CGPoint(x: 20, y: 50), reduceMotion: true)
+        let instant = driver.sample(at: Date())
+        #expect(instant.position == CGPoint(x: 20, y: 50))
+        #expect(instant.facingLeft)
+        #expect(CGPoint(x: 1, y: 0).applying(instant.spriteTransform).y < 0)
+    }
+
     private func tapFrame(_ view: UIView) -> UIImage {
         let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
         return UIGraphicsImageRenderer(bounds: view.bounds, format: format).image { view.layer.render(in: $0.cgContext) }
@@ -161,11 +266,9 @@ import LeximoryCore
             #expect(abs(before.facingAngle - after.facingAngle) > 179)
         }
     }
-    @Test func darkReadingSurfacesMatchCanonicalWebNeutrals() throws {
+    @Test func darkReadingInkAndEbookPaperRetainTheirAuthoredColors() throws {
         let traits = UITraitCollection(userInterfaceStyle: .dark)
         let surfaces: [(UIColor, UInt32)] = [
-            (LeximoryPalette.paperUI, 0x100F0F), (UIColor(LeximoryPalette.shell), 0x18181B),
-            (UIColor(LeximoryPalette.cover), 0x27272A), (UIColor(LeximoryPalette.border), 0x3F3F46),
             (LeximoryPalette.readingInkUI, 0xCECDC3)
         ]
         for (color, expected) in surfaces {
@@ -324,11 +427,11 @@ import LeximoryCore
         let select = UICommand(title: "全选", action: #selector(UIResponderStandardEditActions.selectAll(_:)))
         let copy = UICommand(title: "拷贝", action: #selector(UIResponderStandardEditActions.copy(_:)))
         let paste = UICommand(title: "粘贴", action: #selector(UIResponderStandardEditActions.paste(_:)))
-        let children = ReadingSelectionMenu.copyActions([select, paste, UIMenu(title: "", children: [select, copy])])
+        let children = ReadingSelectionMenu.copyAndLookupActions([select, paste, UIMenu(title: "", children: [select, copy])])
         #expect(children.count == 1)
-        let menu = children.first as? UIMenu
-        #expect(menu?.children.count == 1)
-        #expect((menu?.children.first as? UICommand)?.action == copy.action)
+        #expect((children.first as? UICommand)?.action == copy.action)
+        #expect(children.first?.title == "复制")
+        #expect(children.first?.accessibilityLabel == "复制")
     }
     @Test func sessionExpiryDoesNotTreatNetworkFailuresAsSignout() {
         #expect(AccountSession.requiresSignIn(AuthError.sessionMissing))
@@ -402,8 +505,8 @@ import LeximoryCore
             let font = value as! CTFont
             #expect(CTFontCopyPostScriptName(font) as String == "ChillDuanHeiSongBold")
         }
-        #expect(LeximoryTypography.interfaceUI(17).fontName == "RalewayRoman-Regular")
-        #expect(LeximoryTypography.interfaceUI(17, semibold: true).fontName == "RalewayRoman-SemiBold")
+        #expect(LeximoryTypography.interfaceUI(17).fontName == "Urbanist-Regular")
+        #expect(LeximoryTypography.interfaceUI(17, semibold: true).fontName == "Urbanist-SemiBold")
     }
     @Test func definitionRubyPreservesBaselineMarkdownAndCanonicalText() throws {
         let layout = AnnotationMarkdownLayout(content: "**［名］（<ruby>かいしょ<rt>楷書</rt></ruby>／楷书）** 漢字の書体。", size: 17, language: "Japanese")
@@ -481,17 +584,41 @@ import LeximoryCore
         #expect(LeximoryTypography.proseUI(20).fontName == "LibreBaskerville-Regular")
         #expect(UIFont(name: "SpaceMono-Regular", size: 12) != nil)
         #expect(UIFont(name: "SourceCodePro-Medium", size: 17) != nil)
-        #expect(UIFont(name: "RalewayRoman-Regular", size: 17) != nil)
-        #expect(UIFont(name: "RalewayRoman-SemiBold", size: 17) != nil)
+        #expect(UIFont(name: "Urbanist-Regular", size: 17) != nil)
+        #expect(UIFont(name: "Urbanist-SemiBold", size: 17) != nil)
         #expect(UIFont(name: "EBGaramond-Regular", size: 36) != nil)
+        #expect(LeximoryTypography.editorialUI(38).fontName == "EBGaramond-Regular")
         #expect(UIFont(name: "EBGaramondItalic-Italic", size: 20) != nil)
-        #expect(UIFont(name: "LXGWWenKaiScreen", size: 20) != nil)
         #expect(UIFont(name: "ChillDuanHeiSongProJP_Regular", size: 29) != nil)
         #expect(UIFont(name: "ChillDuanHeiSongRegular", size: 18) != nil)
         #expect(UIFont(name: "ChillDuanHeiSongBold", size: 18) != nil)
         #expect(LeximoryTypography.proseUI(18, language: "Chinese", bold: true).fontName == "ChillDuanHeiSongBold")
         #expect(LeximoryTypography.proseUI(18, language: "Chinese").fontName == "ChillDuanHeiSongRegular")
         #expect(LeximoryTypography.proseUI(18, language: "Japanese").fontName == "ChillDuanHeiSongProJP_Regular")
+    }
+
+    @Test func accountHeatmapWithoutARecordedDayHasNoActivityColor() {
+        let future = AccountHeatmapPalette.colors(for: nil)
+        #expect(future.background == .clear)
+        #expect(future.foreground == .secondary)
+        #expect(AccountHeatmapPalette.colors(for: 0).background != .clear)
+    }
+
+    @Test func accountHeatmapNumbersRemainReadableAcrossIntensities() {
+        func luminance(_ color: Color) -> Double {
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+            UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            func linear(_ value: CGFloat) -> Double {
+                let value = Double(value)
+                return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+            }
+            return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+        }
+        for count in [0, 1, 9, 10, 19, 20, 34, 35, 100] {
+            let colors = AccountHeatmapPalette.colors(for: count)
+            let values = [luminance(colors.background), luminance(colors.foreground)].sorted()
+            #expect((values[1] + 0.05) / (values[0] + 0.05) >= 4.5)
+        }
     }
     @Test func attributedTextKeepsCanonicalOffsetsAndEmbeddedDefinitions() throws {
         let document = try FixtureArticle.samples[0].document()
@@ -566,6 +693,43 @@ import LeximoryCore
         try await Task.sleep(for: .milliseconds(150))
         #expect(abs(scroll.contentOffset.y - 240) < 1)
     }
+    @Test func cappedAnnotationReservesUpwardSwipesForScrollingUntilTheBottom() async throws {
+        let document = try FixtureArticle.samples[0].document()
+        let selection = try ReaderLayout(document: document).selection(NSRange(location: 0, length: 4), document: document, textID: TextID(rawValue: "fixture"))
+        let definition = Definition(lemma: "word", definition: String(repeating: "A long annotation must remain reachable.\n", count: 80))
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        var canDismiss = true
+        let host = UIHostingController(rootView:
+            DefinitionView(item: DefinitionPresentation(source: .article(selection), definition: definition),
+                           client: nil, language: "English", isPopover: false, topTrayHeight: 600,
+                           onScrollPermission: { canDismiss = $0 })
+                .frame(width: 390, height: 600, alignment: .top))
+        window.rootViewController = host
+        window.isHidden = false
+        defer { window.isHidden = true }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(300))
+        host.view.layoutIfNeeded()
+        func scrollView(in view: UIView) -> UIScrollView? {
+            if let scroll = view as? UIScrollView, !(scroll is UITextView) { return scroll }
+            return view.subviews.lazy.compactMap { scrollView(in: $0) }.first
+        }
+        let scroll = try #require(scrollView(in: host.view))
+        #expect(scroll.bounds.height <= 600 * 0.78 + 1)
+        #expect(scroll.contentSize.height > scroll.bounds.height)
+        #expect(!canDismiss, "An upward swipe must scroll the overflowing annotation at its top")
+        scroll.setContentOffset(CGPoint(x: 0, y: 240), animated: false)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(!canDismiss)
+        let bottom = scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom
+        scroll.setContentOffset(CGPoint(x: 0, y: bottom), animated: false)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(canDismiss, "Only a new swipe at the bottom may dismiss the tray")
+        scroll.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(!canDismiss)
+    }
     @Test func topAnnotationGrowthKeepsReaderViewportAndTopEdgeFixed() async throws {
         let document = try FixtureArticle.samples[0].document()
         let layout = ReaderLayout(document: document)
@@ -578,11 +742,12 @@ import LeximoryCore
         window.isHidden = false
         defer { window.isHidden = true }
         host.view.layoutIfNeeded()
-        try await Task.sleep(for: .milliseconds(150))
+        try await Task.sleep(for: .milliseconds(450))
         let readerFrame = probe.readerFrame
         let shortTray = probe.trayFrame
         #expect(readerFrame.height > 0)
         #expect(shortTray.height > 0)
+        #expect(probe.canDismiss)
         probe.text = String(repeating: "A long streamed annotation should scroll inside its tray.\n", count: 80)
         try await Task.sleep(for: .milliseconds(250))
         host.view.layoutIfNeeded()
@@ -590,7 +755,60 @@ import LeximoryCore
         #expect(abs(probe.trayFrame.minY - shortTray.minY) < 1)
         #expect(probe.trayFrame.height > shortTray.height)
         #expect(probe.trayFrame.height <= 900 * 0.78 + 1)
+        #expect(!probe.canDismiss)
     }
+    @Test func playbackProgressFollowsAudioAfterAControlAdjustment() async throws {
+        let playback = PlaybackController()
+        defer { playback.stop() }
+        playback.play(textID: TextID(rawValue: "fixture-reader"), audioID: "fixture_recording", title: "Article")
+        await playback.waitForResolution()
+        playback.pause()
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        defer { window.isHidden = true; previous?.makeKey() }
+        let host = UIHostingController(rootView: PlaybackBar(playback: playback))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        func slider(in view: UIView) -> UISlider? {
+            if let slider = view as? UISlider { return slider }
+            return view.subviews.lazy.compactMap { slider(in: $0) }.first
+        }
+        for _ in 0..<50 {
+            if slider(in: host.view) != nil { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let control = try #require(slider(in: host.view))
+        control.value = control.maximumValue * 0.25
+        control.sendActions(for: .valueChanged)
+        try await Task.sleep(for: .milliseconds(100))
+        let adjustedPosition = Double(control.value / control.maximumValue) * 20
+        #expect(abs(adjustedPosition - 5) < 0.1)
+        playback.resume()
+        try await Task.sleep(for: .seconds(2))
+        guard case .ready(_, let elapsed, let duration, let playing) = playback.state else {
+            Issue.record("The recording did not become ready.")
+            return
+        }
+        #expect(playing)
+        #expect(abs(duration - 20) < 0.1)
+        #expect(elapsed >= adjustedPosition + 1)
+        #expect(abs(Double(control.value / control.maximumValue) * duration - elapsed) < 0.75)
+
+        playback.pause()
+        playback.seek(to: 12)
+        for _ in 0..<50 {
+            if case .ready(_, let position, _, false) = playback.state, abs(position - 12) < 0.1 { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        guard case .ready(_, let position, _, let resumed) = playback.state else {
+            Issue.record("Seeking lost the recording.")
+            return
+        }
+        #expect(abs(position - 12) < 0.1)
+        #expect(resumed == false)
+    }
+
     @Test func localMissingRecordingAndNavigationClearPlaybackState() async {
         let playback = PlaybackController(resolve: { _ in nil })
         playback.toggle(textID: TextID(rawValue: "first"), audioID: "missing", title: "First")
@@ -630,6 +848,7 @@ import LeximoryCore
     var text = "A short definition."
     var readerFrame: CGRect = .zero
     var trayFrame: CGRect = .zero
+    var canDismiss = true
 }
 
 private struct AnnotationLayoutProbeView: View {
@@ -641,10 +860,127 @@ private struct AnnotationLayoutProbeView: View {
             .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { probe.readerFrame = $0 }
             .overlay(alignment: .top) {
                 DefinitionView(item: DefinitionPresentation(source: source, definition: Definition(lemma: "word", definition: probe.text)),
-                               client: nil, language: "English", isPopover: false, topTrayHeight: 900, closeTray: {})
+                               client: nil, language: "English", isPopover: false, topTrayHeight: 900, closeTray: {},
+                               onScrollPermission: { probe.canDismiss = $0 })
                     .id(probe.text)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { probe.trayFrame = $0 }
             }
             .frame(width: 820, height: 900)
     }
+}
+
+@MainActor struct TypographyTests {
+    @Test(arguments: [CGFloat(16), 28, 36])
+    func displayPairingUsesTheChineseDisplayFaceWithoutChangingOtherScripts(size: CGFloat) throws {
+        func ink(_ string: String, font: UIFont) -> CGRect {
+            CTLineGetImageBounds(CTLineCreateWithAttributedString(NSAttributedString(string: string, attributes: [.font: font])), nil)
+        }
+        let paired = LeximoryTypography.displayUI(size)
+        let chinese = ink("我", font: paired)
+        #expect(chinese.width > 0 && chinese.height > 0)
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: "我", attributes: [.font: paired]))
+        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+        let run = try #require(runs.first)
+        let chineseFont = try #require((CTRunGetAttributes(run) as NSDictionary)[kCTFontAttributeName] as? UIFont)
+        #expect(chineseFont.fontName == "Fontquan-XinYiJiXiangSong-Regular")
+        #expect(ink("Garamond", font: paired) == ink("Garamond", font: LeximoryTypography.face("EBGaramond-Regular", size: size)))
+        #expect(ink("語", font: LeximoryTypography.editorialUI(size, language: "Japanese")) == ink("語", font: LeximoryTypography.face("ChillDuanHeiSongProJP_Regular", size: size)))
+    }
+
+    @Test func exportOpticalPairingPreview() throws {
+        let preview = VStack(alignment: .leading, spacing: 22) {
+            Text("Display pairing").interfaceFont(17, semibold: true)
+            ForEach([CGFloat(16), 24, 32], id: \.self) { size in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("\(Int(size)) pt").interfaceFont(12, style: .caption1).foregroundStyle(.secondary)
+                    Text("浏览网页 · 我的书签 · Leximory").displayFont(size)
+                    Text(LeximoryTypography.scaledChineseText("字里行间 · 日本語の本 · Field notes", size: size))
+                }
+            }
+        }
+        .padding(24).frame(width: 720, alignment: .leading)
+        .foregroundStyle(.black).background(.white)
+        .environment(\.dynamicTypeSize, .large)
+        let renderer = ImageRenderer(content: preview)
+        renderer.scale = 2
+        Attachment.record(try #require(renderer.uiImage?.pngData()), named: "display-optical-pairing.png")
+    }
+
+    @Test func mixedLabelsRestoreChineseSizingWithoutShrinkingOtherScripts() throws {
+        let text = LeximoryTypography.scaledChineseText("猫，。𠀀 A かな 🙂", size: 20)
+        let context = EnvironmentValues().fontResolutionContext
+        let expected: [(String, CGFloat)] = [
+            ("猫", 17), ("，", 17), ("。", 17), ("𠀀", 17),
+            ("A", 20), ("か", 20), ("な", 20), ("🙂", 20)
+        ]
+        for (glyph, size) in expected {
+            let range = try #require(text.range(of: glyph))
+            let font = try #require(text[range].font)
+            #expect(font.resolve(in: context).pointSize == size)
+        }
+    }
+
+    @Test func removedHandwritingFontIsNotBundledOrRegistered() {
+        #expect(Bundle.main.url(forResource: "LXGWWenKaiScreen", withExtension: "ttf") == nil)
+        #expect(UIFont(name: "LXGWWenKaiScreen", size: 20) == nil)
+    }
+
+    @Test func interfaceTypeUsesTheLocalAccessibilitySize() throws {
+        func height(_ size: DynamicTypeSize, header: Bool) throws -> CGFloat {
+            let content = Text("我的书签 Settings")
+                .interfaceFont(header ? 15 : 17, semibold: header, style: header ? .subheadline : .body)
+                .fixedSize()
+                .environment(\.dynamicTypeSize, size)
+            return try #require(ImageRenderer(content: content).uiImage).size.height
+        }
+        let body = try height(.large, header: false)
+        let accessibleBody = try height(.accessibility5, header: false)
+        #expect(accessibleBody > body * 2)
+        #expect(try height(.large, header: true) < body)
+        #expect(try height(.accessibility5, header: true) < accessibleBody)
+    }
+
+    @Test(arguments: [false, true])
+    func interfaceChineseUsesOriginalSerifWithJapaneseTypesetting(semibold: Bool) {
+        let attributed = NSAttributedString(string: "我的书签 漢語 Urbanist 👋", attributes: [
+            .font: LeximoryTypography.interfaceUI(17, semibold: semibold),
+            NSAttributedString.Key(kCTLanguageAttributeName as String): "ja"
+        ])
+        let line = CTLineCreateWithAttributedString(attributed)
+        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+        let fonts = runs.map { CTRunGetAttributes($0) as NSDictionary }
+            .compactMap { $0[kCTFontAttributeName] as? UIFont }
+        #expect(fonts.contains { $0.fontName == (semibold ? "ChillDuanHeiSongBold" : "ChillDuanHeiSongRegular") })
+        #expect(fonts.contains { $0.fontName == (semibold ? "Urbanist-SemiBold" : "Urbanist-Regular") })
+        #expect(fonts.contains { $0.fontName.contains("AppleColorEmoji") })
+        #expect(fonts.contains { $0.fontName.contains("XinYiJiXiangSong") } == false)
+    }
+
+    @Test(arguments: [String?.none, "Chinese", "Japanese", "English"])
+    func contentTitlesNeverUseJixiangSong(language: String?) {
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: "字里行间 日本語の本 東京 Garamond", attributes: [
+            .font: LeximoryTypography.editorialUI(28, language: language),
+            NSAttributedString.Key(kCTLanguageAttributeName as String): "ja"
+        ]))
+        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+        for run in runs {
+            let font = (CTRunGetAttributes(run) as NSDictionary)[kCTFontAttributeName] as! CTFont
+            #expect((CTFontCopyPostScriptName(font) as String).contains("XinYiJiXiangSong") == false)
+            var glyphs = [CGGlyph](repeating: 0, count: CTRunGetGlyphCount(run))
+            CTRunGetGlyphs(run, CFRange(location: 0, length: 0), &glyphs)
+            #expect(glyphs.contains(0) == false)
+        }
+    }
+
+    @Test func editorialChineseRetainsBundledSerifAlongsideGaramond() {
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: "字里行间 Garamond", attributes: [
+            .font: LeximoryTypography.editorialUI(28, language: "Chinese")
+        ]))
+        let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+        let names = runs.compactMap { (CTRunGetAttributes($0) as NSDictionary)[kCTFontAttributeName] as? UIFont }.map(\.fontName)
+        #expect(names.contains("ChillDuanHeiSongRegular"))
+        #expect(names.contains("Fontquan-XinYiJiXiangSong-Regular") == false)
+        #expect(names.contains("EBGaramond-Regular"))
+    }
+
 }

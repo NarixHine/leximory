@@ -2,24 +2,28 @@
     "name": "@repo/user",
     "type": "module",
     "scripts": {
-        "dev": "tsc --watch"
+        "dev": "tsc-ts --watch"
     },
     "exports": {
         ".": "./src/index.ts",
-        "./quota": "./src/quota.ts"
+        "./quota": "./src/quota.ts",
+        "./entitlements": "./src/entitlements.ts",
+        "./membership": "./src/membership.ts"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:^",
         "@types/node": "^25.0.5",
+        "tsc-ts": "0.0.2",
         "typescript": "latest"
     },
     "dependencies": {
         "@repo/env": "workspace:^",
         "@repo/kv": "workspace:^",
+        "@repo/schema": "workspace:^",
         "@repo/supabase": "workspace:^",
         "kv": "^1.1.1",
-        "supabase": "^2.72.4",
-        "server-only": "^0.0.1"
+        "server-only": "^0.0.1",
+        "supabase": "^2.72.4"
     },
     "peerDependencies": {
         "next": "^16.0.0"

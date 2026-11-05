@@ -1,0 +1,60 @@
+{
+  "baseURL": "https://leximory.com/api/mobile/v1",
+  "checks": [
+    {
+      "operation": "session",
+      "status": 200,
+      "allowance": {
+        "used": 0,
+        "limit": 5,
+        "resetsAt": "2026-12-02T01:53:21.269Z"
+      }
+    },
+    {
+      "operation": "definition",
+      "selection": "leaves",
+      "lemma": "leaf",
+      "language": "en",
+      "allowance": {
+        "used": 1,
+        "limit": 5,
+        "resetsAt": "2026-12-02T01:53:21.269Z"
+      },
+      "definition": {
+        "lemma": "leaf",
+        "definition": "**n. 叶子；树叶** `liːf` a flat green part growing from a plant: *The leaf fell from the tree.*",
+        "etymology": "古英语“leaf”原义“叶、树叶”，与“叶状物”同源: ***leaf*** (叶)",
+        "cognates": "***leaf*** (叶) → **leafy** (多叶的)"
+      }
+    },
+    {
+      "operation": "replay",
+      "additionalCharge": 0
+    },
+    {
+      "operation": "definition",
+      "selection": "walked",
+      "lemma": "walk",
+      "language": "en",
+      "allowance": {
+        "used": 2,
+        "limit": 5,
+        "resetsAt": "2026-12-02T01:53:21.269Z"
+      },
+      "definition": {
+        "lemma": "walk",
+        "definition": "**v. 步行；走过** `wɔːk` move on foot: *We walk to school every day.*",
+        "etymology": "古英语“滚动、翻腾”转为“行走”: ***wealcan*** (滚动)",
+        "cognates": "***wealcan*** (滚动) → **walker** (步行者)"
+      }
+    },
+    {
+      "operation": "revoke",
+      "status": 200,
+      "body": {
+        "deleted": true
+      }
+    }
+  ],
+  "revision": "32dbbfcbaf84fe67146588b85a69c43d97bee076"
+}

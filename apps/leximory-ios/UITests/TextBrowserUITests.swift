@@ -16,7 +16,7 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertTrue(input.waitForExistence(timeout: 5)); input.typeText(page.url + "\n")
         let heading = app.webViews.staticTexts["A quiet forest"].firstMatch
         XCTAssertTrue(heading.waitForExistence(timeout: 15)); heading.press(forDuration: 1)
-        let lookup = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch
+        let lookup = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "猫忆查")).firstMatch
         XCTAssertTrue(lookup.waitForExistence(timeout: 5)); lookup.tap()
         let definition = app.textViews["annotation-markdown"].firstMatch
         XCTAssertTrue(definition.waitForExistence(timeout: 10))
@@ -93,8 +93,7 @@ final class TextBrowserUITests: XCTestCase {
         app.buttons["文库"].firstMatch.tap()
     }
 
-    @MainActor func testPhoneAddressBarSharesCollapsedTabRow() throws {
-        guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("iPhone bottom accessory") }
+    @MainActor func testBrowserControlsFollowTabBarPlacement() throws {
         let app = XCUIApplication()
         defer {
             XCUIDevice.shared.orientation = .portrait
@@ -106,43 +105,34 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertTrue(surf.waitForExistence(timeout: 10)); surf.tap()
         let address = app.buttons["browser-address"]
         XCTAssertTrue(address.waitForExistence(timeout: 10))
-        let input = app.textFields["browser-address-input"]
-        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 60))
-        let expandedCapture = XCTAttachment(screenshot: app.screenshot())
-        expandedCapture.name = "Separate Browser glass controls"; expandedCapture.lifetime = .keepAlways; add(expandedCapture)
-        let expandedY = address.frame.minY
-        app.webViews.firstMatch.swipeUp()
-        app.webViews.firstMatch.swipeUp()
-        let moved = NSPredicate { _, _ in address.frame.minY > expandedY + 20 }
-        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: moved, object: nil)], timeout: 5), .completed)
-        XCTAssertTrue(address.frame.maxX <= surf.frame.minX || address.frame.minX >= surf.frame.maxX)
-        XCTAssertEqual(address.frame.midY, surf.frame.midY, accuracy: 12)
-        let collapsedCapture = XCTAttachment(screenshot: app.screenshot())
-        collapsedCapture.name = "Address beside collapsed navigation"; collapsedCapture.lifetime = .keepAlways; add(collapsedCapture)
-        address.tap()
-        XCTAssertTrue(input.waitForExistence(timeout: 5))
-        XCTAssertLessThanOrEqual(input.frame.height, 56)
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
-        XCTAssertLessThan(input.frame.maxY, app.keyboards.firstMatch.frame.minY)
-        let keyboardCapture = XCTAttachment(screenshot: app.screenshot())
-        keyboardCapture.name = "Address above keyboard"; keyboardCapture.lifetime = .keepAlways; add(keyboardCapture)
-        input.typeText("https://example.invalid")
-        app.buttons["取消"].tap()
-        XCTAssertTrue(address.waitForExistence(timeout: 5))
-        for _ in 0..<4 {
-            app.webViews.firstMatch.swipeDown(velocity: .slow)
-            if address.frame.minY < expandedY + 10 { break }
+        let webpage = app.webViews.firstMatch
+        let header = webpage.staticTexts["Important page controls"].firstMatch
+        XCTAssertTrue(header.waitForExistence(timeout: 60))
+        let navigationAtBottom = surf.frame.midY > app.frame.height / 2
+        if navigationAtBottom {
+            XCTAssertLessThan(address.frame.maxY, app.frame.height / 3)
+            XCTAssertGreaterThanOrEqual(header.frame.minY, address.frame.maxY)
+        } else { XCTAssertGreaterThan(address.frame.minY, app.frame.height / 2) }
+        XCTAssertTrue(app.buttons["网页选项"].isHittable)
+        let initialY = address.frame.minY
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Top Browser controls protect webpage header"; capture.lifetime = .keepAlways; add(capture)
+        webpage.swipeUp(); webpage.swipeUp()
+        XCTAssertEqual(address.frame.minY, initialY, accuracy: 2)
+        if navigationAtBottom { XCTAssertGreaterThanOrEqual(header.frame.minY, address.frame.maxY) }
+        for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+            XCUIDevice.shared.orientation = orientation
+            XCTAssertTrue(address.waitForExistence(timeout: 5)); address.tap()
+            let input = app.textFields["browser-address-input"]
+            XCTAssertTrue(input.waitForExistence(timeout: 5))
+            XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+            XCTAssertLessThan(input.frame.maxY, app.keyboards.firstMatch.frame.minY)
+            if surf.frame.midY > app.frame.height / 2 {
+                XCTAssertGreaterThanOrEqual(header.frame.minY, input.frame.maxY)
+            }
+            app.buttons["取消"].tap()
+            XCTAssertTrue(address.waitForExistence(timeout: 5))
         }
-        let expanded = NSPredicate { _, _ in address.frame.minY < expandedY + 10 }
-        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: expanded, object: nil)], timeout: 10), .completed)
-        XCUIDevice.shared.orientation = .landscapeLeft
-        XCTAssertTrue(address.waitForExistence(timeout: 5))
-        address.tap()
-        XCTAssertTrue(input.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
-        XCTAssertLessThan(input.frame.maxY, app.keyboards.firstMatch.frame.minY)
-        app.buttons["取消"].tap()
-        XCTAssertTrue(address.waitForExistence(timeout: 5))
     }
 
     @MainActor func testBookmarkCreationReturnsToLibraryAndOpensWebpage() throws {
@@ -177,15 +167,16 @@ final class TextBrowserUITests: XCTestCase {
         XCTAssertTrue(heading.waitForExistence(timeout: 15), app.debugDescription)
         let browser = XCTAttachment(screenshot: app.screenshot()); browser.name = "Single-page browser"; browser.lifetime = .keepAlways; add(browser)
         heading.press(forDuration: 1)
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "猫忆查")).firstMatch.waitForExistence(timeout: 5), app.debugDescription)
         let menu = XCTAttachment(screenshot: app.screenshot()); menu.name = "Article-matched selection menu"; menu.lifetime = .keepAlways; add(menu)
-        XCTAssertTrue(app.menuItems["拷贝"].exists)
-        for title in ["拷贝高亮标记的链接", "Copy Link with Highlight", "翻译", "查询", "搜索网页"] {
-            XCTAssertFalse(app.menuItems[title].exists)
+        XCTAssertTrue(app.buttons["复制"].exists)
+        for title in ["拷贝高亮标记的链接", "Copy Link with Highlight", "查找所选内容", "翻译", "搜索网页"] {
+            XCTAssertFalse(app.buttons[title].exists)
         }
         XCTAssertFalse(app.buttons["共享"].exists)
         XCTAssertFalse(app.buttons["全选"].exists)
-        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "🐈 猫忆查")).firstMatch.tap()
+        assertNativeDefineAfterLeximory(in: app, actions: ["猫忆查"])
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "猫忆查")).firstMatch.tap()
         XCTAssertTrue(app.staticTexts["正在理解语境"].firstMatch.waitForExistence(timeout: 1))
         let loading = XCTAttachment(screenshot: app.screenshot()); loading.name = "Immediate context loading"; loading.lifetime = .keepAlways; add(loading)
         let definitionText = app.textViews["annotation-markdown"].firstMatch
@@ -203,27 +194,32 @@ final class TextBrowserUITests: XCTestCase {
     }
 }
 
-private final class BrowserPageServer {
+final class BrowserPageServer {
     let listener: NWListener
     let url: String
-    init() throws {
+    init(pdfData: Data? = nil, artwork: Bool = false, extraArticleContent: String = "") throws {
         let listener = try NWListener(using: .tcp, on: .any)
         self.listener = listener
+        let metadata = artwork ? "<meta property=\"og:image\" content=\"https://fixtures.leximory.invalid/forest.png\"><link rel=\"icon\" href=\"https://fixtures.leximory.invalid/forest.png\">" : ""
         let html = """
-        <!doctype html><html><head><title>A quiet forest</title><meta name="theme-color" content="#d4ddc9"><meta name="viewport" content="width=device-width, initial-scale=1">
+        <!doctype html><html><head><title>A quiet forest</title>\(metadata)<meta name="theme-color" content="#d4ddc9"><meta name="viewport" content="width=device-width, initial-scale=1">
         <style>body{margin:0;background:#fffdf7;color:#192024;font:19px/1.7 Georgia,serif}main{max-width:560px;margin:100px auto;padding:24px}small{font:12px sans-serif;letter-spacing:2px;color:#5d7468}h1{font-size:38px;line-height:1.2}p{margin-top:28px}</style>
         </head><body><main><small>FIELD NOTES</small><h1>A quiet forest</h1>
         <p>The morning light fell across the winding river. We walked slowly beneath the trees, noticing the small things along the bank.</p>
         <p>A bird called from somewhere beyond the path. For a moment, the forest seemed to hold its breath.</p>
-        <p>There was no need to hurry. Every turn offered another reason to look a little closer.</p><a href="/next">Continue walking</a></main></body></html>
+        <p>There was no need to hurry. Every turn offered another reason to look a little closer.</p>\(extraArticleContent)<a href="/next">Continue walking</a></main></body></html>
         """
         let response = Data(("HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: \(html.utf8.count)\r\nConnection: close\r\n\r\n" + html).utf8)
+        let pdfResponse = pdfData.map { data in
+            Data("HTTP/1.1 200 OK\r\nContent-Type: application/pdf\r\nContent-Disposition: inline; filename=\"River pages.pdf\"\r\nContent-Length: \(data.count)\r\nConnection: close\r\n\r\n".utf8) + data
+        }
         let ready = XCTestExpectation(description: "Local article server")
         listener.stateUpdateHandler = { state in if case .ready = state { ready.fulfill() } }
         listener.newConnectionHandler = { connection in
             connection.start(queue: .global(qos: .userInitiated))
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { _, _, _, _ in
-                connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { request, _, _, _ in
+                let isPDF = request.map { String(decoding: $0, as: UTF8.self).hasPrefix("GET /document ") } == true
+                connection.send(content: isPDF ? pdfResponse ?? response : response, completion: .contentProcessed { _ in connection.cancel() })
             }
         }
         listener.start(queue: .global(qos: .userInitiated))
@@ -231,5 +227,30 @@ private final class BrowserPageServer {
             listener.cancel(); throw NSError(domain: "BrowserPageServer", code: 1)
         }
         url = "http://127.0.0.1:\(port.rawValue)/article"
+    }
+}
+
+@MainActor func assertNativeDefineAfterLeximory(in app: XCUIApplication, actions: [String], file: StaticString = #filePath, line: UInt = #line) {
+    let native = app.buttons.matching(NSPredicate(format: "label IN %@", ["辞典"])).firstMatch
+    var pages = 0
+    while !native.isHittable && pages < 3 {
+        let next = app.buttons["reading-selection-更多"].firstMatch
+        guard next.isHittable else { break }
+        next.tap(); pages += 1
+    }
+    XCTAssertTrue(native.isHittable, "Native Define should remain available", file: file, line: line)
+    if pages == 0, native.isHittable {
+        for title in actions {
+            let action = app.buttons[title]
+            if action.isHittable {
+                let comesAfter = native.frame.minY > action.frame.minY + 5 || native.frame.minX > action.frame.minX
+                XCTAssertTrue(comesAfter, "Native Define should follow \(title)", file: file, line: line)
+            }
+        }
+    }
+    for _ in 0..<pages {
+        let previous = app.buttons["reading-selection-返回"].firstMatch
+        guard previous.isHittable else { break }
+        previous.tap()
     }
 }

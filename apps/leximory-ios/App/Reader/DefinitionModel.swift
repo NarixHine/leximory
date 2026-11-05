@@ -40,44 +40,145 @@ enum DefinitionSource {
 
 @MainActor @Observable final class DefinitionModel {
     enum State {
-        case generating(String)
+        case generating(Definition)
         case ready(Definition, completionID: String?)
-        case failed(String)
+        case failed(String, preview: Definition?)
     }
-    enum SaveState: Equatable { case idle, saving, saved, uncertain }
+    enum ElaborationState {
+        case idle
+        case streaming(String)
+        case ready(String)
+        case failed(String, preview: String)
+        var text: String {
+            switch self {
+            case .idle: ""
+            case .streaming(let text), .ready(let text): text
+            case .failed(_, let preview): preview
+            }
+        }
+        var isStreaming: Bool { if case .streaming = self { true } else { false } }
+    }
+    private(set) var elaboration: ElaborationState = .idle
+    @ObservationIgnored private var elaborationTask: Task<Void, Never>?
+    private var elaborationRequestID = UUID().uuidString
+    var completionID: String? { if case .ready(_, let id) = state { id } else { nil } }
+
+    @discardableResult func elaborate(stream: @escaping @MainActor () -> AsyncThrowingStream<DefinitionEvent, Error>) -> Task<Void, Never>? {
+        guard elaborationTask == nil, isReady else { return nil }
+        if case .ready = elaboration { return nil }
+        let retained = elaboration.text
+        elaboration = .streaming(retained)
+        let task = Task {
+            defer { elaborationTask = nil }
+            var buffer = ""
+            var recovering = !retained.isEmpty
+            do {
+                for try await event in stream() {
+                    try Task.checkCancellation()
+                    switch event {
+                    case .started:
+                        recovering = !elaboration.text.isEmpty
+                        buffer = ""
+                    case .delta(_, let text):
+                        buffer += text
+                        if !recovering { elaboration = .streaming(buffer) }
+                    case .completed(_, let result):
+                        elaboration = .ready(result.definition)
+                        return
+                    case .failed(_, let error): throw DefinitionFailure(message: error.message)
+                    }
+                }
+                throw URLError(.cannotParseResponse)
+            } catch {
+                guard !Task.isCancelled else { return }
+                let cause = MobileClient.cause(of: error)
+                elaboration = .failed((cause as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message
+                    ?? "暂时未能获取更多信息。", preview: elaboration.text)
+            }
+        }
+        elaborationTask = task
+        return task
+    }
+    func elaborate(client: MobileClient, source: DefinitionSource) {
+        guard let completionID else { return }
+        let browser: Bool
+        switch source { case .browser, .webpage: browser = true; case .article, .ebook: browser = false }
+        elaborate { client.elaborateDefinition(completionID: completionID, browser: browser, requestID: self.elaborationRequestID) }
+    }
+    enum SaveState: Equatable { case idle, queued, saving, saved, uncertain }
     private(set) var state: State
     private(set) var browserTarget: BrowserTarget?
     private(set) var savedWord: SavedVocabulary?
     private(set) var editor: VocabularyEditModel?
     private(set) var saveError: String?
     private(set) var saveState: SaveState = .idle
+    private(set) var quotaExhausted = false
     @ObservationIgnored private var saveRequest: Task<SavedVocabulary, Error>?
+    @ObservationIgnored private var generationTask: Task<Void, Never>?
+    @ObservationIgnored private var queuedSave: (@MainActor (String?) async throws -> SavedVocabulary)?
     private var creationDefinition: Definition?
-    init(embedded: Definition?) {
-        state = embedded.map { .ready($0, completionID: nil) } ?? .generating("")
+    var visibleDefinition: Definition? {
+        switch state {
+        case .generating(let preview): preview.definition.isEmpty ? nil : preview
+        case .ready(let definition, _): definition
+        case .failed(_, let preview): preview
+        }
     }
-    func offline() { state = .failed("离线时可以查看已保存的释义。语境查词需要联网。") }
-    func generate(client: MobileClient, source: DefinitionSource) async {
-        await generate { try await source.stream(client: client) }
+    var isReady: Bool { if case .ready = state { true } else { false } }
+    var isGenerating: Bool { if case .generating = state { true } else { false } }
+    init(embedded: Definition?) {
+        state = embedded.map { .ready($0, completionID: nil) } ?? .generating(Definition(lemma: "", definition: ""))
+    }
+    func offline() { state = .failed("离线时可以查看已保存的释义。语境查词需要联网。", preview: visibleDefinition) }
+    @discardableResult func startGeneration(client: MobileClient, source: DefinitionSource) -> Task<Void, Never>? {
+        startGeneration { try await source.stream(client: client) }
+    }
+    @discardableResult func startGeneration(stream: @escaping @MainActor () async throws -> (events: AsyncThrowingStream<DefinitionEvent, Error>, target: BrowserTarget?)) -> Task<Void, Never>? {
+        guard generationTask == nil, !isReady else { return nil }
+        let task = Task {
+            await generate(stream: stream)
+            generationTask = nil
+        }
+        generationTask = task
+        return task
+    }
+    func dismiss() {
+        elaborationTask?.cancel()
+        // An explicit save outlives the tray. An ordinary lookup does not.
+        if saveState != .queued && saveState != .saving { generationTask?.cancel() }
     }
     func generate(stream: @MainActor () async throws -> (events: AsyncThrowingStream<DefinitionEvent, Error>, target: BrowserTarget?)) async {
         if case .ready = state { return }
-        state = .generating("")
-        var raw = ""
+        let retained = visibleDefinition
+        quotaExhausted = false
+        state = .generating(retained ?? Definition(lemma: "", definition: ""))
+        let buffer = DefinitionPreviewBuffer { [weak self] preview in self?.state = .generating(preview) }
+        defer { buffer.cancel() }
+        var started = false
+        var recovering = retained != nil
         do {
+            try Task.checkCancellation()
             let stream = try await stream()
             browserTarget = stream.target
             for try await event in stream.events {
                 try Task.checkCancellation()
                 switch event {
-                case .started: raw = ""
+                case .started:
+                    // A retry can produce different wording. Retain the visible response
+                    // until its replacement completes instead of replaying its opening.
+                    if started { recovering = visibleDefinition != nil }
+                    started = true
+                    buffer.restart(retaining: recovering)
                 case .delta(_, let text):
-                    raw += text
-                    let fields = raw.components(separatedBy: "||")
-                    let preview = fields.count >= 3 ? fields[2].replacingOccurrences(of: "}}", with: "") : ""
-                    state = .generating(preview)
+                    buffer.append(text)
                 case .completed(let id, let definition):
+                    buffer.cancel()
                     state = .ready(definition, completionID: id)
+                    if let operation = queuedSave {
+                        queuedSave = nil
+                        saveState = .idle
+                        save(operation: operation)
+                    }
                     return
                 case .failed(_, let error): throw DefinitionFailure(message: error.message)
                 }
@@ -86,11 +187,30 @@ enum DefinitionSource {
             throw URLError(.cannotParseResponse)
         } catch {
             guard !Task.isCancelled else { return }
-            state = .failed((MobileClient.cause(of: error) as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message ?? "释义未能完成，请关闭后重试。")
+            quotaExhausted = (MobileClient.cause(of: error) as? MobileFailure)?.error.code == "quota_exceeded"
+            buffer.flush()
+            state = .failed((MobileClient.cause(of: error) as? MobileFailure)?.error.message ?? (error as? DefinitionFailure)?.message ?? "释义未能完成，请关闭后重试。", preview: visibleDefinition)
+            if saveState == .queued {
+                queuedSave = nil
+                saveState = .idle
+                saveError = "词汇尚未收藏，请在释义完成后重试。"
+            }
         }
     }
-    @discardableResult func save(client: MobileClient, source: DefinitionSource) -> Task<Void, Never>? {
-        save { completionID in try await source.save(client: client, completionID: completionID) }
+    func requestSave(client: MobileClient, source: DefinitionSource) {
+        requestSave { completionID in
+            let receipt = try await source.save(client: client, completionID: completionID)
+            SavedWordsWidgetSync.schedule(client: client)
+            return receipt
+        }
+    }
+    func requestSave(operation: @escaping @MainActor (String?) async throws -> SavedVocabulary) {
+        guard saveState == .idle else { return }
+        if isGenerating, visibleDefinition != nil {
+            saveError = nil
+            queuedSave = operation
+            saveState = .queued
+        } else { save(operation: operation) }
     }
     @discardableResult func save(operation: @escaping @MainActor (String?) async throws -> SavedVocabulary) -> Task<Void, Never>? {
         guard case .ready(let definition, let completionID) = state, case .idle = saveState else { return nil }
@@ -115,7 +235,7 @@ enum DefinitionSource {
                     saveError = failure.error.message
                 } else {
                     saveState = .uncertain
-                    saveError = "未能确认收藏结果，请先在语料本中查看，避免重复收藏。"
+                    saveError = "未能确认收藏结果，请先在已存词汇中查看，避免重复收藏。"
                 }
             }
         }

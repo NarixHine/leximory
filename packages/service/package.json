@@ -2,7 +2,7 @@
     "name": "@repo/service",
     "type": "module",
     "scripts": {
-        "dev": "tsc --watch"
+        "dev": "tsc-ts --watch"
     },
     "exports": {
         "./paper": "./src/paper/index.ts",
@@ -23,6 +23,7 @@
     "devDependencies": {
         "@repo/typescript-config": "workspace:^",
         "@types/node": "^25.0.5",
+        "tsc-ts": "0.0.2",
         "typescript": "latest"
     },
     "dependencies": {

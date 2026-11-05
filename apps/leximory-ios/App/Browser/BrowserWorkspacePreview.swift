@@ -1,0 +1,246 @@
+#if DEBUG && targetEnvironment(simulator)
+import SwiftUI
+import PDFKit
+import LeximoryCore
+import OpenAPIRuntime
+import HTTPTypes
+
+struct BrowserWorkspacePreview: View {
+    let playback: PlaybackController
+    @State private var client: MobileClient?
+    @State private var workspace: BrowserWorkspaceModel?
+    @State private var pendingText: TextID?
+    var body: some View {
+        Group {
+            if let client, let workspace { BrowserWorkspaceView(client: client, namespace: "workspace-fixture", playback: playback, pendingText: $pendingText, initialWorkspace: workspace) }
+            else { ProgressView() }
+        }.onChange(of: workspace?.ebookReader?.ready) { _, ready in
+            guard ready == true, ProcessInfo.processInfo.environment["LEXIMORY_FIXTURE_PDF_ACTIVE_CANVAS"] == "1" else { return }
+            for scene in UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }) {
+                scene.windows.forEach(exposeDrawingCanvas)
+            }
+        }.task {
+            guard client == nil else { return }
+            do {
+                let payloads = try Self.payloads()
+                let root = FileManager.default.temporaryDirectory.appending(path: "browser-workspace-fixture", directoryHint: .isDirectory)
+                try? FileManager.default.removeItem(at: root)
+                let origin = URL(string: "https://workspace-fixture.invalid")!
+                let store = try LocalReadingStore(root: root, origin: origin, accountID: "fixture")
+                let notes = try PDFNotesStore(root: root.appending(path: "notes"), origin: origin, accountID: "fixture")
+                let transport = BrowserWorkspaceFixtureTransport(payloads: payloads, store: store)
+                let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "fixture" }, localStore: store, notesStore: notes)
+                _ = try await client.allLibraries()
+                for library in try await client.allLibraries() {
+                    for text in try await client.allTexts(libraryID: library.id) {
+                        _ = try await client.documentDetails(textID: text.id)
+                        if text.format == "ebook", let descriptorData = payloads["ebook/" + text.id] {
+                            let decoder = JSONDecoder()
+                            decoder.dateDecodingStrategy = .iso8601
+                            let descriptor = try decoder.decode(EbookDescriptor.self, from: descriptorData)
+                            await store.save(descriptor, for: "ebook/" + text.id)
+                            let filename = text.id == "workspace-japanese" ? "japanese-fixture.epub" : text.id == "workspace-pdf" ? "reader-fixture.pdf" : "reader-fixture.epub"
+                            if let url = Bundle.main.url(forResource: filename, withExtension: nil) {
+                                let suppliedPDF = text.id == "workspace-pdf"
+                                    ? ProcessInfo.processInfo.environment["LEXIMORY_FIXTURE_PDF"].flatMap { Data(base64Encoded: $0) } : nil
+                                try await store.saveData(suppliedPDF ?? Data(contentsOf: url), for: "book/" + text.id)
+                                await store.save(descriptor.url.absoluteString, for: "book-source/" + text.id)
+                            }
+                        }
+                    }
+                }
+                UserDefaults.standard.removeObject(forKey: "browser.hidden-home-recents.workspace-fixture")
+                UserDefaults.standard.removeObject(forKey: "browser.home-pins.workspace-fixture")
+                for key in UserDefaults.standard.dictionaryRepresentation().keys
+                    where key.hasSuffix(".workspace-fixture") && (key.hasPrefix("browser.home-pins.") || key.hasPrefix("browser.pin-sync.")) {
+                    UserDefaults.standard.removeObject(forKey: key)
+                }
+                UserDefaults.standard.removeObject(forKey: "browser.annotations.workspace-fixture")
+                UserDefaults.standard.removeObject(forKey: "browser.recent.workspace-fixture")
+                UserDefaults.standard.removeObject(forKey: "recent-access.workspace-fixture")
+                let workspace = BrowserWorkspaceModel(client: client, namespace: "workspace-fixture")
+                let arguments = ProcessInfo.processInfo.arguments
+                if arguments.contains("--workspace-no-pins") || arguments.contains("--workspace-no-recents") {
+                    UserDefaults.standard.removeObject(forKey: "browser.recent-web.workspace-fixture")
+                }
+                if arguments.contains("--workspace-recent-card-fixtures"),
+                   let data = payloads["texts/workspace-folder"],
+                   let page = try? JSONDecoder().decode(CatalogPage<CatalogText>.self, from: data) {
+                    if !arguments.contains("--workspace-no-recents") {
+                        for id in ["fixture-reader", "fixture-forest", "workspace-epub"] {
+                            if let text = page.items.first(where: { $0.id == id }) { await workspace.open(text) }
+                        }
+                    }
+                    if !arguments.contains("--workspace-no-pins"), let text = page.items.first {
+                        workspace.savePin(BrowserHomePin(id: UUID(), title: text.title, destination: .document(text)))
+                    }
+                    if arguments.contains("--workspace-multiple-pins") {
+                        for id in ["fixture-forest", "workspace-epub"] {
+                            if let text = page.items.first(where: { $0.id == id }) {
+                                workspace.savePin(BrowserHomePin(id: UUID(), title: text.title, destination: .document(text)))
+                            }
+                        }
+                    }
+                    workspace.visit(.home)
+                }
+                if let index = arguments.firstIndex(of: "--workspace-webpage-url"), arguments.indices.contains(index + 1),
+                   let url = TextBrowserModel.address(arguments[index + 1]) { workspace.openURL(url) }
+                if ProcessInfo.processInfo.arguments.contains("--workspace-hold-annotations") {
+                    await transport.setCompletionGate { [weak workspace] in workspace?.current.textID != "workspace-import" }
+                }
+                self.workspace = workspace
+                self.client = client
+            } catch { assertionFailure("Browser workspace fixture could not be prepared: \(error)") }
+        }
+    }
+    private func exposeDrawingCanvas(in view: UIView) {
+        if let pdf = view as? PDFView, let provider = pdf.pageOverlayViewProvider as? PDFDrawingOverlays {
+            for overlay in provider.overlays.values {
+                let updateInput = overlay.updateInput
+                overlay.updateInput = { [weak overlay] in
+                    updateInput?()
+                    overlay?.isUserInteractionEnabled = true
+                    overlay?.canvas.isUserInteractionEnabled = true
+                }
+                overlay.isUserInteractionEnabled = true
+                overlay.canvas.isUserInteractionEnabled = true
+            }
+        }
+        view.subviews.forEach(exposeDrawingCanvas)
+    }
+    static func payloads() throws -> [String: Data] {
+        func encode(_ object: Any) throws -> Data { try JSONSerialization.data(withJSONObject: object) }
+        let audioReadOnly = ProcessInfo.processInfo.arguments.contains("--workspace-audio-readonly")
+        let folder: [String: Any] = ["id": "workspace-folder", "name": "Field notes", "language": "en", "owned": !audioReadOnly, "archived": false, "shadow": false]
+        let japanese: [String: Any] = ["id": "workspace-japanese-folder", "name": "日本語", "language": "ja", "owned": true, "archived": false, "shadow": false]
+        let archive: [String: Any] = ["id": "workspace-archive", "name": "Past reading", "language": "en", "owned": true, "archived": true, "shadow": false]
+        let samples = FixtureLibrary.samples[0].articles
+        var rows: [[String: Any]] = samples.map { ["id": $0.id.rawValue, "libraryId": "workspace-folder", "title": $0.title, "topics": $0.topics, "emoji": NSNull(), "createdAt": NSNull(), "format": "article"] }
+        let epub: [String: Any] = ["id": "workspace-epub", "libraryId": "workspace-folder", "title": "A river journey", "topics": [], "emoji": NSNull(), "createdAt": NSNull(), "format": "ebook"]
+        let pdf: [String: Any] = ["id": "workspace-pdf", "libraryId": "workspace-folder", "title": "River pages", "topics": [], "emoji": NSNull(), "createdAt": NSNull(), "format": "ebook"]
+        let ja: [String: Any] = ["id": "workspace-japanese", "libraryId": "workspace-japanese-folder", "title": "日本語の本", "topics": [], "emoji": NSNull(), "createdAt": NSNull(), "format": "ebook"]
+        rows += [epub, pdf]
+        var payloads = ["libraries": try encode(["items": [folder, japanese, archive], "nextCursor": NSNull()]),
+            "texts/workspace-folder": try encode(["items": rows, "nextCursor": NSNull()]),
+            "texts/workspace-japanese-folder": try encode(["items": [ja], "nextCursor": NSNull()]),
+            "texts/workspace-archive": try encode(["items": [], "nextCursor": NSNull()]),
+            "browserRules": try encode(["items": []]), "vocabularyList": try encode(["items": [], "nextCursor": NSNull()])]
+        for (index, article) in samples.enumerated() {
+            guard let url = Bundle.main.url(forResource: article.resource, withExtension: "json") else { throw CocoaError(.fileNoSuchFile) }
+            payloads["document/" + article.id.rawValue] = try encode(["text": rows[index], "library": folder,
+                "document": try JSONSerialization.jsonObject(with: Data(contentsOf: url)), "annotationProgress": NSNull(),
+                "fullArticleAudioId": index == 0 && ProcessInfo.processInfo.arguments.contains("--workspace-audio-fixtures") ? "fixture_recording" : NSNull()])
+        }
+        for (text, library, format) in [(epub, folder, "epub"), (pdf, folder, "pdf"), (ja, japanese, "epub")] {
+            guard let id = text["id"] as? String else { continue }
+            payloads["document/" + id] = try encode(["text": text, "library": library, "document": NSNull(), "annotationProgress": NSNull()])
+            payloads["ebook/" + id] = try encode(["text": text, "library": library, "url": "https://workspace-fixture.invalid/books/\(id).\(format)", "format": format,
+                "expiresAt": "2099-01-01T00:00:00Z", "location": NSNull(), "bookmarks": [], "sourceVersion": "fixture-original"])
+        }
+        return payloads
+    }
+}
+
+private actor BrowserWorkspaceFixtureTransport: ClientTransport {
+    private let review = ReviewFixtureTransport()
+    var payloads: [String: Data]
+    private var pendingReads = 0
+    private var definitionAttempts = 0
+    private var completionGate: (@MainActor @Sendable () -> Bool)?
+    private let store: LocalReadingStore
+    init(payloads: [String: Data], store: LocalReadingStore) { self.payloads = payloads; self.store = store }
+    func setCompletionGate(_ gate: @escaping @MainActor @Sendable () -> Bool) { completionGate = gate }
+    func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+        if operationID == "review" { return try await review.send(request, body: body, baseURL: baseURL, operationID: operationID) }
+        if ProcessInfo.processInfo.arguments.contains("--workspace-definition-fixtures") {
+            if operationID == "definitions" {
+                definitionAttempts += 1
+                return Self.definitionResponse(recovering: definitionAttempts > 1)
+            }
+            if operationID == "vocabulary" {
+                try await Task.sleep(for: .milliseconds(300))
+                return (.init(status: .ok), HTTPBody(#"{"id":"fixture-word","libraryId":"workspace-folder"}"#))
+            }
+        }
+        let path = (request.path ?? "").split(separator: "?")[0].split(separator: "/").map(String.init)
+        var key = operationID
+        if operationID == "texts", path.count >= 2 { key += "/" + path[path.count - 2] }
+        if operationID == "document", let id = path.last { key += "/" + id }
+        if operationID == "ebook", path.count >= 2 { key += "/" + path[path.count - 2] }
+        if operationID == "uploadEbook" {
+            guard let body else { throw URLError(.badServerResponse) }
+            let data = try await Data(collecting: body, upTo: BrowserEbookFile.maximumSize)
+            guard data.starts(with: Data("%PDF-".utf8)),
+                  let url = URL(string: request.path ?? "", relativeTo: baseURL),
+                  let query = URLComponents(url: url, resolvingAgainstBaseURL: true)?.queryItems,
+                  let title = query.first(where: { $0.name == "title" })?.value,
+                  let libraries = try JSONSerialization.jsonObject(with: payloads["libraries"] ?? Data()) as? [String: Any],
+                  let folders = libraries["items"] as? [[String: Any]],
+                  let folder = folders.first(where: { $0["id"] as? String == path[path.count - 2] }) else { throw URLError(.badServerResponse) }
+            let id = "workspace-pdf-import"
+            let source = "https://workspace-fixture.invalid/books/\(id).pdf"
+            let text: [String: Any] = ["id": id, "libraryId": path[path.count - 2], "title": title, "topics": [], "format": "ebook"]
+            payloads["document/" + id] = try JSONSerialization.data(withJSONObject: ["text": text, "library": folder, "document": NSNull(), "annotationProgress": NSNull()])
+            payloads["ebook/" + id] = try JSONSerialization.data(withJSONObject: ["text": text, "library": folder, "url": source, "format": "pdf", "expiresAt": "2099-01-01T00:00:00Z", "location": NSNull(), "bookmarks": []])
+            try await store.saveData(data, for: "book/" + id)
+            await store.save(source, for: "book-source/" + id)
+            return (.init(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(try JSONSerialization.data(withJSONObject: text)))
+        }
+        if operationID == "generateArticleAudio", path.count >= 2 {
+            let key = "document/" + path[path.count - 2]
+            if let data = payloads[key], var document = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                document["fullArticleAudioId"] = "fixture_recording"
+                payloads[key] = try JSONSerialization.data(withJSONObject: document)
+            }
+            return (.init(status: .ok), HTTPBody(#"{"audioId":"fixture_recording"}"#))
+        }
+        if operationID == "importArticle" || operationID == "createBookmark" {
+            guard let body else { throw URLError(.badServerResponse) }
+            let input = try await JSONSerialization.jsonObject(with: Data(collecting: body, upTo: 65536)) as? [String: Any] ?? [:]
+            let folderID = path[path.count - 2]
+            let text: [String: Any] = ["id": "workspace-import", "libraryId": folderID, "title": input["title"] ?? "A quiet forest", "topics": [], "emoji": NSNull(), "createdAt": NSNull(),
+                "format": operationID == "createBookmark" ? "bookmark" : "article", "bookmarkURL": input["url"] ?? NSNull()]
+            let folder: [String: Any] = ["id": folderID, "name": "Field notes", "language": "en", "owned": true, "archived": false, "shadow": false]
+            guard let documentData = payloads["document/fixture-reader"], let document = try JSONSerialization.jsonObject(with: documentData) as? [String: Any] else { throw URLError(.badServerResponse) }
+            payloads["document/workspace-import"] = try JSONSerialization.data(withJSONObject: ["text": text, "library": folder, "document": operationID == "createBookmark" ? NSNull() : document["document"] ?? NSNull(), "annotationProgress": operationID == "createBookmark" ? NSNull() : "annotating"])
+            pendingReads = 0
+            return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(try JSONSerialization.data(withJSONObject: text)))
+        }
+        if key == "document/workspace-import", let data = payloads[key], var document = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            pendingReads += 1
+            let mayComplete = await completionGate?() ?? true
+            if pendingReads > 3 && mayComplete { document["annotationProgress"] = "completed" }
+            return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(try JSONSerialization.data(withJSONObject: document)))
+        }
+        if operationID == "browserRule" || operationID == "ebookPosition" { return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody("{\"saved\":true}")) }
+        guard let data = payloads[key] else { throw URLError(.unsupportedURL) }
+        return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(data))
+    }
+    private static func definitionResponse(recovering: Bool) -> (HTTPResponse, HTTPBody) {
+        let frames = recovering ? [
+            #"{"kind":"started","requestId":"recovered"}"#,
+            #"{"kind":"delta","requestId":"recovered","text":"{{bank||bank||REPLAY"}"#,
+            #"{"kind":"completed","requestId":"recovered","definition":{"lemma":"bank","definition":"河岸，河流两侧的陆地。","etymology":"源自古英语。","cognates":"bench"}}"#
+        ] : [
+            #"{"kind":"started","requestId":"first"}"#,
+            #"{"kind":"delta","requestId":"first","text":"{{bank||bank||河岸，河流两侧的陆地。"}"#,
+            #"{"kind":"delta","requestId":"first","text":"||源自古英语。||bench}}"}"#
+        ]
+        let bytes = AsyncThrowingStream<ArraySlice<UInt8>, Error> { continuation in
+            let task = Task {
+                do {
+                    for frame in frames {
+                        try await Task.sleep(for: .seconds(1))
+                        continuation.yield(Array((frame + "\n").utf8)[...])
+                    }
+                    if recovering { continuation.finish() }
+                    else { continuation.finish(throwing: URLError(.networkConnectionLost)) }
+                } catch { continuation.finish(throwing: error) }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+        return (.init(status: .ok, headerFields: [.contentType: "application/x-ndjson"]),
+                HTTPBody(bytes, length: .unknown, iterationBehavior: .single))
+    }
+}
+#endif

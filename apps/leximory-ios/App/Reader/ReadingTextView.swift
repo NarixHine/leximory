@@ -2,32 +2,93 @@ import SwiftUI
 import UIKit
 import CoreText
 import ImageIO
+import PDFKit
 import LeximoryCore
 import os
 
 @MainActor enum ReadingSelectionMenu {
-    static let lookupTitle = "🐈 猫忆查"
-    static var lookupImage: UIImage? { UIImage(systemName: "magnifyingglass") }
+    static let lookupTitle = "猫忆查"
+    static let searchIdentifier = UIAction.Identifier("com.leximory.selection.web-search")
+    static var lookupImage: UIImage? { UIImage(systemName: "pawprint.fill") }
 
-    static func removeUnrelatedActions(from builder: UIMenuBuilder, keepNativeLookup: Bool = false) {
-        guard builder.system == .context else { return }
-        builder.remove(menu: .share)
-        builder.remove(menu: .replace)
-        builder.remove(menu: .find)
-        if !keepNativeLookup { builder.remove(menu: .lookup) }
-        builder.replaceChildren(ofMenu: .standardEdit) { copyActions($0) }
+    static func menu(children: [UIMenuElement], options: UIMenu.Options = []) -> UIMenu {
+        let menu = UIMenu(options: options, children: children)
+        menu.preferredElementSize = .medium
+        let preferences = UIMenuDisplayPreferences()
+        preferences.maximumNumberOfTitleLines = 1
+        menu.displayPreferences = preferences
+        return menu
     }
 
-    static func copyActions(_ elements: [UIMenuElement]) -> [UIMenuElement] {
-        elements.compactMap { element in
-            if let command = element as? UICommand {
-                return command.action == #selector(UIResponderStandardEditActions.copy(_:)) ? command : nil
-            }
+    static func removeUnrelatedActions(from builder: UIMenuBuilder) {
+        guard builder.system == .context else { return }
+        let native = copyAndLookupActions(builder.menu(for: .root)?.children ?? [])
+        builder.remove(menu: .lookup)
+        builder.replaceChildren(ofMenu: .root) { _ in native }
+    }
+
+    static func insertLearningActions(_ actions: [UIMenuElement], into builder: UIMenuBuilder,
+                                      nativeLookupBeforeCopy: Bool = false, trailingActions: [UIMenuElement] = []) {
+        guard builder.system == .context else { return }
+        builder.replaceChildren(ofMenu: .root) { elements in
+            let native = copyAndLookupActions(elements)
+            let ordered = nativeLookupBeforeCopy
+                ? native.filter { defineTitles.contains(nativeTitle($0)) } + native.filter { !defineTitles.contains(nativeTitle($0)) }
+                : native
+            return [menu(children: actions + ordered + trailingActions, options: .displayInline)]
+        }
+    }
+
+    private static let defineTitles: Set<String> = ["辞典", "查询", "查詢", "定义", "定義", "Look Up", "Define"]
+    private static let copyTitles: Set<String> = ["拷贝", "拷貝", "复制", "複製", "Copy"]
+
+    static func removingSystemSearchActions(_ elements: [UIMenuElement]) -> [UIMenuElement] {
+        elements.flatMap { element -> [UIMenuElement] in
             if let menu = element as? UIMenu {
-                let children = copyActions(menu.children)
-                return children.isEmpty ? nil : menu.replacingChildren(children)
+                if menu.identifier == .lookup { return copyAndLookupActions(menu.children) }
+                let children = removingSystemSearchActions(menu.children)
+                return children.isEmpty ? [] : [menu.replacingChildren(children)]
             }
-            return nil
+            switch nativeTitle(element) {
+            case "查找所选内容", "尋找所選內容", "翻译", "翻譯", "搜索网页", "搜尋網頁", "Search Web", "Translate", "Find Selection": return []
+            default: return [element]
+            }
+        }
+    }
+
+    private static func nativeTitle(_ element: UIMenuElement) -> String {
+        element.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: ".…"))
+    }
+
+    static func copyAndLookupActions(_ elements: [UIMenuElement]) -> [UIMenuElement] {
+        elements.flatMap { element -> [UIMenuElement] in
+            if let menu = element as? UIMenu { return copyAndLookupActions(menu.children) }
+            if (element as? UICommand)?.action == #selector(UIResponderStandardEditActions.copy(_:)) || copyTitles.contains(nativeTitle(element)) {
+                if let action = element as? UIAction { action.title = "复制" }
+                else if let command = element as? UICommand { command.title = "复制" }
+                element.accessibilityLabel = "复制"
+                return [element]
+            }
+            if defineTitles.contains(nativeTitle(element)) {
+                if let action = element as? UIAction { action.title = "辞典" }
+                else if let command = element as? UICommand { command.title = "辞典" }
+                element.accessibilityLabel = "辞典"
+                return [element]
+            }
+            return []
+        }
+    }
+
+    static func nativeLookupActions(in elements: [UIMenuElement]) -> [UIMenuElement] {
+        copyAndLookupActions(elements).filter { defineTitles.contains(nativeTitle($0)) }
+    }
+
+    static func searchAction(query: String?, engine: BrowserSearchEngine = .selected(), perform: ((String) -> Void)?) -> UIAction {
+        let query = query?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return UIAction(title: engine.name, image: UIImage(systemName: "magnifyingglass"), identifier: searchIdentifier, attributes: query.isEmpty || perform == nil ? .disabled : []) { _ in
+            guard !query.isEmpty else { return }
+            perform?(query)
         }
     }
 
@@ -45,12 +106,16 @@ struct ReadingTextView: UIViewRepresentable {
     var client: MobileClient? = nil
     var sync: NativeSync? = nil
     var readOnly = false
+    var annotationReveal: UUID? = nil
+    var articleAudio: ArticleAudioButton? = nil
+    @Environment(\.browserWorkspace) private var workspace
     var onTitleVisibilityChange: ((Bool) -> Void)? = nil
     let onDefine: (ReadingSelection, Definition?, CGRect) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> RubyTextView {
         let view = RubyTextView(frame: .zero, textContainer: nil)
+        view.tintColor = .systemBlue
         view.isEditable = false
         view.isSelectable = true
         view.contentInsetAdjustmentBehavior = .automatic
@@ -59,10 +124,11 @@ struct ReadingTextView: UIViewRepresentable {
         view.textContainer.lineFragmentPadding = 0
         view.adjustsFontForContentSizeCategory = true
         if let article {
-            let header = UIHostingController(rootView: ArticleReadingHeader(article: article, language: language, onTitleFrame: { [weak view, weak coordinator = context.coordinator] rect in
+            let header = UIHostingController(rootView: ArticleReadingHeader(article: article, language: language, audio: articleAudio, onTitleFrame: { [weak view, weak coordinator = context.coordinator] rect in
                 view?.headerTitleFrame = rect
                 if let view { coordinator?.updateTitleVisibility(view) }
-            }))
+            }, onHeightChange: { [weak view] in view?.invalidateReaderGeometry() }))
+            header.sizingOptions = .intrinsicContentSize
             header.view.backgroundColor = .clear
             header.safeAreaRegions = []
             context.coordinator.header = header
@@ -92,14 +158,21 @@ struct ReadingTextView: UIViewRepresentable {
     func updateUIView(_ view: RubyTextView, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
-        if view.keepNativeLookup != readOnly {
-            view.keepNativeLookup = readOnly
+        if let article, let header = coordinator.header,
+           header.rootView.article != article || header.rootView.language != language || header.rootView.audio?.presentationID != articleAudio?.presentationID {
+            header.rootView = ArticleReadingHeader(article: article, language: language, audio: articleAudio,
+                                                  onTitleFrame: header.rootView.onTitleFrame, onHeightChange: header.rootView.onHeightChange)
+            header.view.invalidateIntrinsicContentSize()
+            view.invalidateReaderGeometry()
+        }
+        if view.learningReadOnly != readOnly {
+            view.learningReadOnly = readOnly
             UIMenuSystem.context.setNeedsRebuild()
         }
         view.contentInset.bottom = bottomObstruction
         view.fixtureScrollsToEnd = jumpToEnd
         let bodySize: CGFloat = context.environment.horizontalSizeClass == .regular ? 20 : 18
-        let signature = "\(document.hashValue):\(context.environment.dynamicTypeSize):\(context.environment.colorScheme):\(bodySize)"
+        let signature = "\(document.hashValue):\(article?.title ?? ""):\(language):\(context.environment.dynamicTypeSize):\(context.environment.colorScheme):\(bodySize)"
         if coordinator.signature != signature {
             let selection = view.selectedRange
             let offset = view.contentOffset
@@ -127,6 +200,11 @@ struct ReadingTextView: UIViewRepresentable {
             coordinator.lastJump = jumpToEnd
             if jumpToEnd { view.pendingFinalScroll = true; view.setNeedsLayout() }
         }
+        if let annotationReveal, coordinator.lastReveal != annotationReveal {
+            coordinator.lastReveal = annotationReveal
+            view.layoutIfNeeded()
+            view.revealAnnotations()
+        }
     }
 
     static func dismantleUIView(_ view: RubyTextView, coordinator: Coordinator) {
@@ -141,20 +219,24 @@ struct ReadingTextView: UIViewRepresentable {
         var layout: ReaderLayout
         var signature = ""
         var lastJump = false
+        var lastReveal: UUID?
         var imageTasks: [Task<Void, Never>] = []
         var header: UIHostingController<ArticleReadingHeader>?
         weak var popover: AnnotationPopoverController?
         init(_ parent: ReadingTextView) { self.parent = parent; layout = ReaderLayout(document: parent.document, openingTitleInHeader: parent.article?.title, showsNotices: false) }
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
             guard let view = gestureRecognizer.view as? RubyTextView else { return false }
-            return view.annotation(at: touch.location(in: view)) != nil
+            return popover != nil || view.annotation(at: touch.location(in: view)) != nil
         }
         @objc func annotationTapped(_ gesture: AnnotationTapRecognizer) {
             guard gesture.state == .ended, let view = gesture.reader else { return }
+            guard view.annotation(at: gesture.location(in: view)) != nil else {
+                popover?.dismiss(animated: true)
+                return
+            }
             view.activateAnnotation(at: gesture.location(in: view))
         }
         func present(_ occurrence: ReaderLayout.Annotation, at rect: CGRect, in view: RubyTextView) {
-            guard popover == nil else { return }
             view.highlightAnnotation(occurrence.tag)
             guard view.traitCollection.horizontalSizeClass == .regular,
                   let presenter = view.window?.rootViewController else {
@@ -162,24 +244,31 @@ struct ReadingTextView: UIViewRepresentable {
                 view.highlightAnnotation(nil)
                 return
             }
-            let item = DefinitionPresentation(source: .article(occurrence.selection), definition: occurrence.definition)
-            let controller = AnnotationPopoverController(rootView: AnyView(EmptyView()))
+            let item = DefinitionPresentation(source: .article(occurrence.selection), definition: occurrence.definition, sourceTitle: parent.article?.title)
+            let existing = popover
+            let controller = existing ?? AnnotationPopoverController(rootView: AnyView(EmptyView()))
             let content = DefinitionView(item: item, client: parent.client, language: parent.language, isPopover: true,
                 closeTray: { [weak controller] in controller?.dismiss(animated: true) })
                 .id(item.id)
                 .environment(\.nativeSync, parent.sync)
+                .environment(\.browserWorkspace, parent.workspace)
             controller.rootView = AnyView(content)
-            controller.onDismiss = { [weak view] in view?.highlightAnnotation(nil) }
+            controller.onDismiss = { [weak self, weak controller, weak view] in
+                guard self?.popover === controller else { return }
+                self?.popover = nil
+                view?.highlightAnnotation(nil)
+            }
             controller.modalPresentationStyle = .popover
             controller.sizingOptions = .preferredContentSize
             controller.safeAreaRegions = []
             controller.view.backgroundColor = UIColor(LeximoryPalette.annotationSurface)
             controller.popoverPresentationController?.sourceView = view
             controller.popoverPresentationController?.sourceRect = rect
+            controller.popoverPresentationController?.passthroughViews = [view]
             controller.popoverPresentationController?.permittedArrowDirections = [.up, .down]
             controller.popoverPresentationController?.backgroundColor = UIColor(LeximoryPalette.annotationSurface)
             popover = controller
-            presenter.present(controller, animated: true)
+            if existing == nil { presenter.present(controller, animated: true) }
         }
         func loadImages(in view: RubyTextView) {
             let revision = parent.document.revision
@@ -209,14 +298,23 @@ struct ReadingTextView: UIViewRepresentable {
         func scrollViewDidScroll(_ scrollView: UIScrollView) {
             if let view = scrollView as? RubyTextView { updateTitleVisibility(view) }
         }
+        func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
+            guard case .link(let url) = textItem.content, parent.workspace != nil,
+                  TextBrowserModel.address(url.absoluteString) != nil else { return defaultAction }
+            return UIAction(title: "打开") { [weak self] _ in self?.parent.workspace?.openURL(url) }
+        }
         func textView(_ textView: UITextView, editMenuForTextIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
-            guard !parent.readOnly else { return UIMenu(children: suggestedActions) }
-            guard let selection = try? layout.selection(range, document: parent.document, textID: parent.textID) else { return UIMenu(children: suggestedActions) }
+            let native = ReadingSelectionMenu.copyAndLookupActions(suggestedActions)
+            guard let selection = try? layout.selection(range, document: parent.document, textID: parent.textID) else { return ReadingSelectionMenu.menu(children: native) }
+            let search = ReadingSelectionMenu.searchAction(query: selection.text, perform: parent.workspace.map { workspace in
+                { [weak workspace] query in workspace?.search(query) }
+            })
+            guard !parent.readOnly else { return ReadingGlassMenu.present(from: textView, rect: (textView as? RubyTextView)?.boundingRect(for: range) ?? .zero, elements: native + [search]) }
             let action = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage) { [weak self, weak textView] _ in
                 guard let self, let textView else { return }
                 self.parent.onDefine(selection, nil, self.rect(range, in: textView))
             }
-            return UIMenu(children: [UIMenu(options: .displayInline, children: [action])] + suggestedActions)
+            return ReadingGlassMenu.present(from: textView, rect: (textView as? RubyTextView)?.boundingRect(for: range) ?? .zero, elements: [action] + native + [search])
         }
         private func rect(_ range: NSRange, in view: UITextView) -> CGRect {
             view.presentationRect(for: range)
@@ -284,10 +382,10 @@ struct ReadingTextView: UIViewRepresentable {
 }
 
 @MainActor final class RubyTextView: UITextView {
-    var keepNativeLookup = false
+    var learningReadOnly = false
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
-        ReadingSelectionMenu.removeUnrelatedActions(from: builder, keepNativeLookup: keepNativeLookup)
+        ReadingSelectionMenu.removeUnrelatedActions(from: builder)
     }
 
     var pendingFinalScroll = false
@@ -298,6 +396,8 @@ struct ReadingTextView: UIViewRepresentable {
     var rubySpans: [Ruby] = [] { didSet { setNeedsLayout() } }
     private var pronunciationLabels: [Int: UILabel] = [:]
     private let markerLayer = CAShapeLayer()
+    private var revealLayers: [CAShapeLayer] = []
+    private var revealID: UUID?
     private let pressedAnnotationLayer = CAShapeLayer()
     var openAnnotation: ((ReaderLayout.Annotation, CGRect) -> Void)?
     var annotations: [ReaderLayout.Annotation] = [] {
@@ -433,6 +533,44 @@ struct ReadingTextView: UIViewRepresentable {
         markerLayer.fillColor = LeximoryPalette.wordHighlightUI.cgColor
         markerLayer.path = path.cgPath
         CATransaction.commit()
+    }
+    func revealAnnotations() {
+        guard !UIAccessibility.isReduceMotionEnabled, window != nil else { return }
+        revealLayers.forEach { $0.removeFromSuperlayer() }
+        revealLayers.removeAll()
+        let id = UUID(); revealID = id
+        var bands: [CGRect] = []
+        for segments in annotationSegments.values {
+            for rect in segments where bounds.intersects(rect) {
+                bands.append(rect)
+            }
+        }
+        bands.sort { (left: CGRect, right: CGRect) -> Bool in
+            if left.minY == right.minY { return left.minX < right.minX }
+            return left.minY < right.minY
+        }
+        guard !bands.isEmpty else { return }
+        markerLayer.opacity = 0
+        for (index, rect) in bands.enumerated() {
+            let height = max(3, rect.height * 0.28)
+            let band = CGRect(x: rect.minX - 0.5, y: rect.maxY - height - rect.height * 0.08, width: rect.width + 1, height: height)
+            let marker = CAShapeLayer()
+            marker.bounds = CGRect(origin: .zero, size: band.size)
+            marker.anchorPoint = .zero; marker.position = band.origin
+            marker.path = UIBezierPath(roundedRect: marker.bounds, cornerRadius: height * 0.18).cgPath
+            marker.fillColor = LeximoryPalette.wordHighlightUI.cgColor
+            layer.insertSublayer(marker, at: 0); revealLayers.append(marker)
+            let animation = CABasicAnimation(keyPath: "transform.scale.x")
+            animation.fromValue = 0; animation.toValue = 1; animation.duration = 0.24
+            animation.beginTime = CACurrentMediaTime() + Double(index) / Double(max(1, bands.count)) * 0.3
+            animation.fillMode = .backwards; animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            marker.add(animation, forKey: "reveal")
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            guard let self, revealID == id else { return }
+            markerLayer.opacity = 1
+            revealLayers.forEach { $0.removeFromSuperlayer() }; revealLayers.removeAll()
+        }
     }
     func annotation(tag: String) -> ReaderLayout.Annotation? { annotationsByTag[tag] }
     func annotation(at point: CGPoint) -> (occurrence: ReaderLayout.Annotation, rect: CGRect)? {
@@ -584,5 +722,540 @@ private extension UIFont {
               let end = position(from: start, offset: range.length),
               let selection = textRange(from: start, to: end) else { return .zero }
         return firstRect(for: selection)
+    }
+}
+
+/// Owns presentation only; reading adapters retain their captured selection and authorization.
+@MainActor final class ReadingGlassMenu: UIView, UIScrollViewDelegate {
+    private static weak var current: ReadingGlassMenu?
+    private static weak var pendingSource: UIView?
+    private static var presentationID = UUID()
+    private weak var source: UIView?
+    private let panel = UIVisualEffectView()
+    private let motionHost = UIView()
+    private var glass: UIGlassEffect?
+    private var enteredAt: CFTimeInterval?
+    private var isClosing = false
+    private var sourceBounds: CGRect = .zero
+    private var sourceFrame: CGRect = .zero
+    private var didDismiss: (() -> Void)?
+    private var monitor: Timer?
+    private var selectionRange: NSRange?
+    private var pdfText: String?
+    private var actions: [UIMenuElement] = []
+    private var anchor: CGRect = .zero
+    private var safeBounds: CGRect = .zero
+    private weak var rail: UIScrollView?
+    private weak var overflowButton: UIButton?
+    private var content: UIView?
+    private weak var primarySurface: UIView?
+    private var observedScrollViews: [(UIScrollView, CGPoint)] = []
+
+    @discardableResult static func present(from source: UIView, rect: CGRect, elements: [UIMenuElement], onDismiss: (() -> Void)? = nil) -> UIMenu {
+        // Keep the native responder and selection handles, suppress only its menu.
+        let request = UUID()
+        presentationID = request; pendingSource = source
+        DispatchQueue.main.async { [weak source] in
+            guard presentationID == request, let source, let window = source.window, !rect.isEmpty else { return }
+            current?.close(animated: false)
+            let menu = ReadingGlassMenu(frame: window.bounds)
+            menu.overrideUserInterfaceStyle = source.traitCollection.userInterfaceStyle
+            menu.source = source
+            menu.didDismiss = onDismiss
+            menu.sourceBounds = source.bounds
+            menu.selectionRange = (source as? UITextView)?.selectedRange
+            menu.pdfText = (source as? PDFView)?.currentSelection?.string
+            @MainActor func collectScrolls(_ view: UIView) {
+                if let scroll = view as? UIScrollView { menu.observedScrollViews.append((scroll, scroll.contentOffset)) }
+                view.subviews.forEach(collectScrolls)
+            }
+            collectScrolls(source)
+            var ancestor = source.superview
+            while let view = ancestor {
+                if let scroll = view as? UIScrollView { menu.observedScrollViews.append((scroll, scroll.contentOffset)) }
+                ancestor = view.superview
+            }
+            menu.sourceFrame = source.convert(source.bounds, to: window)
+            menu.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            menu.configure(elements: elements, anchor: source.convert(rect, to: window), window: window)
+            window.addSubview(menu)
+            current = menu
+            menu.reveal()
+        }
+        return UIMenu(children: [])
+    }
+
+    static func dismiss(from source: UIView) {
+        if pendingSource === source { presentationID = UUID(); pendingSource = nil }
+        if current?.source === source { current?.close() }
+    }
+
+    private func configure(elements: [UIMenuElement], anchor: CGRect, window: UIWindow) {
+        if UIAccessibility.isReduceTransparencyEnabled {
+            panel.backgroundColor = .secondarySystemBackground
+        } else {
+            let glass = UIGlassEffect(style: .regular)
+            glass.isInteractive = true
+            self.glass = glass
+        }
+        panel.layer.cornerRadius = 26
+        panel.clipsToBounds = true
+        addSubview(motionHost)
+        motionHost.addSubview(panel)
+        func flattened(_ elements: [UIMenuElement]) -> [UIMenuElement] {
+            elements.flatMap { ($0 as? UIMenu).map { flattened($0.children) } ?? [$0] }
+        }
+        let all = flattened(elements)
+        actions = all.filter { $0.title == ReadingSelectionMenu.lookupTitle }
+            + all.filter { $0.title == "荧光笔" }
+            + all.filter { $0.title != ReadingSelectionMenu.lookupTitle && $0.title != "荧光笔" }
+        self.anchor = anchor
+        safeBounds = window.bounds.inset(by: window.safeAreaInsets).insetBy(dx: 16, dy: 10)
+        renderRail()
+        accessibilityViewIsModal = false
+        monitor = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                guard let source = self.source, source.window != nil,
+                      source.bounds == self.sourceBounds,
+                      (source as? UITextView)?.selectedRange == self.selectionRange,
+                      (source as? PDFView)?.currentSelection?.string == self.pdfText,
+                      self.observedScrollViews.allSatisfy({ $0.0.contentOffset == $0.1 }),
+                      source.convert(source.bounds, to: source.window) == self.sourceFrame else { self.close(); return }
+                if self.overrideUserInterfaceStyle != source.traitCollection.userInterfaceStyle {
+                    self.overrideUserInterfaceStyle = source.traitCollection.userInterfaceStyle
+                }
+            }
+        }
+    }
+
+    private func renderRail() {
+        let endPadding: CGFloat = 4
+        let availableWidth = safeBounds.width - endPadding * 2
+        let row = makeRow()
+        row.spacing = 4
+        row.accessibilityIdentifier = "reading-selection-compact"
+        let primary = actions.first { $0.title == ReadingSelectionMenu.lookupTitle }
+        let trailing = actions.filter { $0 !== primary }
+        var primaryWidth: CGFloat = 0
+        var height: CGFloat = 44
+        if let primary {
+            let button = makeButton(primary)
+            let size = button.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+            primaryWidth = min(size.width, availableWidth * 0.5)
+            height = max(height, size.height)
+            button.widthAnchor.constraint(equalToConstant: primaryWidth).isActive = true
+            row.addArrangedSubview(button)
+        }
+        let scroller = UIScrollView()
+        scroller.accessibilityIdentifier = "reading-selection-rail"
+        scroller.showsHorizontalScrollIndicator = false
+        scroller.bounces = false
+        scroller.delegate = self
+        rail = scroller
+        let strip = makeRow(); strip.translatesAutoresizingMaskIntoConstraints = false
+        scroller.addSubview(strip)
+        var total: CGFloat = 0
+        for (index, element) in trailing.enumerated() {
+            if index > 0 {
+                let divider = UIView(); divider.backgroundColor = UIColor.separator.withAlphaComponent(0.3)
+                divider.widthAnchor.constraint(equalToConstant: 0.5).isActive = true
+                divider.heightAnchor.constraint(equalToConstant: 18).isActive = true
+                strip.addArrangedSubview(divider); total += 0.5
+            }
+            let button = makeButton(element)
+            let measured = button.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+            total += measured.width; height = max(height, measured.height)
+            button.widthAnchor.constraint(equalToConstant: measured.width).isActive = true
+            strip.addArrangedSubview(button)
+        }
+        let gap: CGFloat = primary == nil || trailing.isEmpty ? 0 : 4
+        let overflow = primaryWidth + gap + total > availableWidth
+        let arrowWidth: CGFloat = overflow ? 40 : 0
+        let viewport = max(0, min(total, availableWidth - primaryWidth - gap - arrowWidth))
+        if !trailing.isEmpty {
+            row.addArrangedSubview(scroller)
+            NSLayoutConstraint.activate([
+                scroller.widthAnchor.constraint(equalToConstant: viewport),
+                scroller.heightAnchor.constraint(equalToConstant: height),
+                strip.leadingAnchor.constraint(equalTo: scroller.contentLayoutGuide.leadingAnchor),
+                strip.trailingAnchor.constraint(equalTo: scroller.contentLayoutGuide.trailingAnchor),
+                strip.topAnchor.constraint(equalTo: scroller.contentLayoutGuide.topAnchor),
+                strip.bottomAnchor.constraint(equalTo: scroller.contentLayoutGuide.bottomAnchor),
+                strip.heightAnchor.constraint(equalTo: scroller.frameLayoutGuide.heightAnchor)
+            ])
+        }
+        if overflow {
+            let more = makeButton(UIAction(title: "更多", image: UIImage(systemName: "chevron.right")) { [weak self] _ in self?.advanceRail() }, dismisses: false, iconOnly: true)
+            more.widthAnchor.constraint(equalToConstant: 36).isActive = true
+            more.heightAnchor.constraint(equalToConstant: 36).isActive = true
+            row.addArrangedSubview(more); overflowButton = more
+        }
+        let size = CGSize(width: primaryWidth + gap + viewport + arrowWidth + endPadding * 2, height: height)
+        let above = anchor.minY - size.height - 10
+        let y = above >= safeBounds.minY ? above : min(safeBounds.maxY - size.height, anchor.maxY + 10)
+        panel.frame = CGRect(x: min(max(safeBounds.minX, anchor.midX - size.width / 2), safeBounds.maxX - size.width), y: max(safeBounds.minY, y), width: size.width, height: size.height)
+        motionHost.frame = panel.frame
+        motionHost.layer.shadowColor = UIColor.black.cgColor
+        motionHost.layer.shadowOpacity = 0.14
+        motionHost.layer.shadowRadius = 20
+        motionHost.layer.shadowOffset = CGSize(width: 0, height: 6)
+        motionHost.layer.shadowPath = UIBezierPath(roundedRect: motionHost.bounds, cornerRadius: size.height / 2).cgPath
+        panel.frame = motionHost.bounds
+        panel.layer.cornerRadius = size.height / 2
+        row.frame = panel.bounds.insetBy(dx: endPadding, dy: 0)
+        panel.contentView.addSubview(row); content = row
+        row.layoutIfNeeded()
+        primarySurface?.layer.cornerRadius = max(0, (height - 8) / 2)
+        scrollViewDidScroll(scroller)
+    }
+
+    private func advanceRail() {
+        guard let rail else { return }
+        let end = max(0, rail.contentSize.width - rail.bounds.width)
+        let target: CGFloat
+        if rail.contentOffset.x >= end - 1 { target = 0 }
+        else {
+            target = min(end, rail.contentOffset.x + rail.bounds.width)
+        }
+        rail.setContentOffset(CGPoint(x: target, y: 0), animated: !UIAccessibility.isReduceMotionEnabled)
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard let button = overflowButton else { return }
+        let atEnd = scrollView.contentOffset.x >= scrollView.contentSize.width - scrollView.bounds.width - 1
+        button.accessibilityLabel = atEnd ? "返回" : "更多"
+        button.accessibilityIdentifier = atEnd ? "reading-selection-返回" : "reading-selection-更多"
+        let icon = button.subviews.compactMap { $0 as? UIStackView }.first?.arrangedSubviews.compactMap { $0 as? UIImageView }.first
+        icon?.image = UIImage(systemName: atEnd ? "chevron.left" : "chevron.right")
+    }
+
+    private func makeRow() -> UIStackView {
+        let row = UIStackView()
+        row.axis = .horizontal; row.spacing = 0; row.alignment = .center
+        return row
+    }
+
+    private func makeButton(_ element: UIMenuElement, dismisses: Bool = true, iconOnly: Bool = false) -> UIButton {
+        let primary = element.title == ReadingSelectionMenu.lookupTitle
+        let button = SelectionGlassButton(type: .custom)
+        if let action = element as? UIAction {
+            button.addAction(action, for: .touchUpInside)
+            button.isEnabled = !action.attributes.contains(.disabled)
+        } else if let command = element as? UICommand {
+            button.isEnabled = !command.attributes.contains(.disabled)
+            button.addAction(UIAction { [weak self] _ in
+                guard let source = self?.source else { return }
+                UIApplication.shared.sendAction(command.action, to: nil, from: source, for: nil)
+            }, for: .touchUpInside)
+        }
+        let destructive = (element as? UIAction)?.attributes.contains(.destructive) == true
+        let ink: UIColor = destructive ? .systemRed : primary ? .white : .label
+        let content = UIStackView()
+        content.axis = .horizontal; content.alignment = .center; content.spacing = 6
+        content.isUserInteractionEnabled = false
+        content.translatesAutoresizingMaskIntoConstraints = false
+        let utilitySymbol = ["辞典", "查询", "查詢", "定义", "定義", "Look Up", "Define"].contains(element.title) ? "character.book.closed" : "doc.on.doc"
+        let image = element.image ?? UIImage(systemName: element.title == "搜索" ? "magnifyingglass" : utilitySymbol)
+        let icon = UIImageView(image: image)
+        icon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 15, weight: .regular)
+        icon.contentMode = .scaleAspectFit; icon.tintColor = ink
+        icon.widthAnchor.constraint(equalToConstant: element.title.isEmpty ? 24 : 17).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: element.title.isEmpty ? 24 : 17).isActive = true
+        if primary || element.title == "荧光笔" || iconOnly || element.title.isEmpty {
+            content.addArrangedSubview(icon)
+        }
+        if !iconOnly && !element.title.isEmpty {
+            let label = ReadingMenuLabel()
+            label.text = element.title
+            let learningAction = primary || element.title == "荧光笔"
+            let face = learningAction ? ReadingMenuTypography.learningFont() : LeximoryTypography.interfaceUI(15)
+            label.font = UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: face)
+            label.numberOfLines = 1
+            if primary { label.adjustsFontSizeToFitWidth = true; label.minimumScaleFactor = 0.8 }
+            label.textColor = ink
+            label.setContentCompressionResistancePriority(primary ? .defaultHigh : .required, for: .horizontal)
+            content.addArrangedSubview(label)
+
+        }
+        if primary {
+            let wash = UIView()
+            wash.isUserInteractionEnabled = false
+            primarySurface = wash
+            wash.backgroundColor = UIColor(red: 67 / 255, green: 73 / 255, blue: 67 / 255, alpha: 1)
+            wash.layer.borderWidth = 0.5
+            wash.layer.borderColor = UIColor.white.withAlphaComponent(0.18).cgColor
+            wash.layer.cornerRadius = 18
+            wash.translatesAutoresizingMaskIntoConstraints = false
+            button.addSubview(wash)
+            NSLayoutConstraint.activate([
+                wash.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+                wash.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+                wash.topAnchor.constraint(equalTo: button.topAnchor, constant: 4),
+                wash.bottomAnchor.constraint(equalTo: button.bottomAnchor, constant: -4)
+            ])
+        }
+        if element.title == "荧光笔" {
+            content.removeArrangedSubview(icon); icon.removeFromSuperview()
+            let well = UIView()
+            well.backgroundColor = UIColor { traits in
+                EbookHighlightColor.sage.ink.withAlphaComponent(traits.userInterfaceStyle == .dark ? 0.3 : 0.65)
+            }
+            well.layer.cornerRadius = 6
+            well.widthAnchor.constraint(equalToConstant: 23).isActive = true
+            well.heightAnchor.constraint(equalToConstant: 23).isActive = true
+            icon.translatesAutoresizingMaskIntoConstraints = false
+            well.addSubview(icon)
+            NSLayoutConstraint.activate([
+                icon.centerXAnchor.constraint(equalTo: well.centerXAnchor),
+                icon.centerYAnchor.constraint(equalTo: well.centerYAnchor)
+            ])
+            content.insertArrangedSubview(well, at: 0)
+        }
+        button.addSubview(content)
+        NSLayoutConstraint.activate([
+            content.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: iconOnly ? 0 : primary ? 14 : 10),
+            content.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: iconOnly ? 0 : primary ? -14 : -10),
+            content.topAnchor.constraint(equalTo: button.topAnchor, constant: iconOnly ? 0 : 8),
+            content.bottomAnchor.constraint(equalTo: button.bottomAnchor, constant: iconOnly ? 0 : -8),
+            button.heightAnchor.constraint(greaterThanOrEqualToConstant: iconOnly ? 36 : 44),
+            button.widthAnchor.constraint(greaterThanOrEqualToConstant: iconOnly ? 36 : 44)
+        ])
+        button.backgroundColor = iconOnly ? UIColor.tertiaryLabel.withAlphaComponent(0.08) : .clear
+        button.layer.cornerRadius = 22
+        button.configureHighlight(primary: primary, iconOnly: iconOnly, below: content)
+        content.alpha = button.isEnabled ? 1 : 0.3
+        button.isAccessibilityElement = true
+        button.accessibilityIdentifier = (element as? UIAction)?.identifier == ReadingSelectionMenu.searchIdentifier
+            ? "reading-selection-web-search"
+            : "reading-selection-" + (element.title.isEmpty ? ((element as? UIAction)?.discoverabilityTitle ?? "color") : element.title)
+        button.accessibilityLabel = element.accessibilityLabel ?? (element.title.isEmpty ? (element as? UIAction)?.discoverabilityTitle : element.title)
+        if dismisses {
+            button.addAction(UIAction { [weak self] _ in
+                self?.close()
+            }, for: .touchUpInside)
+        }
+        return button
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard motionHost.frame.contains(point) else {
+            if event?.type == .touches { close() }
+            return nil
+        }
+        return super.hitTest(point, with: event)
+    }
+
+    override func accessibilityPerformEscape() -> Bool { close(); return true }
+
+    private func reveal() {
+        panel.effect = glass
+        content?.alpha = 1
+        let frame = motionHost.frame
+        let pivot = CGPoint(x: min(1, max(0, (anchor.midX - frame.minX) / frame.width)),
+                            y: anchor.midY < frame.midY ? 0 : 1)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        motionHost.layer.anchorPoint = pivot
+        motionHost.layer.position = CGPoint(x: frame.minX + frame.width * pivot.x,
+                                       y: frame.minY + frame.height * pivot.y)
+        motionHost.layer.opacity = 1
+        motionHost.layer.setAffineTransform(.identity)
+        CATransaction.commit()
+        enteredAt = CACurrentMediaTime()
+        motionHost.layer.add(ReadingMenuMotion.animation(entering: true, reduceMotion: UIAccessibility.isReduceMotionEnabled),
+                        forKey: "selection-menu-transition")
+    }
+
+    private func close(animated: Bool = true) {
+        if isClosing {
+            if !animated { motionHost.layer.removeAllAnimations(); removeFromSuperview() }
+            return
+        }
+        isClosing = true
+        monitor?.invalidate(); monitor = nil
+        if Self.current === self { Self.current = nil }
+        let completion = didDismiss; didDismiss = nil; completion?()
+        guard animated else { motionHost.layer.removeAllAnimations(); removeFromSuperview(); return }
+        isUserInteractionEnabled = false
+        let presentation = motionHost.layer.presentation()
+        let scale = presentation.map { Double($0.transform.m11) } ?? 1
+        let opacity = presentation.map { Double($0.opacity) } ?? 1
+        let elapsed = enteredAt.map { CACurrentMediaTime() - $0 } ?? 1
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        CATransaction.setCompletionBlock { [weak self] in self?.removeFromSuperview() }
+        motionHost.layer.removeAnimation(forKey: "selection-menu-transition")
+        motionHost.layer.opacity = 0
+        motionHost.layer.add(ReadingMenuMotion.animation(entering: false, fromScale: scale, fromOpacity: opacity,
+            velocity: elapsed < 0.4 ? ReadingMenuMotion.entranceVelocity(at: elapsed) : 0,
+            reduceMotion: UIAccessibility.isReduceMotionEnabled), forKey: "selection-menu-transition")
+        CATransaction.commit()
+    }
+
+}
+
+@MainActor enum ReadingMenuTypography {
+    private static let learningSample = "猫忆查荧光笔"
+    private static let utilitySample = "辞典复制"
+
+    static func learningFont() -> UIFont {
+        // Cascade descriptors discard the display face's scale matrix. Use the fixed
+        // Chinese face directly and match its ink height to the utility face.
+        let reference = LeximoryTypography.interfaceUI(15)
+        let face = LeximoryTypography.face("Fontquan-XinYiJiXiangSong-Regular", size: 15)
+        let ratio = inkBounds(text: utilitySample, font: reference).height
+            / inkBounds(text: learningSample, font: face).height
+        return face.withSize(15 * ratio)
+    }
+
+    static func inkBounds(text: String, font: UIFont) -> CGRect {
+        CTLineGetBoundsWithOptions(line(text: text, font: font), [.useGlyphPathBounds])
+    }
+
+    private static func line(text: String, font: UIFont) -> CTLine {
+        CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: [.font: font]))
+    }
+}
+
+/// Centers visible ink rather than the unrelated line boxes of the two font families.
+final class ReadingMenuLabel: UILabel {
+    override var intrinsicContentSize: CGSize {
+        guard let text, let font else { return .zero }
+        let ink = ReadingMenuTypography.inkBounds(text: text, font: font)
+        return CGSize(width: ceil(ink.width), height: ceil(ink.height))
+    }
+
+    override func drawText(in rect: CGRect) {
+        guard let text, let font, let context = UIGraphicsGetCurrentContext() else { return }
+        let ink = ReadingMenuTypography.inkBounds(text: text, font: font)
+        guard ink.width > 0, ink.height > 0 else { return }
+        let scale = adjustsFontSizeToFitWidth ? min(1, max(minimumScaleFactor, bounds.width / ink.width)) : 1
+        let color = textColor.resolvedColor(with: traitCollection).cgColor
+        let attributed = NSAttributedString(string: text, attributes: [
+            .font: font,
+            NSAttributedString.Key(kCTForegroundColorAttributeName as String): color
+        ])
+        let line = CTLineCreateWithAttributedString(attributed)
+        context.saveGState()
+        context.textMatrix = .identity
+        context.translateBy(x: bounds.midX - ink.midX * scale,
+                            y: bounds.midY + ink.midY * scale)
+        context.scaleBy(x: scale, y: -scale)
+        context.textPosition = .zero
+        CTLineDraw(line, context)
+        context.restoreGState()
+    }
+}
+
+// Fitted to the supplied ScreenRecording_10-31-2026 18-25-33_1.mov using its frame timestamps.
+// Scale and opacity have separate tracks; the pivot is the selection's nearest menu edge.
+private enum ReadingMenuMotion {
+    static func entranceVelocity(at time: Double) -> Double {
+        let damping = 0.8485596031
+        let frequency = 23.3779488791
+        let damped = frequency * sqrt(1 - damping * damping)
+        return (1 - 0.2505451395) * exp(-damping * frequency * time)
+            * frequency * frequency / damped * sin(damped * time)
+    }
+
+    static func animation(entering: Bool, fromScale: Double = 1, fromOpacity: Double = 1,
+                          velocity: Double = 0, reduceMotion: Bool) -> CAAnimationGroup {
+        let duration = reduceMotion ? 0.12 : entering ? 0.4 : 0.25
+        let opacity = CAKeyframeAnimation(keyPath: "opacity")
+        let times: [Double]
+        let values: [Double]
+        if reduceMotion {
+            times = [0, duration]; values = entering ? [0, 1] : [fromOpacity, 0]
+        } else if entering {
+            times = [0, 0.01389, 0.03056, 0.04723, 0.06389, 0.08056, 0.09723, 0.11389,
+                     0.13056, 0.14723, 0.16389, 0.18056, 0.19723, duration]
+            values = [0, 0.004, 0.255, 0.424, 0.569, 0.694, 0.8, 0.859, 0.914, 0.937, 0.98, 0.996, 1, 1]
+        } else {
+            times = [0, 0.01667, 0.03333, 0.05, 0.06667, 0.08333, 0.1, 0.11667,
+                     0.13333, 0.15, 0.16667, 0.18333, 0.2, 0.21667, 0.23333, duration]
+            values = [1, 0.976, 0.91, 0.796, 0.69, 0.561, 0.455, 0.345,
+                      0.247, 0.184, 0.118, 0.078, 0.059, 0.031, 0.008, 0].map { $0 * fromOpacity }
+        }
+        opacity.keyTimes = times.map { NSNumber(value: $0 / duration) }
+        opacity.values = values
+        opacity.calculationMode = .linear
+        opacity.duration = duration
+        var tracks: [CAAnimation] = [opacity]
+        if !reduceMotion {
+            let damping = entering ? 0.8485596031 : 0.8102735550
+            let frequency = entering ? 23.3779488791 : 19.2726324483
+            let start = entering ? 0.2505451395 : fromScale
+            let target = entering ? 1 : 0.2264864855
+            let spring = CASpringAnimation(keyPath: "transform.scale")
+            spring.mass = 1
+            spring.stiffness = frequency * frequency
+            spring.damping = 2 * damping * frequency
+            spring.initialVelocity = abs(target - start) > 0.0001 ? velocity / (target - start) : 0
+            spring.fromValue = start
+            spring.toValue = target
+            spring.duration = duration
+            spring.timingFunction = CAMediaTimingFunction(name: .linear)
+            tracks.append(spring)
+        }
+        let group = CAAnimationGroup()
+        group.animations = tracks
+        group.duration = duration
+        group.timingFunction = CAMediaTimingFunction(name: .linear)
+        return group
+    }
+}
+
+private final class SelectionGlassButton: UIButton {
+    private let highlightSurface = UIView()
+    private var highlightInsets = UIEdgeInsets.zero
+    private var pointerInside = false
+
+    func configureHighlight(primary: Bool, iconOnly: Bool, below content: UIView) {
+        highlightInsets = iconOnly ? .zero : UIEdgeInsets(top: 4, left: primary ? 0 : 2, bottom: 4, right: primary ? 0 : 2)
+        highlightSurface.isUserInteractionEnabled = false
+        highlightSurface.backgroundColor = primary ? UIColor.white.withAlphaComponent(0.14) : .tertiarySystemFill
+        highlightSurface.alpha = 0
+        highlightSurface.layer.cornerCurve = .continuous
+        insertSubview(highlightSurface, belowSubview: content)
+        let hover = UIHoverGestureRecognizer(target: self, action: #selector(hoverChanged(_:)))
+        hover.cancelsTouchesInView = false
+        addGestureRecognizer(hover)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        highlightSurface.frame = bounds.inset(by: highlightInsets)
+        highlightSurface.layer.cornerRadius = highlightSurface.bounds.height / 2
+    }
+
+    override var isHighlighted: Bool {
+        didSet { updateHighlight() }
+    }
+
+    override var isEnabled: Bool {
+        didSet {
+            if !isEnabled { pointerInside = false }
+            updateHighlight()
+        }
+    }
+
+    @objc private func hoverChanged(_ recognizer: UIHoverGestureRecognizer) {
+        pointerInside = recognizer.state == .began || recognizer.state == .changed
+        updateHighlight()
+    }
+
+    private func updateHighlight() {
+        let active = isEnabled && (isHighlighted || pointerInside)
+        let alpha: CGFloat = active ? 0.6 : 0
+        guard highlightSurface.alpha != alpha else { return }
+        if active || !isEnabled || UIAccessibility.isReduceMotionEnabled {
+            highlightSurface.layer.removeAllAnimations()
+            highlightSurface.alpha = alpha
+        } else {
+            UIView.animate(withDuration: 0.15, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction, .curveEaseOut]) {
+                self.highlightSurface.alpha = alpha
+            }
+        }
     }
 }

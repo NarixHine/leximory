@@ -32,7 +32,7 @@ struct VocabularyEditor: View {
                         .labelStyle(.iconOnly).frame(width: 44, height: 44)
                 }
             }
-            if let error = failure ?? model.error { Text(error).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted) }
+            if let error = failure ?? model.error { Text(error).interfaceFont(14).foregroundStyle(LeximoryPalette.muted) }
         }
     }
 
@@ -44,12 +44,12 @@ struct VocabularyEditor: View {
     }
     private func field(_ label: String, value: Binding<String>, lines: ClosedRange<Int>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(label).font(LeximoryTypography.interface(15)).foregroundStyle(.secondary)
+            Text(label).interfaceFont(15).foregroundStyle(.secondary)
             Group {
                 if label == "词条" { TextField(label, text: value) }
                 else { TextField(label, text: value, axis: .vertical).lineLimit(lines) }
             }
-                .focused($focusedField, equals: label)
+                .tint(.blue).focused($focusedField, equals: label)
                 .submitLabel(label == "词条" ? .done : .return)
                 .onSubmit { if label == "词条" { focusedField = nil } }
                 .font(LeximoryTypography.prose(18, language: language)).lineSpacing(4)

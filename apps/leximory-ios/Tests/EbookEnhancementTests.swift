@@ -6,7 +6,245 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor struct EbookEnhancementTests {
-    @Test func removingWrappedPDFBookmarkRemovesAllLinesAndFailureRestoresThem() throws {
+    @Test func pdfSelectionOffersOneHighlighterAndRemembersRecoloring() throws {
+        let originalPreference = UserDefaults.standard.string(forKey: "pdfHighlightColor")
+        defer { UserDefaults.standard.set(originalPreference, forKey: "pdfHighlightColor") }
+        UserDefaults.standard.removeObject(forKey: "pdfHighlightColor")
+        let reader = EbookReaderState()
+        reader.format = "pdf"; reader.canBookmark = true
+        #expect(reader.lastHighlightColor == .sage)
+        let actions = EbookLearningMenu.actions(reader: reader)
+        #expect(actions.count == 3)
+        #expect(actions[1] is UIAction)
+        let original = EbookBookmark(id: 42, quote: "river", chapter: "Chapter", location: "3", createdAt: "2026-10-24", color: .sage)
+        reader.bookmarks = [original]
+        _ = try #require(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .blue)))
+        #expect(reader.bookmarks == [EbookBookmark(id: 42, quote: "river", chapter: "Chapter", location: "3", createdAt: "2026-10-24", color: .blue)])
+        #expect(EbookReaderState().lastHighlightColor == .blue)
+        reader.selection = EbookSelection(quote: "next", context: "the next word", offset: 4)
+        let highlighter = try #require(EbookLearningMenu.actions(reader: reader)[1] as? UIAction)
+        highlighter.performWithSender(nil, target: nil)
+        guard case .bookmark(.blue) = reader.selectionAction?.kind else {
+            Issue.record("A new highlight must immediately use the remembered blue color")
+            return
+        }
+        #expect(reader.selectionAction?.selection.quote == "next")
+        #expect(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .pink)) != nil)
+        #expect(reader.bookmarks.first?.color == .pink)
+        #expect(reader.bookmarkNotice == nil)
+        reader.readOnly = true
+        #expect(reader.beginBookmarkColorChange(.init(bookmarkID: 42, color: .yellow)) == nil)
+        #expect(reader.bookmarks.first?.color == .pink)
+    }
+
+    @Test(arguments: [false, true])
+    func livePDFHighlightsDoNotStackWhenSavingOverlappingSelections(initialDark: Bool) async throws {
+        let quote = "alpha bravo charlie delta echo"
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { context in
+            context.beginPage()
+            (quote as NSString).draw(at: CGPoint(x: 30, y: 80), withAttributes: [.font: UIFont.systemFont(ofSize: 20)])
+        }
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        let reader = EbookReaderState()
+        let host = UIHostingController(rootView: NativePDFReader(data: data, reader: reader, command: nil))
+        host.overrideUserInterfaceStyle = initialDark ? .dark : .light
+        window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        func snapshot() throws -> CGImage {
+            let format = UIGraphicsImageRendererFormat(); format.scale = 1
+            return try #require(UIGraphicsImageRenderer(bounds: host.view.bounds, format: format).image { _ in
+                host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+            }.cgImage)
+        }
+        func findPDF(_ view: UIView) -> PDFView? {
+            if let pdf = view as? PDFView { return pdf }
+            return view.subviews.lazy.compactMap { findPDF($0) }.first
+        }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(250))
+        let pdf = try #require(findPDF(host.view))
+        let page = try #require(pdf.document?.page(at: 0))
+        let text = try #require(page.string)
+        let points = try quote.split(separator: " ").map { word in
+            let range = try #require(text.range(of: String(word)))
+            let selection = try #require(page.selection(for: NSRange(range, in: text)))
+            let bounds = selection.bounds(for: page)
+            return pdf.convert(pdf.convert(CGPoint(x: bounds.midX, y: bounds.maxY - 1), from: page), to: host.view)
+        }
+        func markerPixels(_ image: CGImage) throws -> [[UInt8]] {
+            try points.map { try pixel(image, x: Int($0.x), y: image.height - Int($0.y) - 1) }
+        }
+        for dark in [initialDark, !initialDark, initialDark] {
+            host.overrideUserInterfaceStyle = dark ? .dark : .light
+            reader.bookmarks = [EbookBookmark(id: 1, quote: quote, chapter: nil, location: "1")]
+            try await Task.sleep(for: .milliseconds(250))
+            let single = try markerPixels(snapshot())
+            reader.bookmarks = [EbookBookmark(id: 2, quote: "bravo charlie", chapter: nil, location: "1"),
+                EbookBookmark(id: 3, quote: "alpha bravo charlie delta", chapter: nil, location: "1"),
+                EbookBookmark(id: 4, quote: "charlie delta echo", chapter: nil, location: "1"),
+                EbookBookmark(id: 5, quote: "bravo charlie", chapter: nil, location: "1")]
+            try await Task.sleep(for: .milliseconds(250))
+            let overlap = try markerPixels(snapshot())
+            #expect(overlap == single, "Live PDFKit overlap must have one coat, dark \(dark)")
+            #expect(single.allSatisfy { $0[1] > $0[0] && $0[0] > $0[2] }, "All sampled pixels must contain the sage marker")
+            let learningPDF = try #require(pdf as? LearningPDFView)
+            #expect(learningPDF.highlight(at: host.view.convert(points[2], to: pdf))?.bookmarkID == 5,
+                "A fully covered save must remain independently selectable")
+            reader.bookmarks = [EbookBookmark(id: 4, quote: "charlie delta echo", chapter: nil, location: "1")]
+            try await Task.sleep(for: .milliseconds(250))
+            let remaining = try markerPixels(snapshot())
+            reader.bookmarks = []
+            try await Task.sleep(for: .milliseconds(100))
+            reader.bookmarks = [EbookBookmark(id: 6, quote: "charlie delta echo", chapter: nil, location: "1")]
+            try await Task.sleep(for: .milliseconds(250))
+            #expect(try markerPixels(snapshot()) == remaining, "Removing overlapping saves must restore the remaining highlight")
+            for color in EbookHighlightColor.allCases {
+                reader.bookmarks = [EbookBookmark(id: 7, quote: quote, chapter: nil, location: "1", color: color)]
+                try await Task.sleep(for: .milliseconds(100))
+                let colored = try markerPixels(snapshot())
+                reader.bookmarks = [EbookBookmark(id: 8, quote: quote, chapter: nil, location: "1"),
+                    EbookBookmark(id: 7, quote: quote, chapter: nil, location: "1", color: color)]
+                try await Task.sleep(for: .milliseconds(100))
+                #expect(try markerPixels(snapshot()) == colored, "Newest color must cover older highlights with one coat, dark \(dark)")
+                let sample = try #require(colored.first)
+                switch color {
+                case .sage, .yellow: #expect(sample[1] > sample[2] && sample[0] > sample[2])
+                case .green: #expect(sample[1] > sample[0] && sample[1] > sample[2])
+                case .blue: #expect(sample[2] > sample[1] && sample[1] > sample[0])
+                case .pink: #expect(sample[0] > sample[2] && sample[2] > sample[1])
+                case .purple: #expect(sample[2] > sample[0] && sample[0] > sample[1])
+                }
+            }
+        }
+    }
+
+    @Test func refreshedPDFHighlightUsesItsSavedColorWithoutChangingItsIdentity() throws {
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { context in
+            context.beginPage()
+            ("A river flows." as NSString).draw(at: CGPoint(x: 30, y: 80), withAttributes: [.font: UIFont.systemFont(ofSize: 20)])
+        }
+        let view = LearningPDFView()
+        view.document = PDFDocument(data: data)
+        let page = try #require(view.document?.page(at: 0))
+        let reader = EbookReaderState()
+        let coordinator = PDFReaderView.Coordinator(reader: reader)
+        reader.bookmarks = [EbookBookmark(id: 42, quote: "river", chapter: nil, location: "1")]
+        coordinator.updateBookmarks(in: view)
+        reader.bookmarks = [EbookBookmark(id: 42, quote: "river", chapter: nil, location: "1", color: .blue)]
+        coordinator.updateBookmarks(in: view)
+        #expect(page.annotations.count == 1)
+        let highlight = try #require(page.annotations.first as? EbookPDFHighlight)
+        #expect(highlight.bookmarkID == 42)
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        highlight.color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        #expect(blue == 1)
+        #expect(blue > green && green > red)
+        #expect(abs(alpha - 0.45) < 0.001)
+    }
+
+    @Test(arguments: [[1, 2], [2, 1]])
+    func removalsRemainLocalWithoutWaitingForTheServer(restorationOrder: [Int]) {
+        let reader = EbookReaderState()
+        let original = [EbookBookmark(id: 1, quote: "river", chapter: nil, location: "1", color: .sage),
+                        EbookBookmark(id: 2, quote: "river", chapter: nil, location: "1", color: .blue),
+                        EbookBookmark(id: 3, quote: "river", chapter: nil, location: "1", color: .pink)]
+        reader.bookmarks = original
+        #expect(reader.beginBookmarkRemoval(1)?.color == .sage)
+        #expect(reader.beginBookmarkRemoval(2)?.color == .blue)
+        _ = restorationOrder
+        #expect(reader.bookmarks == [original[2]])
+    }
+
+    @Test func pdfInvertsWhenAppearanceChangesWithoutRecreatingTheDocument() async throws {
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { context in
+            context.beginPage()
+            UIColor.black.setFill()
+            context.cgContext.fill(CGRect(x: 0, y: 300, width: 400, height: 300))
+        }
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        let reader = EbookReaderState()
+        let host = UIHostingController(rootView: NativePDFReader(data: data, reader: reader, command: nil))
+        host.overrideUserInterfaceStyle = .light
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; window.rootViewController = nil; previous?.makeKey() }
+        host.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(250))
+        func findPDF(_ view: UIView) -> PDFView? {
+            if let pdf = view as? PDFView { return pdf }
+            return view.subviews.lazy.compactMap { findPDF($0) }.first
+        }
+        let pdf = try #require(findPDF(host.view))
+        let document = try #require(pdf.document)
+        let page = try #require(pdf.currentPage)
+        let originalScale = pdf.scaleFactor
+        func snapshot() throws -> CGImage {
+            let format = UIGraphicsImageRendererFormat(); format.scale = 1
+            return try #require(UIGraphicsImageRenderer(bounds: host.view.bounds, format: format).image { _ in
+                host.view.drawHierarchy(in: host.view.bounds, afterScreenUpdates: true)
+            }.cgImage)
+        }
+        func sample(_ image: CGImage, pageY: CGFloat) throws -> [UInt8] {
+            let point = pdf.convert(pdf.convert(CGPoint(x: 200, y: pageY), from: page), to: host.view)
+            return try pixel(image, x: Int(point.x), y: image.height - Int(point.y) - 1)
+        }
+        let light = try snapshot()
+        #expect(try sample(light, pageY: 450).prefix(3).allSatisfy { $0 > 240 })
+        #expect(try sample(light, pageY: 150).prefix(3).allSatisfy { $0 < 15 })
+        host.overrideUserInterfaceStyle = .dark
+        try await Task.sleep(for: .milliseconds(250))
+        let dark = try snapshot()
+        #expect(try sample(dark, pageY: 450).prefix(3).allSatisfy { $0 < 15 })
+        #expect(try sample(dark, pageY: 150).prefix(3).allSatisfy { $0 > 240 })
+        #expect(findPDF(host.view) === pdf)
+        #expect(pdf.document === document)
+        #expect(pdf.scaleFactor == originalScale)
+        #expect(pdf.currentPage === page)
+        host.overrideUserInterfaceStyle = .light
+        try await Task.sleep(for: .milliseconds(250))
+        let restored = try snapshot()
+        #expect(try sample(restored, pageY: 450) == sample(light, pageY: 450))
+    }
+
+    @Test func overlappingPDFHighlightsHaveOneCoatOfSage() throws {
+        let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 160, height: 80)).pdfData { $0.beginPage() }
+        let page = try #require(PDFDocument(data: data)?.page(at: 0))
+        var preceding: [CGRect] = []
+        for (index, bounds) in [CGRect(x: 10, y: 20, width: 70, height: 40),
+                                CGRect(x: 40, y: 20, width: 70, height: 40),
+                                CGRect(x: 55, y: 20, width: 30, height: 40)].enumerated() {
+            page.addAnnotation(EbookPDFHighlight(bounds: bounds, bookmarkID: index, excluding: preceding))
+            preceding.append(bounds)
+        }
+        let thumbnail = page.thumbnail(of: CGSize(width: 160, height: 80), for: .mediaBox)
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1
+        let image = try #require(UIGraphicsImageRenderer(size: CGSize(width: 160, height: 80), format: format).image { _ in
+            thumbnail.draw(in: CGRect(x: 0, y: 0, width: 160, height: 80))
+        }.cgImage)
+        let single = try pixel(image, x: 20, y: 40)
+        let expected = [225, 238, 198, 255]
+        for (actual, target) in zip(single, expected) { #expect(abs(Int(actual) - target) <= 2) }
+        #expect(try pixel(image, x: 60, y: 40) == single)
+        #expect(try pixel(image, x: 100, y: 40) == single)
+        #expect(try pixel(image, x: 130, y: 40) == [255, 255, 255, 255])
+    }
+
+    private func pixel(_ image: CGImage, x: Int, y: Int) throws -> [UInt8] {
+        var bytes = [UInt8](repeating: 0, count: 4)
+        try bytes.withUnsafeMutableBytes { storage in
+            let context = try #require(CGContext(data: storage.baseAddress, width: 1, height: 1,
+                bitsPerComponent: 8, bytesPerRow: 4, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue))
+            context.draw(image, in: CGRect(x: -x, y: -y, width: image.width, height: image.height))
+        }
+        return bytes
+    }
+
+    @Test func removingWrappedPDFBookmarkImmediatelyRemovesAllLines() throws {
         let data = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { context in
             context.beginPage()
             ("First line of the highlight.\nSecond line of the same highlight." as NSString).draw(
@@ -17,7 +255,7 @@ import LeximoryCore
         let quote = try #require(page.string?.trimmingCharacters(in: .whitespacesAndNewlines))
         let reader = EbookReaderState()
         reader.bookmarks = [EbookBookmark(id: 42, quote: quote, chapter: nil, location: "1")]
-        let coordinator = NativePDFReader.Coordinator(reader: reader)
+        let coordinator = PDFReaderView.Coordinator(reader: reader)
         let view = LearningPDFView()
         view.document = document
         coordinator.updateBookmarks(in: view)
@@ -27,14 +265,9 @@ import LeximoryCore
         #expect(reader.beginBookmarkRemoval(42) != nil)
         coordinator.updateBookmarks(in: view)
         #expect(page.annotations.isEmpty)
-        reader.finishBookmarkRemoval(42, succeeded: false)
-        coordinator.updateBookmarks(in: view)
-        #expect(page.annotations.count == lineCount)
-        #expect(reader.bookmarkNotice != nil)
-        #expect(reader.beginBookmarkRemoval(42) != nil)
-        reader.finishBookmarkRemoval(42, succeeded: true)
         coordinator.updateBookmarks(in: view)
         #expect(page.annotations.isEmpty)
+        #expect(reader.bookmarkNotice == nil)
         #expect(reader.bookmarks.isEmpty)
     }
 
@@ -114,18 +347,18 @@ import LeximoryCore
         }
     }
 
-    @Test func concurrentBookmarksReconcileIndependently() {
+    @Test func pendingBookmarksCanBeRecoloredIndependently() {
         let reader = EbookReaderState()
+        reader.canBookmark = true
         reader.location = "3"; reader.chapter = "Chapter"
         let first = reader.beginBookmark(EbookSelection(quote: "First", context: "First", offset: 0, location: "2"))
         let second = reader.beginBookmark(EbookSelection(quote: "Second", context: "Second", offset: 0))
         #expect(reader.bookmarks.map(\.quote) == ["First", "Second"])
         #expect(first.location == "2"); #expect(second.location == "3")
         #expect(first.id != second.id)
-        reader.finishBookmark(second, saved: EbookBookmark(id: 42, quote: second.quote, chapter: second.chapter, location: second.location))
-        reader.finishBookmark(first, saved: nil)
-        #expect(reader.bookmarks.map(\.id) == [42])
-        #expect(reader.bookmarkNotice != nil)
+        #expect(reader.beginBookmarkColorChange(.init(bookmarkID: first.id, color: .blue)) != nil)
+        #expect(reader.bookmarks.map(\.color) == [.blue, .sage])
+        #expect(reader.bookmarkNotice == nil)
     }
 
     @Test func pageBoundsIdentifyOuterMarginsForChrome() {

@@ -6,7 +6,8 @@
         ".": "./src/index.ts"
     },
     "scripts": {
-        "generate": "node --import tsx src/generate.ts"
+        "generate": "node --import tsx src/generate.ts",
+        "check": "node --import tsx src/generate.ts --check"
     },
     "dependencies": {
         "@orpc/contract": "1.15.4",

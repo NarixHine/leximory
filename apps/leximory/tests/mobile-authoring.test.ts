@@ -1,29 +1,89 @@
+import { serializeWord } from '../server/mobile/word-format'
 import { test } from 'node:test'
+import { testMobileHandler } from './helpers/mobile'
 import { assertPublicArticleURL } from '../server/mobile/article-url'
 import assert from 'node:assert/strict'
 import { mobileSubjectSchema } from '@repo/schema/mobile'
-import { createAuthoringHandler, serializeWord, type AuthoringStore } from '../server/mobile/authoring'
+import { createAuthoringOperations, type AuthoringStore } from '../server/mobile/authoring'
 import type { CatalogStore } from '../server/mobile/catalog'
+import { MobileError } from '../server/mobile/errors'
 const subject = mobileSubjectSchema.parse({ userId: 'reader' })
 const fields = { original: 'banks', lemma: 'bank', definition: '河岸', etymology: '古英语', cognates: 'embankment' }
 const word = { id: 'word', libraryId: 'library', fields }
 const catalog: CatalogStore = {
-    library: async () => ({ id: 'library', name: '书', lang: 'en', owner: 'reader', access: 0, starred_by: null, shadow: false }),
-    text: async () => null, libraries: async () => [], texts: async () => [], archived: async () => [], audio: async () => null,
+    library: async () => ({
+        id: 'library',
+        name: '书',
+        lang: 'en',
+        owner: 'reader',
+        access: 0,
+        starred_by: null,
+        shadow: false,
+    }),
+    text: async () => null,
+    libraries: async () => [],
+    texts: async () => [],
+    archived: async () => [],
+    audio: async () => null,
 }
 function harness(store: Partial<AuthoringStore> = {}, owner = catalog) {
     const writes: unknown[] = []
     const authoring: AuthoringStore = {
-        word: async () => word, words: async () => ({ items: [word], nextCursor: null }),
-        updateWord: async (...args) => { writes.push(args) },
-        article: async (_subject, library, input) => { writes.push(input); return { id: 'article', libraryId: library.id, title: input.title, topics: [], emoji: null, createdAt: null, format: 'article' } },
-        ebook: async (library, title, file) => { writes.push({ title, type: file.type, size: file.size }); return { id: 'ebook', libraryId: library.id, title, topics: [], emoji: null, createdAt: null, format: 'ebook' } },
+        word: async () => word,
+        words: async () => ({ items: [word], nextCursor: null }),
+        updateWord: async (...args) => {
+            writes.push(args)
+        },
+        article: async (_subject, library, input) => {
+            writes.push(input)
+            return {
+                id: 'article',
+                libraryId: library.id,
+                title: input.title,
+                topics: [],
+                emoji: null,
+                createdAt: null,
+                format: 'article',
+            }
+        },
+        ebook: async (library, title, file) => {
+            writes.push({ title, type: file.type, size: file.size })
+            return {
+                id: 'ebook',
+                libraryId: library.id,
+                title,
+                topics: [],
+                emoji: null,
+                createdAt: null,
+                format: 'ebook',
+            }
+        },
+        chooseEbookEmoji: async () => '🪐',
+        setEbookEmoji: async () => {},
         ...store,
     }
-    return { writes, handler: createAuthoringHandler({ verify: async () => ({ kind: 'authenticated', subject }), catalog: owner, authoring }) }
+    return {
+        writes,
+        handler: testMobileHandler(createAuthoringOperations({ catalog: owner, authoring }), async () => ({
+            kind: 'authenticated',
+            subject,
+        })),
+    }
 }
 function request(path: string, body?: unknown) {
-    return new Request(`https://example.com/api/mobile/v1/${path}`, { method: body === undefined ? 'GET' : 'POST', headers: { authorization: 'Bearer test' }, body: body === undefined ? undefined : JSON.stringify(body) })
+    return new Request(`https://example.com/api/mobile/v1/${path}`, {
+        method: body === undefined ? 'GET' : 'POST',
+        headers: { authorization: 'Bearer test' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+    })
+}
+function ebookUpload(filename: string, bytes: Uint8Array<ArrayBuffer> | string, title = 'Book') {
+    const parameters = new URLSearchParams({ title, filename })
+    return new Request(`https://example.com/api/mobile/v1/libraries/library/ebooks?${parameters}`, {
+        method: 'POST',
+        headers: { authorization: 'Bearer test', 'content-type': 'application/octet-stream' },
+        body: bytes,
+    })
 }
 test('saved words load, edit the canonical fields, and preserve the destination library', async () => {
     const { handler, writes } = harness()
@@ -33,57 +93,212 @@ test('saved words load, edit the canonical fields, and preserve the destination 
     assert.equal(serializeWord({ ...fields, etymology: null }), '{{banks||bank||河岸||||embankment}}')
 })
 test('read access alone never grants word edits or content uploads', async () => {
-    const { handler, writes } = harness({}, { ...catalog, library: async () => ({ id: 'library', name: '共享', lang: 'en', owner: 'other', access: 1, starred_by: ['reader'], shadow: false }) })
-    for (const path of ['vocabulary/word', 'libraries/library/articles', 'libraries/library/ebooks?title=Book&filename=book.pdf']) {
+    const { handler, writes } = harness(
+        {},
+        {
+            ...catalog,
+            library: async () => ({
+                id: 'library',
+                name: '共享',
+                lang: 'en',
+                owner: 'other',
+                access: 1,
+                starred_by: ['reader'],
+                shadow: false,
+            }),
+        },
+    )
+    for (const path of [
+        'vocabulary/word',
+        'libraries/library/articles',
+        'libraries/library/ebooks?title=Book&filename=book.pdf',
+    ]) {
         assert.equal((await handler(request(path, fields))).status, 404)
     }
     assert.deepEqual(writes, [])
 })
 test('edits reject injected delimiters and extra owner fields before writing', async () => {
     const { handler, writes } = harness()
-    for (const body of [{ ...fields, definition: 'bad||value' }, { ...fields, definition: '  ' }, { ...fields, userId: 'other' }]) {
+    for (const body of [
+        { ...fields, definition: 'bad||value' },
+        { ...fields, definition: '  ' },
+        { ...fields, userId: 'other' },
+    ]) {
         assert.equal((await handler(request('vocabulary/word', body))).status, 400)
     }
     assert.deepEqual(writes, [])
 })
 test('vocabulary listing validates its response and never accepts uploads', async () => {
     const { handler, writes } = harness()
-    assert.deepEqual(await (await handler(request('libraries/library/vocabulary'))).json(), { items: [word], nextCursor: null })
-    assert.equal((await handler(request('libraries/library/vocabulary?title=Book&filename=book.pdf', fields))).status, 404)
+    assert.deepEqual(await (await handler(request('libraries/library/vocabulary'))).json(), {
+        items: [word],
+        nextCursor: null,
+    })
+    assert.equal(
+        (await handler(request('libraries/library/vocabulary?title=Book&filename=book.pdf', fields))).status,
+        405,
+    )
     assert.deepEqual(writes, [])
 })
 test('invalid stored vocabulary is a service failure, not a client validation error', async () => {
-    const { handler } = harness({ words: async () => ({ items: [{ ...word, fields: { ...fields, lemma: '' } }], nextCursor: null }) })
+    const { handler } = harness({
+        words: async () => ({ items: [{ ...word, fields: { ...fields, lemma: '' } }], nextCursor: null }),
+    })
     assert.equal((await handler(request('libraries/library/vocabulary'))).status, 503)
 })
 test('article upload passes generation settings, validates language length, and derives the owner', async () => {
     const { handler, writes } = harness()
-    const input = { title: 'Article', content: 'Along the river.', annotate: true, onlyComments: false, generateTitle: true }
+    const input = {
+        title: 'Article',
+        content: 'Along the river.',
+        annotate: true,
+        onlyComments: false,
+        generateTitle: true,
+    }
     assert.equal((await handler(request('libraries/library/articles', input))).status, 200)
     assert.deepEqual(writes, [input])
-    const chinese = harness({}, { ...catalog, library: async (id, signal) => ({ ...(await catalog.library(id, signal))!, lang: 'zh' }) })
-    assert.equal((await chinese.handler(request('libraries/library/articles', { ...input, content: '字'.repeat(5001) }))).status, 400)
+    const chinese = harness(
+        {},
+        { ...catalog, library: async (id, signal) => ({ ...(await catalog.library(id, signal))!, lang: 'zh' }) },
+    )
+    assert.equal(
+        (await chinese.handler(request('libraries/library/articles', { ...input, content: '字'.repeat(5001) }))).status,
+        400,
+    )
     assert.deepEqual(chinese.writes, [])
-    const french = harness({}, { ...catalog, library: async (id, signal) => ({ ...(await catalog.library(id, signal))!, lang: 'fr' }) })
-    assert.equal((await french.handler(request('libraries/library/articles', { ...input, content: 'a'.repeat(20000) }))).status, 200)
-    assert.equal((await french.handler(request('libraries/library/articles', { ...input, content: 'a'.repeat(30001) }))).status, 400)
+    const french = harness(
+        {},
+        { ...catalog, library: async (id, signal) => ({ ...(await catalog.library(id, signal))!, lang: 'fr' }) },
+    )
+    assert.equal(
+        (await french.handler(request('libraries/library/articles', { ...input, content: 'a'.repeat(20000) }))).status,
+        200,
+    )
+    assert.equal(
+        (await french.handler(request('libraries/library/articles', { ...input, content: 'a'.repeat(30001) }))).status,
+        400,
+    )
 })
 test('PDF/EPUB streams enforce size and signatures before storage', async () => {
     const { handler, writes } = harness()
-    const upload = (name: string, bytes: Uint8Array<ArrayBuffer> | string) => new Request(`https://example.com/api/mobile/v1/libraries/library/ebooks?title=Book&filename=${name}`, {
-        method: 'POST', headers: { authorization: 'Bearer test', 'content-type': 'application/octet-stream' }, body: bytes,
-    })
-    assert.equal((await handler(upload('book.pdf', '%PDF-1.7\nexample'))).status, 200)
-    assert.equal((await handler(upload('book.EPUB', new Uint8Array([0x50, 0x4b, 3, 4, 0])))).status, 200)
-    assert.equal((await handler(upload('book.pdf', 'not a pdf'))).status, 422)
-    assert.equal((await handler(upload('book.exe', 'not a book'))).status, 422)
-    assert.equal((await handler(upload('empty.pdf', ''))).status, 400)
-    assert.equal((await handler(upload('huge.pdf', new Uint8Array(4_718_593)))).status, 400)
+    assert.equal((await handler(ebookUpload('book.pdf', '%PDF-1.7\nexample'))).status, 200)
+    assert.equal((await handler(ebookUpload('book.EPUB', new Uint8Array([0x50, 0x4b, 3, 4, 0])))).status, 200)
+    assert.equal((await handler(ebookUpload('book.pdf', 'not a pdf'))).status, 422)
+    assert.equal((await handler(ebookUpload('book.exe', 'not a book'))).status, 422)
+    assert.equal((await handler(ebookUpload('empty.pdf', ''))).status, 400)
+    assert.equal((await handler(ebookUpload('huge.pdf', new Uint8Array(4_718_593)))).status, 400)
     assert.equal(writes.length, 2)
 })
 
+test('EPUB and PDF imports choose, persist, and return an emoji using the bearer owner and book metadata', async () => {
+    for (const file of [
+        { filename: '宇宙 & planets.pdf', bytes: '%PDF-1.7\nexample' },
+        { filename: 'Cosmos.EPUB', bytes: new Uint8Array([0x50, 0x4b, 3, 4, 0]) },
+    ]) {
+        const steps: unknown[] = []
+        const { handler, writes } = harness({
+            chooseEbookEmoji: async (owner, input) => {
+                assert.equal(writes.length, 1, 'the book must be saved before emoji generation')
+                steps.push({ owner, input })
+                return '🪐'
+            },
+            setEbookEmoji: async (id, emoji) => {
+                steps.push({ id, emoji })
+            },
+        })
+        const response = await handler(ebookUpload(file.filename, file.bytes, '  Cosmos  '))
+        assert.equal(response.status, 200)
+        assert.deepEqual(await response.json(), {
+            id: 'ebook',
+            libraryId: 'library',
+            title: 'Cosmos',
+            topics: [],
+            emoji: '🪐',
+            createdAt: null,
+            format: 'ebook',
+        })
+        assert.deepEqual(steps, [
+            { owner: subject, input: { title: 'Cosmos', filename: file.filename } },
+            { id: 'ebook', emoji: '🪐' },
+        ])
+    }
+})
+
+test('invalid emoji choices never overwrite an imported book', async () => {
+    for (const emoji of ['', 'a planet', '🪐🌍']) {
+        const saved: unknown[] = []
+        const { handler, writes } = harness({
+            chooseEbookEmoji: async () => emoji,
+            setEbookEmoji: async (...args) => {
+                saved.push(args)
+            },
+        })
+        const response = await handler(ebookUpload('book.pdf', '%PDF-1.7\nexample'))
+        assert.equal(response.status, 200)
+        assert.equal((await response.json()).emoji, null)
+        assert.equal(writes.length, 1)
+        assert.deepEqual(saved, [])
+    }
+})
+
+test('quota, generation, timeout, and emoji persistence failures keep the successful ebook import', async (t) => {
+    t.mock.method(console, 'error', () => {})
+    for (const failure of ['quota', 'generation', 'timeout', 'persistence']) {
+        const saved: unknown[] = []
+        const { handler, writes } = harness({
+            chooseEbookEmoji: async () => {
+                if (failure === 'quota') throw new MobileError('quota_exceeded')
+                if (failure === 'generation') throw new Error('Provider unavailable')
+                if (failure === 'timeout') throw new DOMException('Emoji generation timed out', 'TimeoutError')
+                return '🪐'
+            },
+            setEbookEmoji: async (...args) => {
+                saved.push(args)
+                throw new Error('Database unavailable')
+            },
+        })
+        const response = await handler(ebookUpload('book.pdf', '%PDF-1.7\nexample'))
+        assert.equal(response.status, 200)
+        const imported = await response.json()
+        assert.equal(imported.id, 'ebook')
+        assert.equal(imported.emoji, null)
+        assert.equal(writes.length, 1)
+        assert.deepEqual(saved, failure === 'persistence' ? [['ebook', '🪐']] : [])
+    }
+})
+
+test('rejected and failed uploads never attempt emoji assignment', async () => {
+    const attempts: string[] = []
+    const { handler } = harness({
+        ebook: async () => {
+            throw new MobileError('service_unavailable')
+        },
+        chooseEbookEmoji: async () => {
+            attempts.push('choose')
+            return '🪐'
+        },
+        setEbookEmoji: async () => {
+            attempts.push('save')
+        },
+    })
+    assert.equal((await handler(ebookUpload('book.pdf', 'invalid'))).status, 422)
+    assert.equal((await handler(ebookUpload('book.pdf', '%PDF-1.7\nexample'))).status, 503)
+    assert.deepEqual(attempts, [])
+})
+
 test('shared corpus allows reading while protected welcome words cannot be edited', async () => {
-    const shared: CatalogStore = { ...catalog, library: async () => ({ id: 'library', name: '共享', lang: 'en', owner: 'other', access: 1, starred_by: ['reader'], shadow: false }) }
+    const shared: CatalogStore = {
+        ...catalog,
+        library: async () => ({
+            id: 'library',
+            name: '共享',
+            lang: 'en',
+            owner: 'other',
+            access: 1,
+            starred_by: ['reader'],
+            shadow: false,
+        }),
+    }
     const { handler } = harness({}, shared)
     assert.equal((await handler(request('libraries/library/vocabulary'))).status, 200)
     assert.equal((await handler(request('vocabulary/word'))).status, 200)
@@ -101,8 +316,50 @@ test('URL preview autofills without importing or annotation quota side effects',
 })
 
 test('article preview rejects private networks and embedded credentials', async () => {
-    for (const url of ['http://127.0.0.1/a', 'http://[::1]/', 'http://192.168.1.1/', 'http://10.1.1.1/', 'http://localhost/', 'file:///tmp/a', 'https://user:secret@example.org/']) {
+    for (const url of [
+        'http://127.0.0.1/a',
+        'http://[::1]/',
+        'http://192.168.1.1/',
+        'http://10.1.1.1/',
+        'http://localhost/',
+        'file:///tmp/a',
+        'https://user:secret@example.org/',
+    ]) {
         await assert.rejects(assertPublicArticleURL(url))
     }
     await assert.doesNotReject(assertPublicArticleURL('https://8.8.8.8/article'))
+})
+
+test('vocabulary results must belong to the authorized library and requested word', async () => {
+    const foreignPage = harness({ words: async () => ({ items: [{ ...word, libraryId: 'other' }], nextCursor: null }) })
+    assert.equal((await foreignPage.handler(request('libraries/library/vocabulary'))).status, 503)
+    const wrongWord = harness({ word: async () => ({ ...word, id: 'other' }) })
+    assert.equal((await wrongWord.handler(request('vocabulary/word'))).status, 503)
+})
+
+test('word edits accept full Unicode fields but bound the request before writing', async () => {
+    const { handler, writes } = harness()
+    const unicode = {
+        ...fields,
+        definition: '字'.repeat(16000),
+        etymology: '字'.repeat(16000),
+        cognates: '字'.repeat(16000),
+    }
+    assert.equal((await handler(request('vocabulary/word', unicode))).status, 200)
+    assert.equal((await handler(request('vocabulary/word', { ...fields, definition: 'x'.repeat(320001) }))).status, 400)
+    assert.equal(writes.length, 1)
+})
+
+test('vocabulary rejects duplicate and unsupported pagination query parameters', async () => {
+    const { handler } = harness()
+    for (const parameters of ['cursor=1&cursor=2', 'cursor=invalid', 'owner=other']) {
+        assert.equal((await handler(request(`libraries/library/vocabulary?${parameters}`))).status, 400)
+    }
+})
+
+test('word serialization retains empty middle fields instead of moving cognates into etymology', () => {
+    assert.equal(
+        serializeWord({ original: 'bank', lemma: 'bank', definition: '河岸', etymology: null, cognates: 'embankment' }),
+        '{{bank||bank||河岸||||embankment}}',
+    )
 })

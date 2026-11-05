@@ -1,3 +1,4 @@
+import { isUserActive } from '@repo/supabase/user'
 import { emojiPrompt } from '../ai/text-metadata'
 import { inngest } from './client'
 import { prefixUrl } from '@repo/env/config'
@@ -9,7 +10,7 @@ import { nanoAI } from '../ai/config'
 import { generateText } from 'ai'
 import { revalidateTag } from 'next/cache'
 import { fixDumbPunctuation } from '@repo/utils'
-import { articleImported, notifyEvent } from './client'
+import { articleImported, notifyEvent } from './events'
 
 const topicsPrompt = (input: string) => ({
     instructions: `
@@ -41,13 +42,13 @@ const getFinalAiOutput = (result: unknown): string => {
 
         const text = content
             .filter(
-                part =>
+                (part) =>
                     part &&
                     typeof part === 'object' &&
                     (part as Record<string, unknown>).type === 'text' &&
                     typeof (part as Record<string, unknown>).text === 'string',
             )
-            .map(part => (part as Record<string, string>).text)
+            .map((part) => (part as Record<string, string>).text)
             .join('')
 
         if (text) return text
@@ -71,7 +72,7 @@ const chunkText = (text: string, maxLength: number): string[] => {
     const chunks: string[] = []
 
     // Split by paragraphs (double newline)
-    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim())
+    const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim())
     let currentChunk = ''
 
     for (const paragraph of paragraphs) {
@@ -95,9 +96,7 @@ const chunkText = (text: string, maxLength: number): string[] => {
                         sentenceChunk = ''
                     }
                     for (let i = 0; i < sentence.length; i += maxLength) {
-                        chunks.push(
-                            sentence.slice(i, Math.min(i + maxLength, sentence.length)).trim(),
-                        )
+                        chunks.push(sentence.slice(i, Math.min(i + maxLength, sentence.length)).trim())
                     }
                 } else if ((sentenceChunk + sentence).length >= maxLength) {
                     chunks.push(sentenceChunk.trim())
@@ -124,13 +123,15 @@ const chunkText = (text: string, maxLength: number): string[] => {
         chunks.push(currentChunk.trim())
     }
 
-    return chunks.filter(chunk => chunk)
+    return chunks.filter((chunk) => chunk)
 }
 
 export const annotateFullArticle = inngest.createFunction(
     { id: 'annotate-article', triggers: [articleImported] },
     async ({ step, event }) => {
         const { article, textId, onlyComments, userId, generateTitle } = event.data
+
+        if (!(await isUserActive(userId))) return { deleted: true }
 
         await step.run('set-annotation-progress-annotating', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'annotating' })
@@ -151,15 +152,7 @@ export const annotateFullArticle = inngest.createFunction(
                 const emojiConfig = emojiPrompt(article)
                 const titleConfig = generateTitle ? titlePrompt(article) : undefined
                 const annotationConfigs = await Promise.all(
-                    chunks.map(chunk =>
-                        articleAnnotationPrompt(
-                            lang,
-                            chunk,
-                            onlyComments,
-                            userId,
-                            true,
-                        ),
-                    ),
+                    chunks.map((chunk) => articleAnnotationPrompt(lang, chunk, onlyComments, userId, true)),
                 )
                 return { topicsConfig, emojiConfig, titleConfig, annotationConfigs }
             },
@@ -190,10 +183,12 @@ export const annotateFullArticle = inngest.createFunction(
 
         const textUrl = `/library/${libId}/${textId}`
 
+        if (!(await isUserActive(userId))) return { deleted: true }
         await step.run('set-annotation-progress-saving', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'saving' })
         })
         await step.run('save-article', async () => {
+            if (!(await isUserActive(userId))) return
             const generatedEmoji = getFinalAiOutput(emoji).trim() || undefined
             const generatedTitle = titleResult
                 ? getFinalAiOutput(titleResult)
@@ -210,9 +205,11 @@ export const annotateFullArticle = inngest.createFunction(
             revalidateTag(`texts:${libId}`, 'max')
         })
 
+        if (!(await isUserActive(userId))) return { deleted: true }
         await step.run('set-annotation-progress-completed', async () => {
             await setTextAnnotationProgress({ id: textId, progress: 'completed' })
         })
+        if (!(await isUserActive(userId))) return { deleted: true }
         const { hasSubs, subscription } = await step.run('get-user-subs', async () => {
             return await getSubsStatus({ userId })
         })

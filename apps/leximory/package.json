@@ -4,18 +4,27 @@
     "private": true,
     "scripts": {
         "dev": "concurrently 'next dev -p 3001' 'pnpx inngest-cli@latest dev' 'pnpx @upstash/qstash-cli dev'",
-        "build": "next build",
+        "build": "pnpm run check-types --incremental false && pnpm run test:mobile-runtime && next build",
         "start": "next start",
         "lint": "next lint",
-        "check-types": "tsc --noEmit",
-        "test:mobile": "node --conditions=react-server --import tsx --test tests/ios-reading-contract.test.ts tests/mobile-render-document.test.ts tests/mobile-auth.test.ts tests/mobile-catalog.test.ts tests/mobile-definitions.test.ts tests/mobile-ebooks.test.ts tests/mobile-authoring.test.ts tests/mobile-vocabulary-save.test.ts tests/mobile-browser.test.ts",
-        "mobile:fixtures": "node --import tsx tests/export-mobile-fixtures.ts"
+        "check-types": "pnpm run check:mobile-boundaries && next typegen && tsc-ts --noEmit",
+        "test:mobile": "pnpm run check:mobile-boundaries && node --conditions=react-server --import tsx --test tests/ios-reading-contract.test.ts tests/mobile-render-document.test.ts tests/mobile-article-audio.test.ts tests/mobile-auth.test.ts tests/mobile-catalog.test.ts tests/mobile-library-preferences.test.ts tests/mobile-definitions.test.ts tests/mobile-elaboration.test.ts tests/mobile-ebooks.test.ts tests/mobile-pdf-notes.test.ts tests/mobile-home-pins.test.ts tests/mobile-pdf-outline.test.ts tests/mobile-authoring.test.ts tests/mobile-ebook-import.test.ts tests/inngest-publish.test.ts tests/mobile-release-verification.test.ts tests/mobile-article-import.test.ts tests/mobile-management.test.ts tests/mobile-vocabulary-save.test.ts tests/mobile-browser.test.ts tests/mobile-folders.test.ts tests/mobile-review.test.ts tests/mobile-cost-quota.test.ts tests/mobile-http.test.ts tests/mobile-mutation-effects.test.ts tests/mobile-shortcuts.test.ts tests/mobile-account.test.ts tests/mobile-guest.test.ts tests/mobile-vocabulary-create.test.ts tests/mobile-account-deletion.test.ts tests/mobile-next-runtime.test.ts tests/apple-billing.test.ts",
+        "mobile:fixtures": "node --import tsx tests/export-mobile-fixtures.ts",
+        "generate:mobile-routes": "node --import tsx scripts/mobile-routes.ts --write",
+        "check:mobile-boundaries": "node --import tsx scripts/check-mobile-boundaries.ts",
+        "check:mobile-routes": "pnpm --dir ../../packages/api run check && node --import tsx scripts/mobile-routes.ts",
+        "format": "prettier --write",
+        "smoke:mobile-routes": "node --import tsx scripts/smoke-mobile-routes.ts",
+        "test:mobile-runtime": "node --conditions=react-server --import tsx --test tests/mobile-next-runtime.test.ts",
+        "verify:mobile-release": "node --import tsx scripts/verify-mobile-release.ts",
+        "prepare:mobile-release": "node --import tsx scripts/prepare-mobile-release.ts"
     },
     "dependencies": {
         "@ai-sdk-tools/devtools": "^1.2.0",
         "@ai-sdk/gateway": "^4.0.88",
         "@ai-sdk/google": "^4.0.74",
         "@ai-sdk/react": "^4.0.108",
+        "@apple/app-store-server-library": "^3.1.0",
         "@aws-sdk/client-s3": "^3.844.0",
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -66,6 +75,7 @@
         "@react-aria/i18n": "^3.12.5",
         "@react-aria/ssr": "^3.9.7",
         "@react-aria/visually-hidden": "^3.8.19",
+        "@repo/api": "workspace:^",
         "@repo/env": "workspace:^",
         "@repo/kv": "workspace:^",
         "@repo/languages": "workspace:^",
@@ -120,6 +130,7 @@
         "next": "16.2.1",
         "next-themes": "^0.2.1",
         "nuqs": "^2.4.3",
+        "pdf-lib": "^1.17.1",
         "qrcode.react": "^4.2.0",
         "quiz": "^0.1.0",
         "react": "19.2.4",
@@ -145,8 +156,7 @@
         "vaul": "^1.1.2",
         "web-push": "^3.6.7",
         "wink-lemmatizer": "^3.0.4",
-        "zod": "^4.4.1",
-        "@repo/api": "workspace:^"
+        "zod": "^4.4.1"
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3.3.1",
@@ -178,6 +188,7 @@
         "serwist": "^9.5.11",
         "tailwindcss": "^4.1.11",
         "tailwindcss-animate": "^1.0.7",
+        "tsc-ts": "0.0.2",
         "typescript": "^5.9.2"
     }
 }

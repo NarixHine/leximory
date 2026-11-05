@@ -53,6 +53,11 @@ enum PlaybackState: Equatable {
               let url = Bundle.main.url(forResource: "diagnostic-tone", withExtension: "wav") else { return nil }
         return PlaybackDescriptor(url: url, expiresAt: Date().addingTimeInterval(3600))
     }
+    func play(textID: TextID, audioID: String, title: String) {
+        let source = PlaybackSource(textID: textID, audioID: audioID, title: title)
+        if state.source == source, player != nil { resume() }
+        else { start(source) }
+    }
     func toggle(textID: TextID, audioID: String, title: String) {
         let source = PlaybackSource(textID: textID, audioID: audioID, title: title)
         if state.source == source, player != nil {
@@ -127,8 +132,14 @@ enum PlaybackState: Equatable {
         if let descriptor, descriptor.expiresAt <= now() { start(source, seekTo: max(0, seconds), autoPlay: wantsPlayback); return }
         let duration = player.currentItem?.duration.seconds ?? 0
         guard duration.isFinite, duration > 0 else { return }
-        player.seek(to: CMTime(seconds: min(max(0, seconds), duration), preferredTimescale: 600))
-        publishProgress()
+        let request = generation
+        player.seek(to: CMTime(seconds: min(max(0, seconds), duration), preferredTimescale: 600),
+                    toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+            Task { @MainActor [weak self] in
+                guard finished, let self, self.generation == request else { return }
+                self.publishProgress()
+            }
+        }
     }
     func leaveReader(unless textID: TextID?) {
         if state.source?.textID != textID { stop() }

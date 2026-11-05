@@ -3,7 +3,9 @@ import SwiftUI
 struct ArticleReadingHeader: View {
     let article: FixtureArticle
     let language: String
+    var audio: ArticleAudioButton? = nil
     var onTitleFrame: ((CGRect) -> Void)? = nil
+    var onHeightChange: (() -> Void)? = nil
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -23,6 +25,7 @@ struct ArticleReadingHeader: View {
                 titleAndTopics.padding(.horizontal, 24)
             }
         }.padding(.bottom, 8).coordinateSpace(name: "article-header")
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { _ in onHeightChange?() }
     }
     private var artwork: some View {
         CoverArt(motif: article.cover, identity: article.id.rawValue, animated: true,
@@ -41,6 +44,7 @@ struct ArticleReadingHeader: View {
                         .foregroundStyle(LeximoryPalette.muted)
                 }
             }
+            if let audio { audio.padding(.top, 8) }
         }
     }
 }

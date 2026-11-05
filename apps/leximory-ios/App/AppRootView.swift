@@ -14,6 +14,15 @@ struct AppRootView: View {
     init(fixturePlayback: PlaybackController) {
         self.fixturePlayback = fixturePlayback
         #if DEBUG && targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("--browser-workspace-fixtures") { return }
+        try? FileManager.default.removeItem(at: FileManager.default.temporaryDirectory.appending(path: "browser-workspace-fixture", directoryHint: .isDirectory))
+        let fixtureWallpapers = HomeWallpaperStore(namespace: "workspace-fixture")
+        try? fixtureWallpapers.removeAll()
+        for key in ["browser.hidden-home-recents.workspace-fixture", "browser.home-pins.workspace-fixture", "browser.annotations.workspace-fixture", "browser.recent.workspace-fixture", "browser.recent-web.workspace-fixture", "browser.web-history.workspace-fixture", "recent-access.workspace-fixture"] { UserDefaults.standard.removeObject(forKey: key) }
+        for key in UserDefaults.standard.dictionaryRepresentation().keys
+            where key.hasSuffix(".workspace-fixture") && (key.hasPrefix("browser.home-pins.") || key.hasPrefix("browser.pin-sync.") || key.hasPrefix("browser.guest-pins.")) {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
         if ProcessInfo.processInfo.arguments.contains("--account-fixtures") || ProcessInfo.processInfo.arguments.contains("--fixtures") || ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
             if ProcessInfo.processInfo.arguments.contains("--remote-gallery-fixtures") {
                 fixtureClient = MobileClient(baseURL: URL(string: "https://catalog-fixture.invalid")!, transport: GalleryFixtureTransport(), token: { _ in "fixture" })
@@ -23,6 +32,10 @@ struct AppRootView: View {
         #endif
         var configuration = AppConfiguration.bundled
         #if DEBUG && targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("--account-entry-preview") || ProcessInfo.processInfo.arguments.contains("--account-deletion-preview") || ProcessInfo.processInfo.arguments.contains("--guest-home-preview") {
+            configuration = AppConfiguration(apiURL: URL(string: "https://account-preview.invalid")!,
+                supabaseURL: URL(string: "https://account-preview.invalid")!, anonKey: "preview")
+        }
         if configuration == nil && ProcessInfo.processInfo.arguments.contains("--onboarding") {
             configuration = AppConfiguration(apiURL: URL(string: "http://localhost:3001")!,
                 supabaseURL: URL(string: "https://onboarding-preview.invalid")!, anonKey: "preview")
@@ -30,6 +43,12 @@ struct AppRootView: View {
         #endif
         guard let configuration else { return }
         let account = AccountSession(configuration: configuration)
+        #if DEBUG && targetEnvironment(simulator)
+        if ProcessInfo.processInfo.arguments.contains("--account-entry-preview") {
+            account.entry = Self.bundledAnnotationEntry(prefersInflected: ProcessInfo.processInfo.arguments.contains("--account-entry-inflected"))
+        }
+        if ProcessInfo.processInfo.arguments.contains("--account-deletion-preview") { account.deletion.presented = true }
+        #endif
         _session = State(initialValue: account)
         _livePlayback = State(initialValue: PlaybackController { source in
             let descriptor = try await account.client.audio(textID: source.textID.rawValue, audioID: source.audioID)
@@ -50,7 +69,9 @@ struct AppRootView: View {
                 #endif
             } else {
                 #if DEBUG && targetEnvironment(simulator)
-                if ProcessInfo.processInfo.arguments.contains("--account-fixtures") {
+                if ProcessInfo.processInfo.arguments.contains("--browser-workspace-fixtures") {
+                    BrowserWorkspacePreview(playback: fixturePlayback)
+                } else if ProcessInfo.processInfo.arguments.contains("--account-fixtures") {
                     AccountPreview(playback: fixturePlayback)
                 } else if ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
                     AuthoringPreview(playback: fixturePlayback)
@@ -62,7 +83,7 @@ struct AppRootView: View {
                             if let fixtureClient { TextBrowserScreen(client: fixtureClient) }
                             else { LeximoryUnavailableView("浏览网页", systemImage: "globe") }
                         } account: {
-                            Text("账号").font(LeximoryTypography.interface(24))
+                            Text("账号").displayFont(24, relativeTo: .title2)
                         }
                     } else { fixtureBrowser }
                 } else {
@@ -75,92 +96,124 @@ struct AppRootView: View {
         }
     }
     #if DEBUG && targetEnvironment(simulator)
+    private static func bundledAnnotationEntry(prefersInflected: Bool) -> AccountEntryContext? {
+        guard let url = Bundle.main.url(forResource: "reader", withExtension: "json"),
+              let data = try? Data(contentsOf: url), let document = try? JSONDecoder().decode(ReadingDocument.self, from: data) else { return nil }
+        let title = document.blocks.first { $0.kind == .heading1 }?.displayText
+        for block in document.blocks {
+            for span in block.spans {
+                guard case .definition(let definition) = span.style, let range = try? span.range.validated(in: block.displayText) else { continue }
+                if prefersInflected && String(block.displayText[range]) == definition.lemma { continue }
+                let selection = GuestSelection(quote: String(block.displayText[range]), context: block.displayText,
+                    offset: span.range.location, title: title, language: "en")
+                return AccountEntryContext(purpose: .words, word: AccountWordContext(definition: definition, original: selection.quote,
+                    quote: selection.excerpt, title: title, language: "en"))
+            }
+        }
+        return nil
+    }
     private var fixtureBrowser: some View {
         FixtureLibraryView(playback: fixturePlayback, libraries: ProcessInfo.processInfo.arguments.contains("--ebook-fixtures") ? FixtureLibrary.ebookSamples : ProcessInfo.processInfo.arguments.contains("--catalog-layout-fixtures") ? FixtureLibrary.layoutSamples : FixtureLibrary.samples, client: fixtureClient)
     }
     #endif
 }
 
+private enum AccountRootSheet: Identifiable {
+    case entry(AccountEntryContext), deletion
+    var id: String { switch self { case .entry(let context): context.id.uuidString; case .deletion: "deletion" } }
+}
+
+private struct AccountPresentationSizing: PresentationSizing {
+    func proposedSize(for root: PresentationSizingRoot, context: PresentationSizingContext) -> ProposedViewSize {
+        ProposedViewSize(width: 560, height: 900)
+    }
+}
+
 private struct AccountRoot: View {
     let session: AccountSession
     let playback: PlaybackController
     @State private var pendingText: TextID?
+    @State private var pendingHome = false
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage("hasOpenedLeximory") private var hasOpened = false
+    private var sheet: Binding<AccountRootSheet?> {
+        Binding(get: {
+            if let entry = session.entry { return .entry(entry) }
+            return session.deletion.presented ? .deletion : nil
+        }, set: { value in
+            if value == nil { session.entry = nil; session.deletion.presented = false }
+        })
+    }
     var body: some View {
         ZStack {
             switch session.state {
             case .restoring: ReadingLoadingIndicator("正在打开文库").frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .signedOut:
-                if hasOpened { SignInView(session: session) } else { WelcomeGate(session: session) }
-            case .expired: SignInView(session: session, notice: "登录已过期，请重新登录。")
-            case .signedIn: LiveLibraryView(session: session, playback: playback, pendingText: $pendingText).id(session.generation)
+            case .signedOut, .expired:
+                BrowserWorkspaceView(client: session.client, namespace: "local-guest", playback: playback,
+                    session: session, guest: session.guest, pendingText: $pendingText, pendingHome: $pendingHome)
+                    .environment(\.guestSession, session.guest)
+                    .id("local-guest/\(session.generation)")
+            case .signedIn: BrowserWorkspaceView(client: session.client, namespace: session.state.accountID ?? "", playback: playback, session: session, pendingText: $pendingText, pendingHome: $pendingHome).id(session.generation)
             case .unavailable(let message):
                 LeximoryUnavailableView("暂时无法连接", systemImage: "wifi.exclamationmark", message: message) {
                     Button("重试") { Task { await session.restore() } }
-                    Button("返回登录") { Task { await session.signOut() } }
+                    Button("返回登录") { session.entry = AccountEntryContext() }
                 }
             }
         }
         .background(LeximoryPalette.paper)
         .environment(\.nativeSync, session.sync)
-        .task { await session.restore() }
+        .environment(\.accountSession, session)
+        .sheet(item: sheet) { destination in
+            NavigationStack {
+                switch destination {
+                case .entry(let context):
+                    SignInView(session: session, notice: signInNotice, context: context)
+                case .deletion: AccountDeletionView(session: session)
+                }
+            }.leximorySheetStyle().presentationDetents([.large]).presentationSizing(AccountPresentationSizing())
+        }
+        .alert("登录链接未能打开", isPresented: Binding(get: { session.callbackFailure != nil }, set: { if !$0 { session.callbackFailure = nil } })) {
+            Button("好", role: .cancel) { session.callbackFailure = nil }
+        } message: { Text(session.callbackFailure ?? "") }
+        .task(id: "deletion/\(scenePhase == .active)/\(session.deletion.accepted)") {
+            guard scenePhase == .active else { return }
+            await session.deletion.resume()
+            await session.finishAcceptedDeletion()
+            while session.deletion.accepted && session.deletion.status == .pending && !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(10)) } catch { return }
+                await session.deletion.refresh()
+            }
+        }
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            repeat {
+                await session.restore()
+                guard case .restoring = session.state else { return }
+                do { try await Task.sleep(for: .seconds(15)) } catch { return }
+            } while !Task.isCancelled
+        }
         .task(id: "\(session.state.accountID ?? "")/\(scenePhase == .active)") {
             guard session.state.isSignedIn, scenePhase == .active else { session.sync?.pause(); return }
             await session.sync?.run()
         }
-        .onChange(of: session.state.isSignedIn) { _, signedIn in if signedIn { hasOpened = true } }
-        .onChange(of: session.generation) { _, _ in playback.stop(); pendingText = nil }
-        .onOpenURL { url in pendingText = TextLink.textID(from: url, webURL: session.client.webURL) }
-    }
-}
-
-struct SignInView: View {
-    let session: AccountSession
-    var notice: String? = nil
-    @State private var email = ""
-    @State private var password = ""
-    @State private var submitting = false
-    @State private var error: String?
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("继续语言学习之旅")
-                        .font(LeximoryTypography.interface(24, style: .title2)).foregroundStyle(.primary).tracking(-0.3).lineSpacing(3)
-                }
-                if let notice { Text(notice).font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.secondary) }
-                VStack(spacing: 16) {
-                    TextField("邮箱", text: $email).textContentType(.username).keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled().accessibilityIdentifier("sign-in-email")
-                    Divider()
-                    SecureField("密码", text: $password).textContentType(.password).accessibilityIdentifier("sign-in-password")
-                }.padding(20).background(LeximoryPalette.shell, in: RoundedRectangle(cornerRadius: 22))
-                Link("忘记密码？", destination: session.client.webURL.appending(path: "forgot-password"))
-                    .font(LeximoryTypography.interface(15, style: .subheadline))
-                if let error { Text(error).font(LeximoryTypography.interface(15, style: .subheadline)).foregroundStyle(.red).accessibilityAddTraits(.updatesFrequently) }
-                Button {
-                    submitting = true; error = nil
-                    Task {
-                        defer { password = ""; submitting = false }
-                        do { try await session.signIn(email: email.trimmingCharacters(in: .whitespacesAndNewlines), password: password) }
-                        catch { if !Task.isCancelled { self.error = "登录未成功，请检查邮箱、密码和网络后重试。" } }
-                    }
-                } label: {
-                    HStack {
-                        if submitting { ProgressView().tint(LeximoryPalette.paper) }
-                        Text(submitting ? "登录中" : "登录").font(LeximoryTypography.interface(17))
-                    }
-                    .frame(maxWidth: .infinity).padding(.vertical, 17)
-                    .foregroundStyle(LeximoryPalette.paper)
-                    .background(LeximoryPalette.ink, in: Capsule())
-                    .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .disabled(submitting || email.isEmpty || password.isEmpty)
-            }.padding(28).frame(maxWidth: 480).frame(maxWidth: .infinity)
+        .task(id: "widget/\(session.generation)/\(session.state.accountID ?? "")/\(scenePhase == .active)/\(session.sync?.online != false)") {
+            guard session.state.isSignedIn, scenePhase == .active, session.sync?.online != false else { return }
+            await SavedWordsWidgetSync.refresh(client: session.client)
         }
-        .scrollDismissesKeyboard(.interactively)
+        .onChange(of: session.generation) { _, _ in playback.stop(); pendingText = nil }
+        .onOpenURL { url in
+            if url.scheme == "leximory", url.host == "auth", url.path == "/callback" {
+                Task {
+                    do { try await session.handleAuthCallback(url) }
+                    catch { session.callbackFailure = "链接可能已失效，请重新发送确认邮件或重设密码邮件。" }
+                }
+            } else if SavedWordsWidgetLink.opensHome(url) { pendingHome = true }
+            else { pendingText = TextLink.textID(from: url, webURL: session.client.webURL) }
+        }
+    }
+    private var signInNotice: String? {
+        if case .expired = session.state { return "登录已过期，请重新登录。" }
+        return nil
     }
 }
 

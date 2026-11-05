@@ -33,6 +33,40 @@ struct AuthoringTests {
         await #expect(throws: (any Error).self) { try await client.uploadEbook(libraryID: "library", title: "书", filename: "large.pdf", data: Data(count: 4_718_593)) }
         #expect(await transport.calls == 0)
     }
+    @Test func articleImportRecoversWithOneRequestIdentity() async throws {
+        let transport = RecoveringArticleTransport()
+        let client = MobileClient(baseURL: URL(string: "https://import.test")!, transport: transport, token: { _ in "verified" })
+        let article = try await client.importArticle(libraryID: "library", title: "Article", content: "Along the river.", annotate: true, onlyComments: false, generateTitle: false)
+        #expect(article.id == "article")
+        let identities = await transport.identities
+        #expect(identities.count == 2)
+        #expect(identities.first?.isEmpty == false)
+        #expect(Set(identities).count == 1)
+    }
+    @Test func exhaustedArticleImportCanRetryTheSameIntent() async throws {
+        let transport = RecoveringArticleTransport(failures: 3)
+        let client = MobileClient(baseURL: URL(string: "https://import.test")!, transport: transport, token: { _ in "verified" })
+        await #expect(throws: (any Error).self) {
+            try await client.importArticle(libraryID: "library", title: "Article", content: "Along the river.", annotate: false, onlyComments: false, generateTitle: false, requestID: "same-draft")
+        }
+        let article = try await client.importArticle(libraryID: "library", title: "Article", content: "Along the river.", annotate: false, onlyComments: false, generateTitle: false, requestID: "same-draft")
+        #expect(article.id == "article")
+        #expect(await transport.identities == ["same-draft", "same-draft", "same-draft", "same-draft"])
+    }
+    private actor RecoveringArticleTransport: ClientTransport {
+        var identities: [String] = []
+        let failures: Int
+        init(failures: Int = 1) { self.failures = failures }
+        func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+            let data = try await Data(collecting: #require(body), upTo: 65536)
+            let payload = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+            identities.append(payload["requestId"] as? String ?? "")
+            if identities.count <= failures {
+                return (HTTPResponse(status: .serviceUnavailable, headerFields: [.contentType: "application/json"]), HTTPBody(#"{"error":{"code":"service_unavailable","message":"temporary","retryable":true}}"#))
+            }
+            return (HTTPResponse(status: .ok, headerFields: [.contentType: "application/json"]), HTTPBody(#"{"id":"article","libraryId":"library","title":"Article","topics":[],"emoji":null,"createdAt":null,"format":"article"}"#))
+        }
+    }
     private actor AuthoringTransport: ClientTransport {
         var calls = 0
         func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {

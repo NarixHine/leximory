@@ -22,7 +22,7 @@ struct VocabularyLibraryView: View {
                                 .foregroundStyle(LeximoryPalette.ink).fixedSize(horizontal: false, vertical: true)
                                 .accessibilityAddTraits(.isHeader)
                             Spacer(minLength: 0)
-                            Button("文章", systemImage: "doc.text", action: closeCorpus)
+                            Button("返回", systemImage: "chevron.left", action: closeCorpus)
                                 .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
                                 .frame(minWidth: 44, minHeight: 44).tint(.primary)
                                 .accessibilityIdentifier("corpus-show-texts")
@@ -30,7 +30,7 @@ struct VocabularyLibraryView: View {
                         timeline(columns: contentWidth < 600 ? 2 : 3)
                     }.padding(24).frame(maxWidth: LeximoryLayout.textGalleryMeasure).frame(maxWidth: .infinity)
                 }.background(LeximoryPalette.paper)
-            }.navigationTitle("语料本").navigationBarTitleDisplayMode(.inline)
+            }.navigationTitle("已存词汇").navigationBarTitleDisplayMode(.inline)
                 .task { await load(reset: true) }
                 .refreshable { await load(reset: true) }
                 .tint(.primary)
@@ -39,14 +39,14 @@ struct VocabularyLibraryView: View {
     private func timeline(columns: Int) -> some View {
         LazyVStack(alignment: .leading, spacing: 22) {
             ForEach(days, id: \.self) { day in
-                if !day.isEmpty { Text(dateLabel(day)).font(LeximoryTypography.interface(13)).foregroundStyle(.secondary) }
+                if !day.isEmpty { Text(dateLabel(day)).interfaceFont(13).foregroundStyle(.secondary) }
                 wordGrid(words.filter { dateKey($0) == day }, columns: columns)
             }
-            if loading { HStack(spacing: 10) { ProgressView(); Text("正在加载词汇").font(LeximoryTypography.interface(15)) }.frame(maxWidth: .infinity) }
+            if loading { HStack(spacing: 10) { ProgressView(); Text("正在加载词汇").interfaceFont(15) }.frame(maxWidth: .infinity) }
             if cursor != nil && !loading {
                 Button("更多", systemImage: "chevron.down") { Task { await load(reset: false) } }.frame(maxWidth: .infinity, minHeight: 44)
             }
-            if let error { Text(error).font(LeximoryTypography.interface(14)).foregroundStyle(LeximoryPalette.muted) }
+            if let error { Text(error).interfaceFont(14).foregroundStyle(LeximoryPalette.muted) }
             if words.isEmpty && error != nil { Button("重试") { Task { await load(reset: true) } } }
         }
     }
@@ -87,7 +87,7 @@ struct VocabularyLibraryView: View {
     }
 }
 
-private struct CorpusWordTray: View {
+struct CorpusWordTray: View {
     @Environment(\.nativeSync) private var sync
     @State private var editor: VocabularyEditModel
     private let initialWord: SavedWord
@@ -96,11 +96,17 @@ private struct CorpusWordTray: View {
     let client: MobileClient
     let isPopover: Bool
     let updated: (SavedWord) -> Void
+    let deleted: ((String) -> Void)?
+    @Environment(\.dismiss) private var dismiss
+    @State private var verifiedWord: SavedWord?
+    @State private var confirmingDelete = false
+    @State private var deleting = false
+    @State private var deletionError: String?
     @State private var editing = false
-    init(word: SavedWord, library: FixtureLibrary, client: MobileClient, isPopover: Bool, updated: @escaping (SavedWord) -> Void) {
+    init(word: SavedWord, library: FixtureLibrary, client: MobileClient, isPopover: Bool, deleted: ((String) -> Void)? = nil, updated: @escaping (SavedWord) -> Void) {
         initialWord = word
         _editor = State(initialValue: VocabularyEditModel(word: word))
-        self.library = library; self.client = client; self.isPopover = isPopover; self.updated = updated
+        self.library = library; self.client = client; self.isPopover = isPopover; self.updated = updated; self.deleted = deleted
     }
     @State private var height: CGFloat = 320
     @State private var bottomInset: CGFloat = 0
@@ -120,20 +126,24 @@ private struct CorpusWordTray: View {
                         if let content = word.fields.etymology { section("语源", content) }
                         if let content = word.fields.cognates { section("同源词", content) }
                         if let error = editor.error {
-                            Text(error).font(LeximoryTypography.interface(13)).foregroundStyle(LeximoryPalette.muted)
+                            Text(error).interfaceFont(13).foregroundStyle(LeximoryPalette.muted)
                         }
+                        if let deletionError { Text(deletionError).interfaceFont(13).foregroundStyle(.secondary) }
                         HStack(spacing: 16) {
-                            if library.owned && word.protected != true {
+                            if library.owned && (verifiedWord?.protected ?? word.protected) != true {
                                 Button("编辑词汇", systemImage: "pencil") { editing = true }
                                     .labelStyle(.iconOnly).frame(width: 48, height: 48)
                                     .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Circle())
-                                    .disabled(sync?.online == false)
+                                    .disabled(sync?.online == false || deleting)
+                            }
+                            if deleted != nil, library.owned, (verifiedWord?.protected ?? word.protected) != true {
+                                Button("删除词汇", systemImage: "trash", role: .destructive) { confirmingDelete = true }
+                                    .labelStyle(.iconOnly).frame(width: 44, height: 44)
+                                    .disabled(sync?.online == false || deleting || editor.saving)
+                                    .accessibilityIdentifier("review-delete-word")
                             }
                             if let dictionaryURL {
-                                Link(destination: dictionaryURL) {
-                                    Image(systemName: "arrow.up.right.square").font(.system(size: 20))
-                                        .frame(width: 44, height: 44).foregroundStyle(LeximoryPalette.muted)
-                                }.accessibilityLabel("在词典中查看")
+                                DictionaryLink(url: dictionaryURL, client: client) { dismiss() }
                             }
                         }
                     }
@@ -149,6 +159,28 @@ private struct CorpusWordTray: View {
             .background(LeximoryPalette.shell)
             .presentationDetents([.height(max(1, min(height, 720) - bottomInset)), .large])
             .presentationCornerRadius(isPopover ? 32 : nil)
+            .interactiveDismissDisabled(deleting)
+            .task(id: initialWord.id) {
+                // Timeline rows do not carry welcome-word protection. Fetch it before enabling removal.
+                verifiedWord = try? await MutationRetry.run { try await client.savedWord(id: initialWord.id) }
+            }
+            .confirmationDialog("删除词汇？", isPresented: $confirmingDelete, titleVisibility: .visible) {
+                Button("删除", role: .destructive) {
+                    guard !deleting, !editor.saving else { return }
+                    let target = verifiedWord ?? word
+                    deleting = true; deletionError = nil
+                    Task {
+                        defer { deleting = false }
+                        do {
+                            try await client.removeWord(target)
+                            SavedWordsWidgetSync.schedule(client: client)
+                            deleted?(target.id); dismiss()
+                        }
+                        catch { deletionError = "删除未能完成，请重试。" }
+                    }
+                }
+                Button("取消", role: .cancel) {}
+            } message: { Text("删除后无法恢复。") }
     }
     private var dictionaryURL: URL? {
         let base: String?
@@ -163,7 +195,7 @@ private struct CorpusWordTray: View {
     }
     private func section(_ label: String, _ content: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(label).font(LeximoryTypography.interface(14)).foregroundStyle(.secondary)
+            Text(label).interfaceFont(14).foregroundStyle(.secondary)
             AnnotationMarkdownText(content: content, size: 17, language: library.language)
         }
     }

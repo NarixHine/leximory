@@ -4,7 +4,7 @@ export type Database = {
     // Allows to automatically instantiate createClient with right options
     // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
     __InternalSupabase: {
-        PostgrestVersion: '12.2.12 (cd3cf9e)'
+        PostgrestVersion: '12.2.12'
     }
     graphql_public: {
         Tables: {
@@ -33,9 +33,43 @@ export type Database = {
     }
     public: {
         Tables: {
+            apple_subscriptions: {
+                Row: {
+                    environment: string
+                    original_transaction_id: string
+                    signed_renewal_info: string | null
+                    signed_transaction_info: string | null
+                    status: number | null
+                    user_id: string | null
+                    verified_at: string
+                    version: number
+                }
+                Insert: {
+                    environment: string
+                    original_transaction_id: string
+                    signed_renewal_info?: string | null
+                    signed_transaction_info?: string | null
+                    status?: number | null
+                    user_id?: string | null
+                    verified_at?: string
+                    version?: number
+                }
+                Update: {
+                    environment?: string
+                    original_transaction_id?: string
+                    signed_renewal_info?: string | null
+                    signed_transaction_info?: string | null
+                    status?: number | null
+                    user_id?: string | null
+                    verified_at?: string
+                    version?: number
+                }
+                Relationships: []
+            }
             bookmarks: {
                 Row: {
                     chapter: string | null
+                    color: string
                     created_at: string
                     id: number
                     location: string | null
@@ -45,6 +79,7 @@ export type Database = {
                 }
                 Insert: {
                     chapter?: string | null
+                    color?: string
                     created_at: string
                     id?: number
                     location?: string | null
@@ -54,6 +89,7 @@ export type Database = {
                 }
                 Update: {
                     chapter?: string | null
+                    color?: string
                     created_at?: string
                     id?: number
                     location?: string | null
@@ -103,6 +139,45 @@ export type Database = {
                         referencedColumns: ['id']
                     },
                 ]
+            }
+            browser_home_pins: {
+                Row: {
+                    created_at: string
+                    deleted_at: string | null
+                    destination: Json
+                    favicon_url: string | null
+                    id: string
+                    revision: string
+                    sort_order: number
+                    title: string
+                    updated_at: string
+                    user_id: string
+                }
+                Insert: {
+                    created_at?: string
+                    deleted_at?: string | null
+                    destination: Json
+                    favicon_url?: string | null
+                    id: string
+                    revision?: string
+                    sort_order?: number
+                    title: string
+                    updated_at?: string
+                    user_id: string
+                }
+                Update: {
+                    created_at?: string
+                    deleted_at?: string | null
+                    destination?: Json
+                    favicon_url?: string | null
+                    id?: string
+                    revision?: string
+                    sort_order?: number
+                    title?: string
+                    updated_at?: string
+                    user_id?: string
+                }
+                Relationships: []
             }
             dictations: {
                 Row: {
@@ -341,6 +416,53 @@ export type Database = {
                         columns: ['creator']
                         isOneToOne: false
                         referencedRelation: 'users'
+                        referencedColumns: ['id']
+                    },
+                ]
+            }
+            pdf_page_notes: {
+                Row: {
+                    canvas_height: number
+                    canvas_width: number
+                    drawing_base64: string
+                    format_version: number
+                    page_index: number
+                    pdf_version: string
+                    revision: string
+                    text_id: string
+                    updated_at: string
+                    user_id: string
+                }
+                Insert: {
+                    canvas_height: number
+                    canvas_width: number
+                    drawing_base64: string
+                    format_version?: number
+                    page_index: number
+                    pdf_version: string
+                    revision?: string
+                    text_id: string
+                    updated_at?: string
+                    user_id: string
+                }
+                Update: {
+                    canvas_height?: number
+                    canvas_width?: number
+                    drawing_base64?: string
+                    format_version?: number
+                    page_index?: number
+                    pdf_version?: string
+                    revision?: string
+                    text_id?: string
+                    updated_at?: string
+                    user_id?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: 'pdf_page_notes_text_id_fkey'
+                        columns: ['text_id']
+                        isOneToOne: false
+                        referencedRelation: 'texts'
                         referencedColumns: ['id']
                     },
                 ]
@@ -598,10 +720,8 @@ export type Tables<
       }
         ? R
         : never
-    : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] &
-            DefaultSchema['Views'])
-      ? (DefaultSchema['Tables'] &
-            DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+    : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+      ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
             Row: infer R
         }
           ? R
@@ -609,9 +729,7 @@ export type Tables<
       : never
 
 export type TablesInsert<
-    DefaultSchemaTableNameOrOptions extends
-        | keyof DefaultSchema['Tables']
-        | { schema: keyof DatabaseWithoutInternals },
+    DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
     TableName extends DefaultSchemaTableNameOrOptions extends {
         schema: keyof DatabaseWithoutInternals
     }
@@ -634,9 +752,7 @@ export type TablesInsert<
       : never
 
 export type TablesUpdate<
-    DefaultSchemaTableNameOrOptions extends
-        | keyof DefaultSchema['Tables']
-        | { schema: keyof DatabaseWithoutInternals },
+    DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
     TableName extends DefaultSchemaTableNameOrOptions extends {
         schema: keyof DatabaseWithoutInternals
     }
@@ -659,9 +775,7 @@ export type TablesUpdate<
       : never
 
 export type Enums<
-    DefaultSchemaEnumNameOrOptions extends
-        | keyof DefaultSchema['Enums']
-        | { schema: keyof DatabaseWithoutInternals },
+    DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums'] | { schema: keyof DatabaseWithoutInternals },
     EnumName extends DefaultSchemaEnumNameOrOptions extends {
         schema: keyof DatabaseWithoutInternals
     }

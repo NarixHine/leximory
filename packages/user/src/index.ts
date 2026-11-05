@@ -1,9 +1,11 @@
 import 'server-only'
+import { cacheTag } from 'next/cache'
 import { createClient } from '@repo/supabase/server'
 import { Plan, prefixUrl } from '@repo/env/config'
 import { redirect } from 'next/navigation'
 import { supabase } from '@repo/supabase'
 import { SIGN_IN_URL } from '@repo/env/config'
+import { getMembership } from './membership'
 import { ensureUserExists } from '@repo/supabase/user'
 
 export async function getSession() {
@@ -19,7 +21,7 @@ export async function getUser() {
         data: { user },
         error,
     } = await supabase.auth.getUser()
-    if (error || !user) {
+    if (error || !user || user.app_metadata?.account_deletion) {
         return null
     }
     const {
@@ -52,10 +54,7 @@ export async function getPlan(userId?: string) {
         return await getPlan((await getUserOrThrow()).userId)
     }
     await ensureUserExists(userId)
-    const {
-        data: { plan },
-    } = await supabase.from('users').select('plan').eq('id', userId).single().throwOnError()
-    return (plan ?? 'beginner') as Plan
+    return (await getMembership(userId)).plan
 }
 
 export async function updatePlan(userId: string, plan: Plan) {
@@ -63,18 +62,24 @@ export async function updatePlan(userId: string, plan: Plan) {
 }
 
 export async function getUserById(userId: string) {
+    const [profile, membership] = await Promise.all([getProfileById(userId), getMembership(userId)])
+    return { ...profile, plan: membership.plan }
+}
+
+async function getProfileById(userId: string) {
     'use cache'
+    cacheTag(`profile:${userId}`)
     const {
         data: { user },
         error,
     } = await supabase.auth.admin.getUserById(userId)
-    if (error || !user) {
+    if (error || !user || user.app_metadata?.account_deletion) {
         throw new Error('User not found')
     }
     const {
         id,
         email,
-        user_metadata: { username, avatar_url, plan },
+        user_metadata: { username, avatar_url },
         last_sign_in_at,
         created_at,
     } = user
@@ -84,7 +89,6 @@ export async function getUserById(userId: string) {
         username: username as string | undefined,
         image: avatar_url as string | undefined,
         lastActiveAt: last_sign_in_at as string,
-        plan: (plan ?? 'beginner') as Plan,
         createdAt: created_at as string,
     }
 }

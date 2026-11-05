@@ -1,6 +1,61 @@
 import SwiftUI
 import WebKit
+import QuartzCore
 import LeximoryCore
+
+@MainActor struct BrowserLoadFailure {
+    let message: String
+    let url: URL?
+
+    init(message: String, url: URL? = nil) {
+        self.message = message
+        self.url = url
+    }
+
+    init(_ error: Error, fallbackURL: URL?) {
+        let failure = error as NSError
+        let failedURL = failure.userInfo[NSURLErrorFailingURLErrorKey] as? URL
+        url = (failedURL ?? fallbackURL).flatMap { TextBrowserModel.address($0.absoluteString) }
+        switch (failure.domain, failure.code) {
+        case (NSURLErrorDomain, NSURLErrorNotConnectedToInternet),
+             (NSURLErrorDomain, NSURLErrorNetworkConnectionLost):
+            message = "请检查网络连接后再试。"
+        case (NSURLErrorDomain, NSURLErrorTimedOut):
+            message = "网站响应时间过长，请稍后再试。"
+        case (NSURLErrorDomain, NSURLErrorCannotFindHost),
+             (NSURLErrorDomain, NSURLErrorDNSLookupFailed):
+            message = "未能找到这个网站，请检查网址是否正确。"
+        case (NSURLErrorDomain, NSURLErrorSecureConnectionFailed),
+             (NSURLErrorDomain, NSURLErrorServerCertificateHasBadDate),
+             (NSURLErrorDomain, NSURLErrorServerCertificateUntrusted),
+             (NSURLErrorDomain, NSURLErrorServerCertificateHasUnknownRoot),
+             (NSURLErrorDomain, NSURLErrorServerCertificateNotYetValid):
+            message = "无法与这个网站建立安全连接。"
+        default:
+            message = "这个网页暂时无法载入，请稍后再试。"
+        }
+    }
+}
+
+enum BrowserSearchEngine: String, CaseIterable, Identifiable {
+    case bing, google, duckDuckGo, baidu
+    static func selected(in defaults: UserDefaults = .standard) -> Self {
+        defaults.string(forKey: "browser.searchEngine").flatMap(Self.init(rawValue:)) ?? .bing
+    }
+    var id: String { rawValue }
+    var name: String {
+        switch self { case .bing: "Bing"; case .google: "Google"; case .duckDuckGo: "DuckDuckGo"; case .baidu: "百度" }
+    }
+    var endpoint: String {
+        switch self {
+        case .bing: "https://www.bing.com/search"
+        case .google: "https://www.google.com/search"
+        case .duckDuckGo: "https://duckduckgo.com/"
+        case .baidu: "https://www.baidu.com/s"
+        }
+    }
+    var queryParameter: String { self == .baidu ? "wd" : "q" }
+}
 import os
 
 struct BrowserSelection: Decodable {
@@ -12,7 +67,9 @@ struct BrowserSelection: Decodable {
 
 final class BrowserWebView: WKWebView {
     var lookup: ((BrowserSelection) -> Void)?
-    private var capturedSelection: BrowserSelection?
+    var search: ((String) -> Void)?
+    private var selectionRequest = UUID()
+    func invalidateSelection() { selectionRequest = UUID(); ReadingGlassMenu.dismiss(from: self) }
     private static let world = WKContentWorld.world(name: "LeximoryBrowserSelection")
     static let selectionScript = """
         const selection = window.getSelection();
@@ -20,24 +77,51 @@ final class BrowserWebView: WKWebView {
         const range = selection.getRangeAt(0);
         const element = range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement;
         if (!element || element.closest('input,textarea,[contenteditable]:not([contenteditable="false"]),script,style')) return null;
-        const clean = (fragment) => {
-          fragment.querySelectorAll('rt,rp,script,style').forEach(node => node.remove());
-          return fragment.textContent || '';
-        };
-        const quote = clean(range.cloneContents());
-        if (!quote.trim() || quote.length > 1024) return null;
+        const excluded = 'rt,rp,script,style,input,textarea,[contenteditable]:not([contenteditable="false"])';
         const block = element.closest('p,li,blockquote,h1,h2,h3,h4,h5,h6,td,pre') || element;
         if (!block.contains(range.endContainer)) return null;
-        const before = document.createRange();
-        before.selectNodeContents(block);
-        before.setEnd(range.startContainer, range.startOffset);
-        const prefix = clean(before.cloneContents());
-        const after = document.createRange();
-        after.selectNodeContents(block);
-        after.setStart(range.endContainer, range.endOffset);
-        const suffix = clean(after.cloneContents());
-        const leading = prefix.slice(-1200);
-        return {quote, context: leading + quote + suffix.slice(0,1200), offset: leading.length, url: location.href};
+        const outside = (node, forward) => {
+          while (node && node !== block) {
+            const sibling = forward ? node.nextSibling : node.previousSibling;
+            if (sibling) return sibling;
+            node = node.parentNode;
+          }
+          return null;
+        };
+        // Walk from the selection boundaries. Never clone a paragraph or read its
+        // complete text just to keep 1,200 characters of surrounding context.
+        const read = (container, offset, forward, limit, selected = false) => {
+          let node = container, result = '', visits = 0;
+          if (node.nodeType !== Node.TEXT_NODE) {
+            node = node.childNodes[forward ? offset : offset - 1] || outside(node, forward);
+            offset = null;
+          }
+          while (node && result.length < limit && visits++ < 4096) {
+            if (node.nodeType === Node.TEXT_NODE) {
+              if (selected && range.comparePoint(node, 0) > 0) break;
+              const start = offset === null ? (forward ? 0 : node.length) : offset;
+              const end = selected && node === range.endContainer ? range.endOffset : node.length;
+              const available = limit - result.length;
+              const part = forward ? node.data.slice(start, Math.min(end, start + available))
+                                   : node.data.slice(Math.max(0, start - available), start);
+              result = forward ? result + part : part + result;
+              if (selected && node === range.endContainer) break;
+              node = outside(node, forward);
+            } else if (node.nodeType === Node.ELEMENT_NODE && node.matches(excluded)) {
+              node = outside(node, forward);
+            } else {
+              node = (forward ? node.firstChild : node.lastChild) || outside(node, forward);
+            }
+            offset = null;
+          }
+          return {text: result, exhausted: visits >= 4096};
+        };
+        const selected = read(range.startContainer, range.startOffset, true, 1025, true);
+        const quote = selected.text;
+        if (!quote.trim() || quote.length > 1024 || selected.exhausted) return null;
+        const leading = read(range.startContainer, range.startOffset, false, 1200).text;
+        const trailing = read(range.endContainer, range.endOffset, true, 1200).text;
+        return {quote, context: leading + quote + trailing, offset: leading.length, url: location.href};
         """
 
     override func buildMenu(with builder: UIMenuBuilder) {
@@ -45,15 +129,71 @@ final class BrowserWebView: WKWebView {
         guard builder.system == .context else { return }
         guard !super.canPerformAction(#selector(UIResponderStandardEditActions.cut(_:)), withSender: nil) else { return }
         ReadingSelectionMenu.removeUnrelatedActions(from: builder)
-        builder.replaceChildren(ofMenu: .root) { ReadingSelectionMenu.copyActions($0) }
-        capturedSelection = nil
-        capture { [weak self] selection in self?.capturedSelection = selection }
-        let action = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage) { [weak self] _ in
-            guard let self else { return }
-            if let capturedSelection { lookup?(capturedSelection) }
-            else { capture { [weak self] in if let selection = $0 { self?.lookup?(selection) } } }
+        // Each menu owns its snapshot. A late response from an older menu cannot
+        // replace the selection used by a newer menu or a different document.
+        let request = selectionRequest
+        var capturedSelection: BrowserSelection?
+        capture { [weak self] selection in
+            guard self?.selectionRequest == request else { return }
+            capturedSelection = selection
         }
-        builder.insertSibling(UIMenu(title: "", options: .displayInline, children: [action]), beforeMenu: .standardEdit)
+        let action = UIAction(title: ReadingSelectionMenu.lookupTitle, image: ReadingSelectionMenu.lookupImage) { [weak self] _ in
+            guard let self, selectionRequest == request else { return }
+            if let capturedSelection { lookup?(capturedSelection) }
+            else {
+                capture { [weak self] selection in
+                    guard let self, self.selectionRequest == request, let selection else { return }
+                    self.lookup?(selection)
+                }
+            }
+        }
+        let searchAction = UIAction(title: BrowserSearchEngine.selected().name, image: UIImage(systemName: "magnifyingglass"), identifier: ReadingSelectionMenu.searchIdentifier, attributes: search == nil ? .disabled : []) { [weak self] _ in
+            guard let self, selectionRequest == request else { return }
+            if let capturedSelection { search?(capturedSelection.quote) }
+            else {
+                capture { [weak self] selection in
+                    guard let self, self.selectionRequest == request, let selection else { return }
+                    self.search?(selection.quote)
+                }
+            }
+        }
+        ReadingSelectionMenu.insertLearningActions([action], into: builder, trailingActions: [searchAction])
+        let elements = builder.menu(for: .root)?.children ?? []
+        builder.replaceChildren(ofMenu: .root) { _ in [] }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let script = "const s = getSelection(); if (!s || s.isCollapsed || !s.rangeCount) return null; const r = s.getRangeAt(0).getBoundingClientRect(); return {quote:s.toString(),rect:{x:r.x,y:r.y,width:r.width,height:r.height}};"
+            guard let snapshot = try? await callAsyncJavaScript(script, arguments: [:], in: nil, contentWorld: Self.world) as? [String: Any],
+                  let quote = snapshot["quote"] as? String, !quote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  let value = snapshot["rect"] as? [String: Double], selectionRequest == request else { return }
+            let scale = scrollView.zoomScale
+            let rect = CGRect(x: value["x", default: 0] * scale, y: value["y", default: 0] * scale,
+                              width: value["width", default: 0] * scale, height: value["height", default: 0] * scale)
+            let nativeDictionary = ReadingSelectionMenu.nativeLookupActions(in: elements)
+            let dictionary = UIAction(title: "辞典") { [weak self] _ in
+                guard let self, self.selectionRequest == request else { return }
+                self.presentDictionary(term: quote)
+            }
+            func replaceDictionary(_ element: UIMenuElement) -> UIMenuElement {
+                if let menu = element as? UIMenu { return menu.replacingChildren(menu.children.map(replaceDictionary)) }
+                return nativeDictionary.contains { $0 === element } ? dictionary : element
+            }
+            ReadingGlassMenu.present(from: self, rect: rect, elements: elements.map(replaceDictionary))
+        }
+    }
+    private func presentDictionary(term: String) {
+        guard window != nil else { return }
+        var responder: UIResponder? = self
+        while let current = responder {
+            if let controller = current as? UIViewController {
+                guard controller.presentedViewController == nil else { return }
+                let dictionary = UIReferenceLibraryViewController(term: term)
+                dictionary.view.accessibilityIdentifier = "browser-dictionary"
+                controller.present(dictionary, animated: true)
+                return
+            }
+            responder = current.next
+        }
     }
     private func capture(_ completion: @escaping (BrowserSelection?) -> Void) {
         Task { @MainActor in
@@ -77,33 +217,55 @@ final class BrowserWebView: WKWebView {
 @MainActor @Observable final class TextBrowserModel: NSObject, WKNavigationDelegate, WKUIDelegate {
     static let browsingDataWillClear = Notification.Name("Leximory.browsingDataWillClear")
     @ObservationIgnored let web: BrowserWebView
+    @ObservationIgnored let adBlocker: BrowserAdBlocker
+    private(set) var canReloadForBlocking = false
+    @ObservationIgnored private var blockingLists: [WKContentRuleList] = []
+    @ObservationIgnored private var policyRequest = UUID()
+    @ObservationIgnored private var pendingReloadSafety = false
     private(set) var url: URL?
     private(set) var title = ""
     private(set) var loading = false
+    private(set) var isPDF = false
     private(set) var canGoBack = false
     private(set) var canGoForward = false
     private(set) var navigationID = UUID()
     private(set) var pageColor: UIColor = .systemBackground
-    var error: String?
-    @ObservationIgnored private var resumeOffset: CGFloat?
+    var error: BrowserLoadFailure?
+    @ObservationIgnored private var requestedURL: URL?
+    var recoveryURL: URL? {
+        if let error { return error.url }
+        return url
+    }
+    @ObservationIgnored var committed: ((WKBackForwardListItem) -> Void)?
+    @ObservationIgnored var historyGesture: ((URL) -> Bool)?
+    @ObservationIgnored var navigationBegan: (() -> Void)?
+    @ObservationIgnored private var pendingScroll: (navigation: WKNavigation, offset: CGFloat)?
+    @ObservationIgnored private var currentNavigation: WKNavigation?
+    @ObservationIgnored private var searchNavigation: WKNavigation?
     @ObservationIgnored private var observations: [NSKeyValueObservation] = []
+    @ObservationIgnored private var pdfDownload: BrowserPDFDownload?
 
     override convenience init() { self.init(websiteDataStore: .default()) }
 
-    init(websiteDataStore: WKWebsiteDataStore) {
+    init(websiteDataStore: WKWebsiteDataStore, adBlocker: BrowserAdBlocker = .shared) {
+        self.adBlocker = adBlocker
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = websiteDataStore
         configuration.defaultWebpagePreferences.preferredContentMode = UIDevice.current.userInterfaceIdiom == .phone ? .mobile : .desktop
         // No app credentials or native message handlers are exposed to websites.
         web = BrowserWebView(frame: .zero, configuration: configuration)
         super.init()
+        web.search = { [weak self] query in self?.search(query) }
         web.customUserAgent = Self.safariUserAgent(idiom: UIDevice.current.userInterfaceIdiom)
         web.navigationDelegate = self
         web.uiDelegate = self
+        web.isFindInteractionEnabled = true
         web.allowsBackForwardNavigationGestures = true
         web.scrollView.contentInset.bottom = 80
+        Task { try? await adBlocker.currentPolicy() }
         observations = [
             web.observe(\.url, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
+            web.observe(\.title, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
             web.observe(\.isLoading, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
             web.observe(\.canGoBack, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
             web.observe(\.canGoForward, options: [.new]) { [weak self] _, _ in Task { @MainActor in self?.update() } },
@@ -119,16 +281,26 @@ final class BrowserWebView: WKWebView {
               url.host != nil, url.user == nil, url.password == nil else { return nil }
         return url
     }
-    static func destination(_ input: String) -> URL? {
+    static func destination(_ input: String, engine: BrowserSearchEngine = .bing) -> URL? {
         let input = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !input.isEmpty else { return nil }
         if input.contains("://") { return address(input) }
         if ["javascript:", "data:", "file:", "about:", "http:", "https:"].contains(where: { input.lowercased().hasPrefix($0) }) { return nil }
         if let url = address(input), let host = url.host,
            host.contains(".") || host == "localhost" || host.contains(":") { return url }
-        var search = URLComponents(string: "https://www.bing.com/search")!
-        search.queryItems = [URLQueryItem(name: "q", value: input)]
+        return searchURL(input, engine: engine)
+    }
+    static func searchURL(_ query: String, engine: BrowserSearchEngine? = nil) -> URL? {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return nil }
+        let engine = engine ?? BrowserSearchEngine.selected()
+        var search = URLComponents(string: engine.endpoint)!
+        search.queryItems = [URLQueryItem(name: engine.queryParameter, value: query)]
         return search.url
+    }
+    func search(_ query: String) {
+        guard let url = Self.searchURL(query) else { return }
+        load(url, animateSearch: true)
     }
     static func safariUserAgent(idiom: UIUserInterfaceIdiom, version: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) -> String {
         let safari = "\(version.majorVersion).\(version.minorVersion)"
@@ -147,12 +319,44 @@ final class BrowserWebView: WKWebView {
         let host = url?.host?.lowercased() ?? ""
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
-    func load(_ url: URL, offset: CGFloat? = nil) {
-        resumeOffset = offset
+    func load(_ url: URL, offset: CGFloat? = nil, animateSearch: Bool = false) {
         error = nil
-        web.load(URLRequest(url: url))
+        requestedURL = url
+        let navigation = web.load(URLRequest(url: url))
+        currentNavigation = navigation
+        if let navigation, let offset { pendingScroll = (navigation, offset) }
+        else { pendingScroll = nil }
+        searchNavigation = animateSearch ? navigation : nil
+    }
+    func reload() {
+        if let failedURL = error?.url {
+            load(failedURL)
+        } else {
+            error = nil
+            currentNavigation = web.reload()
+        }
+    }
+    var scrollPosition: CGFloat { pendingScroll?.offset ?? web.scrollView.contentOffset.y }
+    func go(to item: WKBackForwardListItem, offset: CGFloat) -> WKNavigation? {
+        error = nil
+        requestedURL = item.url
+        let navigation = web.go(to: item)
+        currentNavigation = navigation
+        pendingScroll = navigation.map { ($0, offset) }
+        return navigation
+    }
+    func restoreScrollPosition(_ offset: CGFloat) {
+        if error?.url != web.url { error = nil }
+        if web.isLoading, let currentNavigation { pendingScroll = (currentNavigation, offset) }
+        else {
+            requestedURL = web.url
+            pendingScroll = nil
+            web.scrollView.setContentOffset(CGPoint(x: 0, y: offset), animated: false)
+        }
     }
     static func clearBrowsingData(in store: WKWebsiteDataStore = .default(), preferences: UserDefaults = .standard) async {
+        if preferences === UserDefaults.standard { BrowserAdBlocker.shared.clearExceptions() }
+        else { BrowserAdBlocker.clearExceptions(in: preferences) }
         // Drop every browser's page and back/forward list before clearing shared website storage.
         NotificationCenter.default.post(name: browsingDataWillClear, object: nil)
         for key in preferences.dictionaryRepresentation().keys where key.hasPrefix("browser.last-page.") {
@@ -164,32 +368,102 @@ final class BrowserWebView: WKWebView {
         url = web.url; title = web.title ?? ""; loading = web.isLoading
         canGoBack = web.canGoBack; canGoForward = web.canGoForward
         pageColor = web.themeColor ?? web.underPageBackgroundColor
+        web.backgroundColor = pageColor
+        web.scrollView.backgroundColor = pageColor
     }
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        currentNavigation = navigation
+        if pendingScroll?.navigation !== navigation { pendingScroll = nil }
+        pdfDownload?.cancel()
+        isPDF = false
+        web.invalidateSelection()
+        webView.findInteraction?.dismissFindNavigator()
+        navigationBegan?()
         navigationID = UUID(); error = nil; update()
+    }
+    func webView(_ webView: WKWebView, didReceiveServerRedirectForProvisionalNavigation navigation: WKNavigation!) {
+        update()
     }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         update()
-        if let resumeOffset {
-            webView.scrollView.setContentOffset(CGPoint(x: 0, y: resumeOffset), animated: false)
-            self.resumeOffset = nil
+        if let item = webView.backForwardList.currentItem { committed?(item) }
+        if let pendingScroll, pendingScroll.navigation === navigation {
+            Task { @MainActor [weak self] in
+                guard let self, self.pendingScroll?.navigation === navigation else { return }
+                let top = (pendingScroll.offset + webView.scrollView.adjustedContentInset.top) / webView.scrollView.zoomScale
+                _ = try? await webView.callAsyncJavaScript("""
+                    await new Promise(requestAnimationFrame);
+                    window.scrollTo({left: 0, top, behavior: 'instant'});
+                    """, arguments: ["top": top], in: nil, contentWorld: .world(name: "LeximoryBrowserPosition"))
+                guard self.pendingScroll?.navigation === navigation else { return }
+                webView.scrollView.setContentOffset(CGPoint(x: 0, y: pendingScroll.offset), animated: false)
+                self.pendingScroll = nil
+            }
         }
     }
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) { failed(error) }
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { failed(error) }
-    private func failed(_ error: any Error) {
-        guard (error as NSError).code != NSURLErrorCancelled else { return }
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        canReloadForBlocking = pendingReloadSafety
+        update()
+        if let item = webView.backForwardList.currentItem { committed?(item) }
+        if let searchNavigation, navigation === searchNavigation {
+            self.searchNavigation = nil
+            guard webView.window != nil, !UIAccessibility.isReduceMotionEnabled else { return }
+            let transition = CATransition()
+            transition.type = .push
+            transition.subtype = webView.effectiveUserInterfaceLayoutDirection == .rightToLeft ? .fromLeft : .fromRight
+            transition.duration = 0.3
+            transition.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            webView.layer.add(transition, forKey: "searchNavigation")
+        }
+    }
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) { failed(error, navigation: navigation) }
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { failed(error, navigation: navigation) }
+    private func failed(_ error: any Error, navigation: WKNavigation?) {
+        if let currentNavigation, let navigation, currentNavigation !== navigation { return }
+        if pendingScroll?.navigation === navigation { pendingScroll = nil }
         let failure = error as NSError
+        guard failure.domain != NSURLErrorDomain || failure.code != NSURLErrorCancelled else { return }
         Logger(subsystem: "com.leximory.reader", category: "browser").error("Navigation failed: host=\(self.web.url?.host ?? "unknown", privacy: .private) domain=\(failure.domain, privacy: .public) code=\(failure.code)")
-        self.error = "网页未能打开，请重试或在 Safari 中打开。"; update()
+        self.error = BrowserLoadFailure(error, fallbackURL: requestedURL ?? web.url); update()
     }
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) { webView.reload() }
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
         guard let destination = navigationAction.request.url,
               Self.allowsNavigation(destination, mainFrame: navigationAction.targetFrame?.isMainFrame != false) else { return .cancel }
+        if navigationAction.navigationType == .backForward, navigationAction.targetFrame?.isMainFrame != false,
+           historyGesture?(destination) == true { return .cancel }
+        if navigationAction.targetFrame?.isMainFrame == true {
+            let request = UUID()
+            policyRequest = request
+            for attempt in 0..<2 {
+                do {
+                    let policy = try await adBlocker.currentPolicy()
+                    guard policyRequest == request else { return .cancel }
+                    installBlocking(policy)
+                    break
+                } catch {
+                    guard policyRequest == request else { return .cancel }
+                    if attempt == 1 {
+                        Logger(subsystem: "com.leximory.reader", category: "browser").error("Ad rules could not be prepared; preserving available browser rules")
+                    }
+                }
+            }
+            pendingReloadSafety = navigationAction.request.httpMethod == "GET"
+                && navigationAction.navigationType != .formSubmitted && navigationAction.navigationType != .formResubmitted
+            requestedURL = destination
+        }
         return .allow
     }
+    func installBlocking(_ policy: BrowserBlockingPolicy) {
+        let controller = web.configuration.userContentController
+        for list in blockingLists { controller.remove(list) }
+        for list in policy.lists { controller.add(list) }
+        blockingLists = policy.lists
+    }
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        if navigationResponse.isForMainFrame {
+            isPDF = navigationResponse.response.mimeType?.lowercased() == "application/pdf"
+        }
         if navigationResponse.isForMainFrame, let response = navigationResponse.response as? HTTPURLResponse {
             Logger(subsystem: "com.leximory.reader", category: "browser").info("Page response: host=\(response.url?.host ?? "unknown", privacy: .private) status=\(response.statusCode)")
         }
@@ -198,17 +472,62 @@ final class BrowserWebView: WKWebView {
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
                  for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         if let url = navigationAction.request.url, Self.address(url.absoluteString) != nil {
-            resumeOffset = nil; error = nil
+            pendingScroll = nil; error = nil
             web.load(navigationAction.request)
         }
         return nil
     }
 }
 
+struct BrowserArticleDraft: Identifiable {
+    let id = UUID()
+    let url: URL
+    let title: String
+    let content: String
+    var sourceFolderID: String? = nil
+}
+
+extension TextBrowserModel {
+    func pdfFile() async throws -> BrowserEbookFile {
+        guard isPDF, let url else { throw URLError(.cancelled) }
+        let navigation = navigationID
+        return try await MutationRetry.run { @MainActor in
+            guard navigation == self.navigationID else { throw URLError(.cancelled) }
+            let download = BrowserPDFDownload()
+            self.pdfDownload?.cancel()
+            self.pdfDownload = download
+            defer { if self.pdfDownload === download { self.pdfDownload = nil } }
+            let file = try await download.file(from: self.web, url: url)
+            guard navigation == self.navigationID else { throw URLError(.cancelled) }
+            return file
+        }
+    }
+
+    func extractArticle() async throws -> BrowserArticleDraft {
+        guard let url, let resource = Bundle.main.url(forResource: "defuddle", withExtension: "js") else { throw URLError(.cannotParseResponse) }
+        let source = try String(contentsOf: resource, encoding: .utf8)
+        let navigation = navigationID
+        let script = source + """
+        \nconst result = new globalThis.Defuddle(document.cloneNode(true), {url: location.href, markdown: true}).parse();
+        return {title: result.title || document.title, content: result.contentMarkdown || result.content || ''};
+        """
+        let value = try await web.callAsyncJavaScript(script, arguments: [:], in: nil, contentWorld: .world(name: "LeximoryArticleExtraction"))
+        guard navigation == navigationID, let payload = value as? [String: String], let content = payload["content"] else { throw URLError(.cancelled) }
+        return BrowserArticleDraft(url: url, title: payload["title"] ?? title, content: ArticleMarkdownDocument.strippingLinks(content))
+    }
+}
+
 struct BrowserWebContent: UIViewRepresentable {
     let model: TextBrowserModel
+    var reservesBottomControls = true
     func makeUIView(context: Context) -> BrowserWebView { model.web }
-    func updateUIView(_ uiView: BrowserWebView, context: Context) {}
+    func updateUIView(_ uiView: BrowserWebView, context: Context) {
+        uiView.accessibilityElementsHidden = model.error != nil
+        let bottomInset: CGFloat = reservesBottomControls ? 80 : 0
+        if uiView.scrollView.contentInset.bottom != bottomInset {
+            uiView.scrollView.contentInset.bottom = bottomInset
+        }
+    }
     static func dismantleUIView(_ uiView: BrowserWebView, coordinator: ()) {
         uiView.stopLoading(); uiView.lookup = nil
     }
