@@ -9,7 +9,8 @@ concurrency:
     cancel-in-progress: false
 jobs:
     deployed:
-        if: github.event_name == 'workflow_dispatch' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Preview')
+        # Tests are disabled at the repository owner's request.
+        if: ${{ false }}
         runs-on: ubuntu-latest
         environment: mobile-preview
         timeout-minutes: 10
