@@ -2,6 +2,8 @@ import SwiftUI
 
 enum LeximoryPalette {
     static let sage = Color(uiColor: adaptive(light: 0x5A715A, dark: 0xA1A1AA))
+    static let quotaDefinitions = Color(uiColor: adaptive(light: 0xBDD981, dark: 0x7BBF63))
+    static let quotaAudio = Color(uiColor: adaptive(light: 0x80BFFF, dark: 0x80BFFF))
     static let paperUI = adaptive(light: 0xFFFFFF, dark: 0x100F0F)
     static let paper = Color(uiColor: paperUI)
     static let ink = Color(uiColor: .label)

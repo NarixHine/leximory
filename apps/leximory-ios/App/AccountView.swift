@@ -32,6 +32,7 @@ struct AccountView: View {
         _editor = State(initialValue: preview != nil && ProcessInfo.processInfo.arguments.contains("--account-editor-preview") ? .username : nil)
     }
     #endif
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.scenePhase) private var scenePhase
 
     private var editingUnavailable: Bool { busy || session.sync?.online == false }
@@ -165,10 +166,10 @@ struct AccountView: View {
     private func stats(_ value: AccountSettings) -> some View {
         VStack(spacing: 12) {
             subscriptionCard(value)
-            VStack(spacing: 12) {
-                AccountQuotaCard(title: "AI 词点额度", allowance: value.definitions)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: typeSize.isAccessibilitySize ? 1 : 2), spacing: 12) {
+                AccountQuotaCard(title: "AI 词点额度", allowance: value.definitions, tint: LeximoryPalette.quotaDefinitions)
                     .accessibilityIdentifier("account-quota-summary-definitions")
-                AccountQuotaCard(title: "AI 语点额度", allowance: value.audio)
+                AccountQuotaCard(title: "AI 语点额度", allowance: value.audio, tint: LeximoryPalette.quotaAudio)
                     .accessibilityIdentifier("account-quota-summary-audio")
             }
         }
@@ -421,28 +422,26 @@ private struct MembershipEntryButtonStyle: ButtonStyle {
 private struct AccountQuotaCard: View {
     let title: String
     let allowance: Account.Allowance
-    @ScaledMetric(relativeTo: .body) private var ringSize: CGFloat = 64
-    @Environment(\.dynamicTypeSize) private var typeSize
+    let tint: Color
+    @ScaledMetric(relativeTo: .body) private var ringSize: CGFloat = 88
     private var fraction: Double { allowance.limit > 0 ? min(max(allowance.used / allowance.limit, 0), 1) : 0 }
 
     var body: some View {
-        HStack(spacing: 16) {
-            if !typeSize.isAccessibilitySize { ring }
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    AccountCardTitle(title)
-                    Spacer(minLength: 0)
-                    if allowance.resetsIn > 0 {
-                        Text(allowance.resetsIn >= 86_400
-                             ? "\((allowance.resetsIn - 1) / 86_400 + 1) 天后重置"
-                             : "1 天内重置")
-                            .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+        VStack(alignment: .leading, spacing: 16) {
+            AccountCardTitle(title)
+            ring.frame(maxWidth: .infinity)
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                usage.lineLimit(1).minimumScaleFactor(0.65)
+                Spacer(minLength: 0)
+                if allowance.resetsIn > 0 {
+                    Text(allowance.resetsIn >= 86_400
+                         ? "\((allowance.resetsIn - 1) / 86_400 + 1)天后重置"
+                         : "1天内重置")
+                        .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
+                        .fixedSize()
                 }
-                usage
             }
-        }.frame(maxWidth: .infinity, alignment: .leading).padding(16)
+        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(16)
             .background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
             .accessibilityElement(children: .combine)
     }
@@ -459,10 +458,10 @@ private struct AccountQuotaCard: View {
 
     private var ring: some View {
         ZStack {
-            Circle().stroke(LeximoryPalette.sage.opacity(0.08), lineWidth: 4)
+            Circle().stroke(tint.opacity(0.14), lineWidth: 8)
             if fraction > 0 {
                 Circle().trim(from: 0, to: fraction)
-                    .stroke(LeximoryPalette.sage.opacity(0.55), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .stroke(tint, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                     .rotationEffect(.degrees(-90))
             }
             Text("\(Int(fraction * 100))%")

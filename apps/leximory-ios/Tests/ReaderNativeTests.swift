@@ -11,7 +11,7 @@ import LeximoryCore
 
 @MainActor @Suite(.serialized) struct NativeTextSelectionTests {
     @Test(arguments: [false, true])
-    func dictionaryIconAppearsInTheSelectionRail(command: Bool) async throws {
+    func dictionaryIconStaysInNativeMenuAndOutOfCustomRail(command: Bool) async throws {
         let dictionary: UIMenuElement = command
             ? UICommand(title: "Look Up", action: NSSelectorFromString("_define:"))
             : UIAction(title: "Look Up") { _ in }
@@ -40,9 +40,8 @@ import LeximoryCore
         window.layoutIfNeeded()
         func descendants(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(descendants) }
         let button = try #require(descendants(window).first { $0.accessibilityIdentifier == "reading-selection-辞典" } as? UIButton)
-        let icon = try #require(descendants(button).compactMap { $0 as? UIImageView }.first { $0.image != nil })
-        #expect(!icon.isHidden)
-        #expect(icon.bounds.width > 0 && icon.bounds.height > 0)
+        #expect(button.accessibilityLabel == "辞典")
+        #expect(descendants(button).compactMap { $0 as? UIImageView }.allSatisfy { $0.image == nil })
     }
 
     @Test(arguments: [UIUserInterfaceStyle.light, .dark])

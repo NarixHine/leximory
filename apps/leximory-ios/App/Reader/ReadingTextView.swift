@@ -968,7 +968,7 @@ private extension UIFont {
         icon.contentMode = .scaleAspectFit; icon.tintColor = ink
         icon.widthAnchor.constraint(equalToConstant: element.title.isEmpty ? 24 : 17).isActive = true
         icon.heightAnchor.constraint(equalToConstant: element.title.isEmpty ? 24 : 17).isActive = true
-        if primary || element.title == "荧光笔" || element.title == "辞典" || iconOnly || element.title.isEmpty {
+        if primary || element.title == "荧光笔" || iconOnly || element.title.isEmpty {
             content.addArrangedSubview(icon)
         }
         if !iconOnly && !element.title.isEmpty {
