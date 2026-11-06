@@ -8,9 +8,9 @@ final class MembershipUITests: XCTestCase {
         app.launch()
         let purchase = app.buttons["membership-purchase"]
         XCTAssertTrue(purchase.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["membership-price"].label.contains("US$4.49"))
+        XCTAssertTrue(app.buttons["membership-purchase"].label.contains("US$4.49"))
         app.buttons["membership-plan-polyglot"].tap()
-        XCTAssertTrue(app.staticTexts["membership-price"].label.contains("US$6.00"))
+        XCTAssertTrue(app.buttons["membership-purchase"].label.contains("US$6.00"))
         purchase.tap()
         XCTAssertTrue(app.staticTexts["membership-success"].waitForExistence(timeout: 5))
     }
@@ -39,7 +39,7 @@ final class MembershipUITests: XCTestCase {
         purchase.tap()
         XCTAssertTrue(purchase.waitForExistence(timeout: 5))
         XCTAssertTrue(purchase.isEnabled)
-        XCTAssertTrue(app.staticTexts["membership-price"].label.contains("US$6.00"))
+        XCTAssertTrue(app.buttons["membership-purchase"].label.contains("US$6.00"))
         XCTAssertFalse(app.staticTexts["membership-success"].exists)
     }
 
@@ -87,7 +87,7 @@ final class MembershipUITests: XCTestCase {
         for _ in 0..<10 where !plan.isHittable { app.swipeUp() }
         XCTAssertTrue(plan.isHittable)
         plan.tap()
-        XCTAssertTrue(app.staticTexts["membership-price"].label.contains("US$6.00"))
+        XCTAssertTrue(app.buttons["membership-purchase"].label.contains("US$6.00"))
     }
 
     @MainActor func testPurchaseScreenshot() throws {
@@ -103,7 +103,7 @@ final class MembershipUITests: XCTestCase {
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [landscape], timeout: 5), .completed)
         app.buttons["membership-plan-polyglot"].tap()
-        XCTAssertTrue(app.staticTexts["membership-price"].label.contains("US$6.00"))
+        XCTAssertTrue(app.buttons["membership-purchase"].label.contains("US$6.00"))
         capture(app, name: "Membership landscape")
         XCUIDevice.shared.orientation = .portrait
         app.terminate()

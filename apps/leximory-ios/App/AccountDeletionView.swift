@@ -25,9 +25,9 @@ struct AccountDeletionView: View {
                 if let failure = authenticationFailure ?? model.failure {
                     Text(failure).interfaceFont(15, style: .subheadline).foregroundStyle(.red)
                 }
-                Link("联系支持", destination: URL(string: "mailto:support@leximory.com")!).frame(minHeight: 44)
+                Link(destination: URL(string: "mailto:support@leximory.com")!) { AccountSheetLinkLabel("联系支持") }
             }
-            .interfaceFont(17).lineSpacing(4).padding(28)
+            .interfaceFont(17).padding(28)
             .frame(maxWidth: 520).frame(maxWidth: .infinity)
         }
         .background(Color(uiColor: .systemBackground)).tint(.primary)
@@ -60,14 +60,14 @@ struct AccountDeletionView: View {
                 Text("订阅需单独取消").interfaceFont(17, semibold: true)
                 Text("如需停止续费，请在原购买渠道取消订阅。")
                     .foregroundStyle(.secondary)
-                Link("管理 Apple 订阅", destination: URL(string: "https://apps.apple.com/account/subscriptions/")!).frame(minHeight: 44)
+                Link(destination: URL(string: "https://apps.apple.com/account/subscriptions/")!) { AccountSheetLinkLabel("管理 Apple 订阅") }
                 if session.state.isSignedIn {
-                    Button("管理其他渠道订阅") {
+                    Button {
                         Task {
                             do { openURL(try await session.client.accountBilling()) }
                             catch { authenticationFailure = "暂时无法打开订阅管理，请在原购买渠道取消。" }
                         }
-                    }.frame(minHeight: 44)
+                    } label: { AccountSheetLinkLabel("管理其他渠道订阅") }
                 }
             }
             if model.needsAuthentication {
@@ -115,7 +115,7 @@ struct AccountDeletionView: View {
             Button("继续删除") { Task { await model.retry() } }.disabled(model.busy).frame(minHeight: 44)
         case .completed:
             Text("账号与关联的学习内容已删除。Apple 订阅仍需在系统中单独取消。")
-            Link("管理 Apple 订阅", destination: URL(string: "https://apps.apple.com/account/subscriptions/")!).frame(minHeight: 44)
+            Link(destination: URL(string: "https://apps.apple.com/account/subscriptions/")!) { AccountSheetLinkLabel("管理 Apple 订阅") }
         case nil: EmptyView()
         }
     }

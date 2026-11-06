@@ -33,7 +33,6 @@ struct AccountView: View {
     }
     #endif
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var editingUnavailable: Bool { busy || session.sync?.online == false }
 
@@ -166,7 +165,7 @@ struct AccountView: View {
     private func stats(_ value: AccountSettings) -> some View {
         VStack(spacing: 12) {
             subscriptionCard(value)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: typeSize.isAccessibilitySize ? 1 : 2), spacing: 12) {
+            VStack(spacing: 12) {
                 AccountQuotaCard(title: "AI 词点额度", allowance: value.definitions)
                     .accessibilityIdentifier("account-quota-summary-definitions")
                 AccountQuotaCard(title: "AI 语点额度", allowance: value.audio)
@@ -328,25 +327,16 @@ private struct MembershipEntryLabel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 12) {
-                    subscriptionTitle
-                    if !details.hasPaidMembership { planCaption }
-                }.fixedSize()
-                VStack(alignment: .leading, spacing: 6) {
-                    subscriptionTitle
-                    if !details.hasPaidMembership { planCaption }
-                }
-            }
+            subscriptionTitle
 
             if typeSize.isAccessibilitySize {
-                headline(size: details.hasPaidMembership ? 30 : 26)
+                headline(size: 30)
             } else {
                 ViewThatFits(in: .horizontal) {
-                    illustratedHeadline(width: 240, titleSize: details.hasPaidMembership ? 38 : 30)
-                    illustratedHeadline(width: 160, titleSize: details.hasPaidMembership ? 30 : 26)
+                    illustratedHeadline(width: 240, titleSize: 38)
+                    illustratedHeadline(width: 160, titleSize: 30)
                     VStack(alignment: .leading, spacing: 12) {
-                        headline(size: details.hasPaidMembership ? 30 : 26)
+                        headline(size: 30)
                         artwork.frame(maxWidth: 240).frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
@@ -380,22 +370,11 @@ private struct MembershipEntryLabel: View {
             .accessibilityAddTraits(.isHeader)
     }
 
-    private var planCaption: some View {
-        Text(details.membershipTitle)
-            .editorialFont(18, relativeTo: .headline, language: nil)
-            .foregroundStyle(foreground.opacity(0.8))
-    }
-
     private func headline(size: CGFloat) -> some View {
-        Group {
-            if details.hasPaidMembership {
-                Text(details.membershipTitle).editorialFont(size, relativeTo: .title, language: nil)
-            } else {
-                Text("畅学语言，\n畅行天下。").displayFont(size, relativeTo: .title)
-            }
-        }
-        .multilineTextAlignment(.leading)
-        .fixedSize(horizontal: false, vertical: true)
+        Text(details.membershipTitle)
+            .displayFont(size, relativeTo: .title)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private func illustratedHeadline(width: CGFloat, titleSize: CGFloat) -> some View {
@@ -442,20 +421,28 @@ private struct MembershipEntryButtonStyle: ButtonStyle {
 private struct AccountQuotaCard: View {
     let title: String
     let allowance: Account.Allowance
-    @ScaledMetric(relativeTo: .body) private var ringSize: CGFloat = 88
+    @ScaledMetric(relativeTo: .body) private var ringSize: CGFloat = 64
+    @Environment(\.dynamicTypeSize) private var typeSize
     private var fraction: Double { allowance.limit > 0 ? min(max(allowance.used / allowance.limit, 0), 1) : 0 }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            AccountCardTitle(title)
-            ring.frame(maxWidth: .infinity)
-            usage
-            if allowance.resetsIn > 0 {
-                Text("\(Duration.seconds(allowance.resetsIn).formatted(.units(allowed: [.hours, .minutes], width: .abbreviated)))后重置")
-                    .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+        HStack(spacing: 16) {
+            if !typeSize.isAccessibilitySize { ring }
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    AccountCardTitle(title)
+                    Spacer(minLength: 0)
+                    if allowance.resetsIn > 0 {
+                        Text(allowance.resetsIn >= 86_400
+                             ? "\((allowance.resetsIn - 1) / 86_400 + 1) 天后重置"
+                             : "1 天内重置")
+                            .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                usage
             }
-        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(16)
+        }.frame(maxWidth: .infinity, alignment: .leading).padding(16)
             .background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
             .accessibilityElement(children: .combine)
     }
@@ -605,5 +592,21 @@ private struct AccountEditor: View {
                 if field == .email { emailUpdated = true } else { dismiss() }
             } catch { message = "更新失败，请检查填写内容后重试。" }
         }
+    }
+}
+
+struct AccountSheetLinkLabel: View {
+    let title: String
+    init(_ title: String) { self.title = title }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(title).underline()
+            Image(systemName: "arrow.up.right")
+                .font(.system(size: 11)).accessibilityHidden(true)
+        }
+        .foregroundStyle(Color.primary)
+        .frame(minHeight: 44)
+        .contentShape(.rect)
     }
 }

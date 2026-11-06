@@ -144,7 +144,7 @@ struct MembershipView: View {
     }
 
     private var purchaseFooter: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 4) {
             if store.action == .pending {
                 Text("正在等待购买批准，无需再次购买。")
                     .accessibilityIdentifier("membership-pending")
@@ -159,32 +159,39 @@ struct MembershipView: View {
                 HStack(spacing: 8) {
                     if store.action == .purchasing { ProgressView().tint(LeximoryPalette.paper) }
                     Text("订阅\(selection.title)")
+                    if let price = store.prices[selection] {
+                        Text(price + " / 月").accessibilityIdentifier("membership-price")
+                    }
                 }.interfaceFont(17).frame(maxWidth: .infinity, minHeight: 52)
                     .foregroundStyle(LeximoryPalette.paper)
                     .background(LeximoryPalette.ink, in: .capsule)
             }.buttonStyle(.plain).disabled(!store.canPurchase)
                 .opacity(store.canPurchase ? 1 : 0.45).accessibilityIdentifier("membership-purchase")
-            Text("\(store.prices[selection] ?? "价格暂不可用") / 月，自动续订，可随时取消")
-                .accessibilityIdentifier("membership-price")
+            Text("按月自动续订，可随时取消。")
+                .padding(.top, 8)
+                .accessibilityIdentifier("membership-renewal")
             HStack(spacing: 20) {
                 Button { Task { await store.restore(session: session) } } label: {
                     HStack(spacing: 5) {
                         if store.action == .restoring { ProgressView() }
-                        Text("恢复购买")
+                        Text("恢复购买").underline().foregroundStyle(Color.primary)
                     }.frame(minHeight: 44)
                 }.accessibilityIdentifier("membership-restore")
                     .disabled(store.action.isBusy || store.action == .pending || store.action == .confirming)
-                Link("条款", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
-                    .frame(minHeight: 44)
-                Button("隐私") { showsPrivacy = true }.frame(minHeight: 44)
+                Link(destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) {
+                    Text("条款").underline().foregroundStyle(Color.primary).frame(minHeight: 44)
+                }
+                Button { showsPrivacy = true } label: {
+                    Text("隐私").underline().foregroundStyle(Color.primary).frame(minHeight: 44)
+                }
             }
             if case .restoreFailed(let message) = store.action {
                 Text(message).accessibilityIdentifier("membership-error")
-                Link("联系支持", destination: URL(string: "mailto:billing@leximory.com")!).frame(minHeight: 44)
+                Link(destination: URL(string: "mailto:billing@leximory.com")!) { AccountSheetLinkLabel("联系支持") }
             }
         }
-        .interfaceFont(12, style: .footnote)
-        .foregroundStyle(LeximoryPalette.muted).multilineTextAlignment(.center)
+        .interfaceFont(13, style: .footnote)
+        .foregroundStyle(.secondary).multilineTextAlignment(.center)
     }
 
     private var currentMembership: some View {
@@ -197,13 +204,13 @@ struct MembershipView: View {
             }
             if details.memberships?.contains(where: { $0.provider == .appStore }) == true || details.membership?.provider == .appStore {
                 Button { showsManagement = true } label: {
-                    HStack { Text("管理 App Store 订阅"); Spacer(); Image(systemName: "arrow.up.right") }.frame(minHeight: 44)
+                    AccountSheetLinkLabel("管理 App Store 订阅")
                 }
             }
             if details.membership?.provider == .legacy || (details.membership == nil && details.hasPaidMembership) {
                 Text("已有会员权益可在此继续使用。如需确认原订阅或取消续订，请联系支持，避免重复订阅。")
                     .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
-                Link("联系支持", destination: URL(string: "mailto:billing@leximory.com")!).frame(minHeight: 44)
+                Link(destination: URL(string: "mailto:billing@leximory.com")!) { AccountSheetLinkLabel("联系支持") }
             }
 
         }.padding(22).frame(maxWidth: .infinity, alignment: .leading)
@@ -231,8 +238,8 @@ private struct MembershipPrivacyView: View {
                     Text("Leximory 使用你的账号资料提供登录和个人资料功能，并保存书签、词汇与学习记录。使用 AI 注解或朗读时，相关文本会发送到服务端处理。")
                     Text("订阅与付款").interfaceFont(17, semibold: true, style: .headline)
                     Text("App Store 购买由 Apple 处理。Leximory 需要购买记录来确认会员权益，不会收到你的银行卡信息。")
-                    Text("如需了解或处理个人数据，请联系 privacy@leximory.com。")
-                    Link("联系隐私支持", destination: URL(string: "mailto:privacy@leximory.com")!).frame(minHeight: 44)
+                    Text("如需了解或处理个人数据，请联系隐私支持。")
+                    Link(destination: URL(string: "mailto:privacy@leximory.com")!) { AccountSheetLinkLabel("联系隐私支持") }
                 }.padding(24).frame(maxWidth: 600).frame(maxWidth: .infinity)
             }
                 .navigationTitle("隐私说明").navigationBarTitleDisplayMode(.inline)

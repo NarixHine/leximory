@@ -42,7 +42,7 @@ final class AccountUITests: XCTestCase {
         add(attachment)
         subscription.tap()
         XCTAssertTrue(app.buttons["membership-purchase"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["membership-price"].label.contains("US$4.49"))
+        XCTAssertTrue(app.buttons["membership-purchase"].label.contains("US$4.49"))
         app.buttons["membership-close"].tap()
         let username = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "用户名")).firstMatch
         for _ in 0..<5 where !username.isHittable { app.swipeUp() }
