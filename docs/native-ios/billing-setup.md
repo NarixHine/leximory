@@ -1,5 +1,7 @@
 # Subscription setup and testing
 
+For the proposed execution sequence, required evidence, and release criteria, see the [end-to-end subscription test plan](iap-end-to-end-test-plan.md).
+
 The backend and StoreKit delivery are implemented. Live purchases remain disabled until App Store Connect setup and release verification are complete. No database operation was run by the agent. The regenerated `apple_subscriptions` types are the schema contract; no additional table or database function is required.
 
 ## Test now, without App Store Connect
@@ -65,7 +67,7 @@ Use Apple's Sandbox with the ordinary Leximory scheme and no StoreKit configurat
 
 Verify new purchase, restore, pending approval, renewal, cancellation with access through expiry, grace, billing retry, refund and refund reversal. Restart the app before server acknowledgement, interrupt connectivity, replay notifications and try restoring while signed into another Leximory account. Confirm that the original owner retains the subscription and that consumed AI quotas and reset times stay unchanged.
 
-Run the mobile suite, contract checks, type checks, and the iPhone/iPad StoreKit tests. Include a real Sandbox notification test and inspect Inngest retry recovery. Local and injected tests do not establish successful Apple credentials, certificate validation against real transactions, deployment configuration, or database RLS in the live project.
+Run the mobile suite, contract checks, type checks, and the iPhone/iPad StoreKit tests. Include a real Sandbox notification test and inspect Upstash Workflow retry recovery. Local and injected tests do not establish successful Apple credentials, certificate validation against real transactions, deployment configuration, or database RLS in the live project.
 
 ## Remaining App Store release gates
 
