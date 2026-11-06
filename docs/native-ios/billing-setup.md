@@ -53,7 +53,7 @@ Configure **V2 Production and Sandbox notifications** to:
 https://<Leximory deployment>/api/apple/notifications
 ```
 
-Deploy the Inngest functions from the existing `/api/inngest` integration. Verify function discovery for `apple-subscription` and `apple-subscription-recovery`, delivery retries, failure alerts and replay. Notifications receive 200 only after signature validation and durable queue acceptance. Events contain an environment and original transaction ID; raw signed evidence stays out of event and step output.
+Deploy and configure the signed Upstash Workflow endpoints and hourly recovery schedule using [the iOS workflow cutover guide](upstash-workflows.md). Notifications receive 200 only after signature validation and durable queue acceptance. Payloads contain an environment and original transaction ID; raw signed evidence stays out of workflow step output.
 
 Hourly recovery re-fetches known chains and scans an overlapping 48-hour Apple notification history window. For a longer outage, perform a controlled notification-history backfill before enabling checkout again. Account access always checks signed expiry at request time, so an unavailable scheduled job cannot keep an expired subscription active.
 

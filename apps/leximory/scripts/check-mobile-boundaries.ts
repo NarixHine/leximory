@@ -24,6 +24,19 @@ async function main() {
                 if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue
                 const specifier = statement.moduleSpecifier.text
                 const bindings = statement.importClause?.namedBindings
+                if (module.startsWith('server/mobile/') && /inngest/.test(specifier))
+                    violations.push(`${module}: iOS jobs must use server/workflows`)
+                if (
+                    specifier === '@upstash/workflow' &&
+                    !statement.importClause?.isTypeOnly &&
+                    bindings &&
+                    ts.isNamedImports(bindings) &&
+                    bindings.elements.some(
+                        (binding) => !binding.isTypeOnly && (binding.propertyName ?? binding.name).text === 'Client',
+                    ) &&
+                    !['server/workflows/publish.ts', 'app/api/review/steps/generate-story.ts'].includes(module)
+                )
+                    violations.push(`${module}: publish iOS workflows through server/workflows/publish.ts`)
                 if (
                     specifier === 'inngest' &&
                     module !== 'server/inngest/runtime.ts' &&

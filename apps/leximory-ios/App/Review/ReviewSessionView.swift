@@ -18,9 +18,8 @@ struct ReviewSessionView: View {
         GeometryReader { geometry in
             ZStack(alignment: .top) {
                 ScrollView {
-                    lawn(width: min(896, max(0, geometry.size.width - 24)), availableHeight: geometry.size.height - chromeHeight - 116)
-                        .padding(.horizontal, 12).padding(.top, 100).padding(.bottom, chromeHeight + 16)
-                        .frame(maxWidth: 920).frame(maxWidth: .infinity)
+                    lawn(width: geometry.size.width, availableHeight: geometry.size.height - chromeHeight)
+                        .padding(.bottom, chromeHeight)
                 }.scrollBounceBehavior(.basedOnSize).accessibilityIdentifier("review-session-scroll")
                 loadStatus.padding(.top, 12).padding(.horizontal, 20)
                 if let exercise = model.exercise {
@@ -79,7 +78,7 @@ struct ReviewSessionView: View {
         let vertical = width < 600
         let accessible = typeSize.isAccessibilitySize || translations.count > (vertical ? 6 : 12)
         let height = accessible ? max(availableHeight, CGFloat(translations.count + 2) * 100) : max(320, availableHeight)
-        let layout = accessible ? AnyLayout(VStackLayout(spacing: 24)) : AnyLayout(ReviewLawnLayout(seed: "\(model.selection.date)-\(model.selection.language)", portrait: vertical, height: height))
+        let layout = accessible ? AnyLayout(VStackLayout(spacing: 24)) : AnyLayout(ReviewLawnLayout(seed: "\(model.selection.date)-\(model.selection.language)", portrait: vertical, height: max(0, height - 116)))
         let movementRect = CGRect(x: 0, y: 0, width: width, height: height)
         return ZStack {
             Color.clear.frame(width: width, height: height)
@@ -100,7 +99,9 @@ struct ReviewSessionView: View {
                         .accessibilityLabel(model.snapshot?.conversationUnlocked == true ? "每日练笔" : "每日练笔，完成六成翻译后解锁")
                         .accessibilityIdentifier("review-task-conversation")
                 }
-            }.frame(width: width, height: height)
+            }.frame(width: max(0, width - 24), height: max(0, height - 116))
+                .padding(.horizontal, 12).padding(.top, 100).padding(.bottom, 16)
+                .frame(width: width, height: height)
             ReviewMovingCat(driver: cat)
         }.frame(width: width, height: height).clipped().coordinateSpace(name: "review-lawn")
             .accessibilityElement(children: .contain).accessibilityIdentifier("review-lawn")

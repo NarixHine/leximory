@@ -1,0 +1,70 @@
+---
+name: upstash
+description: Work with any Upstash product, SDK, or tool, including serverless Redis (caching, sessions, leaderboards, key-value storage), Ratelimit (rate limiting and throttling), QStash (message queue, cron schedules, background jobs), Workflow (durable long-running functions), Vector (vector database for embeddings, semantic search, and RAG), Search (full-text and semantic search), Box (sandboxed cloud containers for AI agents, TypeScript/JavaScript and Python), Blob (serverless S3-compatible file storage with direct browser uploads), the Upstash CLI, and no-signup scratch Redis for agents. Use when the user mentions Upstash or needs any of these capabilities in a serverless, edge, or Node.js app.
+license: MIT
+metadata:
+  author: Upstash
+  homepage: https://upstash.com
+---
+
+# Upstash Skills
+
+This skill combines documentation for all Upstash SDKs. Pick the relevant sub-skill below.
+
+If Upstash MCP tools are available in this session, prefer them for account and data operations —
+creating and inspecting databases, indexes and Blob buckets, running Redis commands, reading stats,
+logs and the DLQ, and remote work in a Box (shell, browser, git, preview URLs, PRs, screenshots
+uploaded to Blob; see `upstash-box-remote-work`). The sub-skills below are for writing application code; reach for
+`upstash-cli` only when there is no MCP or the work is inherently shell work.
+
+## [upstash-blob-js](upstash-blob-js/overview.md)
+
+Work with the @upstash/blob TypeScript/JavaScript SDK for S3-compatible object storage with direct browser uploads, presigned URLs, multipart, and signed reads. Use when storing files or blobs, uploading avatars, images, videos, attachments or user documents, letting a browser upload straight to storage without proxying bytes through a server, generating public or time-limited signed URLs, serving private files, streaming large files with pause and resume, setting cache headers on stored objects, or reaching an S3-compatible bucket from the AWS SDK.
+
+## [upstash-box-cli](upstash-box-cli/overview.md)
+
+Drive an Upstash Box (a remote sandboxed workspace) from the terminal with the `box` CLI. Use when asked to run commands, edit files, clone repos, run builds or tests, publish a public URL, browse or screenshot a page, open a pull request or issue with a screenshot attached, schedule recurring work, run an AI agent, or do any work inside a box rather than on this machine.
+
+## [upstash-box-js](upstash-box-js/overview.md)
+
+Work with the @upstash/box TypeScript/JavaScript SDK for sandboxed cloud containers with AI agents, shell, filesystem, git, cron schedules, snapshots, and a headless browser. Use when building with Upstash Box, creating a sandbox or isolated environment to run untrusted or agent-generated code, running AI coding agents in containers, giving an agent a cloud dev environment with a shell and repository, browser automation from a box, scheduling recurring jobs inside a box, saving and restoring snapshots, or orchestrating parallel boxes.
+
+## [upstash-box-py](upstash-box-py/overview.md)
+
+Work with the upstash-box Python SDK for sandboxed cloud containers with AI agents, shell, filesystem, git, cron schedules, snapshots, and a headless browser. Use when building with Upstash Box in Python, creating a sandbox or isolated environment to run untrusted or agent-generated code, running AI coding agents in containers, giving an agent a cloud dev environment with a shell and repository, browser automation from a box, scheduling recurring jobs inside a box, saving and restoring snapshots, or orchestrating parallel boxes.
+
+## [upstash-box-remote-work](upstash-box-remote-work/overview.md)
+
+Do work in an Upstash Box, a sandboxed cloud container driven through the remote Upstash MCP server (mcp.upstash.com), instead of on the local machine. Use when the user asks to run, build, test, clone, or edit something remotely, in a sandbox, in the cloud, or in a box, when the deliverable is a pull request, a public preview URL, or a screenshot of a running app, when the local machine cannot deliver (no GitHub login for gh, no way to expose a port, a dirty or slow local checkout), when several independent tasks should run in parallel on separate machines, a code factory that turns a list of tasks into a list of pull requests, or when the deliverable is a video, screen recording, demo or timelapse of a browser, web app, terminal program or agent run. Applies whenever the session has the box_* and blob_* MCP tools, even when Upstash is not named.
+
+## [upstash-cli](upstash-cli/overview.md)
+
+Run the Upstash CLI (`upstash`) from a terminal, shell script, or CI job when no Upstash MCP tools are in the session. Do not load this skill when Upstash MCP tools are available (the Upstash plugin registers mcp.upstash.com) - they already cover creating, listing, renaming, and deleting Redis databases, running Redis commands, usage stats, backups, Vector and Search indexes, QStash schedules and messages, Blob buckets, and Box, so call them directly. Use this skill for shell work the MCP does not do - a CI step or provisioning script that needs `upstash` commands with JSON output, piping results into other commands, `upstash auth login` and API-key setup, team and member management, changing plans, regions, TLS, eviction, auto-upgrade, or budgets, minting temporary S3 credentials for a Blob bucket, connecting a coding agent to Upstash with `upstash setup` (the Upstash plugin, or the remote MCP server plus skills), or when the user explicitly asks for the CLI or for managing Upstash without the console.
+
+## [upstash-qstash-js](upstash-qstash-js/overview.md)
+
+Work with the @upstash/qstash TypeScript/JavaScript SDK, an HTTP-based message queue, task scheduler, and background job system for serverless and edge runtimes (Next.js, Vercel, Cloudflare Workers, Deno, Node.js). Use when publishing messages to HTTP endpoints or URL groups, running background jobs without a long-running worker process, scheduling with cron expressions, delaying messages, building FIFO queues with parallelism and flow control, configuring retries and callbacks, handling a dead letter queue (DLQ), deduplicating messages, fanning out to multiple endpoints, verifying QStash webhook signatures (Next.js App Router, Pages Router, and Edge Runtime), running a local QStash dev server, or migrating regions. Also use when the user asks for a serverless cron job, async task queue, job scheduler, delayed delivery, webhook delivery with retries, or event-driven messaging between services.
+
+## [upstash-ratelimit-js](upstash-ratelimit-js/overview.md)
+
+Rate limiting for serverless and edge apps with the @upstash/ratelimit TypeScript/JavaScript SDK backed by Upstash Redis. Use when adding a rate limiter or throttling to an API route, Next.js middleware, Vercel Edge, Cloudflare Workers, or any HTTP endpoint; returning 429 Too Many Requests; choosing between fixed window, sliding window, and token bucket algorithms; limiting per user, IP, API key, or tenant with prefixes and custom keys; protecting login, signup, form, or AI endpoints from abuse, bots, and brute force; using deny lists, ephemeral caching, analytics, timeouts, and multi-region rate limits; or estimating the Redis command cost of rate limiting. Also use when the user says rate limit, rate-limiting, throttle, quota, request limits, or traffic protection.
+
+## [upstash-redis-js](upstash-redis-js/overview.md)
+
+Work with the @upstash/redis TypeScript/JavaScript SDK, a serverless HTTP-based Redis client for Next.js, Vercel, Cloudflare Workers, edge runtimes, and Node.js. Use when adding a cache (cache-aside, write-through, TTL and expiration strategies), session storage and user sessions, a key-value store, leaderboards and rankings with sorted sets, counters, distributed locks, queues with lists, streams and consumer groups, sparse index-addressed arrays and ring buffers (ARSET, ARINSERT, ARRING, ARGREP, AROP), embeddings and nearest-neighbour vector search stored inside Redis (VECTOR commands via redis.vector, separate from @upstash/vector), JSON documents, pipelines and MULTI/EXEC transactions, Lua scripting, read replicas, or full-text search, typo-tolerant search, facets, aggregations, and search over Redis stream entries with Upstash Redis Search (different from regular FT.SEARCH; also available for TCP clients via @upstash/search-redis and @upstash/search-ioredis). Also use when migrating from ioredis or node-redis, when a Redis connection is needed from a serverless function without connection pooling, when integrating @upstash/ratelimit, or when the user says Redis cache, KV store, session store, serverless Redis, or Upstash Redis. Also use when building AI agents on Redis with Upstash AgentKit (agent memory, chat history, RAG tools, tool caching, chat persistence, resumable streams, distributed locks) for the Vercel AI SDK, TanStack AI, or Vercel Eve. Supports automatic serialization/deserialization of JavaScript types.
+
+## [upstash-redis-start](upstash-redis-start/overview.md)
+
+Provision a zero-config, no-signup, temporary Upstash Redis database for an AI agent with a single POST to https://upstash.com/start-redis, with no account, API key, or SDK setup required. Use when an agent needs scratch Redis right now and the user has not provided credentials, for short-term memory across tool calls, conversation history, a sub-agent work queue, ranked recall, or a quick prototype or demo. Covers idempotent creation and re-fetching credentials, calling the database through the body-style REST API or the official SDKs, and telling the user how to claim it. The database lives 3 days unless the user claims it; not for production data, PII, or secrets.
+
+## [upstash-search-js](upstash-search-js/overview.md)
+
+Work with the @upstash/search TypeScript/JavaScript SDK, a serverless full-text and semantic search database with built-in reranking. Use when adding search to an app or site, creating a search index, upserting documents with searchable content and filterable metadata, running keyword, semantic, or hybrid search queries, reranking results, filtering with SQL-like or structured filter syntax, paginating with range, fetching or deleting documents, resetting an index, or checking index info. Also use when the user asks for site search, product, document, or knowledge-base search, or a managed search service that needs no cluster to run.
+
+## [upstash-vector-js](upstash-vector-js/overview.md)
+
+Work with the @upstash/vector TypeScript/JavaScript SDK, a serverless vector database for embeddings, similarity search, semantic search, and RAG (retrieval-augmented generation). Use when upserting, querying, fetching, ranging, or deleting vectors, upserting raw text against an index with a built-in embedding model, choosing dense, sparse, or hybrid indexes, filtering by metadata, organizing data with namespaces, running resumable queries, or connecting Upstash Vector to an AI or LLM application. Also use when the user asks for a vector store, vector search, nearest-neighbor or kNN search, embeddings storage, semantic cache, recommendations or similarity features, or a hosted vector index that needs no infrastructure.
+
+## [upstash-workflow-js](upstash-workflow-js/overview.md)
+
+Work with the @upstash/workflow TypeScript/JavaScript SDK for durable, long-running workflows in serverless functions, multi-step processes that survive timeouts, retries, and restarts (built on QStash). Use when defining a workflow endpoint with serve(), running steps with context.run, sleeping for minutes to days without holding a function open, calling external APIs with context.call, waiting for an external event or webhook, invoking other workflows, configuring retries, failure callbacks, and a DLQ, controlling concurrency, rate, and parallelism, triggering, cancelling, or inspecting runs with the Workflow client, building AI agents and orchestrators, human-in-the-loop approvals, realtime updates, local development with the QStash dev server, adding middleware, or migrating workflows safely. Also use when the user asks for durable execution, step functions, saga or orchestration patterns, background jobs with checkpoints, or long-running tasks on Vercel, Next.js, Cloudflare Workers, or other serverless platforms.

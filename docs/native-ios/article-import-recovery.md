@@ -16,7 +16,7 @@ All mobile mutation adapters use this cache invalidation boundary. The real Next
 
 Import requests carry a stable request ID. The saved identity includes the account, folder, request ID, and canonical import fields. A replay returns existing stored text instead of overwriting it. Quota and annotation jobs use stable identities, and saved source text survives a failed acknowledgement.
 
-Receipt bookkeeping is an optimization, not proof of generation completion. Receipts last seven days. Inngest event IDs suppress duplicate starts within its [24-hour deduplication window](https://www.inngest.com/docs/durable-execution/guides-and-advanced/idempotency). This is bounded recovery, not a permanent exactly-once guarantee.
+Receipt bookkeeping is an optimization, not proof of generation completion. Receipts last seven days. Native imports now use stable Upstash workflow run IDs with bounded provider deduplication; see [workflow architecture and cutover](upstash-workflows.md). This is bounded recovery, not a permanent exactly-once guarantee.
 
 Required dependency failures retain their cause and named step for server logs, along with the response's request ID. Logs omit request content, credentials, and raw database/provider messages.
 

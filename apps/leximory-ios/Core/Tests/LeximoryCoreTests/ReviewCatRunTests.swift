@@ -4,10 +4,10 @@ import Testing
 @testable import LeximoryCore
 
 @Suite struct ReviewCatRunTests {
-    @Test func catFootprintStaysInsideThePaintedInterior() {
+    @Test func catFootprintStaysInsideTheFullScreenLawn() {
         let lawn = CGRect(x: 30, y: 200, width: 360, height: 644)
         let bounds = ReviewCatRun.movementBounds(in: lawn)
-        let interior = lawn.insetBy(dx: 28.8, dy: 51.52)
+        let interior = lawn
         for center in [CGPoint(x: bounds.minX, y: bounds.minY), CGPoint(x: bounds.maxX, y: bounds.maxY)] {
             for degrees in stride(from: -75.0, through: 75.0, by: 15) {
                 let transform = CGAffineTransform(rotationAngle: degrees * .pi / 180)
@@ -19,8 +19,16 @@ import Testing
                 }
             }
         }
-        #expect(bounds.minY > 300)
-        #expect(bounds.maxY < 744)
+        #expect(abs(bounds.minY - (lawn.minY + hypot(ReviewCatRun.width, ReviewCatRun.height) / 2)) < 0.001)
+        #expect(bounds.height > 430)
+    }
+    @Test func smallWindowsKeepValidMovementBounds() {
+        let lawn = CGRect(x: 0, y: 0, width: 160, height: 80)
+        let bounds = ReviewCatRun.movementBounds(in: lawn)
+        #expect(bounds.width == 0)
+        #expect(bounds.height == 0)
+        #expect(bounds.midX == lawn.midX)
+        #expect(bounds.midY == lawn.midY)
     }
     @Test func webSpriteSizeAndTravelSpeed() {
         #expect(ReviewCatRun.height == 100)

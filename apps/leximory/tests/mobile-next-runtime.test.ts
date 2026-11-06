@@ -46,6 +46,14 @@ test(
                     },
                 }),
             )
+            for (const workflow of ['article-annotation', 'account-deletion', 'apple-subscription', 'apple-recovery']) {
+                const directory = join(root, 'app/api/workflows/ios', workflow)
+                await mkdir(directory, { recursive: true })
+                await writeFile(
+                    join(directory, 'route.ts'),
+                    await readFile(new URL(`../app/api/workflows/ios/${workflow}/route.ts`, import.meta.url), 'utf8'),
+                )
+            }
             const importDirectory = join(root, 'app/api/mobile/v1/libraries/[libraryId]/articles')
             await mkdir(importDirectory, { recursive: true })
             await writeFile(
@@ -138,6 +146,18 @@ test(
                     if (Date.now() > deadline) throw new Error(`Next did not start:\n${output}`)
                     await delay(100)
                 }
+            }
+            for (const workflow of ['article-annotation', 'account-deletion', 'apple-subscription', 'apple-recovery']) {
+                const response = await fetch(`${origin}/api/workflows/ios/${workflow}`, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: '{}',
+                })
+                assert.equal(
+                    response.status,
+                    403,
+                    `unsigned ${workflow} must be rejected before external I/O: ${await response.text()}`,
+                )
             }
             const guestInput = await fetch(origin + '/api/mobile/v1/guest/session', {
                 method: 'POST',
@@ -239,8 +259,8 @@ test(
             assert.deepEqual(await replay.json(), saved)
             assert.equal(backend.texts.size, 1)
             assert.equal(new Set(backend.events.map((event) => event.id)).size, 1)
-            assert.equal(backend.events[0]?.name, 'app/article.imported')
-            assert.equal(backend.events[0]?.environment, 'fixture-preview')
+            assert.equal(backend.events[0]?.name, '/api/workflows/ios/article-annotation')
+            assert.equal(backend.events[0]?.environment, undefined)
             backend.rejectQueue({ status: 401, error: 'Event key not found' })
             const rejected = await importRequest({ ...article, requestId: 'rejected-import' })
             assert.equal(rejected.status, 503)

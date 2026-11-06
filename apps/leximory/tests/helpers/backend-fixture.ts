@@ -185,6 +185,30 @@ export async function startBackendFixture() {
                 else json({ result: redis(body) })
                 return
             }
+            if (url.pathname === '/v2/batch') {
+                if (rejection) {
+                    json({ error: rejection.error }, rejection.status)
+                    return
+                }
+                const batch = z
+                    .array(
+                        z.object({
+                            destination: z.string(),
+                            body: z.string(),
+                            headers: z.record(z.string(), z.string()),
+                        }),
+                    )
+                    .parse(body)
+                for (const message of batch)
+                    events.push({
+                        id: new Headers(message.headers).get('upstash-workflow-runid')!,
+                        name: new URL(message.destination).pathname,
+                        data: JSON.parse(message.body),
+                        environment: undefined,
+                    })
+                json(batch.map(() => ({ messageId: 'fixture-workflow-message' })))
+                return
+            }
             if (url.pathname.startsWith('/inngest/e/')) {
                 const batch = z.array(z.object({ id: z.string(), name: z.string(), data: z.unknown() })).parse(body)
                 if (rejection) {
