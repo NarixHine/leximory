@@ -1,92 +1,6 @@
 import SwiftUI
 import LeximoryCore
 
-struct VocabularyLibraryView: View {
-    let library: FixtureLibrary
-    let client: MobileClient
-    let closeCorpus: () -> Void
-    @Environment(\.nativeSync) private var sync
-    @Environment(\.horizontalSizeClass) private var sizeClass
-    @State private var words: [SavedWord] = []
-    @State private var cursor: String?
-    @State private var loading = false
-    @State private var error: String?
-    @State private var selected: SavedWord?
-    var body: some View {
-        GeometryReader { geometry in
-                let contentWidth = min(geometry.size.width, LeximoryLayout.textGalleryMeasure)
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
-                        HStack(alignment: .top, spacing: 16) {
-                            Text(library.name).editorialFont(32, language: library.language)
-                                .foregroundStyle(LeximoryPalette.ink).fixedSize(horizontal: false, vertical: true)
-                                .accessibilityAddTraits(.isHeader)
-                            Spacer(minLength: 0)
-                            Button("返回", systemImage: "chevron.left", action: closeCorpus)
-                                .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
-                                .frame(minWidth: 44, minHeight: 44).tint(.primary)
-                                .accessibilityIdentifier("corpus-show-texts")
-                        }
-                        timeline(columns: contentWidth < 600 ? 2 : 3)
-                    }.padding(24).frame(maxWidth: LeximoryLayout.textGalleryMeasure).frame(maxWidth: .infinity)
-                }.background(LeximoryPalette.paper)
-            }.navigationTitle("已存词汇").navigationBarTitleDisplayMode(.inline)
-                .task { await load(reset: true) }
-                .refreshable { await load(reset: true) }
-                .tint(.primary)
-                .accessibilityIdentifier("corpus-\(library.id.rawValue)")
-    }
-    private func timeline(columns: Int) -> some View {
-        LazyVStack(alignment: .leading, spacing: 22) {
-            ForEach(days, id: \.self) { day in
-                if !day.isEmpty { Text(dateLabel(day)).interfaceFont(13).foregroundStyle(.secondary) }
-                wordGrid(words.filter { dateKey($0) == day }, columns: columns)
-            }
-            if loading { HStack(spacing: 10) { ProgressView(); Text("正在加载词汇").interfaceFont(15) }.frame(maxWidth: .infinity) }
-            if cursor != nil && !loading {
-                Button("更多", systemImage: "chevron.down") { Task { await load(reset: false) } }.frame(maxWidth: .infinity, minHeight: 44)
-            }
-            if let error { Text(error).interfaceFont(14).foregroundStyle(LeximoryPalette.muted) }
-            if words.isEmpty && error != nil { Button("重试") { Task { await load(reset: true) } } }
-        }
-    }
-    private func wordGrid(_ items: [SavedWord], columns: Int) -> some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columns), spacing: 12) {
-            ForEach(items) { word in
-                Button { selected = word } label: {
-                    Text(word.fields.lemma).font(LeximoryTypography.prose(19, language: library.language))
-                        .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, minHeight: 58).padding(12)
-                        .background(LeximoryPalette.shell, in: RoundedRectangle(cornerRadius: 28))
-                }.buttonStyle(.plain).foregroundStyle(LeximoryPalette.ink)
-                    .popover(isPresented: Binding(get: { selected?.id == word.id }, set: { if !$0 { selected = nil } }), arrowEdge: nil) {
-                        CorpusWordTray(word: word, library: library, client: client, isPopover: sizeClass == .regular) { updated in
-                            if let index = words.firstIndex(where: { $0.id == updated.id }) { words[index] = updated }
-                        }.id(word.id).presentationCompactAdaptation(.sheet).presentationDragIndicator(.visible)
-                    }
-            }
-        }
-    }
-    private var days: [String] { var seen = Set<String>(); return words.map(dateKey).filter { seen.insert($0).inserted } }
-    private func dateKey(_ word: SavedWord) -> String { String((word.createdAt ?? "").prefix(10)) }
-    private func dateLabel(_ key: String) -> String {
-        let parts = key.split(separator: "-")
-        return parts.count == 3 ? "\(parts[0])年\(Int(parts[1]) ?? 0)月\(Int(parts[2]) ?? 0)日" : key
-    }
-    private func load(reset: Bool) async {
-        guard !loading else { return }
-        if let cached = await client.localStore?.value([SavedWord].self, for: "words/\(library.id.rawValue)") { words = cached }
-        guard sync?.online != false else { return }
-        loading = words.isEmpty; error = nil
-        defer { loading = false }
-        do { words = try await client.allVocabulary(libraryID: library.id.rawValue); cursor = nil }
-        catch {
-            if MobileClient.isAccessFailure(error) { words = []; self.error = "暂时无法访问这个语料本。" }
-            else if !Task.isCancelled, words.isEmpty { self.error = "请联网后同步语料本。" }
-        }
-    }
-}
-
 struct CorpusWordTray: View {
     @Environment(\.nativeSync) private var sync
     @State private var editor: VocabularyEditModel
@@ -121,7 +35,7 @@ struct CorpusWordTray: View {
                             editing = false
                         }, cancel: { editing = false })
                     } else {
-                        Text(word.fields.lemma).font(LeximoryTypography.prose(24, language: library.language, bold: true))
+                        Text(word.fields.lemma).font(LeximoryTypography.prose(isPopover ? 22 : 20, language: library.language, bold: true))
                         section("释义", word.fields.definition)
                         if let content = word.fields.etymology { section("语源", content) }
                         if let content = word.fields.cognates { section("同源词", content) }
@@ -194,9 +108,9 @@ struct CorpusWordTray: View {
         return base.flatMap { URL(string: $0)?.appending(path: word.fields.lemma) }
     }
     private func section(_ label: String, _ content: String) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 2) {
             Text(label).interfaceFont(14).foregroundStyle(.secondary)
-            AnnotationMarkdownText(content: content, size: 17, language: library.language)
+            AnnotationMarkdownText(content: content, size: isPopover ? 18 : 17, language: library.language)
         }
     }
 }

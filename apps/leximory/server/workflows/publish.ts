@@ -1,4 +1,5 @@
 import 'server-only'
+import { createHash } from 'node:crypto'
 import { Client, type TriggerOptions } from '@upstash/workflow'
 import type env from '@repo/env'
 import { z } from 'zod'
@@ -6,6 +7,10 @@ import { ExternalServiceError } from '../errors/external-service'
 import { articleImportEventSchema, applePayload, deletionPayload } from './contracts'
 
 type Settings = Pick<typeof env, 'QSTASH_URL' | 'QSTASH_TOKEN' | 'NEXT_PUBLIC_LEXIMORY_URL' | 'VERCEL_ENV'>
+
+function flowKey(scope: string, owner: string) {
+    return `${scope}.${createHash('sha256').update(owner).digest('hex')}`
+}
 
 export function createWorkflowPublisher(settings: Settings) {
     const hosted = settings.VERCEL_ENV === 'preview' || settings.VERCEL_ENV === 'production'
@@ -24,7 +29,7 @@ export function createWorkflowPublisher(settings: Settings) {
                 url: new URL(`/api/workflows/ios/${path}`, origin).href,
                 body,
                 workflowRunId: id,
-                retries: 8,
+                retries: 5,
                 flowControl,
                 disableTelemetry: true,
             })
@@ -67,12 +72,15 @@ export function createWorkflowPublisher(settings: Settings) {
     return {
         publishArticleImport: (input: { id?: string; data: z.infer<typeof articleImportEventSchema> }) => {
             const body = parse(articleImportEventSchema, input.data)
-            return trigger('article-annotation', body, input.id, { key: `ios-article:${body.userId}`, parallelism: 2 })
+            return trigger('article-annotation', body, input.id, {
+                key: flowKey('ios-article', body.userId),
+                parallelism: 2,
+            })
         },
         publishAppleSubscription: (input: z.infer<typeof applePayload>, id?: string) => {
             const body = parse(applePayload, input)
             return trigger('apple-subscription', body, id, {
-                key: `apple:${body.environment}:${body.chain}`,
+                key: flowKey('apple', JSON.stringify([body.environment, body.chain])),
                 parallelism: 1,
             })
         },
@@ -81,7 +89,7 @@ export function createWorkflowPublisher(settings: Settings) {
                 'account-deletion',
                 parse(deletionPayload, { requestId }),
                 `account-deletion:${requestId}:${attempt}`,
-                { key: `account-deletion:${requestId}`, parallelism: 1 },
+                { key: flowKey('account-deletion', requestId), parallelism: 1 },
             ),
     }
 }

@@ -34,6 +34,18 @@ struct BrowserImportRequest: Identifiable {
 
 private enum ImportStep: Hashable { case folder }
 
+private enum ImportFailure {
+    case save(message: String, retryable: Bool), editor, uncertain
+    var dismissal: String { if case .save(_, false) = self { "好" } else { "取消" } }
+    var message: String {
+        switch self {
+        case .save(let message, _): message
+        case .editor: "正文暂时无法读取。请重新打开正文后再试，已输入的内容会保留。"
+        case .uncertain: "请先查看我的书签，确认电子书是否已导入。"
+        }
+    }
+}
+
 struct BrowserImportSheet: View {
     let request: BrowserImportRequest
     @Bindable var workspace: BrowserWorkspaceModel
@@ -49,7 +61,9 @@ struct BrowserImportSheet: View {
     @State private var initialRuleFolderID: String?
     @State private var busy = false
     @State private var uncertain = false
-    @State private var error: String?
+    @State private var failure: ImportFailure?
+    @State private var extractionFailed: Bool
+    @State private var extracting = false
     @State private var path: [ImportStep] = []
     @State private var requestID = UUID().uuidString
     @State private var ebookDraft: EbookImportDraft
@@ -62,6 +76,11 @@ struct BrowserImportSheet: View {
     }
     private var selectedFolderID: String? { file == nil ? folderID : ebookDraft.folderID }
     private var importTitle: String { file == nil ? title : ebookDraft.title }
+    private var failureTitle: String {
+        if case .editor = failure { return "未能读取正文" }
+        if case .uncertain = failure { return "未能确认导入结果" }
+        switch request.source { case .article: return "未能保存网页"; case .ebook: return "未能导入电子书"; case .pdf: return "未能保存 PDF" }
+    }
     private var folder: CatalogLibrary? { workspace.writableFolders.first { $0.id == selectedFolderID } }
     private var folderSelection: Binding<String?> {
         Binding(get: { selectedFolderID }, set: { value in
@@ -84,8 +103,12 @@ struct BrowserImportSheet: View {
         switch request.source { case .ebook(let file), .pdf(let file): filename = file.name; case .article: filename = "" }
         _ebookDraft = State(initialValue: EbookImportDraft(filename: filename))
         switch request.source {
-        case .article(let draft): _title = State(initialValue: draft.title); _content = State(initialValue: draft.content)
-        case .ebook(let file), .pdf(let file): _title = State(initialValue: (file.name as NSString).deletingPathExtension); _content = State(initialValue: "")
+        case .article(let draft):
+            _title = State(initialValue: draft.title); _content = State(initialValue: draft.content)
+            _extractionFailed = State(initialValue: draft.extractionFailed)
+        case .ebook(let file), .pdf(let file):
+            _title = State(initialValue: (file.name as NSString).deletingPathExtension); _content = State(initialValue: "")
+            _extractionFailed = State(initialValue: false)
         }
     }
     var body: some View {
@@ -146,31 +169,48 @@ struct BrowserImportSheet: View {
                 }
                 if file == nil && fullText {
                     Section {
-                        ArticleEditorSurface(content: content, language: folder?.preview.language ?? "English", controller: editor, disabled: busy) { content = $0 }
-                            .id(ObjectIdentifier(editor))
-                            .frame(minHeight: 360, idealHeight: 480)
-                            .listRowInsets(EdgeInsets())
-                            .accessibilityIdentifier("browser-import-editor")
-                        if editor.failed {
-                            Button("重新打开正文", systemImage: "arrow.clockwise") { editor = ArticleEditorController() }
+                        if extractionFailed {
+                            ContentUnavailableView {
+                                Label("未能提取正文", systemImage: "doc.text.magnifyingglass")
+                            } description: {
+                                Text("请重试，或选择存为链接书签。")
+                            } actions: {
+                                if extracting { ProgressView().accessibilityLabel("正在提取正文") }
+                                else { Button("重试提取") { Task { await retryExtraction() } } }
+                            }
+                        } else if editor.failed {
+                            ContentUnavailableView {
+                                Label("未能打开正文", systemImage: "doc.text")
+                            } actions: {
+                                Button("重新打开正文") { editor = ArticleEditorController() }
+                            }
+                        } else {
+                            ArticleEditorSurface(content: content, language: folder?.preview.language ?? "English", controller: editor, disabled: busy || extracting) { content = $0 }
+                                .id(ObjectIdentifier(editor))
+                                .frame(minHeight: 360, idealHeight: 480)
+                                .listRowInsets(EdgeInsets())
+                                .accessibilityIdentifier("browser-import-editor")
                         }
-                        if contentTooLong, let limit { Text("全文共 \(content.utf16.count) 字符，超过此文件夹的 \(limit) 字符上限。请编辑后重试。").foregroundStyle(.secondary) }
-                        if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { Text("未能提取正文。可以存为链接，或手动编辑全文。").foregroundStyle(.secondary) }
                     } header: {
                         sectionHeading("编辑全文")
+                    } footer: {
+                        if contentTooLong, let limit { Text("全文共 \(content.utf16.count) 字符，超过此文件夹的 \(limit) 字符上限。请缩短正文。") }
+                        else if !extractionFailed && content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { Text("请输入正文，或选择存为链接书签。") }
                     }
                 }
-                if let error { Section { Text(error).foregroundStyle(.secondary).accessibilityAddTraits(.updatesFrequently) } }
             }
-            .disabled(busy)
+            .disabled(busy || uncertain)
             .navigationTitle(request.title).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() }.disabled(busy) }
                 if path.isEmpty {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button { confirmImport() } label: {
-                            if busy { ProgressView() } else { Text(file == nil && fullText ? "导入" : request.confirmation) }
-                        }.disabled(!valid || busy || uncertain || (file == nil && fullText && !editor.ready) || sync?.online == false)
+                        Button {
+                            if uncertain { dismiss(); workspace.visit(.bookmarks) }
+                            else { confirmImport() }
+                        } label: {
+                            if busy { ProgressView() } else { Text(uncertain ? "查看我的书签" : file == nil && fullText ? "导入" : request.confirmation) }
+                        }.disabled(!uncertain && (!valid || busy || extracting || (file == nil && fullText && !editor.ready) || sync?.online == false))
                             .accessibilityIdentifier("browser-import-submit")
                     }
                 }
@@ -183,6 +223,16 @@ struct BrowserImportSheet: View {
             .interactiveDismissDisabled(busy)
         }
             .onChange(of: titleFocused) { if titleFocused { ebookDraft.takeTitle() } }
+            .onChange(of: content) { if !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { extractionFailed = false } }
+            .alert(failureTitle, isPresented: Binding(get: { failure != nil }, set: { if !$0 { failure = nil } }), presenting: failure) { problem in
+                switch problem {
+                case .save(_, true): Button("重试") { confirmImport() }
+                case .editor: Button("重新打开正文") { editor = ArticleEditorController() }
+                case .uncertain: Button("查看我的书签") { dismiss(); workspace.visit(.bookmarks) }
+                case .save(_, false): EmptyView()
+                }
+                Button(problem.dismissal, role: .cancel) { }
+            } message: { problem in Text(problem.message) }
             .onDisappear { ebookDraft.stop() }
             .task(id: request.id) {
                 if let file {
@@ -233,18 +283,32 @@ struct BrowserImportSheet: View {
     private func confirmImport() {
         Task { await submit() }
     }
+    private func retryExtraction() async {
+        guard let draft, !extracting else { return }
+        extracting = true
+        defer { extracting = false }
+        do {
+            guard workspace.browser.url == draft.url else { return }
+            let recovered = try await workspace.browser.extractArticle()
+            guard !Task.isCancelled else { return }
+            if title == draft.title { title = recovered.title }
+            content = recovered.content
+            extractionFailed = recovered.extractionFailed
+            editor = ArticleEditorController()
+        } catch { }
+    }
     private func submit() async {
         guard valid, let folder, !busy, !uncertain else { return }
         if file != nil { ebookDraft.stop() }
         titleFocused = false
-        busy = true; error = nil
+        busy = true; failure = nil
         defer { busy = false }
         if file == nil && fullText {
             do {
                 editor.web?.endEditing(true)
                 content = try await editor.markdown()
             } catch {
-                self.error = "正文未能读取，请重试。"
+                failure = .editor
                 return
             }
             guard valid else { return }
@@ -267,10 +331,10 @@ struct BrowserImportSheet: View {
         } catch {
             if let failure = MobileClient.cause(of: error) as? MobileFailure {
                 uncertain = importStarted && file != nil && failure.error.code == "service_unavailable"
-                self.error = uncertain ? "未能确认导入结果，请先查看我的书签，避免重复导入。" : importStarted && fullText && failure.error.retryable ? "导入尚未完成，请重试。" : failure.error.message
+                self.failure = uncertain ? .uncertain : .save(message: failure.error.message, retryable: failure.error.retryable)
             } else {
                 uncertain = importStarted && file != nil
-                self.error = uncertain ? "未能确认导入结果，请先查看我的书签，避免重复导入。" : !importStarted ? "网站文件夹设置未能保存，请重试。" : fullText ? "导入尚未完成，请重试。" : "链接未能保存，请重试。"
+                failure = uncertain ? .uncertain : .save(message: !importStarted ? "网站文件夹设置未能保存，请重试。" : "请稍后重试。", retryable: true)
             }
         }
     }

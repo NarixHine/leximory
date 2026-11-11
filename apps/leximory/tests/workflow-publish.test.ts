@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createServer } from 'node:http'
+import { z } from 'zod'
 import { createWorkflowPublisher } from '../server/workflows/publish'
 
 // Exercise the installed SDK and production publisher with only external HTTP replaced.
@@ -43,12 +44,15 @@ test('iOS job publishing preserves payloads, identities, retries and per-owner f
         assert.equal(messages[0]?.destination, 'https://deployment.example/api/workflows/ios/article-annotation')
         assert.deepEqual(JSON.parse(messages[0]!.body), input.data)
         const headers = new Headers(messages[0]!.headers)
-        assert.equal(headers.get('upstash-retries'), '8')
-        assert.match(JSON.stringify(messages[0]!.headers), /ios-article:reader/)
+        assert.equal(headers.get('upstash-retries'), '5')
+        assert.match(headers.get('upstash-flow-control-key') ?? '', /^ios-article\.[a-f0-9]{64}$/)
         await publisher.publishAppleSubscription({ environment: 'Sandbox', chain: 'chain-1' }, 'notification-1')
         assert.equal(messages.at(-1)?.destination, 'https://deployment.example/api/workflows/ios/apple-subscription')
         assert.deepEqual(JSON.parse(messages.at(-1)!.body), { environment: 'Sandbox', chain: 'chain-1' })
-        assert.match(JSON.stringify(messages.at(-1)!.headers), /apple:Sandbox:chain-1/)
+        assert.match(
+            new Headers(messages.at(-1)!.headers).get('upstash-flow-control-key') ?? '',
+            /^apple\.[a-f0-9]{64}$/,
+        )
         const requestId = '12345678-1234-4234-8234-123456789012'
         await publisher.publishAccountDeletion(requestId, 'attempt')
         assert.equal(messages.at(-1)?.destination, 'https://deployment.example/api/workflows/ios/account-deletion')
@@ -86,3 +90,89 @@ test('hosted workflows reject development destinations', () => {
         { code: 'QUEUE_CONFIGURATION_INVALID' },
     )
 })
+
+test(
+    'the local QStash server accepts and delivers production workflow requests',
+    {
+        skip: !process.env.QSTASH_LOCAL_TEST_URL,
+        timeout: 15000,
+    },
+    async () => {
+        const localURL = process.env.QSTASH_LOCAL_TEST_URL
+        const token = process.env.QSTASH_LOCAL_TEST_TOKEN
+        assert.ok(localURL)
+        assert.ok(token)
+        const origin = new URL(localURL)
+        assert.equal(origin.hostname, '127.0.0.1', 'this integration check must never publish to a live queue')
+        const deliveries: { path: string; payload: unknown }[] = []
+        const delivered = Promise.withResolvers<void>()
+        const server = createServer(async (request, response) => {
+            const parts: Buffer[] = []
+            for await (const part of request) parts.push(Buffer.from(part))
+            const [initial] = z
+                .tuple([z.object({ body: z.string(), callType: z.literal('step') })])
+                .parse(JSON.parse(Buffer.concat(parts).toString()))
+            deliveries.push({
+                path: request.url ?? '',
+                payload: JSON.parse(Buffer.from(initial.body, 'base64').toString()),
+            })
+            response.writeHead(200, { 'content-type': 'application/json' })
+            response.end('{}')
+            if (deliveries.length === 3) delivered.resolve()
+        })
+        await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+        const address = server.address()
+        assert.ok(address && typeof address !== 'string')
+        const publisher = createWorkflowPublisher({
+            QSTASH_URL: origin.href,
+            QSTASH_TOKEN: token,
+            NEXT_PUBLIC_LEXIMORY_URL: `http://127.0.0.1:${address.port}`,
+            VERCEL_ENV: undefined,
+        })
+        const timeout = setTimeout(
+            () => delivered.reject(new Error('QStash did not deliver the fixture workflows')),
+            10000,
+        )
+        try {
+            const identity = crypto.randomUUID()
+            await publisher.publishArticleImport({
+                id: identity + '-article',
+                data: {
+                    article: 'Along the river.',
+                    userId: 'local-test-reader',
+                    textId: 'local-test-text',
+                    onlyComments: false,
+                },
+            })
+            await publisher.publishAppleSubscription(
+                { environment: 'Sandbox', chain: 'local-test-chain' },
+                identity + '-apple',
+            )
+            await publisher.publishAccountDeletion(identity, 'local-test')
+            await delivered.promise
+            assert.deepEqual(
+                deliveries.sort((a, b) => a.path.localeCompare(b.path)),
+                [
+                    { path: '/api/workflows/ios/account-deletion', payload: { requestId: identity } },
+                    {
+                        path: '/api/workflows/ios/apple-subscription',
+                        payload: { environment: 'Sandbox', chain: 'local-test-chain' },
+                    },
+                    {
+                        path: '/api/workflows/ios/article-annotation',
+                        payload: {
+                            article: 'Along the river.',
+                            userId: 'local-test-reader',
+                            textId: 'local-test-text',
+                            onlyComments: false,
+                        },
+                    },
+                ],
+            )
+        } finally {
+            clearTimeout(timeout)
+            server.closeAllConnections()
+            await new Promise<void>((resolve) => server.close(() => resolve()))
+        }
+    },
+)

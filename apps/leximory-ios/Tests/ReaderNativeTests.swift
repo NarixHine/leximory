@@ -10,6 +10,41 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor @Suite(.serialized) struct NativeTextSelectionTests {
+    @Test(arguments: [DynamicTypeSize.large, .accessibility3], [false, true])
+    func definitionBodyMatchesStandaloneAnnotationScaling(typeSize: DynamicTypeSize, topTray: Bool) async throws {
+        let document = try FixtureArticle.samples[0].document()
+        let selection = try ReaderLayout(document: document).selection(NSRange(location: 0, length: 4), document: document,
+                                                                     textID: TextID(rawValue: "scaling-test"))
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let host = UIHostingController(rootView: VStack {
+            DefinitionView(item: DefinitionPresentation(source: .article(selection),
+                                                       definition: Definition(lemma: "word", definition: "Reader definition")),
+                           client: nil, language: "English", isPopover: false, topTrayHeight: topTray ? 500 : nil)
+                .frame(height: 500)
+            AnnotationMarkdownText(content: "Standalone definition", size: topTray ? 16 : 17, language: "English")
+        }.environment(\.horizontalSizeClass, .compact).environment(\.dynamicTypeSize, typeSize))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(250))
+        host.view.layoutIfNeeded()
+        func textViews(in view: UIView) -> [UITextView] {
+            (view as? UITextView).map { [$0] } ?? view.subviews.flatMap { textViews(in: $0) }
+        }
+        let views = textViews(in: host.view)
+        func font(for text: String) throws -> UIFont {
+            let view = try #require(views.first { $0.attributedText.string == text })
+            return try #require(view.attributedText.attribute(.font, at: 0, effectiveRange: nil) as? UIFont)
+        }
+        let reader = try font(for: "Reader definition")
+        let standalone = try font(for: "Standalone definition")
+        #expect(abs(reader.pointSize - standalone.pointSize) < 0.01)
+        if typeSize.isAccessibilitySize { #expect(reader.pointSize > 30) }
+    }
+
     @Test(arguments: [false, true])
     func dictionaryIconStaysInNativeMenuAndOutOfCustomRail(command: Bool) async throws {
         let dictionary: UIMenuElement = command
@@ -631,29 +666,6 @@ import LeximoryCore
         #expect(LeximoryTypography.proseUI(18, language: "Japanese").fontName == "ChillDuanHeiSongProJP_Regular")
     }
 
-    @Test func accountHeatmapWithoutARecordedDayHasNoActivityColor() {
-        let future = AccountHeatmapPalette.colors(for: nil)
-        #expect(future.background == .clear)
-        #expect(future.foreground == .secondary)
-        #expect(AccountHeatmapPalette.colors(for: 0).background != .clear)
-    }
-
-    @Test func accountHeatmapNumbersRemainReadableAcrossIntensities() {
-        func luminance(_ color: Color) -> Double {
-            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
-            UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-            func linear(_ value: CGFloat) -> Double {
-                let value = Double(value)
-                return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
-            }
-            return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
-        }
-        for count in [0, 1, 9, 10, 19, 20, 34, 35, 100] {
-            let colors = AccountHeatmapPalette.colors(for: count)
-            let values = [luminance(colors.background), luminance(colors.foreground)].sorted()
-            #expect((values[1] + 0.05) / (values[0] + 0.05) >= 4.5)
-        }
-    }
     @Test func attributedTextKeepsCanonicalOffsetsAndEmbeddedDefinitions() throws {
         let document = try FixtureArticle.samples[0].document()
         let layout = ReaderLayout(document: document)

@@ -272,11 +272,9 @@ struct DefinitionView: View {
     @AppStorage("guest.contextual-ai-consent.v1") private var guestAIConsent = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var sizeClass
-    @ScaledMetric(relativeTo: .body) private var compactBodySize = 17.0
-    @ScaledMetric(relativeTo: .body) private var regularBodySize = 18.0
-    private var bodySize: Double {
-        if topTrayHeight != nil { return sizeClass == .regular ? regularBodySize * 17 / 18 : compactBodySize * 16 / 17 }
-        return sizeClass == .regular ? regularBodySize : compactBodySize
+    private var bodyBaseSize: CGFloat {
+        if topTrayHeight != nil { return sizeClass == .regular ? 17 : 16 }
+        return sizeClass == .regular ? 18 : 17
     }
     init(item: DefinitionPresentation, client: MobileClient?, language: String, isPopover: Bool, topTrayHeight: CGFloat? = nil, closeTray: (() -> Void)? = nil, trayDragging: Bool = false, onScrollPermission: ((Bool) -> Void)? = nil, allowsFeedback: Bool = true) {
         self.item = item; self.client = client; self.initialLanguage = language; self.isPopover = isPopover
@@ -316,7 +314,7 @@ struct DefinitionView: View {
                         } else {
                             if !waiting {
                                 HStack(alignment: .center, spacing: 10) {
-                                    Text(lemma).font(LeximoryTypography.prose(item.isDynamic ? 20 : 24, language: language, bold: true))
+                                    Text(lemma).font(LeximoryTypography.prose(sizeClass == .regular ? 22 : 20, language: language, bold: true))
                                         .foregroundStyle(LeximoryPalette.ink).textSelection(.enabled).tint(.blue)
                                         .lineLimit(item.isDynamic ? 3 : nil)
                                         .accessibilityAddTraits(.isHeader)
@@ -519,7 +517,7 @@ struct DefinitionView: View {
                     }
                 }
                 if !model.elaboration.text.isEmpty {
-                    AnnotationMarkdownText(content: model.elaboration.text, size: bodySize, language: language, blockFormatting: true)
+                    AnnotationMarkdownText(content: model.elaboration.text, size: bodyBaseSize, language: language, blockFormatting: true)
                         .foregroundStyle(LeximoryPalette.ink)
                 }
                 if case .failed(let message, _) = model.elaboration {
@@ -570,7 +568,7 @@ struct DefinitionView: View {
     private func section(_ title: String, content: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title).interfaceFont(14).foregroundStyle(.secondary)
-            AnnotationMarkdownText(content: content, size: bodySize, language: language)
+            AnnotationMarkdownText(content: content, size: bodyBaseSize, language: language)
                 .foregroundStyle(LeximoryPalette.ink)
         }
     }

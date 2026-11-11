@@ -44,7 +44,7 @@ Article covers and wrapping titles scroll with the prose. Phone titles use 28 pt
 
 ## Navigation and account state
 
-Browser navigation uses a Safari-compatible identity and mobile content on iPhone, desktop content on iPad and Mac. Keywords use the selected search engine, defaulting to Bing; URLs open directly. Preserve webpage cookies and verification frames. Load failures use a Liquid Glass surface above the page.
+Browser navigation uses a Safari-compatible identity and mobile content on iPhone, desktop content on iPad and Mac. Keywords use the selected search engine, defaulting to Bing; URLs open directly. Preserve webpage cookies and verification frames. Cross-site links load inside Leximory, including HTTPS universal links. External opening requires native confirmation. Terminal save/import failures use task-specific native alerts with recovery actions and preserve drafts on Cancel. First-load failures use `ContentUnavailableView`; invalid fields use form footers.
 
 网页选项 offers 清除浏览数据 with destructive confirmation. Clear all browser history, remembered pages, cookies, and website storage, leaving an empty browser. Preserve Leximory account data, bookmarks, vocabulary, and website library choices.
 
@@ -102,7 +102,7 @@ Ebook import starts with the native EPUB/PDF picker and one review sheet with a 
 
 Track article annotation activity across destinations and foreground sessions. More shows a small dot for pending work and a numbered badge for newly ready articles not yet opened. Opening the menu does not acknowledge completion. Opening the article does. Reveal newly completed highlights across the visible text without changing reading position; respect Reduce Motion.
 
-已存词汇 is a collection screen with Chinese date groups and centered word chips: two columns on phone, three or four on iPad. Words open fitted definitions with an explicit edit action. Shared-library words and welcome annotations remain read-only. Native omits lottery and story controls.
+The standalone vocabulary collection is retired. Saved definitions remain available in reading and review; do not add a separate vocabulary destination.
 
 ## Verification
 
@@ -116,7 +116,7 @@ After generating the project, select your development team in Xcode, or pass `DE
 
 ## Account
 
-账号 preserves the web settings page's profile header, subscription, AI 词点额度 and AI 语点额度, monthly vocabulary calendar, English accent, passkey, profile edits and learning-progress sharing. Display only the integer part of used quotas; keep fractional usage in the API and quota accounting. Use the Shanghai calendar for activity.
+账号 preserves the web settings page's profile header, subscription, AI 词点额度 and AI 语点额度, English accent, passkey, profile edits and learning-progress sharing. Display only the integer part of used quotas; keep fractional usage in the API and quota accounting. The native activity calendar and heatmap are retired.
 
 Use native navigation, segmented preferences, a photo picker, edit sheets, sharing and destructive confirmations. Plan comparison opens in a native sheet and checkout uses the existing billing service. Account summaries are cached within the account's reading store; editing stays visible and is disabled offline. Passkeys are fetched on demand and never written to the reading cache.
 

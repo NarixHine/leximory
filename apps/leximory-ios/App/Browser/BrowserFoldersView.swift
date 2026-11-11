@@ -193,23 +193,39 @@ struct BrowserFolderPicker: View {
         .tint(.primary)
     }
     private func row(_ library: CatalogLibrary) -> some View {
-        DisclosureGroup(isExpanded: Binding(get: { expanded.contains(library.id) }, set: { value in
-            if value { expanded.insert(library.id) } else { expanded.remove(library.id) }
-        })) {
-            ForEach(workspace.texts[library.id] ?? []) { text in
-                Label { Text(text.title) } icon: { BrowserTextIcon(text: text) }
-                    .interfaceFont(15, style: .subheadline).foregroundStyle(.secondary).padding(.leading, 16)
+        Group {
+            HStack(spacing: 8) {
+                Button { selection = library.id; dismiss() } label: {
+                    HStack {
+                        BrowserFolderLabel(library: library)
+                        Spacer(minLength: 8)
+                        if selection == library.id { Image(systemName: "checkmark").accessibilityHidden(true) }
+                    }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(.rect)
+                }
+                .buttonStyle(.borderless).foregroundStyle(.primary)
+                .accessibilityValue(selection == library.id ? "已选择" : "未选择")
+                .accessibilityAddTraits(selection == library.id ? .isSelected : [])
+                .accessibilityIdentifier("browser-select-folder-\(library.id)")
+                Button {
+                    if expanded.contains(library.id) { expanded.remove(library.id) }
+                    else { expanded.insert(library.id) }
+                } label: {
+                    Image(systemName: expanded.contains(library.id) ? "chevron.down" : "chevron.right")
+                        .frame(width: 44, height: 44).contentShape(.rect)
+                }
+                .buttonStyle(.borderless).foregroundStyle(.secondary)
+                .accessibilityLabel("\(expanded.contains(library.id) ? "收起" : "展开")\(library.name)的内容")
+                .accessibilityIdentifier("browser-expand-folder-\(library.id)")
             }
-        } label: {
-            HStack {
-                BrowserFolderLabel(library: library)
-                Spacer()
-                Button(selection == library.id ? "已选择" : "选择") { selection = library.id; dismiss() }
-                    .buttonStyle(.borderless).foregroundStyle(.primary)
-                    .accessibilityIdentifier("browser-select-folder-\(library.id)")
+            .task(id: expanded.contains(library.id)) {
+                if expanded.contains(library.id) { await workspace.loadFolder(library, online: sync?.online != false) }
             }
-        }.task(id: expanded.contains(library.id)) {
-            if expanded.contains(library.id) { await workspace.loadFolder(library, online: sync?.online != false) }
+            if expanded.contains(library.id) {
+                ForEach(workspace.texts[library.id] ?? []) { text in
+                    Label { Text(text.title) } icon: { BrowserTextIcon(text: text) }
+                        .interfaceFont(15, style: .subheadline).foregroundStyle(.secondary).padding(.leading, 16)
+                }
+            }
         }
     }
 }
@@ -233,7 +249,6 @@ struct FolderEditorSheet: View {
                 if library == nil {
                     Picker("语言", selection: $language) { ForEach(languages, id: \.0) { code, label in Text(label).tag(code) } }
                 }
-                if let error { Text(error).foregroundStyle(.secondary) }
             }
             .navigationTitle(library == nil ? "新建文件夹" : "重新命名").navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -245,10 +260,15 @@ struct FolderEditorSheet: View {
             }
             .onAppear { if let library { name = library.name; language = library.language } }
             .interactiveDismissDisabled(busy)
+            .alert("未能保存文件夹", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
+                Button("重试") { Task { await save() } }
+                Button("取消", role: .cancel) { }
+            } message: { Text(error ?? "") }
         }.leximorySheetStyle()
-            .presentationDetents([.height(compactHeight + (library == nil ? 60 : 0) + (error == nil ? 0 : 60)), .large])
+            .presentationDetents([.height(compactHeight + (library == nil ? 60 : 0)), .large])
     }
     private func save() async {
+        guard !busy else { return }
         busy = true; error = nil
         defer { busy = false }
         do {

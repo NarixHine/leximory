@@ -9,7 +9,14 @@ final class ReviewUITests: XCTestCase {
         let card = app.buttons["browser-review"]
         XCTAssertTrue(card.waitForExistence(timeout: 15)); card.tap()
         let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "复习进度 24%")).firstMatch
-        XCTAssertTrue(day.waitForExistence(timeout: 10)); day.tap()
+        XCTAssertTrue(day.waitForExistence(timeout: 10))
+        let words = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "review-word-"))
+        XCTAssertEqual(words.count, 5)
+        for word in words.allElementsBoundByIndex {
+            XCTAssertGreaterThanOrEqual(word.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(word.frame.height, 44)
+        }
+        day.tap()
         let word = app.buttons["review-task-discover"]
         XCTAssertTrue(word.waitForExistence(timeout: 10)); word.tap()
         let input = app.textViews["你的翻译"]

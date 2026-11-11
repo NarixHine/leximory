@@ -2,6 +2,27 @@ import XCTest
 import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
+    @MainActor func testHighlighterPresentationKeepsReadableWidth() {
+        let app = launch(); defer { restore(app) }
+        app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+        let book = app.buttons["browser-resource-workspace-epub"]
+        XCTAssertTrue(book.waitForExistence(timeout: 10)); book.tap()
+        let reader = app.otherElements["ebook-reader"]
+        XCTAssertTrue(reader.waitForExistence(timeout: 15))
+        expectation(for: NSPredicate(format: "value CONTAINS %@", "epub已打开"), evaluatedWith: reader)
+        waitForExpectations(timeout: 30)
+        let highlighter = app.buttons["ebook-bookmarks"]
+        if !highlighter.isHittable { reader.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.48)).tap() }
+        XCTAssertTrue(highlighter.waitForExistence(timeout: 5)); highlighter.tap()
+        let title = app.navigationBars["荧光笔"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        let maximumWidth: CGFloat = app.frame.width > 600 ? 400 : app.frame.width
+        XCTAssertLessThanOrEqual(title.frame.width, maximumWidth + 1)
+        XCTAssertTrue(app.staticTexts["暂无标记"].exists)
+    }
+
     @MainActor func testSavedPDFTextSelectionImmediatelyAfterOpening() {
         assertPDFSelectionImmediatelyAfterOpening()
     }
@@ -309,11 +330,20 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertTrue(choose.waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["browser-import-submit"].isEnabled)
         choose.tap()
-        app.buttons.matching(identifier: "browser-select-folder-workspace-folder").matching(NSPredicate(format: "label == %@", "选择")).firstMatch.tap()
+        let expand = app.buttons["browser-expand-folder-workspace-folder"]
+        XCTAssertTrue(expand.waitForExistence(timeout: 5))
+        XCTAssertGreaterThanOrEqual(expand.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(expand.frame.height, 44)
+        expand.tap()
+        XCTAssertTrue(app.navigationBars["选择文件夹"].exists)
+        XCTAssertTrue(app.staticTexts["The art of noticing"].waitForExistence(timeout: 5))
+        let selection = app.buttons["browser-select-folder-workspace-folder"]
+        XCTAssertGreaterThan(selection.frame.width, expand.frame.width)
+        selection.tap()
         XCTAssertTrue(app.buttons["browser-import-submit"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["browser-import-submit"].isEnabled)
         app.buttons.containing(NSPredicate(format: "label CONTAINS %@ AND label BEGINSWITH %@", "Field notes", "文件夹")).firstMatch.tap()
-        app.buttons.matching(identifier: "browser-select-folder-workspace-japanese-folder").matching(NSPredicate(format: "label == %@", "选择")).firstMatch.tap()
+        app.buttons.matching(identifier: "browser-select-folder-workspace-japanese-folder").firstMatch.tap()
         XCTAssertFalse(app.buttons["browser-import-submit"].isEnabled)
     }
     @MainActor func testEbookAddressControlsAcrossReadingThemes() {
@@ -454,7 +484,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
         save.tap()
         XCTAssertTrue(app.navigationBars["保存 PDF"].waitForExistence(timeout: 15))
         app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "选择文件夹")).firstMatch.tap()
-        app.buttons.matching(identifier: "browser-select-folder-workspace-folder").matching(NSPredicate(format: "label == %@", "选择")).firstMatch.tap()
+        app.buttons.matching(identifier: "browser-select-folder-workspace-folder").firstMatch.tap()
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Save webpage PDF into a folder"; screenshot.lifetime = .keepAlways; add(screenshot)
         app.buttons["browser-import-submit"].tap()
@@ -984,10 +1014,9 @@ final class BrowserWorkspaceUITests: XCTestCase {
         let app = launch(extraArguments: ["--workspace-hold-annotations", "--workspace-webpage-url", page.url]); defer { restore(app) }
         XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 15))
         app.buttons["browser-magic-save"].tap()
-        XCTAssertTrue(app.staticTexts["全文预览"].waitForExistence(timeout: 15), app.debugDescription)
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "morning light")).firstMatch.exists, app.debugDescription)
+        XCTAssertTrue(app.buttons["article-format-bold"].waitForExistence(timeout: 15), app.debugDescription)
         app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "选择文件夹")).firstMatch.tap()
-        app.buttons.matching(identifier: "browser-select-folder-workspace-folder").matching(NSPredicate(format: "label == %@", "选择")).firstMatch.tap()
+        app.buttons.matching(identifier: "browser-select-folder-workspace-folder").firstMatch.tap()
         app.buttons["browser-import-submit"].tap()
         XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 10))
         app.buttons["首页"].tap()
@@ -998,6 +1027,85 @@ final class BrowserWorkspaceUITests: XCTestCase {
         app.buttons["browser-resource-workspace-import"].tap()
         XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 5))
         XCTAssertEqual(more.value as? String, "")
+    }
+    @MainActor func testExternalOpeningRequiresConfirmationAndCancelKeepsThePage() throws {
+        let page = try BrowserPageServer(extraArticleContent: "<a href='mailto:reader@example.com'>Contact the author</a>")
+        defer { page.listener.cancel() }
+        let app = launch(extraArguments: ["--workspace-webpage-url", page.url]); defer { restore(app) }
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 15))
+        app.buttons["browser-more"].tap()
+        app.buttons["在 Safari 中打开"].tap()
+        let dialog = app.alerts["在其他 App 中打开？"]
+        XCTAssertTrue(dialog.waitForExistence(timeout: 5))
+        XCTAssertTrue(dialog.buttons["打开"].exists)
+        XCTAssertTrue(dialog.staticTexts["127.0.0.1"].exists)
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Confirm before opening in another app"; capture.lifetime = .keepAlways; add(capture)
+        dialog.buttons["取消"].tap()
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.exists)
+        app.webViews.firstMatch.swipeUp()
+        let contact = app.links["Contact the author"]
+        XCTAssertTrue(contact.waitForExistence(timeout: 5)); contact.tap()
+        XCTAssertTrue(dialog.waitForExistence(timeout: 5))
+        XCTAssertTrue(dialog.staticTexts["mailto:reader@example.com"].exists)
+        dialog.buttons["取消"].tap()
+        XCTAssertTrue(app.buttons["browser-address"].isHittable)
+    }
+    @MainActor func testEmptyExtractionStillOffersBookmarkAndRetryInsideImport() throws {
+        let page = try BrowserPageServer(pageHTML: "<html><head><title>An empty page</title></head><body></body></html>")
+        defer { page.listener.cancel() }
+        let app = launch(extraArguments: ["--workspace-webpage-url", page.url]); defer { restore(app) }
+        let save = app.buttons["browser-magic-save"]
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: save); waitForExpectations(timeout: 15)
+        save.tap()
+        XCTAssertTrue(app.buttons["重试提取"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+        app.buttons["重试提取"].tap()
+        XCTAssertTrue(app.buttons["存为链接书签"].firstMatch.waitForExistence(timeout: 5))
+        app.buttons["存为链接书签"].firstMatch.tap()
+        app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "选择文件夹")).firstMatch.tap()
+        app.buttons["browser-select-folder-workspace-folder"].firstMatch.tap()
+        let submit = app.buttons["browser-import-submit"]
+        XCTAssertTrue(submit.waitForExistence(timeout: 5)); XCTAssertTrue(submit.isEnabled)
+        XCTAssertEqual(submit.label, "保存")
+        submit.tap()
+        XCTAssertTrue(submit.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["browser-address"].isHittable)
+    }
+    @MainActor func testFailedImportKeepsDraftAndRetriesInPlace() throws {
+        try assertNativeImportFailure(dark: false)
+    }
+    @MainActor func testFailedImportUsesNativeAlertInDarkAppearance() throws {
+        try assertNativeImportFailure(dark: true)
+    }
+    @MainActor private func assertNativeImportFailure(dark: Bool) throws {
+        let page = try BrowserPageServer(); defer { page.listener.cancel() }
+        let app = launch(extraArguments: ["--workspace-webpage-url", page.url] + (dark ? ["--dark-appearance"] : []), extraEnvironment: ["LEXIMORY_FIXTURE_IMPORT_FAILURES": "3"])
+        defer { restore(app) }
+        XCTAssertTrue(app.webViews.staticTexts["A quiet forest"].firstMatch.waitForExistence(timeout: 15))
+        app.buttons["browser-magic-save"].tap()
+        app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "选择文件夹")).firstMatch.tap()
+        app.buttons["browser-select-folder-workspace-folder"].firstMatch.tap()
+        let submit = app.buttons["browser-import-submit"]
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: submit); waitForExpectations(timeout: 10)
+        submit.tap()
+        let alert = app.alerts["未能保存网页"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 10))
+        XCTAssertTrue(alert.buttons["重试"].exists)
+        XCTAssertTrue(alert.buttons["取消"].exists)
+        let capture = XCTAttachment(screenshot: app.screenshot())
+        capture.name = "Native import failure \(dark ? "dark" : "light")"; capture.lifetime = .keepAlways; add(capture)
+        if dark {
+            alert.buttons["重试"].tap()
+            XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 15))
+            return
+        }
+        alert.buttons["取消"].tap()
+        XCTAssertFalse(app.alerts.firstMatch.exists)
+        XCTAssertFalse(app.descendants(matching: .any)["browser-import-failure"].exists)
+        XCTAssertEqual(app.textFields.firstMatch.value as? String, "A quiet forest")
+        submit.tap()
+        XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 15))
     }
     @MainActor func testEbookControlsShareTheBottomBar() {
         let app = launch(); defer { restore(app) }

@@ -2,6 +2,30 @@ import SwiftUI
 import WebKit
 import LeximoryCore
 
+enum BrowserWorkspaceFailure {
+    case openText(CatalogText), openArticle(TextID), archiveFolder(CatalogLibrary)
+    case openFile(oversized: Bool), savePDF(oversized: Bool)
+    var dismissal: String { if case .savePDF(true) = self { "好" } else { "取消" } }
+
+    var title: String {
+        switch self {
+        case .openText(let text): text.format == "ebook" ? "未能打开电子书" : text.format == "bookmark" ? "未能打开书签" : "未能打开文章"
+        case .openArticle: "未能打开文章"
+        case .archiveFolder: "未能更新文件夹"
+        case .openFile: "未能打开电子书"
+        case .savePDF: "未能保存 PDF"
+        }
+    }
+    var message: String {
+        switch self {
+        case .openText, .openArticle: "请稍后重试。"
+        case .archiveFolder: "更改尚未完成，请重试。"
+        case .openFile(let oversized): oversized ? "请选择小于 4.5 MB 的文件。" : "请选择有效的 EPUB 或 PDF 文件。"
+        case .savePDF(let oversized): oversized ? "PDF 超过 4.5 MB，暂时无法保存。" : "请稍后重试。"
+        }
+    }
+}
+
 struct WebResource {
     let url: URL
     var bookmarkID: String?
@@ -100,7 +124,7 @@ struct BrowserHomePin: Codable, Equatable, Identifiable {
 }
 
 enum BrowserResource {
-    case home, bookmarks, account, vocabulary, review
+    case home, bookmarks, account, review
     case reviewSession(ReviewModel)
     case web(WebResource)
     case document(RemoteDocument)
@@ -114,7 +138,6 @@ struct BrowserEntry: Identifiable {
         case .home: "Leximory"
         case .bookmarks: "我的书签"
         case .account: "账号"
-        case .vocabulary: "已存词汇"
         case .review: "每日复习"
         case .reviewSession(let model): "\(learningLanguageName(model.selection.language)) 每日复习"
         case .web(let page): page.item?.title ?? page.url.host ?? "网页"
@@ -126,7 +149,6 @@ struct BrowserEntry: Identifiable {
         case .home: "house"
         case .bookmarks: "bookmark"
         case .account: "person.crop.circle"
-        case .vocabulary: "character.book.closed"
         case .review, .reviewSession: "leaf"
         case .web: "globe"
         case .document(let document): document.text.format == "ebook" ? "book.closed" : "doc.text"
@@ -175,7 +197,7 @@ struct AnnotationActivity: Identifiable, Codable {
     private(set) var recentlyOpened: [String: FixtureArticle] = [:]
     private(set) var reviewProgress: [String: ReviewDay.Progress] = [:]
     var expandedFolders: Set<String> = []
-    var error: String?
+    var error: BrowserWorkspaceFailure?
     var loading = true
     var opening = false
     var completionID: String?
@@ -777,7 +799,7 @@ struct AnnotationActivity: Identifiable, Codable {
             acknowledge(text.id)
         } catch {
             guard openRequest == request, !Task.isCancelled else { return }
-            self.error = "暂时无法打开，请稍后重试。"
+            self.error = .openText(text)
         }
     }
     func imported(_ text: CatalogText, annotating: Bool) async {
@@ -911,7 +933,7 @@ struct AnnotationActivity: Identifiable, Codable {
         } catch {
             let cause = MobileClient.cause(of: error)
             guard !Task.isCancelled, !(cause is CancellationError), (cause as? URLError)?.code != .cancelled else { return }
-            self.error = "文件夹未能更新，请重试。"
+            self.error = .archiveFolder(library)
         }
     }
     func upsertFolder(_ library: CatalogLibrary) {

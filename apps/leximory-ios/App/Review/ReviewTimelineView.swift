@@ -132,6 +132,7 @@ struct ReviewTimelineView: View {
                 .foregroundStyle(ReviewStyle.word).fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 12).padding(.vertical, 8)
                 .frame(minHeight: 36).background(ReviewStyle.pill, in: .rect(cornerRadius: 16))
+                .frame(minWidth: 44, minHeight: 44).contentShape(.rect)
         }.buttonStyle(.plain).disabled(word.fields == nil).accessibilityIdentifier("review-word-" + word.id)
             .popover(isPresented: Binding(get: { selectedWord?.id == word.id }, set: { if !$0 { selectedWord = nil } })) {
                 if let fields = word.fields {

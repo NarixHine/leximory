@@ -4,6 +4,10 @@
 
 Open the [interactive visual companion](design-studies.html) for four focused layout studies, Light/Dark variants, and the ten captured screenshots. These studies illustrate component relationships; the six specifications below define the complete screen behavior.
 
+## Scope correction
+
+The standalone vocabulary collection and Account activity heatmap are retired, unreachable product surfaces. Findings F14 and F17–F20 and their restoration/redesign proposals are withdrawn. Preserve the active saved-definition tray in reading/review. The original walkthrough below includes legacy fixture surfaces and must not be treated as proof of production reachability.
+
 ## Verdict
 
 Leximory should feel like a quiet multilingual reading room inside a native iOS workspace. Its distinctive qualities are already present: Chinese display serif, language-aware literary faces, newspaper covers, watercolor landscapes, cats, and restrained sage learning accents. The redesign should make their roles predictable rather than replace them with a new visual style.
@@ -39,7 +43,7 @@ This is a broad source-backed design review with a ten-state simulator walkthrou
 | 12 | Article/EPUB/PDF selection, annotations, vocabulary edit | Source: ReaderScreen, ReadingTextView, EbookControls, VocabularyEditor. No selection gesture or streaming capture. |
 | 13 | EPUB/PDF contents, bookmarks, options, outline and handwriting | Source: EbookScreen, PDFOutlineControls, PDFNotesModel. PDF and Japanese rendering not visually verified. |
 | 14 | Web/ebook import, editing, folder selection | Source: BrowserImportSheet, TextManagementSheet, ArticleEditor, BrowserFoldersView. No real import submitted. |
-| 15 | Saved vocabulary | Source: VocabularyLibraryView and CorpusWordTray. Entry reachability differs by host. |
+| 15 | Saved vocabulary | Standalone collection retired and removed. CorpusWordTray remains in active review/reading flows. |
 | 16 | Onboarding, sign-in, register, email confirmation, password recovery, deletion | Source: OnboardingView, OptionalAccountView, AccountDeletionView. No authentication or deletion action attempted. |
 | 17 | Privacy and subscription management | Source: MembershipView and OptionalAccountView. No StoreKit/account state verification. |
 | 18 | Audio and widget | Source: PlaybackBar, ArticleAudioButton, Shared/SavedWordsWidgetView, Widgets/SavedWordsWidget. No audio playback or widget-host capture. |
@@ -97,7 +101,7 @@ Use [Apple sheet guidance](https://developer.apple.com/design/human-interface-gu
 
 **F02 · P1 · Risk: prose helper ignores local trait overrides.** `Shared/LeximoryStyle.swift`, `prose` calls `UIFontMetrics.scaledFont` without a supplied trait collection, whereas interface/display modifiers use local `@ScaledMetric`. Resolve custom prose using the SwiftUI environment at the rendering boundary. Acceptance: a locally overridden Dynamic Type preview and a device-wide size change produce matching prose sizes, without double scaling UIKit text.
 
-**F03 · P2 · Confirmed: headword roles drift.** `ReaderScreen.swift` renders dynamic/static at 20/24; `VocabularyLibraryView.swift` uses 24; DESIGN.md specifies 20/22 phone/wide. Choose the documented hierarchy, compare on real long French and Japanese words, then apply a single headword role across tray hosts. Keep bold and wrapping; do not use the Chinese display face for headwords.
+**F03 · P2 · Confirmed: headword roles drift.** `ReaderScreen.swift` renders dynamic/static at 20/24; `CorpusWordTray.swift` uses 24; DESIGN.md specifies 20/22 phone/wide. Choose the documented hierarchy, compare on real long French and Japanese words, then apply a single headword role across tray hosts. Keep bold and wrapping; do not use the Chinese display face for headwords.
 
 **F04 · P2 · Confirmed: article header and body start on different insets.** `ArticleReadingHeader.swift` compact title group uses 24 pt while reading/page convention is 20. Screenshot 04 shows this stagger. Align title, topics and audio with prose at 20; keep artwork edge-to-edge. Wide split headers retain their deliberate internal layout. Acceptance: title and first prose line share a leading guide on phone.
 
@@ -123,19 +127,19 @@ Use [Apple sheet guidance](https://developer.apple.com/design/human-interface-gu
 
 ### Account and learning
 
-**F14 · P1 · Confirmed: monthly activity is no longer composed into Account.** `AccountActivityCalendar.swift` exists; `AccountView.body/stats` never instantiates it. DESIGN.md still requires the calendar. Restore it between quotas and English preferences. Adopt Account's 16 pt inner inset and 17 pt primary regular title; the calendar's existing 20 pt inset and 15 pt secondary icon title are inconsistent with current Account card rules. Preserve the exact five-color ramp and Shanghai date model. Acceptance: current month and future blank dates render; the card title matches other Account groups.
+**F14 · Withdrawn: retired surface.** Remove the obsolete code and routes; do not restore or redesign this screen.
 
 **F15 · P1 · Risk: quota captions force metric shrinkage.** `AccountQuotaCard` puts usage and `.fixedSize()` reset caption on one HStack; usage may shrink to 65%. At narrow widths/long captions, two cards can lose the 34 pt metric hierarchy. Test 320/375 pt and six-digit totals. Use ViewThatFits: the prescribed baseline row when it fits, a caption below when it does not. This responsive exception should be documented before implementation. Keep two cards side by side except accessibility sizes.
 
 **F16 · P1 · Confirmed: review timeline word targets are underspecified.** `ReviewTimelineView.wordPill` has only a 36 pt minimum; 14 pt historical words with vertical padding do not guarantee 44 pt. Keep compact visible pills but enforce 44 pt minimum interactive bounds without overlapping neighbours; increase row spacing where needed. Acceptance: Accessibility Inspector reports no undersized word control, with unchanged word wrapping/order.
 
-**F17 · P1 · Confirmed: empty saved-vocabulary state can be blank.** `VocabularyLibraryView.timeline` renders no empty state when words are empty and there is no error/loading. Add the common fixed-title empty state: 还没有保存的词汇 / 阅读时保存词汇，之后可以在这里回看。 No new corpus destination in More. Acceptance: empty, loading, denied, cached and exhausted failure each have their own intentional state.
+**F17 · Withdrawn: retired surface.** Remove the obsolete code and routes; do not restore or redesign this screen.
 
-**F18 · P2 · Confirmed: vocabulary grouping uses timestamp substrings.** `dateKey` takes the first ten characters of createdAt, unlike Account's Shanghai calendar. Parse timestamps and group by the product calendar; explicitly accept already date-only data. Acceptance: words saved either side of Shanghai midnight group identically in vocabulary, review and Account.
+**F18 · Withdrawn: retired surface.** Remove the obsolete code and routes; do not restore or redesign this screen.
 
-**F19 · P2 · Confirmed: vocabulary copy exposes infrastructure/legacy terminology.** Errors say 请联网后同步语料本 and 暂时无法访问这个语料本. Use user-facing 已存词汇 language: 暂时无法打开已存词汇。 / 重试. Keep cached words during recovery; never instruct users to manually synchronize.
+**F19 · Withdrawn: retired surface.** Remove the obsolete code and routes; do not restore or redesign this screen.
 
-**F20 · P2 · Confirmed: vocabulary width strategy omits the documented wide layout and text-size adaptation.** The grid is two or three columns only, based on width, and has no accessibility-size branch. Use two phone, three/four wide columns as content fits; stack to one at accessibility sizes. Acceptance: long lemmas wrap without a cramped two-column AX layout; wide iPad actually uses the intended density.
+**F20 · Withdrawn: retired surface.** Remove the obsolete code and routes; do not restore or redesign this screen.
 
 **F21 · P2 · Confirmed: EPUB position text omits chapter identity.** `EbookScreen.pageLabel` displays numeric fractions, although its accessibility value sometimes includes chapter. Provide a compact chapter + page role for EPUB, and 第 X 页，共 Y 页 for PDF. Truncate chapter content before shrinking page numerals. Keep 15 pt utility type and top control placement. Screenshot 10 illustrates the installed numeric-only treatment.
 
@@ -159,15 +163,15 @@ Use [Apple sheet guidance](https://developer.apple.com/design/human-interface-gu
 
 ### A. Account: a quiet personal reading record
 
-Composition: native large title → profile header → full-width actual-plan artwork card → two quota gauges → monthly vocabulary calendar → English preferences → account management → destructive group → cost reference. Keep a 640 pt measure, 20 pt outer inset, 12 pt gaps, 24 pt card corners, 16 pt inner inset.
+Composition: native large title → profile header → full-width actual-plan artwork card → two quota gauges → English preferences → account management → destructive group → cost reference. Keep a 640 pt measure, 20 pt outer inset, 12 pt gaps, 24 pt card corners, 16 pt inner inset.
 
 The plan name is the hero: 初学者 at 30 pt compact, larger only when it fits. Keep the exact cats-and-book artwork and Home day/night meadow, horizon anchored low. One full-card button; its glass CTA label is not a nested button. At large text sizes remove illustration first. Keep unusual billing/cancellation information; omit routine status prose.
 
-Use 17 pt primary regular headings consistently, including 入库词汇. Quota used values remain visually prominent. The calendar is a record, not a streak game. Profile edit rows use native labeled-content alignment and at least 52 pt height. Show avatar/save feedback at its row and preserve all other controls while an operation runs.
+Use 17 pt primary regular headings consistently, across active groups. Quota used values remain visually prominent. Profile edit rows use native labeled-content alignment and at least 52 pt height. Show avatar/save feedback at its row and preserve all other controls while an operation runs.
 
 States: cached data displays immediately; initial loading uses a small native indicator in the reserved content area; no-account data uses a designed retry page; offline editing buttons remain present and disabled. Sign-out/deletion remain explicitly confirmed. No new account badge on Home.
 
-Files: AccountView, AccountActivityCalendar, Shared/LeximoryStyle. Dependencies: F08, F14, F15. Acceptance: free/paid/billing-retry, long username, dark, narrow and AX variants; activity still uses the exact existing ramp.
+Files: AccountView, AccountActivityCalendar, Shared/LeximoryStyle. Dependencies: F08, F14, F15. Acceptance: free/paid/billing-retry, long username, dark, narrow and AX variants; no retired activity heatmap returns.
 
 ### B. Bookmarks and folder choice: native organization, literary content
 
@@ -255,14 +259,10 @@ Line numbers refer to the audited working tree, not the installed binary.
 | [App/AccountView.swift](../../apps/leximory-ios/App/AccountView.swift#L107) | Line 107: `.alert("账号"` |
 | [App/AccountView.swift](../../apps/leximory-ios/App/AccountView.swift#L166) | Line 166: `private func stats` |
 | [App/AccountView.swift](../../apps/leximory-ios/App/AccountView.swift#L422) | Line 422: `private struct AccountQuotaCard` |
-| [App/AccountActivityCalendar.swift](../../apps/leximory-ios/App/AccountActivityCalendar.swift#L4) | Line 4: `struct AccountActivityCalendar` |
 | [App/Browser/BrowserWorkspaceView.swift](../../apps/leximory-ios/App/Browser/BrowserWorkspaceView.swift#L193) | Line 193: `.alert("暂时无法完成"` |
 | [App/Browser/BrowserFoldersView.swift](../../apps/leximory-ios/App/Browser/BrowserFoldersView.swift#L48) | Line 48: `if refreshFailed` |
 | [App/Browser/BrowserFoldersView.swift](../../apps/leximory-ios/App/Browser/BrowserFoldersView.swift#L170) | Line 170: `struct BrowserFolderPicker` |
 | [App/Review/ReviewTimelineView.swift](../../apps/leximory-ios/App/Review/ReviewTimelineView.swift#L129) | Line 129: `private func wordPill` |
-| [App/VocabularyLibraryView.swift](../../apps/leximory-ios/App/VocabularyLibraryView.swift#L39) | Line 39: `private func timeline` |
-| [App/VocabularyLibraryView.swift](../../apps/leximory-ios/App/VocabularyLibraryView.swift#L71) | Line 71: `private func dateKey` |
-| [App/VocabularyLibraryView.swift](../../apps/leximory-ios/App/VocabularyLibraryView.swift#L196) | Line 196: `private func section` |
 | [App/Review/ReviewExerciseView.swift](../../apps/leximory-ios/App/Review/ReviewExerciseView.swift#L14) | Line 14: `private var translationFontSize` |
 | [App/Browser/BrowserPreferencesView.swift](../../apps/leximory-ios/App/Browser/BrowserPreferencesView.swift#L4) | Line 4: `struct BrowserPreferencesView` |
 | [App/ContentImportView.swift](../../apps/leximory-ios/App/ContentImportView.swift#L5) | Line 5: `struct ContentImportView` |

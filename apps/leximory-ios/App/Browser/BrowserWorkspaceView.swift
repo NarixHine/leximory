@@ -2,20 +2,6 @@ import SwiftUI
 import UniformTypeIdentifiers
 import LeximoryCore
 
-private enum BrowserSaveFailure {
-    case oversizedPDF, unavailablePDF, unavailableArticle
-    var message: String {
-        switch self {
-        case .oversizedPDF: "PDF 超过 4.5 MB，暂时无法保存。"
-        case .unavailablePDF: "PDF 暂时无法保存，请重试。"
-        case .unavailableArticle: "正文暂时无法提取，请重新加载网页后重试。"
-        }
-    }
-    var canRetry: Bool {
-        switch self { case .oversizedPDF: false; default: true }
-    }
-}
-
 struct BrowserWorkspaceView: View {
     @ScaledMetric(relativeTo: .subheadline) private var addressTextSize = LeximoryTypography.addressSize
     let client: MobileClient
@@ -37,7 +23,6 @@ struct BrowserWorkspaceView: View {
     @State private var importRequest: BrowserImportRequest?
     @State private var importedText: (CatalogText, Bool)?
     @State private var extracting = false
-    @State private var saveError: BrowserSaveFailure?
     @State private var clipboardNotice: UUID?
     @State private var finding = false
     @State private var findRequest: UUID?
@@ -47,6 +32,7 @@ struct BrowserWorkspaceView: View {
     @State private var editingPin: BrowserHomePin?
     @State private var activitySheet = false
     @State private var confirmingClear = false
+    @State private var externalURL: URL?
     @State private var chromeHeight: CGFloat = 64
     @State private var completionNotice = false
     @State private var clearingData = false
@@ -151,7 +137,7 @@ struct BrowserWorkspaceView: View {
         .environment(\.browserWorkspace, workspace)
         .environment(\.browserChromeHeight, chromeHeight)
         .environment(\.openURL, OpenURLAction { url in
-            guard TextBrowserModel.address(url.absoluteString) != nil else { return .systemAction }
+            guard TextBrowserModel.address(url.absoluteString) != nil else { externalURL = url; return .handled }
             finishEditing(); workspace.openURL(url)
             return .handled
         })
@@ -186,13 +172,22 @@ struct BrowserWorkspaceView: View {
                 }
                 catch {
                     if (error as NSError).code == NSUserCancelledError { return }
-                    workspace.error = (error as? URLError)?.code == .dataLengthExceedsMaximum ? "请选择小于 4.5 MB 的电子书。" : "电子书无法打开，请重新选择 EPUB 或 PDF 文件。"
+                    workspace.error = .openFile(oversized: (error as? URLError)?.code == .dataLengthExceedsMaximum)
                 }
             }
         }
-        .alert("暂时无法完成", isPresented: Binding(get: { workspace.error != nil }, set: { if !$0 { workspace.error = nil } })) {
-            Button("完成", role: .cancel) { workspace.error = nil }
-        } message: { Text(workspace.error ?? "") }
+        .alert(workspace.error?.title ?? "操作未完成", isPresented: Binding(get: { workspace.error != nil }, set: { if !$0 { workspace.error = nil } }), presenting: workspace.error) { failure in
+            switch failure {
+            case .openText(let text): Button("重试") { Task { await workspace.open(text) } }
+            case .openArticle(let id): Button("重试") { pendingText = id }
+            case .archiveFolder(let folder): Button("重试") { Task { await workspace.setArchived(folder) } }
+            case .openFile: Button("重新选择") { choosingFile = true }
+            case .savePDF(false): Button("重试") { Task { await extract() } }
+            case .savePDF(true): EmptyView()
+            }
+            Button(failure.dismissal, role: .cancel) { }
+        } message: { failure in Text(failure.message) }
+        .modifier(ExternalLinkConfirmation(url: $externalURL))
         .confirmationDialog("清除所有浏览数据？", isPresented: $confirmingClear, titleVisibility: .visible) {
             Button("清除浏览数据", role: .destructive) {
                 Task {
@@ -248,7 +243,7 @@ struct BrowserWorkspaceView: View {
                 guard !Task.isCancelled else { return }
                 pendingText = nil
                 await workspace.open(document.text)
-            } catch { workspace.error = "暂时无法打开文章，请稍后重试。"; pendingText = nil }
+            } catch { workspace.error = .openArticle(id); pendingText = nil }
         }
         .task(id: pendingHome) {
             guard pendingHome else { return }
@@ -308,14 +303,14 @@ struct BrowserWorkspaceView: View {
             }
         }
         .onChange(of: workspace.current.id) { _, _ in
-            saveError = nil
+            workspace.error = nil
             findDismissal?.stop(); findDismissal = nil
             workspace.browser.web.findInteraction?.dismissFindNavigator()
             findInteraction?.dismissFindNavigator()
             findRequest = nil; finding = false; findInteraction = nil
             if playback.textID?.rawValue != workspace.current.textID { playback.stop() }
         }
-        .onChange(of: workspace.browser.navigationID) { saveError = nil }
+        .onChange(of: workspace.browser.navigationID) { if case .savePDF = workspace.error { workspace.error = nil } }
     }
     private var recentArtworkTaskID: [String] {
         let state = [scenePhase == .active ? "active" : "inactive", sync?.online == false ? "offline" : "online"]
@@ -340,7 +335,6 @@ struct BrowserWorkspaceView: View {
             switch entry.resource {
             case .bookmarks: return ids.insert("bookmarks").inserted
             case .account: return ids.insert("account").inserted
-            case .vocabulary: return ids.insert("vocabulary").inserted
             case .review: return ids.insert("review").inserted
             case .reviewSession(let model): return ids.insert("review/" + model.selection.id).inserted
             case .document(let document): return ids.insert(document.text.id).inserted
@@ -350,7 +344,7 @@ struct BrowserWorkspaceView: View {
     }
     private func active(_ entry: BrowserEntry) -> Bool {
         switch (entry.resource, workspace.current.resource) {
-        case (.bookmarks, .bookmarks), (.account, .account), (.vocabulary, .vocabulary), (.review, .review): true
+        case (.bookmarks, .bookmarks), (.account, .account), (.review, .review): true
         case (.reviewSession(let a), .reviewSession(let b)): a.selection == b.selection
         case (.document(let a), .document(let b)): a.text.id == b.text.id
         default: false
@@ -370,7 +364,6 @@ struct BrowserWorkspaceView: View {
         case .account:
             if let session { AccountView(session: session, playback: playback).safeAreaPadding(.bottom, chromeHeight) }
             else { LeximoryUnavailableView("账号", systemImage: "person.crop.circle") }
-        case .vocabulary: BrowserVocabularyView(workspace: workspace)
         case .review:
             if guest != nil { GuestAccountPrompt(title: "每日复习", message: "登录后复习你收藏的生词。", purpose: .review) }
             else { ReviewTimelineView(client: client, progressOverrides: workspace.reviewProgress, open: workspace.openReview) }
@@ -416,12 +409,6 @@ struct BrowserWorkspaceView: View {
                                 .frame(width: 44, height: 48).contentShape(Circle()).glassEffect(chromeGlass, in: .circle)
                         }.buttonStyle(.plain).disabled(extracting || sync?.online == false || workspace.browser.loading || workspace.browser.error != nil)
                             .accessibilityLabel(workspace.browser.isPDF ? "保存 PDF" : "保存网页").accessibilityIdentifier("browser-magic-save")
-                            .popover(isPresented: Binding(get: { saveError != nil }, set: { if !$0 { saveError = nil } })) {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    Text(saveError?.message ?? "").interfaceFont(15)
-                                    if saveError?.canRetry == true { Button("重试") { Task { await extract() } } }
-                                }.padding(20).frame(maxWidth: 320).presentationCompactAdaptation(.popover)
-                            }
                     }
                     more
                 }
@@ -496,7 +483,7 @@ struct BrowserWorkspaceView: View {
             if workspace.current.isWeb, let url = workspace.browser.recoveryURL {
                 Section {
                     ShareLink(item: url) { Label("分享", systemImage: "square.and.arrow.up") }
-                    Button("在 Safari 中打开", systemImage: "safari") { openURL(url) }
+                    Button("在 Safari 中打开", systemImage: "safari") { externalURL = url }
                 }
             }
             if case .document(let document) = workspace.current.resource, document.text.format == "ebook" {
@@ -612,7 +599,7 @@ struct BrowserWorkspaceView: View {
     }
     private func extract() async {
         guard guest == nil else { session?.entry = AccountEntryContext(purpose: .cloudLibrary); return }
-        saveError = nil
+        workspace.error = nil
         extracting = true
         defer { extracting = false }
         let resourceID = workspace.current.id
@@ -633,8 +620,13 @@ struct BrowserWorkspaceView: View {
         catch {
             guard workspace.current.id == resourceID, workspace.browser.navigationID == navigationID,
                   !Task.isCancelled, !(error is CancellationError), (error as? URLError)?.code != .cancelled else { return }
-            if pdf, (error as? URLError)?.code == .dataLengthExceedsMaximum { saveError = .oversizedPDF }
-            else { saveError = pdf ? .unavailablePDF : .unavailableArticle }
+            if pdf { workspace.error = .savePDF(oversized: (error as? URLError)?.code == .dataLengthExceedsMaximum) }
+            else if let url = workspace.browser.url {
+                var draft = BrowserArticleDraft(url: url, title: workspace.browser.title.isEmpty ? url.host ?? "网页" : workspace.browser.title,
+                    content: "", extractionFailed: true)
+                if let id = webBookmarkID { draft.sourceFolderID = workspace.documents[id]?.library.id }
+                importRequest = BrowserImportRequest(source: .article(draft))
+            }
         }
     }
 }
@@ -663,26 +655,6 @@ private struct BrowserAnnotationSheet: View {
                     }
                 }
         }.leximorySheetStyle().presentationDetents([.medium, .large])
-    }
-}
-
-private struct BrowserVocabularyView: View {
-    let workspace: BrowserWorkspaceModel
-    @State private var selected: CatalogLibrary?
-    @Environment(\.browserChromeHeight) private var chromeHeight
-    var body: some View {
-        Group {
-            if let selected { VocabularyLibraryView(library: selected.preview, client: workspace.client, closeCorpus: { self.selected = nil }) }
-            else {
-                List {
-                    Section {
-                        ForEach(workspace.libraries.filter(\.owned)) { library in
-                            Button { selected = library } label: { BrowserFolderLabel(library: library) }.foregroundStyle(.primary)
-                        }
-                    } header: { LeximorySectionHeader("已存词汇") }
-                }.listStyle(.insetGrouped)
-            }
-        }.safeAreaPadding(.bottom, chromeHeight)
     }
 }
 

@@ -2,12 +2,12 @@
 
 The native backend publishes through `server/workflows/client.ts`. Payload validation, provider error classification, retry policy, stable article/notification run identities and flow-control keys live in `publish.ts`. Thin Next.js routes under `/api/workflows/ios` expose signed Upstash Workflow handlers. The native API and Apple notification endpoint no longer publish Inngest events.
 
-| Endpoint | Responsibility |
-| --- | --- |
-| `article-annotation` | Generate metadata and annotated chunks, save the article, finish progress, send any existing web-push subscription its completion notification |
-| `account-deletion` | Freeze, wait two minutes, persist the ownership manifest, remove files/data/auth, confirm deletion; exhausted failures mark the existing ledger failed |
-| `apple-subscription` | Reconcile one Apple environment/transaction chain using the existing versioned entitlement writer |
-| `apple-recovery` | Page known chains and the overlapping 48-hour signed notification history, enqueue reconciliation |
+| Endpoint             | Responsibility                                                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `article-annotation` | Generate metadata and annotated chunks, save the article, finish progress, send any existing web-push subscription its completion notification         |
+| `account-deletion`   | Freeze, wait two minutes, persist the ownership manifest, remove files/data/auth, confirm deletion; exhausted failures mark the existing ledger failed |
+| `apple-subscription` | Reconcile one Apple environment/transaction chain using the existing versioned entitlement writer                                                      |
+| `apple-recovery`     | Page known chains and the overlapping 48-hour signed notification history, enqueue reconciliation                                                      |
 
 All external I/O belongs inside `context.run`; waits use `context.sleep`. AI model instances and configuration are constructed inside generation steps; step output contains strings. Account deletion retains its persisted inventory and idempotent persistence adapter. Apple notifications carry chain identifiers, never signed evidence. Flow control limits requests/steps, not whole-run locks; persistence must remain safe under replay and overlap.
 
@@ -24,5 +24,7 @@ The web's article and notification workflows remain in Inngest. Shared article p
 Workflow 1.2 uses bounded provider deduplication; stable run IDs are not a permanent exactly-once guarantee. Import receipts last seven days, entitlement writes are versioned, and deletion operations remain idempotent. Replaying a failed run must use the existing domain identity and persisted source/manifest. Inspect and resume failed steps through Upstash's DLQ rather than silently accepting unresolved jobs.
 
 The publisher uses the installed SDK's transport with immediate HTTP error propagation and no SDK send retries. Mobile request retries reuse article identity. The installed SDK does not expose a transport cancellation deadline; a stalled enqueue can consume the route budget and a lost response must be replayed with that identity.
+
+Workflow delivery requests use five retries and flow-control keys with a scope and a SHA-256 owner digest. QStash rejects eight retries on the standard tier, including the local development server (`quota maxRetries exceeded, current limit: 5`), and rejects colons in flow-control keys (`flowControlKey must be alphanumeric, hyphen, underscore, or period`). Both errors prevent queue acceptance with HTTP 400. To check acceptance and delivery through the real local server, set `QSTASH_LOCAL_TEST_URL` and `QSTASH_LOCAL_TEST_TOKEN` when running `tests/workflow-publish.test.ts`. The integration check accepts only `127.0.0.1` and uses an in-memory callback server.
 
 References: [scheduling workflows](https://upstash.com/docs/workflow/howto/schedule), [run configuration](https://upstash.com/docs/workflow/howto/configure).

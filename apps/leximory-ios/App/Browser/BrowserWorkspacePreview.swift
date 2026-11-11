@@ -146,6 +146,7 @@ private actor BrowserWorkspaceFixtureTransport: ClientTransport {
     var payloads: [String: Data]
     private var pendingReads = 0
     private var definitionAttempts = 0
+    private var importFailures = Int(ProcessInfo.processInfo.environment["LEXIMORY_FIXTURE_IMPORT_FAILURES"] ?? "0") ?? 0
     private var completionGate: (@MainActor @Sendable () -> Bool)?
     private let store: LocalReadingStore
     init(payloads: [String: Data], store: LocalReadingStore) { self.payloads = payloads; self.store = store }
@@ -195,6 +196,11 @@ private actor BrowserWorkspaceFixtureTransport: ClientTransport {
             return (.init(status: .ok), HTTPBody(#"{"audioId":"fixture_recording"}"#))
         }
         if operationID == "importArticle" || operationID == "createBookmark" {
+            if importFailures > 0 {
+                importFailures -= 1
+                return (.init(status: .serviceUnavailable, headerFields: [.contentType: "application/json"]),
+                    HTTPBody(#"{"error":{"code":"service_unavailable","message":"服务暂时不可用，请稍后重试。","retryable":true}}"#))
+            }
             guard let body else { throw URLError(.badServerResponse) }
             let input = try await JSONSerialization.jsonObject(with: Data(collecting: body, upTo: 65536)) as? [String: Any] ?? [:]
             let folderID = path[path.count - 2]

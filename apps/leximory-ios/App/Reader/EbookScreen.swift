@@ -154,6 +154,7 @@ struct EbookScreen: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.dynamicTypeSize) private var typeSize
     private var usesCompactTypography: Bool { sizeClass != .regular || verticalSizeClass == .compact }
     @Environment(\.browserWorkspace) private var workspace
     @Environment(\.browserChromeHeight) private var browserChromeHeight
@@ -346,7 +347,8 @@ struct EbookScreen: View {
             }.background(LeximoryPalette.paper)
                 .overlay { if reader.bookmarks.isEmpty { LeximoryUnavailableView("暂无标记", systemImage: "highlighter") } }
                 .navigationTitle("荧光笔").navigationBarTitleDisplayMode(.inline)
-        }.frame(minWidth: sizeClass == .regular ? 400 : nil, idealHeight: min(620, max(260, CGFloat(reader.bookmarks.count) * 180 + 80)))
+        }.frame(idealWidth: sizeClass == .regular ? 400 : nil, maxWidth: sizeClass == .regular ? 400 : nil,
+                idealHeight: min(620, max(260, CGFloat(reader.bookmarks.count) * 180 + 80)))
             .presentationCompactAdaptation(.sheet).presentationDetents([.medium, .large])
             .presentationBackground(LeximoryPalette.paper)
     }
@@ -483,7 +485,8 @@ struct EbookScreen: View {
             }.background(LeximoryPalette.paper)
                 .navigationTitle("阅读选项").navigationBarTitleDisplayMode(.inline)
         }.frame(minWidth: sizeClass == .regular ? 340 : nil, idealHeight: format == "epub" ? 400 : 260)
-            .presentationDetents([.medium]).presentationDragIndicator(.visible)
+            .presentationDetents(typeSize.isAccessibilitySize || verticalSizeClass == .compact ? [.large] : [.medium, .large])
+            .presentationDragIndicator(.visible)
             .presentationBackground(LeximoryPalette.paper).tint(LeximoryPalette.ink)
     }
     private func load() async {

@@ -2,15 +2,69 @@ import Foundation
 import Testing
 import WebKit
 import SwiftUI
+import Network
 @testable import Leximory
 
 @MainActor @Suite(.serialized) struct TextBrowserTests {
+    @Test func crossSiteRedirectsFinishInTheBrowserAndPreserveBackHistory() async throws {
+        let server = try await BrowserLinkRedirectServer()
+        defer { server.listener.cancel() }
+        let model = TextBrowserModel(websiteDataStore: .nonPersistent())
+        defer { model.web.stopLoading() }
+        model.load(server.origin.appending(path: "search"))
+        for _ in 0..<200 {
+            if model.hasCommittedPage, !model.loading { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(model.hasCommittedPage)
+        _ = try await model.web.evaluateJavaScript("document.querySelector('a').click()")
+        for _ in 0..<300 {
+            if model.url?.path == "/story", !model.loading { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(model.url?.path == "/story")
+        #expect(model.error == nil)
+        #expect(model.externalURL == nil)
+        #expect(try await model.web.evaluateJavaScript("document.body.textContent") as? String == "The story opened inside Leximory.")
+        #expect(model.web.backForwardList.backList.map(\.url.path) == ["/search"])
+    }
+    @Test(arguments: [
+        "document.getElementById('result').click()",
+        "document.getElementById('result').target = '_blank'; document.getElementById('result').click()",
+        "location.href = document.getElementById('result').href"
+    ])
+    func crossSiteLinksAreCancelledAndLoadedByTheApp(script: String) async throws {
+        let model = TextBrowserModel(websiteDataStore: .nonPersistent())
+        let target = try #require(URL(string: "https://www.nytimes.com/section/world"))
+        let probe = BrowserLinkNavigation(model: model, destination: target)
+        model.web.navigationDelegate = probe
+        defer { model.web.stopLoading() }
+        model.web.loadHTMLString("<html><body><a id='result' href='\(target.absoluteString)'>NYTimes result</a></body></html>",
+            baseURL: URL(string: "https://www.google.com/search?q=news"))
+        for _ in 0..<200 {
+            if probe.loaded { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(probe.loaded)
+        _ = try await model.web.evaluateJavaScript(script)
+        for _ in 0..<200 {
+            if probe.decisions.count >= 2 { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(probe.decisions.count == 2)
+        let first = try #require(probe.decisions.first)
+        let last = try #require(probe.decisions.last)
+        #expect(first.policy == .cancel)
+        #expect(last.type == .other)
+        #expect(last.policy == .allow)
+        #expect(model.externalURL == nil)
+    }
     @Test(arguments: [
         (NSURLErrorNotConnectedToInternet, "请检查网络连接后再试。"),
         (NSURLErrorTimedOut, "网站响应时间过长，请稍后再试。"),
         (NSURLErrorCannotFindHost, "未能找到这个网站，请检查网址是否正确。"),
         (NSURLErrorServerCertificateUntrusted, "无法与这个网站建立安全连接。"),
-        (NSURLErrorCannotConnectToHost, "这个网页暂时无法载入，请稍后再试。")
+        (NSURLErrorCannotConnectToHost, "暂时无法加载，请稍后再试。")
     ])
     func loadFailureExplainsTheProblemWithoutTechnicalDetails(code: Int, message: String) throws {
         let destination = try #require(URL(string: "https://unavailable.example/article"))
@@ -87,6 +141,31 @@ import SwiftUI
         #expect(draft.content.contains("Read more"))
         #expect(!draft.content.contains("tracking="))
         #expect(draft.content.utf16.count < 10000)
+    }
+    @Test func webpageImportRemovesImagesWithoutChangingTheOpenPage() async throws {
+        let model = TextBrowserModel(websiteDataStore: .nonPersistent())
+        defer { model.web.stopLoading() }
+        let paragraph = "The morning light fell across the winding river. We walked slowly beneath the trees."
+        let html = "<html><head><title>A river journey</title></head><body><article><h1>A river journey</h1>" +
+            String(repeating: "<p>\(paragraph)</p>", count: 10) +
+            "<figure><picture><source srcset='large.jpg'><img src='data:image/png;base64,\(String(repeating: "A", count: 40000))' alt='A landscape' width='600' height='400'></picture></figure>" +
+            "<p>After the photograph.</p></article></body></html>"
+        model.web.loadHTMLString(html, baseURL: URL(string: "https://example.com/article"))
+        for _ in 0..<200 {
+            if model.url != nil, !model.web.isLoading { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        for _ in 0..<2 {
+            let draft = try await model.extractArticle()
+            #expect(!draft.extractionFailed)
+            #expect(draft.content.contains(paragraph))
+            #expect(draft.content.contains("After the photograph."))
+            #expect(!draft.content.contains("!["))
+            #expect(!draft.content.contains("data:image"))
+            #expect(!draft.content.contains("A landscape"))
+            #expect(draft.content.utf16.count < 5000)
+        }
+        #expect(try await model.web.evaluateJavaScript("document.querySelectorAll('img').length") as? Int == 1)
     }
     @Test func addressEditingKeepsTheDraftAndCompositionAcrossViewUpdates() async throws {
         let editor = BrowserAddressEditor()
@@ -422,6 +501,66 @@ import SwiftUI
             contentWorld: .world(name: "LeximoryBrowserSelection"))
         #expect(privateSelection == nil || privateSelection is NSNull)
         #expect(config.userContentController.userScripts.isEmpty)
+    }
+}
+
+private final class BrowserLinkRedirectServer: Sendable {
+    let listener: NWListener
+    let origin: URL
+    init() async throws {
+        let listener = try NWListener(using: .tcp, on: .any)
+        self.listener = listener
+        listener.newConnectionHandler = { connection in
+            connection.start(queue: .global())
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { request, _, _, _ in
+                let path = request.map { String(decoding: $0, as: UTF8.self).components(separatedBy: " ").dropFirst().first ?? "" } ?? ""
+                let port = listener.port?.rawValue ?? 0
+                let response: String
+                if path == "/redirect" {
+                    response = "HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:\(port)/story\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                } else {
+                    let body = path == "/search" ? "<a href='http://localhost:\(port)/redirect'>NYTimes result</a>" : "The story opened inside Leximory."
+                    let html = "<html><body>\(body)</body></html>"
+                    response = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: \(html.utf8.count)\r\nConnection: close\r\n\r\n" + html
+                }
+                connection.send(content: Data(response.utf8), completion: .contentProcessed { _ in connection.cancel() })
+            }
+        }
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
+            listener.stateUpdateHandler = { state in
+                switch state {
+                case .ready: listener.stateUpdateHandler = nil; continuation.resume()
+                case .failed(let error): listener.stateUpdateHandler = nil; continuation.resume(throwing: error)
+                default: break
+                }
+            }
+            listener.start(queue: .global())
+        }
+        let port = try #require(listener.port)
+        origin = try #require(URL(string: "http://127.0.0.1:\(port.rawValue)"))
+    }
+}
+
+@MainActor private final class BrowserLinkNavigation: NSObject, WKNavigationDelegate {
+    struct Decision { let type: WKNavigationType; let policy: WKNavigationActionPolicy }
+    let model: TextBrowserModel
+    let destination: URL
+    var loaded = false
+    var decisions: [Decision] = []
+    init(model: TextBrowserModel, destination: URL) { self.model = model; self.destination = destination }
+    func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction) async -> WKNavigationActionPolicy {
+        let policy = await model.webView(webView, decidePolicyFor: action)
+        if action.request.url == destination {
+            decisions.append(Decision(type: action.navigationType, policy: policy))
+            return .cancel
+        }
+        return policy
+    }
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        model.webView(webView, didStartProvisionalNavigation: navigation)
+    }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        model.webView(webView, didFinish: navigation); loaded = true
     }
 }
 

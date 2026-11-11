@@ -21,7 +21,6 @@ struct TextBrowserScreen: View {
     @State private var addressEditor = BrowserAddressEditor()
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
     @State private var localBrowser = BrowserModelStorage()
     private var browser: TextBrowserModel { sharedBrowser ?? localBrowser.model }
     @State private var address = ""
@@ -61,20 +60,21 @@ struct TextBrowserScreen: View {
         }
     }
     private var controlsAtTop: Bool { false }
+    private var showsFailurePage: Bool { browser.error != nil && !browser.hasCommittedPage }
     private var page: some View {
         ZStack(alignment: .top) {
             BrowserWebContent(model: browser, reservesBottomControls: !controlsAtTop).frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea(.container, edges: .bottom)
                 .ignoresSafeArea(.keyboard)
                 .backgroundExtensionEffect(isEnabled: controlsAtTop)
-                .accessibilityHidden(browser.error != nil)
-                .allowsHitTesting(browser.error == nil)
+                .accessibilityHidden(showsFailurePage)
+                .allowsHitTesting(!showsFailurePage)
             if sharedBrowser == nil && browser.url == nil && browser.error == nil && !browser.loading && !editingAddress {
                 LeximoryUnavailableView("浏览网页", systemImage: "globe", message: "输入网址或关键词，阅读时选中文字即可猫忆查。")
                     .frame(maxHeight: .infinity)
             }
-            if let error = browser.error {
-                BrowserLoadFailureView(failure: error) {
+            if let error = browser.error, !browser.hasCommittedPage {
+                BrowserLoadFailureView(failure: error, openExternally: { browser.externalURL = $0 }) {
                     if error.url == nil { browser.error = nil; opened = false; openingAttempt += 1 }
                     else { browser.reload() }
                 }
@@ -92,7 +92,7 @@ struct TextBrowserScreen: View {
                     .id(definition.id)
             }
         }
-        .background(Color(uiColor: browser.error == nil ? browser.pageColor : .systemBackground).ignoresSafeArea())
+        .background(Color(uiColor: showsFailurePage ? .systemBackground : browser.pageColor).ignoresSafeArea())
         .safeAreaInset(edge: .top, spacing: 0) {
             if showsControls && controlsAtTop {
                 controls.padding(.horizontal, 16).padding(.vertical, 8)
@@ -105,6 +105,17 @@ struct TextBrowserScreen: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(bookmarkID == nil ? .visible : .hidden, for: .tabBar)
+        .alert("未能打开网页", isPresented: Binding(
+            get: { browser.error != nil && browser.hasCommittedPage },
+            set: { if !$0 { browser.error = nil } }
+        ), presenting: browser.error) { failure in
+            Button("重试") {
+                if let url = failure.url { browser.load(url) }
+                else { browser.reload() }
+            }
+            Button("取消", role: .cancel) { }
+        } message: { failure in Text(failure.message) }
+        .modifier(ExternalLinkConfirmation(url: Binding(get: { browser.externalURL }, set: { browser.externalURL = $0 })))
         .sheet(isPresented: $settings) {
             BrowserPreferencesView(client: client, domain: browser.domain, bookmarkMode: bookmarkID != nil,
                 selectedLibraryID: selectedLibraryID) { libraryID in
@@ -207,7 +218,7 @@ struct TextBrowserScreen: View {
                             Section {
                                 ShareLink(item: url) { Label("分享", systemImage: "square.and.arrow.up") }
                                 Button("存为书签", systemImage: "bookmark") { savingBookmark = true }
-                                Button("在 Safari 中打开", systemImage: "safari") { openURL(url) }
+                                Button("在 Safari 中打开", systemImage: "safari") { browser.externalURL = url }
                             }
                         }
                         if bookmarkID == nil {
@@ -461,9 +472,8 @@ struct BrowserSession: Codable {
 
 struct BrowserLoadFailureView: View {
     let failure: BrowserLoadFailure
+    let openExternally: (URL) -> Void
     let retry: () -> Void
-    @Environment(\.openURL) private var openURL
-    @Environment(\.dynamicTypeSize) private var typeSize
 
     private var heading: Text {
         if let host = failure.url?.host {
@@ -476,10 +486,11 @@ struct BrowserLoadFailureView: View {
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
-                LeximoryUnavailableView(
-                    heading,
-                    systemImage: "globe", message: failure.message
-                ) {
+                ContentUnavailableView {
+                    Label { heading } icon: { Image(systemName: "globe") }
+                } description: {
+                    Text(failure.message)
+                } actions: {
                     VStack(spacing: 8) {
                         Button(action: retry) {
                             Label("重新载入", systemImage: "arrow.clockwise")
@@ -487,21 +498,19 @@ struct BrowserLoadFailureView: View {
                                 .frame(maxWidth: .infinity, minHeight: 26)
                         }
                         .buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.capsule).controlSize(.large)
-                        .tint(.primary).foregroundStyle(Color(uiColor: .systemBackground))
                         .accessibilityIdentifier("browser-load-retry")
                         if let url = failure.url {
-                            Button { openURL(url) } label: {
+                            Button { openExternally(url) } label: {
                                 Label("在 Safari 中打开", systemImage: "safari")
                                     .fixedSize(horizontal: false, vertical: true)
                                     .frame(maxWidth: .infinity, minHeight: 44)
                                     .contentShape(.rect)
                             }
-                            .buttonStyle(.plain).foregroundStyle(.primary)
+                            .buttonStyle(.borderless)
                             .accessibilityIdentifier("browser-load-safari")
                         }
                     }
-                    .frame(maxWidth: typeSize.isAccessibilitySize ? .infinity : 240)
+                    .frame(maxWidth: 320)
                 }
                 .frame(minHeight: geometry.size.height)
             }
@@ -511,6 +520,22 @@ struct BrowserLoadFailureView: View {
         }
         .padding(.bottom, 88)
         .background(Color(uiColor: .systemBackground).ignoresSafeArea())
+    }
+}
+
+struct ExternalLinkConfirmation: ViewModifier {
+    @Binding var url: URL?
+    @Environment(\.openURL) private var openURL
+
+    func body(content: Content) -> some View {
+        content.alert("在其他 App 中打开？", isPresented: Binding(
+            get: { url != nil }, set: { if !$0 { url = nil } }
+        ), presenting: url) { destination in
+            Button("取消", role: .cancel) { url = nil }
+            Button("打开") { url = nil; openURL(destination) }
+        } message: { destination in
+            Text(destination.host ?? destination.absoluteString)
+        }
     }
 }
 

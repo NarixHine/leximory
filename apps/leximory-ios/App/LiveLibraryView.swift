@@ -94,15 +94,12 @@ struct RemoteTextGallery: View {
     @State private var texts: [CatalogText] = []
     @State private var importing = false
     @State private var importedArticle: FixtureArticle?
-    @State private var vocabulary = false
     @State private var loading = true
     @State private var error: String?
     @State private var requestID = UUID()
     var body: some View {
         ZStack {
-            if vocabulary {
-                VocabularyLibraryView(library: library, client: client, closeCorpus: { vocabulary = false })
-            } else if loading { ReadingLoadingIndicator("正在加载文章") }
+            if loading { ReadingLoadingIndicator("正在加载文章") }
             else if let error {
                 LeximoryUnavailableView("暂时无法加载文章", systemImage: "wifi.exclamationmark", message: error) { Button("重试") { Task { await load() } } }
             } else if texts.isEmpty {
@@ -110,18 +107,13 @@ struct RemoteTextGallery: View {
             } else {
                 TextGallery(library: FixtureLibrary(id: library.id, name: library.name, language: library.language,
                     articles: texts.map(\.preview), isRemote: true), showsNavigationBar: sizeClass != .regular,
-                    openVocabulary: sizeClass == .regular ? { vocabulary = true } : nil,
                     importText: sizeClass == .regular && library.owned && !library.shadow ? { importing = true } : nil) { article in
                     open(article)
                 }
             }
         }
         .toolbar {
-            if sizeClass != .regular && !loading && !vocabulary {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("语料本", systemImage: "book.closed") { vocabulary = true }
-                        .buttonStyle(.glass).buttonBorderShape(.circle).foregroundStyle(.primary)
-                }
+            if sizeClass != .regular && !loading {
                 if library.owned && !library.shadow {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("导入", systemImage: "plus") { importing = true }
@@ -132,12 +124,10 @@ struct RemoteTextGallery: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if sizeClass == .regular && !loading && !vocabulary && (error != nil || texts.isEmpty) {
+            if sizeClass == .regular && !loading && (error != nil || texts.isEmpty) {
                 GlassEffectContainer(spacing: 16) {
                     HStack {
                         Spacer()
-                        Button("语料本", systemImage: "book.closed") { vocabulary = true }
-                            .buttonStyle(.glass).buttonBorderShape(.circle).labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)
                         if library.owned && !library.shadow {
                             Button("导入", systemImage: "plus") { importing = true }
                                 .buttonStyle(.glass).buttonBorderShape(.circle).labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44)

@@ -143,7 +143,6 @@ struct TextGallery: View {
     @Environment(\.nativeSync) private var sync
     let library: FixtureLibrary
     var showsNavigationBar = true
-    var openVocabulary: (() -> Void)? = nil
     var importText: (() -> Void)? = nil
     let open: (FixtureArticle) -> Void
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -153,7 +152,7 @@ struct TextGallery: View {
             let railCount = geometry.size.width > geometry.size.height ? 5 : 3
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    if showsNavigationBar || openVocabulary != nil || importText != nil {
+                    if showsNavigationBar || importText != nil {
                         HStack(alignment: .top, spacing: 16) {
                             if showsNavigationBar {
                                 Text(library.name).editorialFont(24, language: library.language)
@@ -163,11 +162,6 @@ struct TextGallery: View {
                             Spacer(minLength: 0)
                             GlassEffectContainer(spacing: 16) {
                                 HStack(spacing: 16) {
-                                    if let openVocabulary {
-                                        Button("语料本", systemImage: "book.closed", action: openVocabulary)
-                                            .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
-                                            .frame(minWidth: 44, minHeight: 44)
-                                    }
                                     if let importText {
                                         Button("导入", systemImage: "plus", action: importText)
                                             .labelStyle(.iconOnly).buttonStyle(.glass).buttonBorderShape(.circle)
