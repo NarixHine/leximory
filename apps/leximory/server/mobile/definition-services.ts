@@ -41,7 +41,8 @@ export const definitionServices: DefinitionServices = {
         const { textStream } = streamText({
             ...wordAI,
             abortSignal: signal,
-            maxOutputTokens: language === 'nl' ? 1600 : 800,
+            // Long selections occupy both opening fields before the explanation begins.
+            maxOutputTokens: 4096,
             instructions: `${mobileWordGuide(language)}${language === 'en' ? `\n用户偏好：${accent}。` : ''}`,
             prompt: context,
         })

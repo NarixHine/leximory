@@ -38,7 +38,8 @@ export async function prepareDefinition(
         }
         signal.throwIfAborted()
         const definition = parseGeneratedDefinition(generated)
-        await services.cache(key, definition)
+        // A cache outage must not discard the streamed answer and trigger paid regeneration.
+        await services.cache(key, definition).catch(() => {})
         return definition
     }
 }

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createHash } from 'node:crypto'
+import { z } from 'zod'
 
 // Production SDKs use fake external HTTP services, never live credentials or accounts.
 for (const key of [
@@ -128,4 +129,51 @@ void test('production mobile stores reject paid work when quota is exhausted and
     allow = true
     await requireCommentaryQuota('reader', 0.01, signal)
     assert.equal(charges().length, 5)
+})
+
+test('production annotation generation leaves room for long selections and calls the provider once', async (t) => {
+    const calls: number[] = []
+    const output = '{{bridge the gap||bridge the gap||弥合差距}}'
+    t.mock.method(globalThis, 'fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = new URL(input instanceof Request ? input.url : String(input))
+        assert.ok(url.pathname.endsWith('/ai/language-model'))
+        const options = z.object({ maxOutputTokens: z.number() }).parse(JSON.parse(String(init?.body)))
+        calls.push(options.maxOutputTokens)
+        const parts = [
+            { type: 'stream-start', warnings: [] },
+            { type: 'text-start', id: 'annotation' },
+            { type: 'text-delta', id: 'annotation', delta: output },
+            { type: 'text-end', id: 'annotation' },
+            {
+                type: 'finish',
+                finishReason: { unified: 'stop', raw: 'stop' },
+                usage: {
+                    inputTokens: { total: 100 },
+                    outputTokens: { total: 30 },
+                },
+            },
+        ]
+        return new Response(parts.map((part) => `data: ${JSON.stringify(part)}\n\n`).join(''), {
+            headers: { 'content-type': 'text/event-stream' },
+        })
+    })
+    const { definitionServices } = await import('../server/mobile/definition-services')
+    const quote = '字'.repeat(1024)
+    for (const language of ['en', 'fr', 'ja', 'zh', 'nl'] as const) {
+        let raw = ''
+        for await (const delta of definitionServices.generate(
+            `[[${quote}]]`,
+            language,
+            '',
+            new AbortController().signal,
+        ))
+            raw += delta
+        assert.equal(raw, output)
+    }
+    assert.equal(calls.length, 5)
+    // The format repeats the selected text in two required fields before explaining it.
+    assert.ok(
+        calls.every((budget) => budget > quote.length * 2),
+        'Long selections must leave room for the explanation after both required fields',
+    )
 })

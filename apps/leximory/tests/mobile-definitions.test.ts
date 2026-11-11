@@ -297,6 +297,71 @@ test('provider bursts retain every character and flush before completion', async
         cognates: 'bench',
     })
 })
+test('a phrase with omitted optional fields completes the streamed answer without regenerating', async () => {
+    const output =
+        '{{bridge the gap||bridge the gap||**phr. 弥合差距** reduce a difference: *Reading helps bridge the gap.*||||}}'
+    const h = harness({
+        async *generate() {
+            h.metrics.generations++
+            yield output
+        },
+    })
+    const frames = (await (await h.handler(request())).text())
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line))
+    assert.equal(
+        frames
+            .filter((frame) => frame.kind === 'delta')
+            .map((frame) => frame.text)
+            .join(''),
+        output,
+    )
+    assert.deepEqual(frames.at(-1), {
+        kind: 'completed',
+        requestId: 'request-native-fixture',
+        definition: {
+            lemma: 'bridge the gap',
+            definition: '**phr. 弥合差距** reduce a difference: *Reading helps bridge the gap.*',
+            etymology: null,
+            cognates: null,
+        },
+    })
+    assert.equal(h.metrics.generations, 1)
+    assert.equal(h.receipts.size, 1)
+})
+test('an optional definition cache outage cannot fail an already generated answer', async () => {
+    const h = harness({
+        cache: async () => {
+            throw new Error('Cache unavailable')
+        },
+    })
+    const frames = (await (await h.handler(request())).text())
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line))
+    assert.equal(frames.at(-1).kind, 'completed')
+    assert.deepEqual(frames.at(-1).definition, definition)
+    assert.equal(h.metrics.generations, 1)
+    assert.equal(h.receipts.size, 1)
+})
+test('empty required fields and malformed annotation structure still fail validation', () => {
+    for (const output of [
+        '{{||bank||meaning}}',
+        '{{bank||||meaning}}',
+        '{{bank||bank||||etymology}}',
+        '{{bank||bank||meaning||source||cognate||extra}}',
+        '{{bank||bank||unfinished',
+    ]) {
+        assert.throws(() => parseGeneratedDefinition(output))
+    }
+    assert.deepEqual(parseGeneratedDefinition('{{bank||bank||meaning||||bench}}'), {
+        lemma: 'bank',
+        definition: 'meaning',
+        etymology: null,
+        cognates: 'bench',
+    })
+})
 test('a large multilingual provider chunk is split into bounded, decodable frames', async () => {
     const meaning = '🙂漢'.repeat(5000)
     const output = `{{bank||bank||${meaning}}}`

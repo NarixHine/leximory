@@ -40,13 +40,13 @@ export interface DefinitionServices {
 export function parseGeneratedDefinition(value: string): CompletedDefinition {
     const match = /^\s*\{\{([^{}]+)\}\}\s*$/.exec(value)
     const portions = match?.[1]?.split('||').map((value) => value.trim())
-    if (!portions || portions.length < 3 || portions.length > 5 || portions.some((value) => !value))
+    if (!portions || portions.length < 3 || portions.length > 5 || portions.slice(0, 3).some((value) => !value))
         throw new MobileError('service_unavailable')
     return checkedResponse(definitionSchema, {
         lemma: portions[1],
         definition: portions[2],
-        etymology: portions[3] ?? null,
-        cognates: portions[4] ?? null,
+        etymology: portions[3] || null,
+        cognates: portions[4] || null,
     })
 }
 function occurrence(document: ReturnType<typeof renderDocument>, input: unknown, textId: string) {
