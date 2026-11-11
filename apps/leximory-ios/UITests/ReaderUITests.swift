@@ -487,6 +487,7 @@ final class ReaderUITests: XCTestCase {
 
     @MainActor func testCancelledEPUBDragAndEdgeBack() {
         let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
         app.launchArguments = ["--fixtures", "--ebook-fixtures"]
         app.launch()
         app.buttons["library-fixture-ebooks"].tap()
@@ -495,12 +496,18 @@ final class ReaderUITests: XCTestCase {
         let reader = app.descendants(matching: .any).matching(identifier: "ebook-reader").firstMatch
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "The river"), object: reader)], timeout: 5) == .completed)
         let position = reader.value as? String
-        let start = reader.coordinate(withNormalizedOffset: CGVector(dx: 0.7, dy: 0.5))
-        let end = reader.coordinate(withNormalizedOffset: CGVector(dx: 0.58, dy: 0.5))
+        let start = reader.coordinate(withNormalizedOffset: CGVector(dx: 0.7, dy: 0.3))
+        let end = start.withOffset(CGVector(dx: -reader.frame.width * 0.12, dy: 0))
         start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.3)
         XCTAssertEqual(reader.value as? String, position)
-        start.press(forDuration: 0.05, thenDragTo: reader.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.5)), withVelocity: .slow, thenHoldForDuration: 0.4)
+        let diagonal = start.withOffset(CGVector(dx: -reader.frame.width * 0.45, dy: reader.frame.width * 0.35))
+        start.press(forDuration: 0.05, thenDragTo: diagonal, withVelocity: .slow, thenHoldForDuration: 0.4)
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value != %@", position!), object: reader)], timeout: 5) == .completed)
+        let advanced = reader.value as? String
+        for _ in 0..<3 {
+            start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.3)
+            XCTAssertEqual(reader.value as? String, advanced, "An aborted drag must retain the exact page")
+        }
         let edge = reader.coordinate(withNormalizedOffset: CGVector(dx: 0.005, dy: 0.5))
         edge.press(forDuration: 0.05, thenDragTo: start)
         XCTAssertTrue(app.buttons["text-fixture-epub"].waitForExistence(timeout: 5))

@@ -546,6 +546,7 @@ struct PageTurnSpring {
     private var previewReady = false
     private var requestedCommit: Bool?
     private var resolvingTurn = false
+    private var settlingTurn = false
     private var motionFinished = false
     private var launchVelocity: CGFloat = 0
     private var settlementDriver: PageTurnFrames?
@@ -649,19 +650,23 @@ struct PageTurnSpring {
         return touch.location(in: web).x > 24
     }
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        guard let web, reader.ready, reader.selection == nil else { return false }
-        guard gestureRecognizer === pan else { return true }
-        guard !preparingTap else { return false }
-        let velocity = pan.velocity(in: web)
-        guard abs(velocity.x) > abs(velocity.y) * 1.5 else { return false }
+        guard let web else { return false }
+        guard gestureRecognizer === pan else { return reader.ready && reader.selection == nil }
+        return claimDrag(translation: pan.translation(in: web), velocity: pan.velocity(in: web))
+    }
+    func claimDrag(translation: CGPoint, velocity: CGPoint) -> Bool {
+        guard reader.ready, reader.selection == nil, !preparingTap else { return false }
+        let movement = translation == .zero ? velocity : translation
+        guard abs(movement.x) > abs(movement.y) else { return false }
         if turnInFlight {
-            guard let driver = settlementDriver else { return false }
+            guard !settlingTurn else { return false }
             // Claim the existing sheets before UIKit delivers .began. Otherwise
             // the old completion can restore the renderer between those calls.
-            driver.stop(); settlementDriver = nil
+            settlementDriver?.stop(); settlementDriver = nil
+            requestedCommit = nil; resolvingTurn = false; motionFinished = false
             return true
         }
-        let requestingNext = reader.rightToLeft ? velocity.x > 0 : velocity.x < 0
+        let requestingNext = reader.rightToLeft ? movement.x > 0 : movement.x < 0
         return requestingNext ? !reader.atEnd : !reader.atStart
     }
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
@@ -673,13 +678,13 @@ struct PageTurnSpring {
         case .began:
             if turnInFlight {
                 settlementDriver?.stop(); settlementDriver = nil
-                requestedCommit = nil; resolvingTurn = false; motionFinished = false
                 dragOrigin = progress * web.bounds.width * (forward ? -1 : 1)
                 updateDrag(translation: dragOrigin + pan.translation(in: web).x)
                 return
             }
             dragOrigin = 0
-            forward = pan.velocity(in: web).x < 0
+            let translation = pan.translation(in: web)
+            forward = (translation.x == 0 ? pan.velocity(in: web).x : translation.x) < 0
             advances = reader.rightToLeft ? !forward : forward
             launchVelocity = 0
             if !UIAccessibility.isReduceMotionEnabled {
@@ -1024,7 +1029,8 @@ struct PageTurnSpring {
         motionFinished = true
         // Motion follows the release immediately. Only removing its sheets
         // waits for WebKit to have the committed or cancelled page ready.
-        guard previewReady else { return }
+        guard previewReady, !settlingTurn else { return }
+        settlingTurn = true
         Task { [weak self] in
             guard let self else { return }
             if let web = self.web {
@@ -1041,7 +1047,7 @@ struct PageTurnSpring {
         outgoing = nil; incoming = nil; outgoingImage = nil; incomingImage = nil
         outgoingVeil = nil; incomingVeil = nil; outgoingShadow = nil; incomingShadow = nil
         progress = 0; dragOrigin = 0; launchVelocity = 0; previewReady = false
-        requestedCommit = nil; resolvingTurn = false; motionFinished = false
+        requestedCommit = nil; resolvingTurn = false; settlingTurn = false; motionFinished = false
         resolvedSwipeImage = nil; pinnedIncoming = false
         settlementDriver?.stop(); settlementDriver = nil; turnInFlight = false
         prepare()

@@ -5,6 +5,69 @@ import WebKit
 @testable import Leximory
 
 @MainActor @Suite(.serialized) struct EPUBNavigationTests {
+    @Test(.timeLimit(.minutes(2)), arguments: [false, true], [CGSize(width: 390, height: 844), CGSize(width: 1180, height: 820)])
+    func cancelledTurnsRestoreTheExactPage(japanese: Bool, size: CGSize) async throws {
+        let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))
+        let book = try #require(Bundle.main.url(forResource: "reader-fixture", withExtension: "epub"))
+        let config = WKWebViewConfiguration(); config.websiteDataStore = .nonPersistent()
+        let probe = EbookBridgeProbe(); config.userContentController.add(probe, name: "reader")
+        let web = WKWebView(frame: CGRect(origin: .zero, size: size), configuration: config)
+        web.scrollView.contentInsetAdjustmentBehavior = .never
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene); window.frame = web.frame
+        window.rootViewController = UIViewController(); window.rootViewController?.view.addSubview(web); window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey(); config.userContentController.removeScriptMessageHandler(forName: "reader") }
+        web.navigationDelegate = probe; try await probe.load(web, url: page)
+        let failures = try #require(try await web.callAsyncJavaScript("""
+            const archive = await JSZip.loadAsync(bytes, {base64:true});
+            for (const name of ['OEBPS/one.xhtml', 'OEBPS/two.xhtml']) {
+              const doc = new DOMParser().parseFromString(await archive.file(name).async('string'), 'application/xhtml+xml');
+              const text = japanese ? '東京の庭で本を読み、長い物語の続きを楽しむ。' : 'The river winds through the garden while a reader enjoys a long story. ';
+              doc.body.innerHTML = '<p>' + text.repeat(600) + '</p>';
+              archive.file(name, new XMLSerializer().serializeToString(doc));
+            }
+            await window.openBook(await archive.generateAsync({type:'base64'}), '', {}, theme, []);
+            await navigationIdle(); await chapterPainted();
+            const state = () => {
+              const m = rendition.manager, loc = rendition.currentLocation();
+              return {href:loc.start.href, cfi:loc.start.cfi, page:loc.start.displayed.page,
+                left:m.container.scrollLeft, top:m.container.scrollTop};
+            };
+            const failures = [];
+            for (const scenario of ['middle', 'nextChapter', 'previousChapter']) {
+              await window.readerCommand('display', scenario === 'previousChapter' ? 'two.xhtml' : 'one.xhtml');
+              if (scenario === 'middle') {
+                for (let i = 0; i < 5; i++) await rendition.next();
+              } else if (scenario === 'nextChapter') {
+                const m = rendition.manager, total = rendition.currentLocation().start.displayed.total;
+                const vertical = m.settings.axis === 'vertical';
+                const last = vertical ? total - 1 : Math.floor((total - 1) / m.layout.divisor);
+                m.scrollTo(vertical ? 0 : last * m.layout.delta, vertical ? last * m.layout.height : 0, true);
+              }
+              await chapterPainted(); rendition.location = rendition.currentLocation();
+              const origin = state();
+              if (scenario === 'middle' && origin.page < 5) throw Error('Fixture needs several pages');
+              const actions = scenario === 'middle' ? ['next', 'previous', 'next'] : [scenario === 'nextChapter' ? 'next' : 'previous'];
+              for (const action of actions) {
+                await window.readerTurn(action);
+                const preview = state();
+                if ((scenario === 'middle') !== (preview.href === origin.href)) throw Error('Fixture did not reach the expected chapter boundary');
+                await window.readerTurn('cancel');
+                const actual = state();
+                if (JSON.stringify(actual) !== JSON.stringify(origin) || rendition.location.start.cfi !== origin.cfi) {
+                  failures.push({scenario, action, origin, actual, reported:rendition.location.start.cfi});
+                }
+              }
+            }
+            return failures;
+            """, arguments: ["bytes":try Data(contentsOf: book).base64EncodedString(), "japanese":japanese,
+                "theme":["paper":"#ffffff", "ink":"#192024", "size":"20", "leading":"1.6", "weight":"400", "writing":japanese ? "vertical-rl" : "horizontal-tb"]],
+            in: nil, contentWorld: .page) as? [[String: Any]])
+        #expect(failures.isEmpty, "Cancelled swipes changed the source page: \(failures)")
+        #expect(probe.failure == nil)
+    }
+
     @Test(.serialized, arguments: [false, true])
     func highlightTapsRetainIdentityAndColorsWithPublisherHeadings(japanese: Bool) async throws {
         let page = try #require(Bundle.main.url(forResource: "ebook-reader", withExtension: "html"))

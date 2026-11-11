@@ -350,7 +350,18 @@ import LeximoryCore
         #expect(EbookAppearance.paper.colors(dark: true).paper == "#100f0f")
         #expect(ReadingSelectionMenu.lookupImage != nil)
     }
-    @Test(arguments: [false, true].flatMap { advancing in
+    @Test(arguments: [(CGPoint(x: -12, y: 10), true), (CGPoint(x: 12, y: -10), true),
+                      (CGPoint(x: -10, y: 12), false), (CGPoint.zero, false)])
+    func pageDragUsesTheFingerTravelForDirection(translation: CGPoint, expected: Bool) {
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 400, height: 800))
+        let reader = EbookReaderState(); reader.ready = true; reader.atStart = false; reader.atEnd = false
+        let turns = EPUBPageTurn(web: web, reader: reader)
+        defer { turns.stop() }
+        let begins = turns.claimDrag(translation: translation, velocity: .zero)
+        #expect(begins == expected)
+    }
+
+    @Test(.serialized, arguments: [false, true].flatMap { advancing in
         [false, true].flatMap { rtl in
             ([nil, 1.5, -2] as [Double?]).map { (advancing, rtl, $0) }
         }
@@ -429,6 +440,10 @@ import LeximoryCore
             let committed = releaseVelocity > 0
             let endpoint = PageSlide.outgoingOffset(progress: committed ? 1 : 0, width: 400, forward: forward, advances: advancing)
             #expect(abs(outgoing.transform.tx - endpoint) < 0.001, "The slide must finish without waiting for WebKit")
+            #expect(turns.claimDrag(translation: CGPoint(x: sign * 12, y: 10), velocity: .zero),
+                "The page must remain grabbable while destination rendering is pending")
+            turns.updateDrag(translation: sign * 48)
+            turns.releaseDrag(velocity: CGFloat(releaseVelocity))
             _ = try await web.callAsyncJavaScript("window.releaseSwipe(true)", arguments: [:], in: nil, contentWorld: .page)
             for _ in 0..<100 {
                 if host.subviews.allSatisfy({ $0 is WKWebView }) { break }

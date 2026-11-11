@@ -520,6 +520,23 @@ function installReflow() {
     return task;
   };
 }
+function pagePosition() {
+  const manager = rendition.manager;
+  return {href:manager.views.first().section.href,
+    left:manager.container.scrollLeft, top:manager.container.scrollTop};
+}
+async function restorePagePosition(origin) {
+  const manager = rendition.manager;
+  if (manager.views.first()?.section.href !== origin.href) {
+    await rendition.display(origin.href);
+    await chapterPainted();
+  }
+  // A CFI is a text anchor, not an exact paginated viewport. Re-displaying it
+  // can land several pages earlier, particularly in vertical writing.
+  manager.scrollTo(origin.left, origin.top, true);
+  await painted();
+  rendition.location = rendition.currentLocation();
+}
 // Cancel opposite tap pairs only when their prefix is known to stay inside
 // the book. At an edge, previous/next is not equivalent to doing nothing.
 function compactTapActions(actions, location) {
@@ -549,8 +566,7 @@ function compactTapActions(actions, location) {
 window.readerTap = async actions => {
   if (reflowing) await navigationIdle();
   if (!rendition) return false;
-  const location = rendition.location;
-  if (!pageTurn) pageTurn = {origin: location.start.cfi};
+  if (!pageTurn) pageTurn = {origin: pagePosition()};
   const origin = pageTurn.origin;
   let compacted = actions.length > 1 ? compactTapActions(actions, rendition.currentLocation()) : [...actions];
   try {
@@ -573,8 +589,7 @@ window.readerTap = async actions => {
     reportLocation(rendition.location);
     return true;
   } catch (error) {
-    await rendition.display(origin);
-    await painted();
+    await restorePagePosition(origin);
     throw error;
   } finally { await finishPageTurn(); }
 };
@@ -609,15 +624,14 @@ window.readerTurn = async action => {
   if (!rendition) return false;
   if (action === 'next' || action === 'previous') {
     await navigationIdle();
-    pageTurn = {origin: rendition.currentLocation().start.cfi};
+    pageTurn = {origin: pagePosition()};
     try {
       await (action === 'next' ? rendition.next() : rendition.prev());
       await chapterPainted();
       return true;
     } catch (error) {
       try {
-        await rendition.display(pageTurn.origin);
-        await chapterPainted();
+        await restorePagePosition(pageTurn.origin);
       } finally { await finishPageTurn(); }
       throw error;
     }
@@ -625,8 +639,7 @@ window.readerTurn = async action => {
   if (!pageTurn) return false;
   try {
     if (action === 'cancel') {
-      await rendition.display(pageTurn.origin);
-      await chapterPainted();
+      await restorePagePosition(pageTurn.origin);
     } else if (action === 'commit') {
       reportLocation(rendition.currentLocation());
     }
