@@ -267,12 +267,12 @@ struct ReadingTextView: UIViewRepresentable {
             controller.modalPresentationStyle = .popover
             controller.sizingOptions = .preferredContentSize
             controller.safeAreaRegions = []
-            controller.view.backgroundColor = UIColor(LeximoryPalette.annotationSurface)
+            controller.view.backgroundColor = .clear
             controller.popoverPresentationController?.sourceView = view
             controller.popoverPresentationController?.sourceRect = rect
             controller.popoverPresentationController?.passthroughViews = [view]
             controller.popoverPresentationController?.permittedArrowDirections = [.up, .down]
-            controller.popoverPresentationController?.backgroundColor = UIColor(LeximoryPalette.annotationSurface)
+            controller.popoverPresentationController?.backgroundColor = .clear
             popover = controller
             if existing == nil { presenter.present(controller, animated: true) }
         }

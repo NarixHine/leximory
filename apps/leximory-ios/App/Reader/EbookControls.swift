@@ -300,6 +300,8 @@ final class EbookPDFHighlight: PDFAnnotation {
 
 final class EbookPDFPreannotation: PDFAnnotation {
     let prepared: PreparedEbookAnnotation
+    @MainActor private var entranceTask: Task<Void, Never>?
+    @MainActor private weak var entranceLayer: CALayer?
     init(bounds: CGRect, prepared: PreparedEbookAnnotation) {
         self.prepared = prepared
         super.init(bounds: bounds, forType: .ink, withProperties: nil)
@@ -310,6 +312,34 @@ final class EbookPDFPreannotation: PDFAnnotation {
         add(path); shouldPrint = false
     }
     required init?(coder: NSCoder) { return nil }
+
+    @MainActor func reveal(in view: PDFView, page: PDFPage) {
+        guard !UIAccessibility.isReduceMotionEnabled, view.visiblePages.contains(page), let surface = view.documentView else { return }
+        let start = surface.convert(view.convert(CGPoint(x: bounds.minX + 1, y: bounds.minY + 1.5), from: page), from: view)
+        let end = surface.convert(view.convert(CGPoint(x: bounds.maxX - 1, y: bounds.minY + 1.5), from: page), from: view)
+        let path = CGMutablePath(); path.move(to: start); path.addLine(to: end)
+        let stroke = CAShapeLayer(); stroke.path = path; stroke.strokeColor = color.cgColor
+        stroke.lineCap = .round; stroke.lineWidth = 1.8 * view.scaleFactor
+        shouldDisplay = false
+        entranceLayer = stroke
+        surface.layer.addSublayer(stroke)
+        let entrance = CABasicAnimation(keyPath: "opacity")
+        entrance.fromValue = 0; entrance.toValue = 1; entrance.duration = 0.16
+        entrance.timingFunction = CAMediaTimingFunction(controlPoints: 0.23, 1, 0.32, 1)
+        stroke.add(entrance, forKey: "entrance")
+        entranceTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(160))
+            guard !Task.isCancelled else { return }
+            shouldDisplay = true
+            stroke.removeFromSuperlayer()
+            entranceLayer = nil; entranceTask = nil
+        }
+    }
+    @MainActor func cancelEntrance() {
+        entranceTask?.cancel(); entranceTask = nil
+        entranceLayer?.removeFromSuperlayer(); entranceLayer = nil
+        shouldDisplay = true
+    }
 }
 
 final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {

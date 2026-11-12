@@ -1,6 +1,7 @@
 /* Source ranges remain in the publisher DOM; only non-interactive strokes are added. */
 ;(() => {
     let marks = []
+    let entering = new Set()
     const layers = new WeakMap()
     const surface = document.createElement('div')
     surface.style.cssText = 'position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:2;'
@@ -98,49 +99,29 @@
             const contents = view.contents,
                 doc = contents?.document
             if (!doc?.body) continue
-            const frame = view.iframe.getBoundingClientRect(),
-                groups = []
-            let previousBlock
+            const frame = view.iframe.getBoundingClientRect()
+            const visible = []
             for (const node of textNodes(doc)) {
-                const block =
-                    node.parentElement.closest('p,li,dd,dt,blockquote,h1,h2,h3,h4,h5,h6') ||
-                    node.parentElement.closest('div') ||
-                    doc.body
-                if (
-                    contents.window.getComputedStyle(block).visibility === 'hidden' ||
-                    contents.window.getComputedStyle(block).display === 'none'
-                )
-                    continue
-                if (block !== previousBlock) {
-                    groups.push({ text: '', runs: [] })
-                    previousBlock = block
-                }
-                const group = groups[groups.length - 1]
-                group.runs.push({ node, start: 0, end: node.length, offset: group.text.length })
-                group.text += node.data
+                const style = contents.window.getComputedStyle(node.parentElement)
+                if (style.visibility === 'hidden' || style.display === 'none') continue
+                for (const [start, end] of visibleRanges(doc, node, viewport, frame))
+                    visible.push({ node, start, end })
             }
-            for (const group of groups) {
-                const spans = []
-                for (const run of group.runs) {
-                    for (const [start, end] of visibleRanges(doc, run.node, viewport, frame)) {
-                        const first = run.offset + start,
-                            last = run.offset + end
-                        if (spans.length && spans[spans.length - 1][1] === first) spans[spans.length - 1][1] = last
-                        else spans.push([first, last])
-                    }
-                }
-                for (const [first, last] of spans) {
-                    let start = first
-                    while (start < last) {
-                        let end = Math.min(last, start + 1600)
-                        if (end < last && /^[\uDC00-\uDFFF]$/.test(group.text[end])) end--
-                        const text = group.text.slice(start, end),
-                            range = sourceRange(doc, group.runs, start, end - start)
-                        if (range && text.trim())
-                            result.push({ location: contents.cfiFromRange(range, bookmarkIgnoreClass), text })
-                        start = end
-                    }
-                }
+            if (!visible.length) continue
+            const range = doc.createRange()
+            range.setStart(visible[0].node, visible[0].start)
+            range.setEnd(visible.at(-1).node, visible.at(-1).end)
+            const mapped = mapRange(contents, range)
+            const boundaries = [...new Intl.Segmenter(undefined, {granularity:'grapheme'}).segment(mapped.text)].map(part => part.index)
+            boundaries.push(mapped.text.length)
+            let start = 0
+            while (start < mapped.text.length) {
+                const end = boundaries.findLast(offset => offset > start && offset <= start + 1600) ?? boundaries.find(offset => offset > start)
+                if (end === undefined) break
+                const text = mapped.text.slice(start, end)
+                const passage = sourceRange(doc, mapped.runs, start, end - start)
+                if (passage && text.trim()) result.push({ location: contents.cfiFromRange(passage, bookmarkIgnoreClass), text })
+                start = end
             }
         }
         return result
@@ -157,7 +138,7 @@
             layer.dataset.leximoryAnnotationLayer = 'true'
             layer.style.cssText =
                 'position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;overflow:visible;z-index:10;writing-mode:horizontal-tb;direction:ltr;'
-            state = { layer, hits: [] }
+            state = { layer, hits: [], strokes: new Map() }
             layers.set(doc, state)
             doc.addEventListener(
                 'pointerdown',
@@ -180,7 +161,9 @@
             doc.addEventListener('pointercancel', release, { passive: true })
         }
         surface.appendChild(state.layer)
-        state.layer.replaceChildren()
+        const previous = state.strokes
+        state.strokes = new Map()
+        for (const button of state.layer.querySelectorAll('button')) button.remove()
         state.hits = []
         const vertical = currentTheme?.writing === 'vertical-rl'
         const passages = new Map()
@@ -208,8 +191,9 @@
                 part.setEnd(run.node, run.start + end - run.offset)
                 for (const rect of part.getClientRects()) if (rect.width > 0 && rect.height > 0) rectangles.push(rect)
             }
-            for (const rect of rectangles) {
-                const stroke = document.createElement('div')
+            for (const [index, rect] of rectangles.entries()) {
+                const key = `${mark.id}:${index}`
+                const stroke = previous.get(key) ?? document.createElement('div')
                 stroke.setAttribute('aria-hidden', 'true')
                 stroke.style.cssText = `position:absolute;pointer-events:none;border-radius:999px;background:${isDarkTheme(currentTheme) ? 'rgba(174,198,160,.32)' : 'rgba(90,121,79,.25)'};`
                 const x = rect.left + frame.left,
@@ -231,6 +215,9 @@
                           },
                 )
                 state.layer.appendChild(stroke)
+                state.strokes.set(key, stroke)
+                if (!previous.has(key) && entering.has(mark.id) && !matchMedia('(prefers-reduced-motion: reduce)').matches)
+                    stroke.animate([{opacity:0},{opacity:1}], {duration:160,easing:'cubic-bezier(0.23,1,0.32,1)'})
                 state.hits.push({ rect, mark, stroke })
             }
             const anchor = rectangles[0]
@@ -253,11 +240,19 @@
                 state.layer.appendChild(action)
             }
         }
+        for (const [key, stroke] of previous) if (!state.strokes.has(key)) stroke.remove()
     }
     window.readerAnnotationMarks = (values) => {
+        const known = new Set(marks.map(mark => mark.id))
+        entering = new Set(values.filter(mark => !known.has(mark.id)).map(mark => mark.id))
         marks = values
-        surface.replaceChildren()
-        if (rendition) for (const contents of rendition.getContents()) draw(contents)
+        const active = new Set()
+        if (rendition) for (const contents of rendition.getContents()) {
+            draw(contents)
+            const layer = layers.get(contents.document)?.layer
+            if (layer) active.add(layer)
+        }
+        for (const layer of [...surface.children]) if (!active.has(layer)) layer.remove()
     }
     window.readerTapAnnotation = (fractionX, fractionY) => {
         if (!ready || pageTurn || reflowing) return false

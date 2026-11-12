@@ -2,7 +2,7 @@ import XCTest
 import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
-    @MainActor func testEbookPreannotationMenuStartsOffAndOpensAnInstantDefinition() {
+    @MainActor func testEbookPreannotationMenuStartsOnAndOpensAnInstantDefinition() {
         let app = launch(); defer { restore(app) }
         app.buttons["browser-more"].tap()
         XCTAssertFalse(app.buttons["电子书预注释"].exists)
@@ -22,12 +22,9 @@ final class BrowserWorkspaceUITests: XCTestCase {
         option.tap()
         let toggle = app.switches["ebook-preannotation-enabled"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
-        XCTAssertEqual(toggle.value as? String, "0")
+        XCTAssertEqual(toggle.value as? String, "1")
         XCTAssertTrue(toggle.isEnabled, app.debugDescription)
         guard toggle.isEnabled else { return }
-        let control = toggle.switches.firstMatch
-        if control.exists { control.tap() } else { toggle.tap() }
-        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "1"), object: toggle)], timeout: 3), .completed, app.debugDescription)
         app.buttons["关闭"].tap()
         let word = app.buttons["bank，查看释义"].firstMatch
         XCTAssertTrue(word.waitForExistence(timeout: 15), app.debugDescription)

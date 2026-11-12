@@ -177,9 +177,9 @@ struct EbookScreen: View {
     private var readerPresentation: some View {
         ZStack {
             if let data {
-                if format == "pdf" { NativePDFReader(data: data, reader: reader, command: reader.command, notes: notes, notesRevision: notes?.revision ?? 0, drawingEnabled: notes?.drawing == true)
+                if format == "pdf" { NativePDFReader(data: data, reader: reader, command: reader.command, notes: notes, notesRevision: notes?.revision ?? 0, drawingEnabled: notes?.drawing == true, annotationRevision: reader.preannotations?.revision ?? 0)
                     .id(contentID).ignoresSafeArea(.container, edges: [.top, .bottom]) }
-                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && !usesCompactTypography ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: appearance, bottomChromeHeight: browserChromeHeight).id(contentID).ignoresSafeArea(.container, edges: [.top, .bottom]) }
+                else { NativeEPUBReader(data: data, language: language, reader: reader, command: reader.command, fontSize: proseSize.wrappedValue + (language != "Japanese" && !usesCompactTypography ? 2 : 0), lineHeight: proseLeading.wrappedValue, appearance: appearance, bottomChromeHeight: browserChromeHeight, annotationRevision: reader.preannotations?.revision ?? 0).id(contentID).ignoresSafeArea(.container, edges: [.top, .bottom]) }
             }
             if refreshingContent && loading {
                 ProgressView().padding(18)
@@ -225,7 +225,7 @@ struct EbookScreen: View {
             DefinitionView(item: item, client: client, language: language, isPopover: sizeClass == .regular)
                 .id(item.id)
                 .presentationCompactAdaptation(.sheet)
-                .presentationBackground(LeximoryPalette.annotationSurface)
+                .presentationBackground(.clear)
                 .presentationDragIndicator(.visible)
         }
         .sensoryFeedback(.success, trigger: reader.bookmarkConfirmation) { _, _ in scenePhase == .active }
@@ -704,6 +704,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
     let lineHeight: Double
     let appearance: EbookAppearance
     var bottomChromeHeight: CGFloat = 0
+    var annotationRevision = 0
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.browserWorkspace) private var workspace
@@ -946,11 +947,12 @@ struct NativePDFReader: View {
     var notes: PDFNotesModel? = nil
     var notesRevision = 0
     var drawingEnabled = false
+    var annotationRevision = 0
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         PDFReaderView(data: data, reader: reader, command: command, notes: notes,
-            notesRevision: notesRevision, drawingEnabled: drawingEnabled)
+            notesRevision: notesRevision, drawingEnabled: drawingEnabled, annotationRevision: annotationRevision)
             .overlay {
                 Color.white.opacity(colorScheme == .dark ? 1 : 0)
                     .blendMode(.difference)
@@ -969,6 +971,7 @@ struct PDFReaderView: UIViewRepresentable {
     var notes: PDFNotesModel? = nil
     var notesRevision = 0
     var drawingEnabled = false
+    var annotationRevision = 0
     func makeCoordinator() -> Coordinator { Coordinator(reader: reader) }
     func makeUIView(context: Context) -> PDFView {
         let view = LearningPDFView()
@@ -1050,13 +1053,14 @@ struct PDFReaderView: UIViewRepresentable {
             guard reader.ready, reader.preannotations?.enabled == true, let document = view?.document,
                   let page = view?.currentPage else { return }
             let current = document.index(for: page)
-            var units: [EbookAnnotationUnit] = []
-            for index in [current, current - 1, current + 1] where index >= 0 && index < document.pageCount {
+            var pages: [[EbookAnnotationUnit]] = []
+            for index in [current, current + 1, current - 1] where index >= 0 && index < document.pageCount {
                 if annotationPages[index] == nil {
                     annotationPages[index] = EbookAnnotationUnit.pdfPage(index + 1, text: document.page(at: index)?.string ?? "")
                 }
-                units.append(contentsOf: annotationPages[index] ?? [])
+                pages.append(annotationPages[index] ?? [])
             }
+            let units = (0..<(pages.map(\.count).max() ?? 0)).flatMap { offset in pages.compactMap { $0.indices.contains(offset) ? $0[offset] : nil } }
             reader.receiveAnnotationUnits(units, origin: reader.location)
         }
         func updateAnnotations(in view: PDFView) {
@@ -1066,7 +1070,7 @@ struct PDFReaderView: UIViewRepresentable {
             let prepared = reader.preannotations?.annotations ?? []
             let ids = Set(prepared.map(\.id))
             annotationStrokes.removeAll { page, stroke in
-                if !ids.contains(stroke.prepared.id) { page.removeAnnotation(stroke); return true }
+                if !ids.contains(stroke.prepared.id) { stroke.cancelEntrance(); page.removeAnnotation(stroke); return true }
                 return false
             }
             let drawn = Set(annotationStrokes.map { $0.1.prepared.id })
@@ -1081,6 +1085,7 @@ struct PDFReaderView: UIViewRepresentable {
                 for line in selection.selectionsByLine() {
                     let stroke = EbookPDFPreannotation(bounds: line.bounds(for: page), prepared: item)
                     page.addAnnotation(stroke); annotationStrokes.append((page, stroke))
+                    stroke.reveal(in: view, page: page)
                 }
             }
         }

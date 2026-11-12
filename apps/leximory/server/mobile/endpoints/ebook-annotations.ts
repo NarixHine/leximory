@@ -10,7 +10,6 @@ import { definitionServices } from '../definition-services'
 import { chargeCommentaryQuota } from '../quota-store'
 import { createEbookAnnotationStore } from '../ebook-annotation-store'
 import { createEbookAnnotationOperations } from '../ebook-annotations'
-import { mobileMiniAI } from '../ai-config'
 import { streamEbookAnnotations } from '../ebook-annotation-generation'
 
 const operations = createEbookAnnotationOperations({
@@ -40,7 +39,7 @@ const operations = createEbookAnnotationOperations({
                 durableReceipt: true,
             }),
         async *generate(text, language, accent, signal) {
-            yield* streamEbookAnnotations({ model: mobileMiniAI.model, text, language, accent, signal })
+            yield* streamEbookAnnotations({ text, language, accent, signal })
         },
     },
 })

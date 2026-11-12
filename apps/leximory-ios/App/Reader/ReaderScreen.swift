@@ -80,7 +80,7 @@ struct ReaderScreen: View {
             DefinitionView(item: item, client: client, language: language, isPopover: false)
                 .id(item.id)
                 .presentationDragIndicator(.visible)
-                .presentationBackground(LeximoryPalette.annotationSurface)
+                .presentationBackground(.clear)
         }
         .overlay(alignment: .top) {
             if let item = definition, item.isDynamic {
@@ -385,7 +385,8 @@ struct DefinitionView: View {
                alignment: .top)
         // A height detent adds the bottom safe area; our content already includes its edge inset.
         .presentationDetents([.height(max(160, min(contentHeight, 560) - bottomSafeArea)), .large])
-        .background(topTrayHeight == nil ? LeximoryPalette.annotationSurface : Color.clear).accessibilityIdentifier("definition-tray")
+        .modifier(DefinitionGlassSurface(enabled: topTrayHeight == nil))
+        .accessibilityIdentifier("definition-tray")
         .accessibilityAction(.escape) { if let closeTray { closeTray() } else { dismiss() } }
     }
     private var feedbackContent: some View {
@@ -587,6 +588,17 @@ struct DefinitionPrimaryButtonStyle: ButtonStyle {
     }
 }
 
+private struct DefinitionGlassSurface: ViewModifier {
+    var enabled = true
+    @ViewBuilder func body(content: Content) -> some View {
+        if enabled {
+            content
+                .clipShape(RoundedRectangle(cornerRadius: 36, style: .continuous))
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 36, style: .continuous))
+        } else { content }
+    }
+}
+
 /// The card moves independently of the reading document; its children own its height.
 struct DefinitionTopTray: View {
     let item: DefinitionPresentation
@@ -620,8 +632,7 @@ struct DefinitionTopTray: View {
                                trayDragging: dragging, onScrollPermission: { atScrollBottom = $0 },
                                allowsFeedback: presented && dismissal == nil && !dragging)
                     .frame(width: min(LeximoryLayout.annotationMeasure, geometry.size.width - 24))
-                    .clipShape(RoundedRectangle(cornerRadius: 36, style: .continuous))
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 36, style: .continuous))
+                    .modifier(DefinitionGlassSurface())
                     .shadow(color: .black.opacity(0.14), radius: 20, y: 8)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
                         extent = height

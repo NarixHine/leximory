@@ -86,7 +86,10 @@ export function createEbookAnnotationOperations(dependencies: {
         const asset = await dependencies.ebooks.asset(textId, context.signal)
         if (!asset || asset.sourceVersion !== input.sourceVersion) throw new MobileError('stale_revision')
         const { accent, limit } = await definitions.preferences(context.subject)
-        const id = hash(['ebook-annotations-v1', context.subject.userId, textId, input, library.lang, accent])
+        const identity = [context.subject.userId, textId, input, library.lang, accent]
+        const id = hash(['ebook-annotations-v2', ...identity])
+        // Refresh the old prompt's results without charging the same passage again.
+        const quotaReceipt = hash(['ebook-annotations-v1', ...identity])
         const existing = await store.get(id, context.subject.userId, textId, context.signal)
         const unit: AnnotationUnit = existing ?? {
             ...input,
@@ -123,7 +126,7 @@ export function createEbookAnnotationOperations(dependencies: {
                         } else await store.create(unit, signal)
                         if (!unit.complete) {
                             const cost = (Array.from(input.text).length / 1000) * EBOOK_ANNOTATION_COST_PER_THOUSAND
-                            if (!(await generator.charge(unit.userId, limit, id, cost)))
+                            if (!(await generator.charge(unit.userId, limit, quotaReceipt, cost)))
                                 throw new MobileError('quota_exceeded')
                             let count = 0
                             for await (const output of generator.generate(input.text, library.lang, accent, signal)) {

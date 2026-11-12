@@ -16,19 +16,22 @@ struct EbookAnnotationSelection: Identifiable {
 @MainActor @Observable final class EbookPreannotationModel {
     let textID: String
     let sourceVersion: String
-    private(set) var enabled = false
+    private(set) var enabled = true
     private(set) var revision = 0
     private(set) var units: [EbookAnnotationUnit] = []
     private var pages: [String: EbookAnnotationPage] = [:]
     private var failed = Set<String>()
     private var windowRevision = UUID()
     private var quotaBlocked = false
-    private var operationID = UUID()
-    private var processingUnitID: String?
+    private var loaded = Set<String>()
+    private struct Preparation {
+        let id: UUID
+        let task: Task<Void, Never>
+    }
     var online = true
     var active = true
     @ObservationIgnored private let client: MobileClient
-    @ObservationIgnored private var operation: Task<Void, Never>?
+    @ObservationIgnored private var preparations: [String: Preparation] = [:]
     @ObservationIgnored private var loading: Task<Void, Never>?
 
     init(textID: String, sourceVersion: String, client: MobileClient) {
@@ -48,50 +51,56 @@ struct EbookAnnotationSelection: Identifiable {
     func setEnabled(_ enabled: Bool) {
         self.enabled = enabled; revision += 1; failed.removeAll(); quotaBlocked = false
         Task { await client.setEbookPreannotationEnabled(enabled) }
-        if enabled { units = [] } else { operation?.cancel(); operation = nil; operationID = UUID(); loading?.cancel() }
+        if enabled { units = [] } else { cancelPreparations(); loading?.cancel() }
     }
     func setWindow(_ values: [EbookAnnotationUnit]) {
         var ids = Set<String>()
         let window = values.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && ids.insert($0.id).inserted }
         guard enabled else { units = window; return }
         units = window; revision += 1
-        if let processingUnitID, !ids.contains(processingUnitID) {
-            operation?.cancel(); operation = nil; operationID = UUID(); self.processingUnitID = nil
+        for id in preparations.keys where !ids.contains(id) {
+            preparations.removeValue(forKey: id)?.task.cancel()
         }
         let generation = UUID(); windowRevision = generation
         loading?.cancel()
         loading = Task {
-            for unit in window where pages[unit.id] == nil {
-                let cached = await client.cachedEbookAnnotations(textID: textID, version: sourceVersion, unit: unit)
+            for unit in window where !loaded.contains(unit.id) {
+                var cached = pages[unit.id]
+                if cached == nil { cached = await client.cachedEbookAnnotations(textID: textID, version: sourceVersion, unit: unit) }
                 guard !Task.isCancelled, windowRevision == generation else { return }
                 if let cached, pages[unit.id] == nil { pages[unit.id] = cached; revision += 1 }
+                loaded.insert(unit.id)
+                start()
             }
-            if pages.count > 80 { pages = pages.filter { ids.contains($0.key) } }
+            if pages.count > 80 { pages = pages.filter { ids.contains($0.key) }; loaded.formIntersection(ids) }
             start()
         }
     }
     func resume(online: Bool, active: Bool) {
         let recovering = (!self.online && online) || (!self.active && active)
         self.online = online; self.active = active
-        if !active || !online { operation?.cancel(); return }
+        if !active || !online { cancelPreparations(); return }
         if recovering { failed.removeAll(); quotaBlocked = false }
         start()
     }
-    func stop() { active = false; operation?.cancel(); loading?.cancel() }
+    func stop() { active = false; cancelPreparations(); loading?.cancel() }
+    private func cancelPreparations() {
+        let pending = preparations.values
+        preparations.removeAll()
+        for preparation in pending { preparation.task.cancel() }
+    }
     private func start() {
-        guard enabled, active, online, !quotaBlocked, operation == nil,
-              units.contains(where: { pages[$0.id]?.complete != true && !failed.contains($0.id) }) else { return }
-        let runID = UUID(); operationID = runID
-        operation = Task {
-            defer {
-                if operationID == runID {
-                    operation = nil; processingUnitID = nil
-                    if Task.isCancelled { start() }
+        guard enabled, active, online, !quotaBlocked else { return }
+        for unit in units where preparations.count < 6 && loaded.contains(unit.id) &&
+            pages[unit.id]?.complete != true && !failed.contains(unit.id) && preparations[unit.id] == nil {
+            let runID = UUID()
+            let task = Task {
+                defer {
+                    if preparations[unit.id]?.id == runID {
+                        preparations[unit.id] = nil
+                        start()
+                    }
                 }
-            }
-            while enabled, active, online, !Task.isCancelled,
-                  let unit = units.first(where: { pages[$0.id]?.complete != true && !failed.contains($0.id) }) {
-                processingUnitID = unit.id
                 var completed = false
                 for attempt in 0..<3 {
                     do {
@@ -127,6 +136,7 @@ struct EbookAnnotationSelection: Identifiable {
                     }
                 }
             }
+            preparations[unit.id] = Preparation(id: runID, task: task)
         }
     }
 }
@@ -146,10 +156,8 @@ struct EbookPreannotationSheet: View {
                         .disabled(model == nil)
                         .accessibilityIdentifier("ebook-preannotation-enabled")
                 } footer: {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(model == nil ? "登录并保存电子书后可开启" : "轻点带下划线的词语，查看释义")
-                        if model != nil { Text("每千字 0.25 词点，释义可离线查看") }
-                    }.interfaceFont(13, style: .footnote)
+                    Text(model == nil ? "登录并保存电子书后可开启" : "轻点带下划线的词语，查看释义")
+                        .interfaceFont(13, style: .footnote)
                 }
             }
             .navigationTitle("电子书预注释")
@@ -157,6 +165,6 @@ struct EbookPreannotationSheet: View {
             .toolbar { ToolbarItem(placement: .topBarTrailing) { LeximorySheetCloseButton { dismiss() } } }
         }
         .leximorySheetStyle()
-        .presentationDetents([.medium, .large])
+        .presentationSizing(.form)
     }
 }

@@ -661,10 +661,10 @@ public struct MobileClient: Sendable {
         }
     }
     private func ebookAnnotationCacheKey(textID: String, version: String, unit: EbookAnnotationUnit) -> String {
-        "ebook-annotations/\(textID)/\(version)/\(unit.id)"
+        "ebook-annotations-v2/\(textID)/\(version)/\(unit.id)"
     }
     public func ebookPreannotationEnabled() async -> Bool {
-        await localStore?.value(Bool.self, for: "ebook-annotation-enabled") ?? false
+        await localStore?.value(Bool.self, for: "ebook-annotation-enabled") ?? true
     }
     public func setEbookPreannotationEnabled(_ value: Bool) async {
         await localStore?.save(value, for: "ebook-annotation-enabled")

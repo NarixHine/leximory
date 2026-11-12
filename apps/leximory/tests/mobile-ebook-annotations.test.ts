@@ -1,5 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import { MockLanguageModelV4 } from 'ai/test'
 import { createClient } from '@supabase/supabase-js'
@@ -11,6 +12,7 @@ import { createEbookAnnotationStore } from '../server/mobile/ebook-annotation-st
 import {
     createEbookAnnotationOperations,
     resolveEbookAnnotation,
+    type EbookAnnotationGenerator,
     type GeneratedEbookAnnotation,
 } from '../server/mobile/ebook-annotations'
 import { testMobileHandler } from './helpers/mobile'
@@ -131,7 +133,7 @@ function fixture() {
                 receipts.add(id)
                 return true
             },
-            generate: async function* () {
+            generate: async function* (..._input: Parameters<EbookAnnotationGenerator['generate']>) {
                 generated++
                 yield output
             },
@@ -217,6 +219,22 @@ test('a database failure never publishes an unsaved annotation; recovery uses th
         ['annotation', 'complete'],
     )
     assert.equal(f.usage(), 0.01125)
+})
+
+test('refreshing annotations from the previous prompt reuses its durable quota receipt', async () => {
+    const f = fixture()
+    const legacyID = createHash('sha256')
+        .update(JSON.stringify(['ebook-annotations-v1', 'reader', 'book', input, 'en', '']))
+        .digest('hex')
+    f.receipts.add(legacyID)
+    const result = await frames(await f.handler(f.request()))
+    assert.equal(result.at(-1).kind, 'complete')
+    assert.notEqual(result[0].unitId, legacyID)
+    assert.equal(f.generations(), 1)
+    assert.equal(f.usage(), 0)
+    await frames(await f.handler(f.request()))
+    assert.equal(f.generations(), 1)
+    assert.equal(f.usage(), 0)
 })
 
 test('streamed annotations persist before the following generation element is available', async () => {
@@ -308,14 +326,14 @@ test('resuming a passage cannot persist more annotations than the reader can dec
     assert.equal((await frames(await f.handler(f.request(request)))).at(-1).kind, 'complete')
 })
 
-test('the real structured-output SDK rejects malformed final output instead of completing an empty passage', async () => {
+test('the real text-stream SDK rejects an unfinished annotation instead of completing an empty passage', async () => {
     const model = new MockLanguageModelV4({
         doStream: async () => ({
             stream: new ReadableStream({
                 start(controller) {
                     controller.enqueue({ type: 'stream-start', warnings: [] })
                     controller.enqueue({ type: 'text-start', id: 'text' })
-                    controller.enqueue({ type: 'text-delta', id: 'text', delta: '{{bank||bank||river edge}}' })
+                    controller.enqueue({ type: 'text-delta', id: 'text', delta: '{{bank||bank||river edge' })
                     controller.enqueue({ type: 'text-end', id: 'text' })
                     controller.enqueue({
                         type: 'finish',
@@ -343,3 +361,99 @@ test('the real structured-output SDK rejects malformed final output instead of c
     assert.equal(result.at(-1).kind, 'failed')
     assert.equal([...f.rows.values()][0]?.complete, false)
 })
+
+test(
+    'the real SDK publishes and persists each web-format annotation before later tokens arrive',
+    { timeout: 5000 },
+    async () => {
+        let proceed = () => {}
+        const waiting = new Promise<void>((resolve) => {
+            proceed = resolve
+        })
+        const model = new MockLanguageModelV4({
+            doStream: async () => ({
+                stream: new ReadableStream({
+                    async start(controller) {
+                        controller.enqueue({ type: 'stream-start', warnings: [] })
+                        controller.enqueue({ type: 'text-start', id: 'text' })
+                        controller.enqueue({
+                            type: 'text-delta',
+                            id: 'text',
+                            delta: 'The bank is closed. We walked along the {{ba',
+                        })
+                        controller.enqueue({
+                            type: 'text-delta',
+                            id: 'text',
+                            delta: 'nk||bank||**n. 河岸** `bæŋk` river edge||语源||***bank*** → em**bank**}}',
+                        })
+                        await waiting
+                        controller.enqueue({
+                            type: 'text-delta',
+                            id: 'text',
+                            delta: ' and the {{shore||shore||**n. 岸** `ʃɔːr` land along water}} with {{reeds||reed||**n. 芦苇** `riːd` a tall grass}}.',
+                        })
+                        controller.enqueue({ type: 'text-end', id: 'text' })
+                        controller.enqueue({
+                            type: 'finish',
+                            finishReason: { unified: 'stop', raw: 'stop' },
+                            usage: {
+                                inputTokens: {
+                                    total: 10,
+                                    noCache: undefined,
+                                    cacheRead: undefined,
+                                    cacheWrite: undefined,
+                                },
+                                outputTokens: { total: 10, text: undefined, reasoning: undefined },
+                            },
+                        })
+                        controller.close()
+                    },
+                }),
+            }),
+        })
+        const f = fixture()
+        f.dependencies.generator.generate = (text, language, accent, signal) =>
+            streamEbookAnnotations({ model, text, language, accent, signal })
+        const handler = testMobileHandler(createEbookAnnotationOperations(f.dependencies), async () => ({
+            kind: 'authenticated',
+            subject,
+        }))
+        const response = await handler(
+            f.request({ ...input, text: input.text.slice(0, -1) + ' and the shore with reeds.' }),
+        )
+        const reader = response.body!.getReader()
+        try {
+            const first = await reader.read()
+            const frame = JSON.parse(new TextDecoder().decode(first.value).trim())
+            assert.equal(frame.annotation.start, 40)
+            assert.deepEqual(frame.annotation.definition, {
+                lemma: 'bank',
+                definition: '**n. 河岸** `bæŋk` river edge',
+                etymology: '语源',
+                cognates: '***bank*** → em**bank**',
+            })
+            assert.equal(z.array(z.unknown()).parse(f.rows.get(frame.unitId)?.annotations).length, 1)
+            assert.equal(f.rows.get(frame.unitId)?.complete, false)
+        } finally {
+            proceed()
+        }
+        let remaining = ''
+        while (true) {
+            const chunk = await reader.read()
+            if (chunk.done) break
+            remaining += new TextDecoder().decode(chunk.value)
+        }
+        const rest = remaining
+            .trim()
+            .split('\n')
+            .map((line) => JSON.parse(line))
+        assert.deepEqual(
+            rest.filter((frame) => frame.kind === 'annotation').map((frame) => frame.annotation.quote),
+            ['shore', 'reeds'],
+        )
+        assert.equal(rest.at(-1).kind, 'complete')
+        const system = model.doStreamCalls[0]?.prompt.find((message) => message.role === 'system')
+        assert.ok(system?.content.includes('注解格式为 {{原文形式||原形||释义||'))
+        assert.ok(system?.content.includes('必须完整保留原文的内容和格式'))
+    },
+)
