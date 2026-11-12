@@ -17,7 +17,6 @@ struct EbookAnnotationSelection: Identifiable {
     let textID: String
     let sourceVersion: String
     private(set) var enabled = false
-    private(set) var error: String?
     private(set) var revision = 0
     private(set) var units: [EbookAnnotationUnit] = []
     private var pages: [String: EbookAnnotationPage] = [:]
@@ -47,7 +46,7 @@ struct EbookAnnotationSelection: Identifiable {
         revision += 1
     }
     func setEnabled(_ enabled: Bool) {
-        self.enabled = enabled; revision += 1; error = nil; failed.removeAll(); quotaBlocked = false
+        self.enabled = enabled; revision += 1; failed.removeAll(); quotaBlocked = false
         Task { await client.setEbookPreannotationEnabled(enabled) }
         if enabled { units = [] } else { operation?.cancel(); operation = nil; operationID = UUID(); loading?.cancel() }
     }
@@ -75,7 +74,7 @@ struct EbookAnnotationSelection: Identifiable {
         let recovering = (!self.online && online) || (!self.active && active)
         self.online = online; self.active = active
         if !active || !online { operation?.cancel(); return }
-        if recovering { failed.removeAll(); quotaBlocked = false; error = nil }
+        if recovering { failed.removeAll(); quotaBlocked = false }
         start()
     }
     func stop() { active = false; operation?.cancel(); loading?.cancel() }
@@ -117,14 +116,13 @@ struct EbookAnnotationSelection: Identifiable {
                         if Task.isCancelled { return }
                         let failure = MobileClient.cause(of: error) as? MobileFailure
                         if failure?.error.code == "quota_exceeded" {
-                            quotaBlocked = true; self.error = "本期词点额度已用完，已有注释仍可阅读。"; return
+                            quotaBlocked = true; return
                         }
                         if failure?.error.retryable != false, attempt < 2 {
                             do { try await Task.sleep(for: .seconds(attempt + 1)) } catch { return }
                             continue
                         }
                         failed.insert(unit.id)
-                        self.error = failure?.error.code == "stale_revision" ? "电子书已更新，请重新打开后继续。" : (failure?.error.message ?? "暂时未能添加注释，已有注释仍可阅读。")
                         break
                     }
                 }
@@ -149,9 +147,8 @@ struct EbookPreannotationSheet: View {
                         .accessibilityIdentifier("ebook-preannotation-enabled")
                 } footer: {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(model == nil ? "登录并保存电子书后可开启。" : "为当前页及前后页添加词语释义，轻点下划线即可查看。")
-                        if model != nil { Text("每千字 0.25 词点，释义可离线查看。") }
-                        if let error = model?.error { Text(error).foregroundStyle(.secondary) }
+                        Text(model == nil ? "登录并保存电子书后可开启" : "轻点带下划线的词语，查看释义")
+                        if model != nil { Text("每千字 0.25 词点，释义可离线查看") }
                     }.interfaceFont(13, style: .footnote)
                 }
             }

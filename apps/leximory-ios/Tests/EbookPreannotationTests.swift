@@ -30,7 +30,6 @@ import LeximoryCore
         model.setEnabled(true)
         model.setWindow(units)
         try await wait { model.annotations.count == 3 }
-        #expect(model.error == nil)
         #expect(await transport.count == 3)
         model.stop()
         await client.setEbookPreannotationEnabled(true)
@@ -155,7 +154,6 @@ import LeximoryCore
         model.setWindow([EbookAnnotationUnit(location: "pdf:40:0", text: "Another bank.")])
         try await wait { model.annotations.first?.unit.location == "pdf:40:0" }
         #expect(await transport.locations == ["pdf:1:0", "pdf:40:0"])
-        #expect(model.error == nil)
         model.stop()
     }
 
