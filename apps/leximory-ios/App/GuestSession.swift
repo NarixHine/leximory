@@ -109,7 +109,7 @@ extension DefinitionSource {
             GuestSelection(quote: selection.quote, context: selection.context, offset: selection.offset, title: title, language: language)
         case .ebook(_, let quote, let context, let offset):
             GuestSelection(quote: quote, context: context, offset: offset, title: title, language: language)
-        case .article, .browser: throw URLError(.unsupportedURL)
+        case .article, .browser, .ebookAnnotation: throw URLError(.unsupportedURL)
         }
     }
 }

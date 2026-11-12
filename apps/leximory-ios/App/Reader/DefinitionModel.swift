@@ -5,18 +5,20 @@ import LeximoryCore
 enum DefinitionSource {
     case article(ReadingSelection)
     case ebook(textID: String, quote: String, context: String, offset: Int)
+    case ebookAnnotation(textID: String, unitID: String, annotation: EbookAnnotation)
     case browser(quote: String, target: BrowserTarget)
     case webpage(id: UUID, selection: BrowserSelection, bookmarkID: String?, libraryID: String?)
     var text: String {
-        switch self { case .article(let selection): selection.text; case .ebook(_, let quote, _, _): quote; case .browser(let quote, _): quote; case .webpage(_, let selection, _, _): selection.quote }
+        switch self { case .article(let selection): selection.text; case .ebook(_, let quote, _, _): quote; case .ebookAnnotation(_, _, let annotation): annotation.quote; case .browser(let quote, _): quote; case .webpage(_, let selection, _, _): selection.quote }
     }
     var id: String {
-        switch self { case .article(let selection): selection.id; case .ebook(let id, let quote, let context, let offset): id + quote + context + String(offset); case .browser(_, let target): target.selectionId; case .webpage(let id, _, _, _): id.uuidString }
+        switch self { case .article(let selection): selection.id; case .ebook(let id, let quote, let context, let offset): id + quote + context + String(offset); case .ebookAnnotation(_, _, let annotation): annotation.id; case .browser(_, let target): target.selectionId; case .webpage(let id, _, _, _): id.uuidString }
     }
     func stream(client: MobileClient) async throws -> (events: AsyncThrowingStream<DefinitionEvent, Error>, target: BrowserTarget?) {
         switch self {
         case .article(let selection): return (client.definitions(selection: selection), nil)
         case .ebook(let id, let quote, let context, let offset): return (client.ebookDefinitions(textID: id, quote: quote, context: context, offset: offset), nil)
+        case .ebookAnnotation: throw URLError(.unsupportedURL)
         case .browser(_, let target): return (client.browserDefinitions(selectionID: target.selectionId), target)
         case .webpage(_, let selection, let bookmarkID, let libraryID):
             let target = try await client.browserSelection(url: selection.url, quote: selection.quote, context: selection.context,
@@ -31,6 +33,8 @@ enum DefinitionSource {
         case .ebook(let id, _, _, _):
             guard let completionID else { throw URLError(.badServerResponse) }
             return try await client.saveEbookVocabulary(textID: id, completionID: completionID)
+        case .ebookAnnotation(let id, let unitID, let annotation):
+            return try await client.saveEbookAnnotation(textID: id, unitID: unitID, annotationID: annotation.id)
         case .browser, .webpage:
             guard let completionID else { throw URLError(.badServerResponse) }
             return try await client.saveBrowserVocabulary(completionID: completionID)
@@ -102,7 +106,7 @@ enum DefinitionSource {
     func elaborate(client: MobileClient, source: DefinitionSource) {
         guard let completionID else { return }
         let browser: Bool
-        switch source { case .browser, .webpage: browser = true; case .article, .ebook: browser = false }
+        switch source { case .browser, .webpage: browser = true; case .article, .ebook, .ebookAnnotation: browser = false }
         elaborate { client.elaborateDefinition(completionID: completionID, browser: browser, requestID: self.elaborationRequestID) }
     }
     enum SaveState: Equatable { case idle, queued, saving, saved, uncertain }

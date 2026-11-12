@@ -244,6 +244,28 @@ export const vocabularyInputSchema = z
         requestId: resourceID,
     })
     .strict()
+export const ebookAnnotationInputSchema = z
+    .object({
+        sourceVersion: z.string().min(1).max(256),
+        location: z.string().min(1).max(4096),
+        text: z.string().min(1).max(24000),
+    })
+    .strict()
+export const ebookAnnotationSchema = z
+    .object({
+        id: resourceID,
+        quote: z.string().min(1).max(1024),
+        start: z.int().nonnegative(),
+        length: z.int().positive(),
+        definition: definitionSchema,
+    })
+    .strict()
+export const ebookAnnotationFrameSchema = z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('annotation'), unitId: resourceID, annotation: ebookAnnotationSchema }).strict(),
+    z.object({ kind: z.literal('complete'), unitId: resourceID }).strict(),
+    z.object({ kind: z.literal('failed'), unitId: resourceID, error: mobileErrorSchema.shape.error }).strict(),
+])
+
 export const vocabularyEditSchema = definitionSchema
     .extend({
         original: z.string().min(1).max(1024),
@@ -735,6 +757,31 @@ export const mobileContract = {
         })
         .input(ebookSelectionSchema.extend({ textId: resourceID }))
         .output(z.string()),
+    ebookAnnotations: oc
+        .route({
+            method: 'POST',
+            path: '/texts/{textId}/ebook-annotations',
+            spec: (spec) => ({
+                ...spec,
+                responses: {
+                    ...spec.responses,
+                    200: {
+                        description: 'Incrementally persisted ebook annotations',
+                        content: { 'application/x-ndjson': { schema: { type: 'string', format: 'binary' } } },
+                    },
+                },
+            }),
+        })
+        .input(ebookAnnotationInputSchema.extend({ textId: resourceID }))
+        .output(z.string()),
+    ebookAnnotationVocabulary: oc
+        .route({ method: 'POST', path: '/texts/{textId}/ebook-annotation-vocabulary' })
+        .input(
+            z
+                .object({ textId: resourceID, unitId: resourceID, annotationId: resourceID, requestId: resourceID })
+                .strict(),
+        )
+        .output(z.object({ id: resourceID, libraryId: resourceID }).strict()),
     ebookVocabulary: oc
         .route({ method: 'POST', path: '/texts/{textId}/ebook-vocabulary' })
         .input(z.object({ textId: resourceID, completionId: resourceID, requestId: resourceID }))

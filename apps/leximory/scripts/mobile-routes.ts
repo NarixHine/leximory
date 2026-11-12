@@ -50,6 +50,7 @@ async function main() {
         authoring: ['extractArticle', 'vocabularyList', 'savedWord', 'editWord', 'importArticle', 'uploadEbook'],
         management: ['editableText', 'editText', 'removeText', 'replaceEbook', 'removeEbook', 'removeWord'],
         'ebook-import': ['suggestEbookImport'],
+        'ebook-annotations': ['ebookAnnotations', 'ebookAnnotationVocabulary'],
         folders: ['createFolder', 'renameFolder', 'libraryArchive'],
         review: ['reviewTimeline', 'reviewCheck', 'reviewStart', 'reviewTranslation', 'reviewConversation'],
         shortcuts: ['saveShortcutWord'],

@@ -11,6 +11,7 @@ export async function chargeCommentaryQuota(input: {
     cost: number
     limit: number
     requestId?: string
+    durableReceipt?: boolean
 }): Promise<boolean> {
     const keys = [`user:${input.userId}:commentary_quota`]
     if (input.requestId) keys.push('mobile:quota-receipt:' + mobileMutationID(input.userId, input.requestId))
@@ -21,10 +22,13 @@ export async function chargeCommentaryQuota(input: {
          if used + cost > tonumber(ARGV[2]) then return 0 end
          redis.call('INCRBYFLOAT', KEYS[1], cost)
          if redis.call('TTL', KEYS[1]) < 0 then redis.call('EXPIRE', KEYS[1], 2592000) end
-         if KEYS[2] then redis.call('SET', KEYS[2], '1', 'EX', 86400) end
+         if KEYS[2] then
+             if ARGV[3] == '1' then redis.call('SET', KEYS[2], '1')
+             else redis.call('SET', KEYS[2], '1', 'EX', 86400) end
+         end
          return 1`,
         keys,
-        [input.cost, input.limit],
+        input.durableReceipt ? [input.cost, input.limit, '1'] : [input.cost, input.limit],
     )
     if (allowed === 1) invalidateMutationCaches(`quota:${input.userId}:commentary`)
     return allowed === 1 || allowed === 2

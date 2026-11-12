@@ -24,6 +24,18 @@ struct EbookBookmarkColorRequest: Equatable {
         return EbookExport(data: bytes, format: type, title: title)
     }
     var pdfOutline: PDFOutlineModel?
+    var preannotations: EbookPreannotationModel?
+    var annotationSelection: EbookAnnotationSelection?
+    @ObservationIgnored var requestPreannotations: (() -> Void)?
+    private var annotationUnits: [EbookAnnotationUnit] = []
+    private var annotationOrigin: String?
+    func receiveAnnotationUnits(_ units: [EbookAnnotationUnit], origin: String?, neighbor: Bool = false) {
+        guard origin == location else { return }
+        if !neighbor || annotationOrigin != origin { annotationUnits = []; annotationOrigin = origin }
+        let existing = Set(annotationUnits.map(\.id))
+        annotationUnits.append(contentsOf: units.filter { !existing.contains($0.id) })
+        preannotations?.setWindow(annotationUnits)
+    }
     var positionSaver: EbookPositionSaver?
     var bookmarks: [EbookBookmark] = []
     var location: String?
@@ -120,6 +132,8 @@ struct EbookScreen: View {
     @State private var loadError: String?
     @State private var tray: EbookTray?
     @State private var definition: DefinitionPresentation?
+    @State private var annotationRect = CGRect.zero
+    @State private var readerFrame = CGRect.zero
     @State private var positionSaver: EbookPositionSaver?
     @State private var scrubPosition: Double?
     @AppStorage("ebook.appearance") private var appearance = EbookAppearance.paper
@@ -189,7 +203,7 @@ struct EbookScreen: View {
         }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: reader.chromeVisible)
         .overlay(alignment: .top) {
-            if let item = definition {
+            if let item = definition, item.isDynamic {
                 DefinitionTopTray(item: item, client: client, language: language) { definition = nil }
                     .id(item.id)
             }
@@ -205,6 +219,15 @@ struct EbookScreen: View {
             }
         }
         .sensoryFeedback(.error, trigger: reader.bookmarkNotice)
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { readerFrame = $0 }
+        .popover(item: Binding(get: { definition?.isDynamic == false ? definition : nil }, set: { definition = $0 }),
+                 attachmentAnchor: .rect(.rect(annotationRect.offsetBy(dx: -readerFrame.minX, dy: -readerFrame.minY)))) { item in
+            DefinitionView(item: item, client: client, language: language, isPopover: sizeClass == .regular)
+                .id(item.id)
+                .presentationCompactAdaptation(.sheet)
+                .presentationBackground(LeximoryPalette.annotationSurface)
+                .presentationDragIndicator(.visible)
+        }
         .sensoryFeedback(.success, trigger: reader.bookmarkConfirmation) { _, _ in scenePhase == .active }
         .task(id: reader.bookmarkNotice) {
             guard reader.bookmarkNotice != nil else { return }
@@ -226,6 +249,7 @@ struct EbookScreen: View {
         .task(id: reader.pdfOutline?.textID) { await reader.pdfOutline?.refreshAllowance() }
         .onChange(of: reader.readOnly) { _, readOnly in
             reader.pdfOutline?.online = !readOnly
+            reader.preannotations?.resume(online: !readOnly, active: resourceActive && scenePhase == .active)
             if !readOnly { Task { await reader.pdfOutline?.refreshAllowance() } }
         }
         .task(id: notes?.document) { await notes?.run() }
@@ -233,7 +257,10 @@ struct EbookScreen: View {
             reader.drawingEnabled = drawing == true
             if drawing == true { reader.chromeVisible = true; definition = nil; tray = nil }
         }
-        .onChange(of: scenePhase) { _, phase in if phase != .active { notes?.flush() } }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { notes?.flush() }
+            reader.preannotations?.resume(online: !reader.readOnly, active: resourceActive && phase == .active)
+        }
         .onChange(of: reader.backRequest) { _, _ in if let workspace { workspace.go(-1) } else { dismiss() } }
         .onChange(of: resourceActive, initial: true) { _, active in updateResourceActivity(active) }
     }
@@ -244,7 +271,13 @@ struct EbookScreen: View {
             tray = EbookTray(rawValue: request); reader.trayRequest = nil
         }
 
-        .onDisappear { positionSaver?.flush(); notes?.deactivate() }
+        .onDisappear { positionSaver?.flush(); notes?.deactivate(); reader.preannotations?.stop() }
+        .onChange(of: reader.preannotations?.enabled) { _, _ in reader.requestPreannotations?() }
+        .onChange(of: reader.annotationSelection?.id) { _, _ in
+            guard let tap = reader.annotationSelection else { return }
+            annotationRect = tap.rect
+            definition = DefinitionPresentation(source: .ebookAnnotation(textID: article.id.rawValue, unitID: tap.prepared.unitID, annotation: tap.prepared.annotation), definition: tap.prepared.annotation.definition, sourceTitle: article.title)
+        }
         .onChange(of: reader.selectionAction?.id) { _, _ in handleSelectionAction() }
         .onChange(of: reader.bookmarkColorRequest) { _, request in
             reader.bookmarkColorRequest = nil
@@ -273,6 +306,7 @@ struct EbookScreen: View {
         }
     }
     private func updateResourceActivity(_ active: Bool) {
+        reader.preannotations?.resume(online: !reader.readOnly, active: active && scenePhase == .active)
         if active {
             workspace?.ebookReader = reader
             workspace?.ebookTextID = article.id.rawValue
@@ -490,6 +524,7 @@ struct EbookScreen: View {
             .presentationBackground(LeximoryPalette.paper).tint(LeximoryPalette.ink)
     }
     private func load() async {
+        reader.preannotations?.stop(); reader.preannotations = nil
         notes?.deactivate(); notes = nil; reader.drawingEnabled = false
         reader.pdfOutline = nil
         positionSaver?.flush()
@@ -530,6 +565,7 @@ struct EbookScreen: View {
                 }
                 reader.format = book.descriptor.format; data = book.data
                 reader.book = book
+                await configurePreannotations(book, client: client)
                 if cached != nil { await refreshBook(book, client: client) }
             } else {
                 reader.format = article.resource.hasSuffix("pdf") ? "pdf" : "epub"
@@ -598,14 +634,26 @@ struct EbookScreen: View {
                 reader.bookmarks = refreshed.descriptor.bookmarks
             }
             reader.book = refreshed
+            await configurePreannotations(refreshed, client: client)
         } catch {
             // A failed revalidation must leave the cached book readable.
             guard !Task.isCancelled, bookRequest == request else { return }
             if MobileClient.isAccessFailure(error) {
+                reader.preannotations?.stop(); reader.preannotations = nil
                 notes?.deactivate(); notes = nil; data = nil; reader.book = nil; reader.pdfOutline = nil; loading = false
                 loadError = "暂时无法访问这本电子书。"
             }
         }
+    }
+    private func configurePreannotations(_ book: LocalEbook, client: MobileClient) async {
+        guard let version = book.descriptor.sourceVersion else { return }
+        if reader.preannotations?.sourceVersion == version { return }
+        reader.preannotations?.stop()
+        let model = EbookPreannotationModel(textID: article.id.rawValue, sourceVersion: version, client: client)
+        model.online = !reader.readOnly; model.active = resourceActive && scenePhase == .active
+        reader.preannotations = model
+        await model.restorePreference()
+        reader.requestPreannotations?()
     }
     private func saveBookmark(_ selection: EbookSelection, color: EbookHighlightColor) async {
         guard reader.canEditHighlights, let client else { return }
@@ -666,6 +714,10 @@ private struct NativeEPUBReader: UIViewRepresentable {
         config.userContentController.add(context.coordinator, name: "reader")
         let web = LearningWebView(frame: .zero, configuration: config)
         web.reader = reader
+        reader.requestPreannotations = { [weak coordinator = context.coordinator] in
+            coordinator?.requestAnnotations()
+            coordinator?.pageTurn?.prepare()
+        }
         reader.dismissSelection = { [weak web] in
             guard let web else { return }
             ReadingGlassMenu.dismiss(from: web)
@@ -687,12 +739,16 @@ private struct NativeEPUBReader: UIViewRepresentable {
     }
     func updateUIView(_ web: WKWebView, context: Context) {
         context.coordinator.parent = self
+        context.coordinator.updateAnnotations()
         let theme = context.coordinator.theme(web)
         if reader.ready, theme != context.coordinator.appliedTheme {
             context.coordinator.appliedTheme = theme
             context.coordinator.pageTurn?.invalidateSnapshot()
             Task { [weak coordinator = context.coordinator] in
                 _ = try? await web.callAsyncJavaScript("await window.readerTheme(theme)", arguments: ["theme": theme], in: nil, contentWorld: .page)
+                coordinator?.appliedAnnotationRevision = -1
+                coordinator?.requestAnnotations()
+                coordinator?.updateAnnotations()
                 coordinator?.pageTurn?.prepare()
             }
         }
@@ -732,10 +788,37 @@ private struct NativeEPUBReader: UIViewRepresentable {
         var commandID: UUID?
         var appliedTheme: [String: String] = [:]
         var appliedBookmarks: [[String: String]] = []
+        var appliedAnnotationRevision = -1
         weak var web: WKWebView?
         var pageTurn: EPUBPageTurn?
         let gestures: EbookGestures
         init(_ parent: NativeEPUBReader) { self.parent = parent; gestures = EbookGestures(reader: parent.reader) }
+        func requestAnnotations() {
+            guard parent.reader.preannotations?.enabled == true, parent.reader.ready, let web else { return }
+            let origin = parent.reader.location
+            let version = parent.reader.preannotations?.sourceVersion
+            Task { [weak self, weak web] in
+                guard let self, let web,
+                      let values = try? await web.callAsyncJavaScript("await navigationIdle(); return window.readerAnnotationViewport()", arguments: [:], in: nil, contentWorld: .page) as? [[String: String]] else { return }
+                let units = values.compactMap { value -> EbookAnnotationUnit? in
+                    guard let location = value["location"], let text = value["text"] else { return nil }
+                    return EbookAnnotationUnit(location: location, text: text)
+                }
+                guard parent.reader.preannotations?.sourceVersion == version else { return }
+                parent.reader.receiveAnnotationUnits(units, origin: origin)
+            }
+        }
+        func updateAnnotations() {
+            guard parent.reader.ready, let web else { return }
+            let revision = parent.reader.preannotations?.revision ?? 0
+            guard revision != appliedAnnotationRevision else { return }
+            appliedAnnotationRevision = revision
+            let marks: [[String: Any]] = (parent.reader.preannotations?.annotations ?? []).map {
+                ["id": $0.id, "location": $0.unit.location, "start": $0.annotation.start,
+                 "length": $0.annotation.length, "quote": $0.annotation.quote]
+            }
+            Task { _ = try? await web.callAsyncJavaScript("window.readerAnnotationMarks(marks)", arguments: ["marks": marks], in: nil, contentWorld: .page) }
+        }
         func theme(_ web: WKWebView) -> [String: String] {
             let colors = parent.appearance.colors(dark: parent.scheme == .dark, softerInk: parent.language == "Chinese" || parent.language == "Japanese")
             if let rgb = UInt32(colors.paper.dropFirst(), radix: 16) {
@@ -805,6 +888,13 @@ private struct NativeEPUBReader: UIViewRepresentable {
                 parent.reader.ready = true
                 web?.becomeFirstResponder()
                 pageTurn?.prepare()
+                requestAnnotations()
+            case "annotationTapped":
+                guard let id = body["id"] as? String,
+                      let prepared = parent.reader.preannotations?.annotations.first(where: { $0.id == id }),
+                      let anchor = body["rect"] as? [String: Double], let web else { return }
+                let rect = web.convert(CGRect(x: anchor["x"] ?? 0, y: anchor["y"] ?? 0, width: anchor["width"] ?? 1, height: anchor["height"] ?? 1), to: nil)
+                parent.reader.annotationSelection = EbookAnnotationSelection(prepared: prepared, rect: rect)
             case "failed": parent.reader.loadFailure = "电子书未能加载，请重试。"
             case "contents":
                 parent.reader.chapters = (body["items"] as? [[String: Any]] ?? []).compactMap { item in
@@ -838,6 +928,8 @@ private struct NativeEPUBReader: UIViewRepresentable {
                 parent.reader.chapterPage = body["page"] as? Int ?? 1
                 parent.reader.chapterPages = body["pages"] as? Int ?? 0
                 parent.reader.chapter = body["chapter"] as? String
+                appliedAnnotationRevision = -1
+                requestAnnotations()
                 parent.reader.atStart = body["atStart"] as? Bool ?? false
                 parent.reader.atEnd = body["atEnd"] as? Bool ?? false
                 pageTurn?.pageArrived()
@@ -881,6 +973,7 @@ struct PDFReaderView: UIViewRepresentable {
     func makeUIView(context: Context) -> PDFView {
         let view = LearningPDFView()
         view.reader = reader
+        reader.requestPreannotations = { [weak coordinator = context.coordinator] in coordinator?.requestAnnotations() }
         view.isFindInteractionEnabled = true
         context.coordinator.gestures.install(on: view, centerTap: true)
         view.backgroundColor = .white
@@ -926,6 +1019,7 @@ struct PDFReaderView: UIViewRepresentable {
     func updateUIView(_ view: PDFView, context: Context) {
         context.coordinator.drawingOverlays?.update()
         context.coordinator.updateBookmarks(in: view)
+        context.coordinator.updateAnnotations(in: view)
         if let command, command.id != context.coordinator.commandID {
             context.coordinator.commandID = command.id
             switch command.action {
@@ -949,6 +1043,47 @@ struct PDFReaderView: UIViewRepresentable {
         var drawingOverlays: PDFDrawingOverlays?
         private var appliedBookmarks: [EbookBookmark] = []
         private var bookmarkAnnotations: [(PDFPage, PDFAnnotation)] = []
+        private var annotationRevision = -1
+        private var annotationStrokes: [(PDFPage, EbookPDFPreannotation)] = []
+        private var annotationPages: [Int: [EbookAnnotationUnit]] = [:]
+        func requestAnnotations() {
+            guard reader.ready, reader.preannotations?.enabled == true, let document = view?.document,
+                  let page = view?.currentPage else { return }
+            let current = document.index(for: page)
+            var units: [EbookAnnotationUnit] = []
+            for index in [current, current - 1, current + 1] where index >= 0 && index < document.pageCount {
+                if annotationPages[index] == nil {
+                    annotationPages[index] = EbookAnnotationUnit.pdfPage(index + 1, text: document.page(at: index)?.string ?? "")
+                }
+                units.append(contentsOf: annotationPages[index] ?? [])
+            }
+            reader.receiveAnnotationUnits(units, origin: reader.location)
+        }
+        func updateAnnotations(in view: PDFView) {
+            let revision = reader.preannotations?.revision ?? 0
+            guard revision != annotationRevision, let document = view.document else { return }
+            annotationRevision = revision
+            let prepared = reader.preannotations?.annotations ?? []
+            let ids = Set(prepared.map(\.id))
+            annotationStrokes.removeAll { page, stroke in
+                if !ids.contains(stroke.prepared.id) { page.removeAnnotation(stroke); return true }
+                return false
+            }
+            let drawn = Set(annotationStrokes.map { $0.1.prepared.id })
+            for item in prepared where !drawn.contains(item.id) {
+                let components = item.unit.location.split(separator: ":")
+                guard components.count == 3, components[0] == "pdf", let number = Int(components[1]), let offset = Int(components[2]),
+                      let page = document.page(at: number - 1), let text = page.string else { continue }
+                let source = text as NSString
+                let range = NSRange(location: offset + item.annotation.start, length: item.annotation.length)
+                guard range.location >= 0, NSMaxRange(range) <= source.length,
+                      source.substring(with: range) == item.annotation.quote, let selection = page.selection(for: range) else { continue }
+                for line in selection.selectionsByLine() {
+                    let stroke = EbookPDFPreannotation(bounds: line.bounds(for: page), prepared: item)
+                    page.addAnnotation(stroke); annotationStrokes.append((page, stroke))
+                }
+            }
+        }
         func updateBookmarks(in view: PDFView) {
             let menuChanged = reader.bookmarks != appliedBookmarks
             if menuChanged {
@@ -989,6 +1124,7 @@ struct PDFReaderView: UIViewRepresentable {
             let index = document.index(for: page)
             reader.location = String(index + 1); reader.chapter = page.label ?? String(index + 1)
             reader.atStart = index == 0; reader.atEnd = index == document.pageCount - 1
+            requestAnnotations()
         }
         @objc func selectionChanged() {
             guard let selection = view?.currentSelection, let quote = selection.string?.trimmingCharacters(in: .whitespacesAndNewlines), !quote.isEmpty, quote.count <= 1024 else { reader.selection = nil; return }

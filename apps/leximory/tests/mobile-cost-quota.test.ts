@@ -177,3 +177,40 @@ test('production annotation generation leaves room for long selections and calls
         'Long selections must leave room for the explanation after both required fields',
     )
 })
+
+test('ebook quota receipts survive retries and a quota reset without another deduction', async (t) => {
+    const receipts = new Set<string>()
+    let used = 0
+    t.mock.method(globalThis, 'fetch', async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const raw = z.array(z.unknown()).parse(JSON.parse(String(init?.body)))
+        const pipeline = Array.isArray(raw[0])
+        const execute = (value: unknown) => {
+            const command = z.array(z.union([z.string(), z.number()])).parse(value)
+            assert.equal(command[0], 'eval')
+            const key = String(command[4]),
+                cost = Number(command[5]),
+                limit = Number(command[6])
+            assert.equal(command[7], '1', 'Ebook receipts must remain durable across quota periods')
+            if (receipts.has(key)) return { result: 2 }
+            if (used + cost > limit) return { result: 0 }
+            used += cost
+            receipts.add(key)
+            return { result: 1 }
+        }
+        return Response.json(pipeline ? raw.map(execute) : execute(raw))
+    })
+    const { chargeCommentaryQuota } = await import('../server/mobile/quota-store')
+    const charge = (id: string) =>
+        chargeCommentaryQuota({ userId: 'reader', cost: 0.5, limit: 20, requestId: id, durableReceipt: true })
+    assert.equal(await charge('ebook-passage-1'), true)
+    assert.equal(await charge('ebook-passage-1'), true)
+    assert.equal(used, 0.5)
+    used = 20
+    assert.equal(await charge('ebook-passage-1'), true)
+    assert.equal(await charge('ebook-passage-2'), false)
+    used = 0
+    assert.equal(await charge('ebook-passage-1'), true)
+    assert.equal(used, 0)
+    assert.equal(await charge('ebook-passage-2'), true)
+    assert.equal(used, 0.5)
+})

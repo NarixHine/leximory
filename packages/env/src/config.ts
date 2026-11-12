@@ -1,4 +1,5 @@
 import env, { IS_PROD } from '@repo/env'
+import { EBOOK_ANNOTATION_COST_PER_THOUSAND } from './content'
 
 import type { Plan } from './billing'
 export { PLANS, type Plan } from './billing'
@@ -65,6 +66,7 @@ export const PLAN_DAILY_LEXICOIN: Record<Plan, number> = {
 export const ACTION_QUOTA_COST = {
     articleAnnotation: 1,
     wordAnnotation: 0.25,
+    ebookAnnotation: EBOOK_ANNOTATION_COST_PER_THOUSAND,
     wordList: 1,
     story: 2,
     chat: 0.5,

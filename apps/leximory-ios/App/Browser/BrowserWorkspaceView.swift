@@ -31,6 +31,7 @@ struct BrowserWorkspaceView: View {
     @State private var editingText: CatalogText?
     @State private var editingPin: BrowserHomePin?
     @State private var activitySheet = false
+    @State private var ebookAnnotationSheet = false
     @State private var confirmingClear = false
     @State private var externalURL: URL?
     @State private var chromeHeight: CGFloat = 64
@@ -153,6 +154,9 @@ struct BrowserWorkspaceView: View {
             BrowserPinEditor(pin: pin) { workspace.savePin($0) }
         }
         .sheet(isPresented: $activitySheet) { BrowserAnnotationSheet(workspace: workspace) }
+        .sheet(isPresented: $ebookAnnotationSheet) {
+            EbookPreannotationSheet(model: workspace.ebookTextID == workspace.current.textID ? workspace.ebookReader?.preannotations : nil)
+        }
         .sheet(isPresented: $adBlockingSettings) {
             BrowserAdBlockingSettings(blocker: workspace.browser.adBlocker, browser: workspace.current.isWeb ? workspace.browser : nil)
         }
@@ -488,6 +492,8 @@ struct BrowserWorkspaceView: View {
             }
             if case .document(let document) = workspace.current.resource, document.text.format == "ebook" {
                 Section {
+                    Button("电子书预注释", systemImage: "text.badge.checkmark") { ebookAnnotationSheet = true }
+                        .accessibilityIdentifier("browser-ebook-preannotation")
                     if let reader = workspace.ebookReader, workspace.ebookTextID == document.text.id,
                        let file = reader.export(title: workspace.documents[document.text.id]?.text.title ?? document.text.title) {
                         ShareLink(item: file, preview: SharePreview(file.filename)) {

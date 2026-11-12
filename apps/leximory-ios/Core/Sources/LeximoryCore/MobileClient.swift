@@ -173,6 +173,7 @@ public struct MobileFailure: Error, Codable, Sendable {
         public let retryable: Bool
     }
     public let error: Detail
+    public init(error: Detail) { self.error = error }
 }
 private struct APIExpiryDates: DateTranscoder {
     func encode(_ date: Date) throws -> String { Date.ISO8601FormatStyle(includingFractionalSeconds: true).format(date) }
@@ -657,6 +658,58 @@ public struct MobileClient: Sendable {
         let requestID = UUID().uuidString
         return try await MutationRetry.run {
             try mapped(try await client.ebookVocabulary(path: .init(textId: textID), body: .json(.init(completionId: completionID, requestId: requestID))).ok.body.json, to: SavedVocabulary.self)
+        }
+    }
+    private func ebookAnnotationCacheKey(textID: String, version: String, unit: EbookAnnotationUnit) -> String {
+        "ebook-annotations/\(textID)/\(version)/\(unit.id)"
+    }
+    public func ebookPreannotationEnabled() async -> Bool {
+        await localStore?.value(Bool.self, for: "ebook-annotation-enabled") ?? false
+    }
+    public func setEbookPreannotationEnabled(_ value: Bool) async {
+        await localStore?.save(value, for: "ebook-annotation-enabled")
+    }
+    public func cachedEbookAnnotations(textID: String, version: String, unit: EbookAnnotationUnit) async -> EbookAnnotationPage? {
+        await localStore?.value(EbookAnnotationPage.self, for: ebookAnnotationCacheKey(textID: textID, version: version, unit: unit))
+    }
+    public func ebookAnnotations(textID: String, version: String, unit: EbookAnnotationUnit) -> AsyncThrowingStream<EbookAnnotationEvent, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                let key = ebookAnnotationCacheKey(textID: textID, version: version, unit: unit)
+                var page = await cachedEbookAnnotations(textID: textID, version: version, unit: unit)
+                do {
+                    let body = try await client.ebookAnnotations(path: .init(textId: textID), body: .json(.init(sourceVersion: version, location: unit.location, text: unit.text))).ok.body.application_x_hyphen_ndjson
+                    var frames = EbookAnnotationFrames()
+                    for try await bytes in body {
+                        try Task.checkCancellation()
+                        for event in try frames.append(Data(bytes)) {
+                            switch event {
+                            case .annotation(let id, let annotation):
+                                let source = unit.text as NSString
+                                guard annotation.start <= source.length, annotation.length <= source.length - annotation.start,
+                                      source.substring(with: NSRange(location: annotation.start, length: annotation.length)) == annotation.quote else { throw URLError(.cannotParseResponse) }
+                                if page?.unitId != id { page = EbookAnnotationPage(unitId: id) }
+                                if page?.annotations.contains(where: { $0.id == annotation.id }) != true { page?.annotations.append(annotation) }
+                            case .complete(let id):
+                                if page?.unitId != id { page = EbookAnnotationPage(unitId: id) }
+                                page?.complete = true
+                            case .failed: break
+                            }
+                            if let page { await localStore?.save(page, for: key) }
+                            continuation.yield(event)
+                        }
+                    }
+                    try frames.finish()
+                    continuation.finish()
+                } catch { continuation.finish(throwing: error) }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+    public func saveEbookAnnotation(textID: String, unitID: String, annotationID: String) async throws -> SavedVocabulary {
+        let requestID = UUID().uuidString
+        return try await MutationRetry.run {
+            try mapped(try await client.ebookAnnotationVocabulary(path: .init(textId: textID), body: .json(.init(unitId: unitID, annotationId: annotationID, requestId: requestID))).ok.body.json, to: SavedVocabulary.self)
         }
     }
     public func definitions(selection: ReadingSelection) -> AsyncThrowingStream<DefinitionEvent, Error> {

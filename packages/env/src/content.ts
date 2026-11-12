@@ -14,3 +14,4 @@ export const maxArticleLength = (lang: Lang): number => {
             return 10000
     }
 }
+export const EBOOK_ANNOTATION_COST_PER_THOUSAND = 0.25

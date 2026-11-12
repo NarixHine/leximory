@@ -208,6 +208,53 @@ export type Database = {
                     },
                 ]
             }
+            ebook_preannotations: {
+                Row: {
+                    annotations: Json
+                    complete: boolean
+                    created_at: string
+                    id: string
+                    location: string
+                    source_text: string
+                    source_version: string
+                    text_id: string
+                    updated_at: string
+                    user_id: string
+                }
+                Insert: {
+                    annotations?: Json
+                    complete?: boolean
+                    created_at?: string
+                    id: string
+                    location: string
+                    source_text: string
+                    source_version: string
+                    text_id: string
+                    updated_at?: string
+                    user_id: string
+                }
+                Update: {
+                    annotations?: Json
+                    complete?: boolean
+                    created_at?: string
+                    id?: string
+                    location?: string
+                    source_text?: string
+                    source_version?: string
+                    text_id?: string
+                    updated_at?: string
+                    user_id?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: 'ebook_preannotations_text_id_fkey'
+                        columns: ['text_id']
+                        isOneToOne: false
+                        referencedRelation: 'texts'
+                        referencedColumns: ['id']
+                    },
+                ]
+            }
             flashbacks: {
                 Row: {
                     conversation: Json | null

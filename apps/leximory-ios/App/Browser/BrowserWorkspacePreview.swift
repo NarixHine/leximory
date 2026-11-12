@@ -152,6 +152,21 @@ private actor BrowserWorkspaceFixtureTransport: ClientTransport {
     init(payloads: [String: Data], store: LocalReadingStore) { self.payloads = payloads; self.store = store }
     func setCompletionGate(_ gate: @escaping @MainActor @Sendable () -> Bool) { completionGate = gate }
     func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
+        if operationID == "ebookAnnotations", let body {
+            struct Input: Decodable { let location: String; let text: String }
+            let input = try JSONDecoder().decode(Input.self, from: await Data(collecting: body, upTo: 120000))
+            let unitID = EbookAnnotationUnit(location: input.location, text: input.text).id
+            var frames: [Data] = []
+            if let range = input.text.range(of: "bank") {
+                let offset = NSRange(range, in: input.text)
+                let annotation = EbookAnnotation(id: unitID, quote: "bank", start: offset.location, length: offset.length,
+                    definition: Definition(lemma: "bank", definition: "**n. 河岸** the land beside a river"))
+                frames.append(try JSONSerialization.data(withJSONObject: ["kind":"annotation","unitId":unitID,
+                    "annotation":try JSONSerialization.jsonObject(with: JSONEncoder().encode(annotation))]))
+            }
+            frames.append(Data("{\"kind\":\"complete\",\"unitId\":\"\(unitID)\"}".utf8))
+            return (.init(status: .ok, headerFields: [.contentType:"application/x-ndjson"]), HTTPBody(frames.reduce(Data()) { $0 + $1 + Data([10]) }))
+        }
         if operationID == "review" { return try await review.send(request, body: body, baseURL: baseURL, operationID: operationID) }
         if ProcessInfo.processInfo.arguments.contains("--workspace-definition-fixtures") {
             if operationID == "definitions" {

@@ -298,7 +298,41 @@ final class EbookPDFHighlight: PDFAnnotation {
     required init?(coder: NSCoder) { return nil }
 }
 
+final class EbookPDFPreannotation: PDFAnnotation {
+    let prepared: PreparedEbookAnnotation
+    init(bounds: CGRect, prepared: PreparedEbookAnnotation) {
+        self.prepared = prepared
+        super.init(bounds: bounds, forType: .ink, withProperties: nil)
+        color = UIColor(red: 0.35, green: 0.47, blue: 0.31, alpha: 0.27)
+        let border = PDFBorder(); border.lineWidth = 1.8; self.border = border
+        let path = UIBezierPath(); path.lineCapStyle = .round
+        path.move(to: CGPoint(x: 1, y: 1.5)); path.addLine(to: CGPoint(x: max(2, bounds.width - 1), y: 1.5))
+        add(path); shouldPrint = false
+    }
+    required init?(coder: NSCoder) { return nil }
+}
+
 final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
+    private var pressedAnnotation: UIView?
+    func preannotation(at point: CGPoint) -> EbookPDFPreannotation? {
+        guard reader?.drawingEnabled != true, let page = page(for: point, nearest: false) else { return nil }
+        return page.annotations.compactMap { $0 as? EbookPDFPreannotation }.first { $0.bounds.contains(convert(point, to: page)) }
+    }
+    func pressPreannotation(at point: CGPoint) {
+        clearPressedPreannotation()
+        guard let stroke = preannotation(at: point), let page = stroke.page else { return }
+        let feedback = UIView(frame: convert(stroke.bounds, from: page).insetBy(dx: -1, dy: -1))
+        feedback.backgroundColor = UIColor.label.withAlphaComponent(0.1)
+        feedback.layer.cornerRadius = 4; feedback.isUserInteractionEnabled = false
+        addSubview(feedback); pressedAnnotation = feedback
+    }
+    func clearPressedPreannotation() { pressedAnnotation?.removeFromSuperview(); pressedAnnotation = nil }
+    @discardableResult func presentPreannotation(at point: CGPoint) -> Bool {
+        clearPressedPreannotation()
+        guard let stroke = preannotation(at: point), let page = stroke.page else { return false }
+        reader?.annotationSelection = EbookAnnotationSelection(prepared: stroke.prepared, rect: convert(convert(stroke.bounds, from: page), to: nil))
+        return true
+    }
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         guard let hit = super.hitTest(point, with: event) else { return nil }
         return (pageOverlayViewProvider as? PDFDrawingOverlays)?.readingTouchTarget(for: hit) ?? hit
@@ -391,6 +425,12 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
             let tap = UITapGestureRecognizer(target: self, action: #selector(tapped))
             tap.cancelsTouchesInView = false; tap.delegate = self
             view.addGestureRecognizer(tap)
+            if view is LearningPDFView {
+                let press = UILongPressGestureRecognizer(target: self, action: #selector(annotationPressed))
+                press.minimumPressDuration = 0; press.allowableMovement = 8
+                press.cancelsTouchesInView = false; press.delegate = self
+                view.addGestureRecognizer(press)
+            }
             for recognizer in view.gestureRecognizers ?? [] where recognizer !== tap {
                 if let other = recognizer as? UITapGestureRecognizer, other.numberOfTapsRequired > 1 { tap.require(toFail: other) }
             }
@@ -406,7 +446,7 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
             let point = gesture.location(in: web)
             Task { [weak self, weak web] in
                 guard let self, let web else { return }
-                let handled = try? await web.callAsyncJavaScript("return window.readerTapHighlight(x,y)",
+                let handled = try? await web.callAsyncJavaScript("return window.readerTapAnnotation?.(x,y) || window.readerTapHighlight(x,y)",
                     arguments: ["x":point.x / max(1, web.bounds.width), "y":point.y / max(1, web.bounds.height)], in: nil, contentWorld: .page) as? Bool
                 guard handled != true, reader.selection == nil else { return }
                 web.dismissHighlightMenu()
@@ -414,7 +454,7 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
             }
             return
         }
-        if let pdf = view as? LearningPDFView, pdf.presentHighlightMenu(at: gesture.location(in: view)) { return }
+        if let pdf = view as? LearningPDFView, pdf.presentHighlightMenu(at: gesture.location(in: view)) || pdf.presentPreannotation(at: gesture.location(in: view)) { return }
         if pdfSelectionActiveAtTouchDown, let pdf = view as? LearningPDFView, pdf.dismissSelection() { return }
         guard reader.selection == nil else { return }
         let x = gesture.location(in: view).x / max(1, view.bounds.width)
@@ -425,9 +465,15 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
     @objc private func backSwiped(_ gesture: UIScreenEdgePanGestureRecognizer) {
         if gesture.state == .ended, gesture.translation(in: gesture.view).x > 70 { reader.backRequest = UUID() }
     }
+    @objc private func annotationPressed(_ gesture: UILongPressGestureRecognizer) {
+        guard let pdf = gesture.view as? LearningPDFView else { return }
+        if gesture.state == .began { pdf.pressPreannotation(at: gesture.location(in: pdf)) }
+        else if gesture.state != .changed { pdf.clearPressedPreannotation() }
+    }
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         if reader.drawingEnabled { return false }
         if let pdf = gestureRecognizer.view as? LearningPDFView {
+            if gestureRecognizer is UILongPressGestureRecognizer { return pdf.preannotation(at: touch.location(in: pdf)) != nil }
             pdfSelectionActiveAtTouchDown = pdf.currentSelection != nil || reader.selection != nil || reader.menuSelection != nil
             pdf.highlightAtTouchDown = pdf.highlight(at: touch.location(in: pdf))
             gestureRecognizer.cancelsTouchesInView = pdf.highlightAtTouchDown != nil
@@ -832,6 +878,7 @@ struct PageTurnSpring {
             var locations = [true: location, false: location]
             var images = [true: source, false: source]
             var edges: Set<Bool> = []
+            var annotatedDirections = Set<Bool>()
             // Warm both immediate neighbors before extending the lookahead.
             for advancing in [advances, !advances, advances, advances, !advances, !advances] {
                 if edges.contains(advancing) { continue }
@@ -842,6 +889,14 @@ struct PageTurnSpring {
                 if next == previous {
                     edges.insert(advancing)
                     continue
+                }
+                if reader.preannotations?.enabled == true, annotatedDirections.insert(advancing).inserted,
+                   let values = try await preview.callAsyncJavaScript("return window.readerAnnotationViewport()", arguments: [:], in: nil, contentWorld: .page) as? [[String: String]] {
+                    let units = values.compactMap { value -> EbookAnnotationUnit? in
+                        guard let location = value["location"], let text = value["text"] else { return nil }
+                        return EbookAnnotationUnit(location: location, text: text)
+                    }
+                    reader.receiveAnnotationUnits(units, origin: location, neighbor: true)
                 }
                 guard let image = await captureWebImage(hiding: [], from: preview),
                       !Task.isCancelled, snapshotID == generation, !stopped else { return }

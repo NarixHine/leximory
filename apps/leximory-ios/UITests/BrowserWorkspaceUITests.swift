@@ -2,6 +2,39 @@ import XCTest
 import UIKit
 
 final class BrowserWorkspaceUITests: XCTestCase {
+    @MainActor func testEbookPreannotationMenuStartsOffAndOpensAnInstantDefinition() {
+        let app = launch(); defer { restore(app) }
+        app.buttons["browser-more"].tap()
+        XCTAssertFalse(app.buttons["电子书预注释"].exists)
+        app.tap()
+        app.buttons["我的书签"].tap()
+        let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch
+        XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
+        let book = app.buttons["browser-resource-workspace-epub"]
+        XCTAssertTrue(book.waitForExistence(timeout: 10)); book.tap()
+        let reader = app.otherElements["ebook-reader"]
+        XCTAssertTrue(reader.waitForExistence(timeout: 15))
+        expectation(for: NSPredicate(format: "value CONTAINS %@", "epub已打开"), evaluatedWith: reader)
+        waitForExpectations(timeout: 30)
+        app.buttons["browser-more"].tap()
+        let option = app.buttons["电子书预注释"]
+        XCTAssertTrue(option.waitForExistence(timeout: 5), app.debugDescription)
+        option.tap()
+        let toggle = app.switches["ebook-preannotation-enabled"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        XCTAssertEqual(toggle.value as? String, "0")
+        XCTAssertTrue(toggle.isEnabled, app.debugDescription)
+        guard toggle.isEnabled else { return }
+        let control = toggle.switches.firstMatch
+        if control.exists { control.tap() } else { toggle.tap() }
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "1"), object: toggle)], timeout: 3), .completed, app.debugDescription)
+        app.buttons["关闭"].tap()
+        let word = app.buttons["bank，查看释义"].firstMatch
+        XCTAssertTrue(word.waitForExistence(timeout: 15), app.debugDescription)
+        word.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        XCTAssertTrue(app.staticTexts["bank"].firstMatch.waitForExistence(timeout: 5), app.debugDescription)
+        let snapshot = XCTAttachment(screenshot: app.screenshot()); snapshot.name = "Prepared ebook definition"; snapshot.lifetime = .keepAlways; add(snapshot)
+    }
     @MainActor func testHighlighterPresentationKeepsReadableWidth() {
         let app = launch(); defer { restore(app) }
         app.buttons["我的书签"].tap()

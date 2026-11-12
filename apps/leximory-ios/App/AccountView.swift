@@ -78,6 +78,7 @@ struct AccountView: View {
             .refreshable { await load() }
             .task { await load() }
             .onReceive(NotificationCenter.default.publisher(for: .pdfOutlineUsageChanged)) { _ in Task { await load() } }
+            .onReceive(NotificationCenter.default.publisher(for: .ebookPreannotationUsageChanged)) { _ in Task { await load() } }
             .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await load() } } }
             .onChange(of: photo) { _, item in
                 guard let item else { return }
@@ -482,6 +483,7 @@ private struct AccountActionCostTable: View {
     }
     private let rows = [
         Row(id: "article-annotation", action: "文章预注释", cost: "1 词点"),
+        Row(id: "ebook-annotation", action: "电子书预注释（每千字）", cost: "0.25 词点"),
         Row(id: "word-annotation", action: "🐈 猫忆查", cost: "0.25 词点"),
         Row(id: "ebook-icon", action: "电子书图标生成", cost: "0.01 词点"),
         Row(id: "pdf-outline", action: "PDF 目录生成", cost: "1 词点"),
