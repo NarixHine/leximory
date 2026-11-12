@@ -6,6 +6,7 @@ import { annotationPrompt } from '../ai/annotation-prompt'
 import { parseGeneratedDefinition } from './definitions'
 import { MobileError } from './errors'
 import type { GeneratedEbookAnnotation } from './ebook-annotations'
+import { mobileNanoAI } from './ai-config'
 
 export async function* streamEbookAnnotations(input: {
     model?: LanguageModel
@@ -24,6 +25,7 @@ export async function* streamEbookAnnotations(input: {
     const abort = new AbortController()
     const result = streamText({
         ...config,
+        ...mobileNanoAI,
         ...(input.model ? { model: input.model } : {}),
         abortSignal: AbortSignal.any([input.signal, abort.signal]),
     })

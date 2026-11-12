@@ -3,6 +3,7 @@ import { Lang } from '@repo/env/config'
 import { generateText } from 'ai'
 import getLanguageServerStrategy from '@/lib/languages/strategies.server'
 import { annotationPrompt } from './annotation-prompt'
+import { miniAI } from './config'
 
 export const articleAnnotationPrompt = async (
     lang: Lang,
@@ -10,14 +11,16 @@ export const articleAnnotationPrompt = async (
     onlyComments: boolean,
     userId: string,
     autoTrim: boolean = true,
-) =>
-    annotationPrompt({
+) => ({
+    ...annotationPrompt({
         lang,
         input,
         onlyComments,
         autoTrim,
         accentPrompt: await getLanguageServerStrategy(lang).getAccentPrompt(userId),
-    })
+    }),
+    ...miniAI,
+})
 
 export const annotateParagraph = async ({
     content,

@@ -1,7 +1,6 @@
 import 'server-only'
 import type { Lang } from '@repo/env/config'
 import { instruction } from '@/lib/prompt'
-import { miniAI } from './config'
 
 export function annotationPrompt({
     lang,
@@ -31,6 +30,5 @@ export function annotationPrompt({
     
     ${input}`,
         maxOutputTokens: 12000,
-        ...miniAI,
     }
 }

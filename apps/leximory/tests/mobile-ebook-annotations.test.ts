@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
-import { MockLanguageModelV4 } from 'ai/test'
+import { MockLanguageModelV4, MockProviderV4 } from 'ai/test'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@repo/supabase/types'
 import { mobileSubjectSchema } from '@repo/schema/mobile'
@@ -363,9 +363,9 @@ test('the real text-stream SDK rejects an unfinished annotation instead of compl
 })
 
 test(
-    'the real SDK publishes and persists each web-format annotation before later tokens arrive',
+    'DeepSeek page streaming preserves web formatting and persists before later tokens arrive',
     { timeout: 5000 },
-    async () => {
+    async (t) => {
         let proceed = () => {}
         const waiting = new Promise<void>((resolve) => {
             proceed = resolve
@@ -411,9 +411,16 @@ test(
                 }),
             }),
         })
+        const previousProvider = globalThis.AI_SDK_DEFAULT_PROVIDER
+        globalThis.AI_SDK_DEFAULT_PROVIDER = new MockProviderV4({
+            languageModels: { 'deepseek/deepseek-v4.1-flash-1017': model },
+        })
+        t.after(() => {
+            globalThis.AI_SDK_DEFAULT_PROVIDER = previousProvider
+        })
         const f = fixture()
         f.dependencies.generator.generate = (text, language, accent, signal) =>
-            streamEbookAnnotations({ model, text, language, accent, signal })
+            streamEbookAnnotations({ text, language, accent, signal })
         const handler = testMobileHandler(createEbookAnnotationOperations(f.dependencies), async () => ({
             kind: 'authenticated',
             subject,
@@ -452,6 +459,8 @@ test(
             ['shore', 'reeds'],
         )
         assert.equal(rest.at(-1).kind, 'complete')
+        assert.equal(model.doStreamCalls[0]?.reasoning, 'medium')
+        assert.equal(model.doStreamCalls[0]?.providerOptions?.google, undefined)
         const system = model.doStreamCalls[0]?.prompt.find((message) => message.role === 'system')
         assert.ok(system?.content.includes('注解格式为 {{原文形式||原形||释义||'))
         assert.ok(system?.content.includes('必须完整保留原文的内容和格式'))
