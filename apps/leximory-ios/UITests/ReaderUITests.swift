@@ -1048,6 +1048,12 @@ final class ReaderUITests: XCTestCase {
         XCTAssertTrue(meaning.isHittable)
         capture(app, name: "Embedded definition")
         dismissDefinitionTray(app)
+        for _ in 0..<2 {
+            paragraph.coordinate(withNormalizedOffset: CGVector(dx: 0.065, dy: 0.75)).tap()
+            XCTAssertTrue(meaning.waitForExistence(timeout: 3), app.debugDescription)
+            XCTAssertTrue(meaning.isHittable)
+            dismissDefinitionTray(app)
+        }
         XCTAssertTrue(paragraph.exists)
     }
     @MainActor func testSelectionKeepsCopyAndAddsDefine() throws {

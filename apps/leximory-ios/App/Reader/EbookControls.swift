@@ -485,12 +485,14 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
                 let handled = try? await web.callAsyncJavaScript("return window.readerTapAnnotation?.(x,y) || window.readerTapHighlight(x,y)",
                     arguments: ["x":point.x / max(1, web.bounds.width), "y":point.y / max(1, web.bounds.height)], in: nil, contentWorld: .page) as? Bool
                 guard handled != true, reader.selection == nil else { return }
+                if reader.annotationSelection != nil { reader.annotationSelection = nil; return }
                 web.dismissHighlightMenu()
                 if reader.gutterSide(at: point) == nil { reader.chromeVisible.toggle() }
             }
             return
         }
         if let pdf = view as? LearningPDFView, pdf.presentHighlightMenu(at: gesture.location(in: view)) || pdf.presentPreannotation(at: gesture.location(in: view)) { return }
+        if reader.annotationSelection != nil { reader.annotationSelection = nil; return }
         if pdfSelectionActiveAtTouchDown, let pdf = view as? LearningPDFView, pdf.dismissSelection() { return }
         guard reader.selection == nil else { return }
         let x = gesture.location(in: view).x / max(1, view.bounds.width)

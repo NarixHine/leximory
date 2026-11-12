@@ -215,6 +215,7 @@ struct ReadingTextView: UIViewRepresentable {
 
     static func dismantleUIView(_ view: RubyTextView, coordinator: Coordinator) {
         coordinator.imageTasks.forEach { $0.cancel() }
+        coordinator.popover?.afterDismiss = nil
         coordinator.popover?.dismiss(animated: false)
         view.openAnnotation = nil
         view.delegate = nil
@@ -237,13 +238,20 @@ struct ReadingTextView: UIViewRepresentable {
         @objc func annotationTapped(_ gesture: AnnotationTapRecognizer) {
             guard gesture.state == .ended, let view = gesture.reader else { return }
             guard view.annotation(at: gesture.location(in: view)) != nil else {
-                popover?.dismiss(animated: true)
+                popover?.afterDismiss = nil
+                if popover?.isClosing == false { popover?.dismiss(animated: true) }
                 return
             }
             view.activateAnnotation(at: gesture.location(in: view))
         }
         func present(_ occurrence: ReaderLayout.Annotation, at rect: CGRect, in view: RubyTextView) {
             view.highlightAnnotation(occurrence.tag)
+            if let closing = popover, closing.isClosing {
+                closing.afterDismiss = { [weak self, weak view] in
+                    if let view { self?.present(occurrence, at: rect, in: view) }
+                }
+                return
+            }
             guard let presenter = view.window?.rootViewController else {
                 view.highlightAnnotation(nil)
                 return
@@ -701,6 +709,9 @@ struct ReadingTextView: UIViewRepresentable {
 
 @MainActor final class AnnotationPopoverController: UIHostingController<AnyView>, UIPopoverPresentationControllerDelegate {
     var onDismiss: (() -> Void)?
+    var afterDismiss: (() -> Void)?
+    private(set) var isClosing = false
+    private var dismissalFinished = false
     func setContent(_ content: AnyView, sourceView: UIView, sourceRect: CGRect) {
         modalPresentationStyle = .popover
         sizingOptions = .preferredContentSize
@@ -739,9 +750,23 @@ struct ReadingTextView: UIViewRepresentable {
         }
     }
     func adaptivePresentationStyle(for controller: UIPresentationController, traitCollection: UITraitCollection) -> UIModalPresentationStyle { .none }
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        onDismiss?()
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        guard presentedViewController == nil else { super.dismiss(animated: flag, completion: completion); return }
+        isClosing = true
+        super.dismiss(animated: flag) { [self] in
+            finishDismissal()
+            completion?()
+        }
+    }
+    func presentationControllerWillDismiss(_ presentationController: UIPresentationController) { isClosing = true }
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) { finishDismissal() }
+    private func finishDismissal() {
+        guard !dismissalFinished else { return }
+        dismissalFinished = true
+        let dismissed = onDismiss, reopen = afterDismiss
+        onDismiss = nil; afterDismiss = nil
+        dismissed?()
+        reopen?()
     }
 }
 
@@ -750,6 +775,7 @@ struct AnnotationPopover: UIViewControllerRepresentable {
     let anchor: CGRect
     let client: MobileClient?
     let language: String
+    var passthroughView: UIView? = nil
     @Environment(\.nativeSync) private var sync
     @Environment(\.browserWorkspace) private var workspace
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -765,7 +791,7 @@ struct AnnotationPopover: UIViewControllerRepresentable {
         context.coordinator.update(host)
     }
     static func dismantleUIViewController(_ host: Presenter, coordinator: Coordinator) {
-        host.onReady = nil; coordinator.popover?.dismiss(animated: false)
+        host.onReady = nil; coordinator.popover?.afterDismiss = nil; coordinator.popover?.dismiss(animated: false)
     }
     final class Presenter: UIViewController {
         var onReady: (() -> Void)?
@@ -775,26 +801,37 @@ struct AnnotationPopover: UIViewControllerRepresentable {
     @MainActor final class Coordinator {
         var parent: AnnotationPopover
         weak var popover: AnnotationPopoverController?
-        private var identity: String?
+        private var identity: UUID?
         private var rect = CGRect.null
         private var viewport = CGSize.zero
         init(_ parent: AnnotationPopover) { self.parent = parent }
         func update(_ host: Presenter) {
             guard let window = host.view.window else { return }
-            guard let item = parent.item else { popover?.dismiss(animated: false); return }
+            guard let item = parent.item else {
+                popover?.afterDismiss = nil
+                if popover?.isClosing == false { popover?.dismiss(animated: false) }
+                return
+            }
+            if let closing = popover, closing.isClosing {
+                closing.afterDismiss = { [weak self, weak host] in
+                    if let host { self?.update(host) }
+                }
+                return
+            }
             let anchor = host.view.convert(parent.anchor, from: nil)
-            guard identity != item.id || rect != anchor || viewport != window.bounds.size || popover == nil else { return }
-            identity = item.id; rect = anchor; viewport = window.bounds.size
+            guard identity != item.requestID || rect != anchor || viewport != window.bounds.size || popover == nil else { return }
+            identity = item.requestID; rect = anchor; viewport = window.bounds.size
             let existing = popover
             let controller = existing ?? AnnotationPopoverController(rootView: AnyView(EmptyView()))
             let content = DefinitionView(item: item, client: parent.client, language: parent.language, isPopover: true,
                 closeTray: { [weak controller] in controller?.dismiss(animated: true) })
                 .id(item.id).environment(\.nativeSync, parent.sync).environment(\.browserWorkspace, parent.workspace)
             controller.setContent(AnyView(content), sourceView: host.view, sourceRect: anchor)
+            controller.popoverPresentationController?.passthroughViews = parent.passthroughView.map { [$0] }
             controller.onDismiss = { [weak self, weak controller] in
                 guard let self, self.popover === controller else { return }
                 self.popover = nil
-                if self.parent.item?.id == item.id { self.parent.item = nil }
+                if self.parent.item?.requestID == item.requestID { self.parent.item = nil }
             }
             popover = controller
             if existing == nil { host.present(controller, animated: false) }

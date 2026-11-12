@@ -8,11 +8,12 @@ private enum DocumentState {
 }
 
 struct DefinitionPresentation: Identifiable {
+    let requestID: UUID
     let source: DefinitionSource
     let definition: Definition?
     let sourceTitle: String?
-    init(source: DefinitionSource, definition: Definition?, sourceTitle: String? = nil) {
-        self.source = source; self.definition = definition
+    init(source: DefinitionSource, definition: Definition?, sourceTitle: String? = nil, requestID: UUID = UUID()) {
+        self.source = source; self.definition = definition; self.requestID = requestID
         let title = sourceTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
         self.sourceTitle = title?.isEmpty == false ? title : nil
     }

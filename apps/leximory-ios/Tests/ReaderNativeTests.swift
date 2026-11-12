@@ -9,6 +9,94 @@ import CoreText
 import LeximoryCore
 @testable import Leximory
 
+@MainActor @Suite(.serialized) struct AnnotationPopoverInteractionTests {
+    private func wait(_ predicate: () -> Bool) async throws {
+        let deadline = ContinuousClock.now.advanced(by: .seconds(4))
+        while !predicate(), ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }
+        #expect(predicate())
+    }
+    @Test(arguments: [false, true]) func articleTapDuringDismissalOpensTheLatestWord(sameWord: Bool) async throws {
+        let article = FixtureArticle.samples[0], document = try article.document()
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }, window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: ReadingTextView(document: document, textID: article.id, jumpToEnd: false, onDefine: { _, _, _ in }))
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844); window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(150)); host.view.layoutIfNeeded()
+        func reader(in view: UIView) -> RubyTextView? { (view as? RubyTextView) ?? view.subviews.lazy.compactMap { reader(in: $0) }.first }
+        let view = try #require(reader(in: host.view))
+        let first = try #require(view.annotations.first)
+        let next = sameWord ? first : try #require(view.annotations.dropFirst().first)
+        let initial = try #require(view.segments(for: first.range).first)
+        let target = try #require(view.segments(for: next.range).first)
+        view.activateAnnotation(at: CGPoint(x: initial.midX, y: initial.midY))
+        try await Task.sleep(for: .milliseconds(100))
+        let closing = try #require(host.presentedViewController as? AnnotationPopoverController)
+        var dismissed = false
+        closing.dismiss(animated: true) { dismissed = true }
+        #expect(closing.isBeingDismissed)
+        view.activateAnnotation(at: CGPoint(x: initial.midX, y: initial.midY))
+        view.activateAnnotation(at: CGPoint(x: target.midX, y: target.midY))
+        try await wait { dismissed }
+        try await wait { host.presentedViewController !== closing && host.presentedViewController?.view.window === window }
+        let reopened = try #require(host.presentedViewController as? AnnotationPopoverController)
+        #expect(reopened !== closing)
+        #expect(reopened.view.window === window)
+        func text(in view: UIView) -> [String] { (view as? UITextView).map { [$0.text ?? ""] } ?? view.subviews.flatMap { text(in: $0) } }
+        #expect(text(in: reopened.view).contains(next.definition.definition))
+        reopened.dismiss(animated: false)
+    }
+
+    @Test(arguments: [false, true]) func ebookRetapDuringDismissalSurvivesTheOldDismissalCallback(cancelled: Bool) async throws {
+        let article = FixtureArticle.samples[0], document = try article.document()
+        let selection = try ReaderLayout(document: document).selection(NSRange(location: 0, length: 4), document: document, textID: article.id)
+        let definition = Definition(lemma: "word", definition: "The saved meaning")
+        func item() -> DefinitionPresentation { DefinitionPresentation(source: .article(selection), definition: definition) }
+        let state = AnnotationPopoverProbe(item: item())
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }, window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: AnnotationPopoverProbeView(state: state))
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844); window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(200))
+        let closing = try #require(host.presentedViewController as? AnnotationPopoverController)
+        var dismissed = false
+        closing.dismiss(animated: true) { dismissed = true }
+        #expect(closing.isBeingDismissed)
+        state.item = item()
+        if cancelled {
+            try await Task.sleep(for: .milliseconds(20))
+            state.item = nil
+        }
+        try await wait { dismissed }
+        if cancelled {
+            try await wait { host.presentedViewController == nil }
+            #expect(state.item == nil)
+            return
+        }
+        try await wait { host.presentedViewController !== closing && host.presentedViewController?.view.window === window }
+        #expect(state.item != nil)
+        let reopened = try #require(host.presentedViewController as? AnnotationPopoverController)
+        #expect(reopened !== closing)
+        #expect(reopened.view.window === window)
+        reopened.dismiss(animated: false)
+    }
+}
+
+@MainActor @Observable private final class AnnotationPopoverProbe {
+    var item: DefinitionPresentation?
+    init(item: DefinitionPresentation) { self.item = item }
+}
+
+private struct AnnotationPopoverProbeView: View {
+    @Bindable var state: AnnotationPopoverProbe
+    var body: some View {
+        Color.white.background {
+            AnnotationPopover(item: $state.item, anchor: CGRect(x: 150, y: 300, width: 40, height: 22), client: nil, language: "English")
+        }
+    }
+}
+
 @MainActor @Suite(.serialized) struct NativeTextSelectionTests {
     @Test(arguments: [DynamicTypeSize.large, .accessibility3], [false, true])
     func definitionBodyMatchesStandaloneAnnotationScaling(typeSize: DynamicTypeSize, topTray: Bool) async throws {

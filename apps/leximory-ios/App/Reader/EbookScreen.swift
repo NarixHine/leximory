@@ -26,6 +26,7 @@ struct EbookBookmarkColorRequest: Equatable {
     var pdfOutline: PDFOutlineModel?
     var preannotations: EbookPreannotationModel?
     var annotationSelection: EbookAnnotationSelection?
+    @ObservationIgnored weak var annotationView: UIView?
     @ObservationIgnored var requestPreannotations: (() -> Void)?
     private var annotationUnits: [EbookAnnotationUnit] = []
     private var annotationOrigin: String?
@@ -219,8 +220,11 @@ struct EbookScreen: View {
         }
         .sensoryFeedback(.error, trigger: reader.bookmarkNotice)
         .background {
-            AnnotationPopover(item: Binding(get: { definition?.isDynamic == false ? definition : nil }, set: { definition = $0 }),
-                              anchor: annotationRect, client: client, language: language)
+            AnnotationPopover(item: Binding(get: { definition?.isDynamic == false ? definition : nil }, set: {
+                if $0 == nil, reader.annotationSelection?.id == definition?.requestID { reader.annotationSelection = nil }
+                definition = $0
+            }),
+                              anchor: annotationRect, client: client, language: language, passthroughView: reader.annotationView)
         }
         .sensoryFeedback(.success, trigger: reader.bookmarkConfirmation) { _, _ in scenePhase == .active }
         .task(id: reader.bookmarkNotice) {
@@ -268,11 +272,14 @@ struct EbookScreen: View {
         .onDisappear { positionSaver?.flush(); notes?.deactivate(); reader.preannotations?.stop() }
         .onChange(of: reader.preannotations?.enabled) { _, _ in reader.requestPreannotations?() }
         .onChange(of: reader.annotationSelection?.id) { _, _ in
-            guard let tap = reader.annotationSelection else { return }
+            guard let tap = reader.annotationSelection else {
+                if definition?.isDynamic == false { definition = nil }
+                return
+            }
             annotationRect = tap.rect
             var transaction = Transaction(); transaction.disablesAnimations = true
             withTransaction(transaction) {
-                definition = DefinitionPresentation(source: .ebookAnnotation(textID: article.id.rawValue, unitID: tap.prepared.unitID, annotation: tap.prepared.annotation), definition: tap.prepared.annotation.definition, sourceTitle: article.title)
+                definition = DefinitionPresentation(source: .ebookAnnotation(textID: article.id.rawValue, unitID: tap.prepared.unitID, annotation: tap.prepared.annotation), definition: tap.prepared.annotation.definition, sourceTitle: article.title, requestID: tap.id)
             }
         }
         .onChange(of: reader.selectionAction?.id) { _, _ in handleSelectionAction() }
@@ -318,6 +325,7 @@ struct EbookScreen: View {
     }
     private func handleSelectionAction() {
         guard let action = reader.selectionAction else { return }
+        reader.annotationSelection = nil
         switch action.kind {
         case .define:
             definition = DefinitionPresentation(source: .ebook(textID: article.id.rawValue, quote: action.selection.quote, context: action.selection.context, offset: action.selection.offset), definition: nil, sourceTitle: article.title)
@@ -712,6 +720,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
         config.userContentController.add(context.coordinator, name: "reader")
         let web = LearningWebView(frame: .zero, configuration: config)
         web.reader = reader
+        reader.annotationView = web
         reader.requestPreannotations = { [weak coordinator = context.coordinator] in
             coordinator?.requestAnnotations()
             coordinator?.pageTurn?.prepare()
@@ -872,6 +881,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
                 #endif
             case "pageTap":
                 guard let side = body["side"] as? String, side == "left" || side == "right" else { return }
+                if parent.reader.annotationSelection != nil { parent.reader.annotationSelection = nil; return }
                 pageTurn?.requestTurn(advancing: (side == "right") != parent.reader.rightToLeft)
             case "layout":
                 if let x = body["x"] as? Double, let y = body["y"] as? Double,
@@ -974,6 +984,7 @@ struct PDFReaderView: UIViewRepresentable {
     func makeUIView(context: Context) -> PDFView {
         let view = LearningPDFView()
         view.reader = reader
+        reader.annotationView = view
         reader.requestPreannotations = { [weak coordinator = context.coordinator] in coordinator?.requestAnnotations() }
         view.isFindInteractionEnabled = true
         context.coordinator.gestures.install(on: view, centerTap: true)
