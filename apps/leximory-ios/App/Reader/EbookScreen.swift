@@ -133,7 +133,6 @@ struct EbookScreen: View {
     @State private var tray: EbookTray?
     @State private var definition: DefinitionPresentation?
     @State private var annotationRect = CGRect.zero
-    @State private var readerFrame = CGRect.zero
     @State private var positionSaver: EbookPositionSaver?
     @State private var scrubPosition: Double?
     @AppStorage("ebook.appearance") private var appearance = EbookAppearance.paper
@@ -219,14 +218,9 @@ struct EbookScreen: View {
             }
         }
         .sensoryFeedback(.error, trigger: reader.bookmarkNotice)
-        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { readerFrame = $0 }
-        .popover(item: Binding(get: { definition?.isDynamic == false ? definition : nil }, set: { definition = $0 }),
-                 attachmentAnchor: .rect(.rect(annotationRect.offsetBy(dx: -readerFrame.minX, dy: -readerFrame.minY)))) { item in
-            DefinitionView(item: item, client: client, language: language, isPopover: sizeClass == .regular)
-                .id(item.id)
-                .presentationCompactAdaptation(.sheet)
-                .presentationBackground { DefinitionGlassBackground() }
-                .presentationDragIndicator(.visible)
+        .background {
+            AnnotationPopover(item: Binding(get: { definition?.isDynamic == false ? definition : nil }, set: { definition = $0 }),
+                              anchor: annotationRect, client: client, language: language)
         }
         .sensoryFeedback(.success, trigger: reader.bookmarkConfirmation) { _, _ in scenePhase == .active }
         .task(id: reader.bookmarkNotice) {
@@ -1042,6 +1036,8 @@ struct PDFReaderView: UIViewRepresentable {
     }
     static func dismantleUIView(_ uiView: PDFView, coordinator: Coordinator) {
         coordinator.drawingOverlays?.tearDown()
+        coordinator.removeUnderlines()
+        (uiView as? LearningPDFView)?.onAnnotationLayout = nil
         uiView.pageOverlayViewProvider = nil
     }
     @MainActor final class Coordinator: NSObject {
@@ -1074,7 +1070,7 @@ struct PDFReaderView: UIViewRepresentable {
             let prepared = reader.preannotations?.annotations ?? []
             let ids = Set(prepared.map(\.id))
             annotationStrokes.removeAll { page, stroke in
-                if !ids.contains(stroke.prepared.id) { stroke.cancelEntrance(); page.removeAnnotation(stroke); return true }
+                if !ids.contains(stroke.prepared.id) { stroke.removeUnderline(); page.removeAnnotation(stroke); return true }
                 return false
             }
             let drawn = Set(annotationStrokes.map { $0.1.prepared.id })
@@ -1124,11 +1120,22 @@ struct PDFReaderView: UIViewRepresentable {
         init(reader: EbookReaderState) { self.reader = reader; gestures = EbookGestures(reader: reader) }
         func observe(_ view: PDFView) {
             self.view = view
+            (view as? LearningPDFView)?.onAnnotationLayout = { [weak self] in self?.updateUnderlines() }
             NotificationCenter.default.addObserver(self, selector: #selector(pageChanged), name: .PDFViewPageChanged, object: view)
             NotificationCenter.default.addObserver(self, selector: #selector(selectionChanged), name: .PDFViewSelectionChanged, object: view)
+            NotificationCenter.default.addObserver(self, selector: #selector(updateUnderlines), name: .PDFViewScaleChanged, object: view)
+        }
+        @objc func updateUnderlines() {
+            guard let view else { return }
+            for (page, stroke) in annotationStrokes { stroke.updateUnderline(in: view, page: page) }
+        }
+        func removeUnderlines() {
+            for (page, stroke) in annotationStrokes { stroke.removeUnderline(); page.removeAnnotation(stroke) }
+            annotationStrokes.removeAll()
         }
         @objc func pageChanged() {
             drawingOverlays?.schedulePresentationUpdate()
+            updateUnderlines()
             guard reader.ready, let document = view?.document, let page = view?.currentPage else { return }
             let index = document.index(for: page)
             reader.location = String(index + 1); reader.chapter = page.label ?? String(index + 1)

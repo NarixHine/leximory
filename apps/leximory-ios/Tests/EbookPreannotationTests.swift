@@ -67,19 +67,40 @@ import LeximoryCore
         defer { window.isHidden = true; previous?.makeKey() }
         view.autoScales = true; view.document = document; view.layoutDocumentView()
         let coordinator = PDFReaderView(data: bytes, reader: reader, command: nil).makeCoordinator()
+        coordinator.observe(view)
         coordinator.updateAnnotations(in: view)
         let stroke = try #require(page.annotations.compactMap { $0 as? EbookPDFPreannotation }.first)
         let second = (text as NSString).range(of: "bank", options: .backwards)
         let expected = try #require(page.selection(for: second))
         #expect(abs(stroke.bounds.midX - expected.bounds(for: page).midX) < 1)
-        try await Task.sleep(for: .milliseconds(100))
-        let image = UIGraphicsImageRenderer(bounds: view.bounds).image { _ in view.drawHierarchy(in: view.bounds, afterScreenUpdates: true) }
-        Attachment.record(try #require(image.pngData()), named: "pdf-preannotation-underline.png")
+        let surface = try #require(view.documentView)
+        let line = try #require(surface.layer.sublayers?.compactMap { $0 as? CAShapeLayer }.first)
+        let original = line.frame
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(line.superlayer === surface.layer)
+        #expect(!stroke.shouldDisplay)
+        #expect(!line.shouldRasterize)
+        #expect(line.contentsScale >= view.traitCollection.displayScale)
+        #expect(line.lineCap == .round)
+        let format = UIGraphicsImageRendererFormat(); format.scale = 3; format.preferredRange = .standard
+        let image = UIGraphicsImageRenderer(size: line.bounds.size, format: format).image { context in
+            line.render(in: context.cgContext)
+        }
+        let cgImage = try #require(image.cgImage), data = try #require(cgImage.dataProvider?.data)
+        let pixels = try #require(CFDataGetBytePtr(data))
+        let alphas = stride(from: 3, to: cgImage.bytesPerRow * cgImage.height, by: 4).map { pixels[$0] }
+        let darkest = try #require(alphas.max())
+        #expect(darkest > 0)
+        #expect(alphas.contains { $0 > 0 && $0 < darkest }, "Rounded edges retain subpixel coverage")
+        view.scaleFactor *= 1.5; view.layoutDocumentView(); coordinator.updateUnderlines()
+        #expect(line.frame != original)
+        #expect(line.superlayer === surface.layer)
         let point = view.convert(CGPoint(x: stroke.bounds.midX, y: stroke.bounds.midY), from: page)
         #expect(view.presentPreannotation(at: point))
         #expect(reader.annotationSelection?.prepared.annotation.definition.lemma == "bank")
         model.setEnabled(false); coordinator.updateAnnotations(in: view)
         #expect(page.annotations.isEmpty)
+        #expect(line.superlayer == nil)
         model.stop()
     }
     @Test(.timeLimit(.minutes(2)), arguments: [false, true], [false, true])

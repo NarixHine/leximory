@@ -300,45 +300,48 @@ final class EbookPDFHighlight: PDFAnnotation {
 
 final class EbookPDFPreannotation: PDFAnnotation {
     let prepared: PreparedEbookAnnotation
-    @MainActor private var entranceTask: Task<Void, Never>?
-    @MainActor private weak var entranceLayer: CALayer?
+    @MainActor private var underline: CAShapeLayer?
     init(bounds: CGRect, prepared: PreparedEbookAnnotation) {
         self.prepared = prepared
         super.init(bounds: bounds, forType: .ink, withProperties: nil)
         color = UIColor.black.withAlphaComponent(0.22)
-        let border = PDFBorder(); border.lineWidth = 1.8; self.border = border
-        let path = UIBezierPath(); path.lineCapStyle = .round
-        path.move(to: CGPoint(x: 1, y: 1.5)); path.addLine(to: CGPoint(x: max(2, bounds.width - 1), y: 1.5))
-        add(path); shouldPrint = false
+        shouldDisplay = false; shouldPrint = false
     }
     required init?(coder: NSCoder) { return nil }
 
     @MainActor func reveal(in view: PDFView, page: PDFPage) {
-        guard !UIAccessibility.isReduceMotionEnabled, view.visiblePages.contains(page), let surface = view.documentView else { return }
-        let start = surface.convert(view.convert(CGPoint(x: bounds.minX + 1, y: bounds.minY + 1.5), from: page), from: view)
-        let end = surface.convert(view.convert(CGPoint(x: bounds.maxX - 1, y: bounds.minY + 1.5), from: page), from: view)
-        let path = CGMutablePath(); path.move(to: start); path.addLine(to: end)
-        let stroke = CAShapeLayer(); stroke.path = path; stroke.strokeColor = color.cgColor
-        stroke.lineCap = .round; stroke.lineWidth = 1.8 * view.scaleFactor
-        shouldDisplay = false
-        entranceLayer = stroke
-        surface.layer.addSublayer(stroke)
+        updateUnderline(in: view, page: page)
+        guard !UIAccessibility.isReduceMotionEnabled, view.visiblePages.contains(page) else { return }
         let entrance = CABasicAnimation(keyPath: "opacity")
         entrance.fromValue = 0.35; entrance.toValue = 1; entrance.duration = 0.16
         entrance.timingFunction = CAMediaTimingFunction(controlPoints: 0.23, 1, 0.32, 1)
-        stroke.add(entrance, forKey: "entrance")
-        entranceTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(160))
-            guard !Task.isCancelled else { return }
-            shouldDisplay = true
-            stroke.removeFromSuperlayer()
-            entranceLayer = nil; entranceTask = nil
-        }
+        underline?.add(entrance, forKey: "entrance")
     }
-    @MainActor func cancelEntrance() {
-        entranceTask?.cancel(); entranceTask = nil
-        entranceLayer?.removeFromSuperlayer(); entranceLayer = nil
-        shouldDisplay = true
+    @MainActor func updateUnderline(in view: PDFView, page: PDFPage) {
+        guard let surface = view.documentView else { return }
+        func convert(_ point: CGPoint) -> CGPoint { surface.convert(view.convert(point, from: page), from: view) }
+        let start = convert(CGPoint(x: bounds.minX + 1, y: bounds.minY + 1.5))
+        let end = convert(CGPoint(x: max(bounds.minX + 2, bounds.maxX - 1), y: bounds.minY + 1.5))
+        let thickness = convert(CGPoint(x: bounds.minX + 1, y: bounds.minY + 3.3))
+        let width = hypot(thickness.x - start.x, thickness.y - start.y)
+        let frame = CGRect(x: min(start.x, end.x), y: min(start.y, end.y), width: abs(end.x - start.x), height: abs(end.y - start.y)).insetBy(dx: -width, dy: -width)
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: start.x - frame.minX, y: start.y - frame.minY))
+        path.addLine(to: CGPoint(x: end.x - frame.minX, y: end.y - frame.minY))
+        let stroke = underline ?? CAShapeLayer()
+        let origin = surface.convert(CGPoint.zero, to: view)
+        let unit = surface.convert(CGPoint(x: 1, y: 0), to: view)
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        stroke.frame = frame; stroke.path = path; stroke.strokeColor = color.cgColor
+        stroke.fillColor = nil; stroke.lineCap = .round; stroke.lineJoin = .round; stroke.lineWidth = width
+        stroke.contentsScale = view.traitCollection.displayScale * max(1, hypot(unit.x - origin.x, unit.y - origin.y))
+        stroke.shouldRasterize = false
+        if stroke.superlayer !== surface.layer { surface.layer.addSublayer(stroke) }
+        underline = stroke
+        CATransaction.commit()
+    }
+    @MainActor func removeUnderline() {
+        underline?.removeFromSuperlayer(); underline = nil
     }
 }
 
@@ -418,8 +421,10 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
     }
     var initialPageNumber: Int?
     var onInitialLayout: (() -> Void)?
+    var onAnnotationLayout: (() -> Void)?
     override func layoutSubviews() {
         super.layoutSubviews()
+        onAnnotationLayout?()
         guard bounds.width > 0, bounds.height > 0, let document, let onInitialLayout else { return }
         self.onInitialLayout = nil
         if let initialPageNumber {

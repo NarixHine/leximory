@@ -244,9 +244,7 @@ struct ReadingTextView: UIViewRepresentable {
         }
         func present(_ occurrence: ReaderLayout.Annotation, at rect: CGRect, in view: RubyTextView) {
             view.highlightAnnotation(occurrence.tag)
-            guard view.traitCollection.horizontalSizeClass == .regular,
-                  let presenter = view.window?.rootViewController else {
-                parent.onDefine(occurrence.selection, occurrence.definition, view.presentationRect(for: occurrence.range))
+            guard let presenter = view.window?.rootViewController else {
                 view.highlightAnnotation(nil)
                 return
             }
@@ -258,22 +256,13 @@ struct ReadingTextView: UIViewRepresentable {
                 .id(item.id)
                 .environment(\.nativeSync, parent.sync)
                 .environment(\.browserWorkspace, parent.workspace)
-            controller.rootView = AnyView(content.background { DefinitionGlassBackground() })
+            controller.setContent(AnyView(content), sourceView: view, sourceRect: rect)
             controller.onDismiss = { [weak self, weak controller, weak view] in
                 guard self?.popover === controller else { return }
                 self?.popover = nil
                 view?.highlightAnnotation(nil)
             }
-            controller.modalPresentationStyle = .popover
-            controller.sizingOptions = .preferredContentSize
-            controller.safeAreaRegions = []
-            controller.view.backgroundColor = .clear
-            controller.popoverPresentationController?.sourceView = view
-            controller.popoverPresentationController?.sourceRect = rect
             controller.popoverPresentationController?.passthroughViews = [view]
-            controller.popoverPresentationController?.permittedArrowDirections = [.up, .down]
-            controller.popoverPresentationController?.backgroundColor = .clear
-            controller.popoverPresentationController?.popoverBackgroundViewClass = AnnotationPopoverBackground.self
             popover = controller
             if existing == nil { presenter.present(controller, animated: false) }
         }
@@ -710,22 +699,106 @@ struct ReadingTextView: UIViewRepresentable {
     override func reset() { super.reset(); reader?.highlightAnnotation(nil) }
 }
 
-@MainActor final class AnnotationPopoverBackground: UIPopoverBackgroundView {
-    private var direction: UIPopoverArrowDirection = .unknown
-    private var offset: CGFloat = 0
-    override var arrowDirection: UIPopoverArrowDirection { get { direction } set { direction = newValue } }
-    override var arrowOffset: CGFloat { get { offset } set { offset = newValue } }
-    override class func arrowBase() -> CGFloat { 0 }
-    override class func arrowHeight() -> CGFloat { 0 }
-    override class func contentViewInsets() -> UIEdgeInsets { .zero }
-    override class var wantsDefaultContentAppearance: Bool { false }
-}
-
-@MainActor final class AnnotationPopoverController: UIHostingController<AnyView> {
+@MainActor final class AnnotationPopoverController: UIHostingController<AnyView>, UIPopoverPresentationControllerDelegate {
     var onDismiss: (() -> Void)?
+    func setContent(_ content: AnyView, sourceView: UIView, sourceRect: CGRect) {
+        modalPresentationStyle = .popover
+        sizingOptions = .preferredContentSize
+        safeAreaRegions = []
+        view.backgroundColor = .clear
+        guard let popover = popoverPresentationController, let window = sourceView.window else { return }
+        popover.sourceView = sourceView; popover.sourceRect = sourceRect
+        popover.delegate = self
+        popover.canOverlapSourceViewRect = false
+        let available = window.safeAreaLayoutGuide.layoutFrame.inset(by: popover.popoverLayoutMargins)
+        let anchor = sourceView.convert(sourceRect, to: window)
+        let clearance = max(popover.popoverLayoutMargins.top, popover.popoverLayoutMargins.left)
+        let spaces: [(UIPopoverArrowDirection, CGSize)] = [
+            (.up, CGSize(width: available.width, height: available.maxY - anchor.maxY - clearance)),
+            (.down, CGSize(width: available.width, height: anchor.minY - available.minY - clearance)),
+            (.left, CGSize(width: available.maxX - anchor.maxX - clearance, height: available.height)),
+            (.right, CGSize(width: anchor.minX - available.minX - clearance, height: available.height))
+        ]
+        rootView = content
+        var heights: [CGFloat: CGFloat] = [:]
+        let candidates = spaces.filter { $0.1.width >= 240 && $0.1.height > 0 }.map { direction, space in
+            let width = min(400, space.width)
+            let height = heights[width] ?? sizeThatFits(in: CGSize(width: width, height: .greatestFiniteMagnitude)).height
+            heights[width] = height
+            return (direction: direction, size: CGSize(width: width, height: height), space: space)
+        }
+        let fitting = candidates.filter { $0.size.height <= $0.space.height }
+        let chosen = fitting.max {
+            if $0.size.width != $1.size.width { return $0.size.width < $1.size.width }
+            return $0.space.height < $1.space.height
+        } ?? candidates.max { $0.space.height / $0.size.height < $1.space.height / $1.size.height }
+        if let chosen {
+            rootView = AnyView(content.frame(width: chosen.size.width))
+            preferredContentSize = chosen.size
+            popover.permittedArrowDirections = chosen.direction
+        }
+    }
+    func adaptivePresentationStyle(for controller: UIPresentationController, traitCollection: UITraitCollection) -> UIModalPresentationStyle { .none }
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         onDismiss?()
+    }
+}
+
+struct AnnotationPopover: UIViewControllerRepresentable {
+    @Binding var item: DefinitionPresentation?
+    let anchor: CGRect
+    let client: MobileClient?
+    let language: String
+    @Environment(\.nativeSync) private var sync
+    @Environment(\.browserWorkspace) private var workspace
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+    func makeUIViewController(context: Context) -> Presenter {
+        let host = Presenter()
+        host.onReady = { [weak coordinator = context.coordinator, weak host] in
+            if let host { coordinator?.update(host) }
+        }
+        return host
+    }
+    func updateUIViewController(_ host: Presenter, context: Context) {
+        context.coordinator.parent = self
+        context.coordinator.update(host)
+    }
+    static func dismantleUIViewController(_ host: Presenter, coordinator: Coordinator) {
+        host.onReady = nil; coordinator.popover?.dismiss(animated: false)
+    }
+    final class Presenter: UIViewController {
+        var onReady: (() -> Void)?
+        override func loadView() { view = UIView(); view.backgroundColor = .clear; view.isUserInteractionEnabled = false }
+        override func viewDidAppear(_ animated: Bool) { super.viewDidAppear(animated); onReady?() }
+    }
+    @MainActor final class Coordinator {
+        var parent: AnnotationPopover
+        weak var popover: AnnotationPopoverController?
+        private var identity: String?
+        private var rect = CGRect.null
+        private var viewport = CGSize.zero
+        init(_ parent: AnnotationPopover) { self.parent = parent }
+        func update(_ host: Presenter) {
+            guard let window = host.view.window else { return }
+            guard let item = parent.item else { popover?.dismiss(animated: false); return }
+            let anchor = host.view.convert(parent.anchor, from: nil)
+            guard identity != item.id || rect != anchor || viewport != window.bounds.size || popover == nil else { return }
+            identity = item.id; rect = anchor; viewport = window.bounds.size
+            let existing = popover
+            let controller = existing ?? AnnotationPopoverController(rootView: AnyView(EmptyView()))
+            let content = DefinitionView(item: item, client: parent.client, language: parent.language, isPopover: true,
+                closeTray: { [weak controller] in controller?.dismiss(animated: true) })
+                .id(item.id).environment(\.nativeSync, parent.sync).environment(\.browserWorkspace, parent.workspace)
+            controller.setContent(AnyView(content), sourceView: host.view, sourceRect: anchor)
+            controller.onDismiss = { [weak self, weak controller] in
+                guard let self, self.popover === controller else { return }
+                self.popover = nil
+                if self.parent.item?.id == item.id { self.parent.item = nil }
+            }
+            popover = controller
+            if existing == nil { host.present(controller, animated: false) }
+        }
     }
 }
 

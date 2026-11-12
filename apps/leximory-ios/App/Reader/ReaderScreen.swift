@@ -77,12 +77,6 @@ struct ReaderScreen: View {
             }
         }
         .animation(reduceMotion ? nil : .timingCurve(0.25, 1, 0.5, 1, duration: 0.24), value: playback.textID == article.id)
-        .sheet(item: Binding(get: { sizeClass != .regular && definition?.isDynamic == false ? definition : nil }, set: { definition = $0 })) { item in
-            DefinitionView(item: item, client: client, language: language, isPopover: false)
-                .id(item.id)
-                .presentationDragIndicator(.visible)
-                .presentationBackground { DefinitionGlassBackground() }
-        }
         .overlay(alignment: .top) {
             if let item = definition, item.isDynamic {
                 DefinitionTopTray(item: item, client: client, language: language) { definition = nil }
@@ -301,71 +295,91 @@ struct DefinitionView: View {
         guard let available = topTrayHeight else { return nil }
         return min(max(64, contentHeight), max(64, available * 0.78))
     }
+    private var definitionContents: some View {
+        VStack(alignment: .leading, spacing: item.isDynamic ? 12 : 16) {
+            if editing, let client, let editor = model.editor {
+                VocabularyEditor(model: editor, language: language, failure: model.saveError, submit: {
+                    model.submitEdit(client: client)
+                    editing = false
+                }, cancel: { editing = false })
+            } else {
+                if !waiting {
+                    HStack(alignment: .center, spacing: 10) {
+                        Text(lemma).font(LeximoryTypography.prose(sizeClass == .regular ? 22 : 20, language: language, bold: true))
+                            .foregroundStyle(LeximoryPalette.ink).textSelection(.enabled).tint(.blue)
+                            .lineLimit(item.isDynamic ? 3 : nil)
+                            .accessibilityAddTraits(.isHeader)
+                            .accessibilityIdentifier("definition-headword")
+                        Spacer(minLength: 0)
+                        if model.isGenerating, client != nil, !requiresGuestConsent {
+                            ProgressView().controlSize(.mini).tint(.secondary)
+                                .accessibilityLabel("正在生成释义")
+                                .accessibilityIdentifier("definition-generating")
+                        }
+                    }
+                }
+                if let definition = model.visibleDefinition {
+                    section("释义", content: definition.definition)
+                    if let etymology = definition.etymology, !etymology.isEmpty { section("语源", content: etymology) }
+                    if let cognates = definition.cognates, !cognates.isEmpty { section("同源词", content: cognates) }
+                }
+                if item.isDynamic { elaborationSection }
+                switch model.state {
+                case .ready:
+                    definitionActions
+                    saveFailure
+                case .generating:
+                    if requiresGuestConsent {
+                        Text("免费体验 20 次猫忆查。允许将所选词句交由第三方 AI 生成释义吗？")
+                            .interfaceFont(15).foregroundStyle(.secondary)
+                        Button("允许并查词") { guestAIConsent = true }
+                            .interfaceFont(17).buttonStyle(.borderedProminent).tint(LeximoryPalette.ink)
+                            .foregroundStyle(LeximoryPalette.paper)
+                    } else if waiting {
+                        HStack(spacing: 10) {
+                            ProgressView().tint(LeximoryPalette.muted)
+                            Text("正在理解语境").interfaceFont(15)
+                                .foregroundStyle(LeximoryPalette.muted)
+                        }.frame(maxWidth: .infinity, minHeight: waiting && topTrayHeight != nil ? 32 : 24, alignment: .center)
+                    } else if client == nil && guest == nil { Text("示例模式暂不支持生成语境释义。").foregroundStyle(LeximoryPalette.muted) }
+                case .failed(let message, _):
+                    Text(message).foregroundStyle(LeximoryPalette.muted)
+                    if guest != nil && model.quotaExhausted {
+                        Button("登录后继续查词") { account?.entry = AccountEntryContext(purpose: .service) }
+                    } else if client != nil || guest != nil { Button("重试", systemImage: "arrow.clockwise") { lookupAttempt += 1 } }
+                }
+            }
+        }.padding(item.isDynamic ? 20 : 24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                if abs(height - contentHeight) > 1 { contentHeight = height }
+            }
+            .frame(maxWidth: .infinity, alignment: .top)
+    }
     private var trayContent: some View {
+        Group {
+            if isPopover {
+                ViewThatFits(in: .vertical) {
+                    definitionContents
+                    ScrollView { definitionContents }
+                        .scrollBounceBehavior(.basedOnSize)
+                        .scrollDismissesKeyboard(.interactively)
+                }
+                .frame(idealWidth: 400, maxWidth: 400, alignment: .topLeading)
+            } else {
+                trayLayout
+            }
+        }
+        .accessibilityIdentifier("definition-tray")
+        .accessibilityAction(.escape) { if let closeTray { closeTray() } else { dismiss() } }
+    }
+    private var trayLayout: some View {
         VStack(spacing: 0) {
             GeometryReader { geometry in
                 let safeAreaBottom = geometry.safeAreaInsets.bottom
                 ScrollView {
-                    VStack(alignment: .leading, spacing: item.isDynamic ? 12 : 16) {
-                        if editing, let client, let editor = model.editor {
-                            VocabularyEditor(model: editor, language: language, failure: model.saveError, submit: {
-                                model.submitEdit(client: client)
-                                editing = false
-                            }, cancel: { editing = false })
-                        } else {
-                            if !waiting {
-                                HStack(alignment: .center, spacing: 10) {
-                                    Text(lemma).font(LeximoryTypography.prose(sizeClass == .regular ? 22 : 20, language: language, bold: true))
-                                        .foregroundStyle(LeximoryPalette.ink).textSelection(.enabled).tint(.blue)
-                                        .lineLimit(item.isDynamic ? 3 : nil)
-                                        .accessibilityAddTraits(.isHeader)
-                                        .accessibilityIdentifier("definition-headword")
-                                    Spacer(minLength: 0)
-                                    if model.isGenerating, client != nil, !requiresGuestConsent {
-                                        ProgressView().controlSize(.mini).tint(.secondary)
-                                            .accessibilityLabel("正在生成释义")
-                                            .accessibilityIdentifier("definition-generating")
-                                    }
-                                }
-                            }
-                            if let definition = model.visibleDefinition {
-                                section("释义", content: definition.definition)
-                                if let etymology = definition.etymology, !etymology.isEmpty { section("语源", content: etymology) }
-                                if let cognates = definition.cognates, !cognates.isEmpty { section("同源词", content: cognates) }
-                            }
-                            if item.isDynamic { elaborationSection }
-                            switch model.state {
-                            case .ready:
-                                definitionActions
-                                saveFailure
-                            case .generating:
-                                if requiresGuestConsent {
-                                    Text("免费体验 20 次猫忆查。允许将所选词句交由第三方 AI 生成释义吗？")
-                                        .interfaceFont(15).foregroundStyle(.secondary)
-                                    Button("允许并查词") { guestAIConsent = true }
-                                        .interfaceFont(17).buttonStyle(.borderedProminent).tint(LeximoryPalette.ink)
-                                        .foregroundStyle(LeximoryPalette.paper)
-                                } else if waiting {
-                                    HStack(spacing: 10) {
-                                        ProgressView().tint(LeximoryPalette.muted)
-                                        Text("正在理解语境").interfaceFont(15)
-                                            .foregroundStyle(LeximoryPalette.muted)
-                                    }.frame(maxWidth: .infinity, minHeight: waiting && topTrayHeight != nil ? 32 : 24, alignment: .center)
-                                } else if client == nil && guest == nil { Text("示例模式暂不支持生成语境释义。").foregroundStyle(LeximoryPalette.muted) }
-                            case .failed(let message, _):
-                                Text(message).foregroundStyle(LeximoryPalette.muted)
-                                if guest != nil && model.quotaExhausted {
-                                    Button("登录后继续查词") { account?.entry = AccountEntryContext(purpose: .service) }
-                                } else if client != nil || guest != nil { Button("重试", systemImage: "arrow.clockwise") { lookupAttempt += 1 } }
-                            }
-                        }
-                    }.padding(item.isDynamic ? 20 : 24)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                            if abs(height - contentHeight) > 1 { contentHeight = height }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .top)
+                    definitionContents
                 }
                 .scrollDisabled(trayDragging)
                 .scrollBounceBehavior(.basedOnSize)
@@ -380,14 +394,8 @@ struct DefinitionView: View {
             .clipped()
         }
         .animation(reduceMotion || model.isGenerating || model.elaboration.isStreaming ? nil : .timingCurve(0.32, 0.72, 0, 1, duration: 0.24), value: trayHeight)
-        .frame(width: isPopover ? 400 : nil)
-        .frame(idealHeight: isPopover ? max(120, min(contentHeight, 520)) : nil,
-               maxHeight: isPopover ? max(120, min(contentHeight, 520)) : nil,
-               alignment: .top)
         // A height detent adds the bottom safe area; our content already includes its edge inset.
         .presentationDetents([.height(max(160, min(contentHeight, 560) - bottomSafeArea)), .large])
-        .accessibilityIdentifier("definition-tray")
-        .accessibilityAction(.escape) { if let closeTray { closeTray() } else { dismiss() } }
     }
     private var feedbackContent: some View {
         trayContent
@@ -597,10 +605,6 @@ private struct DefinitionGlassSurface: ViewModifier {
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 36, style: .continuous))
         } else { content }
     }
-}
-
-struct DefinitionGlassBackground: View {
-    var body: some View { Color.clear.modifier(DefinitionGlassSurface()) }
 }
 
 /// The card moves independently of the reading document; its children own its height.

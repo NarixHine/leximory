@@ -124,6 +124,78 @@ import LeximoryCore
 }
 
 @MainActor struct ReaderNativeTests {
+    @Test func staticAnnotationUsesNativeAnchoredPopoverOnPhone() async throws {
+        let article = FixtureArticle.samples[0], document = try article.document()
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }, window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: ReadingTextView(document: document, textID: article.id, jumpToEnd: false, onDefine: { _, _, _ in
+            Issue.record("Static definitions should open locally through the native popover")
+        }))
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(150)); host.view.layoutIfNeeded()
+        func reader(in view: UIView) -> RubyTextView? { (view as? RubyTextView) ?? view.subviews.lazy.compactMap { reader(in: $0) }.first }
+        let view = try #require(reader(in: host.view)), occurrence = try #require(view.annotations.first)
+        let segment = try #require(view.segments(for: occurrence.range).first)
+        view.scrollRectToVisible(segment.insetBy(dx: 0, dy: -100), animated: false)
+        view.activateAnnotation(at: CGPoint(x: segment.midX, y: segment.midY))
+        try await Task.sleep(for: .milliseconds(250))
+        let controller = try #require(host.presentedViewController as? AnnotationPopoverController)
+        let popover = try #require(controller.popoverPresentationController)
+        #expect(popover.sourceView === view)
+        #expect(popover.sourceRect == segment)
+        #expect(popover.popoverBackgroundViewClass == nil)
+        #expect(controller.adaptivePresentationStyle(for: popover, traitCollection: view.traitCollection) == .none)
+        let bubble = controller.view.convert(controller.view.bounds, to: window)
+        let word = view.convert(segment, to: window)
+        #expect(!bubble.intersects(word), "bubble=\(bubble), word=\(word), intersection=\(bubble.intersection(word)), preferred=\(controller.preferredContentSize), arrow=\(popover.arrowDirection.rawValue), style=\(popover.presentationStyle.rawValue)")
+        #expect(controller.preferredContentSize.height > 120)
+        #expect(controller.preferredContentSize.width <= 400)
+        controller.dismiss(animated: false)
+    }
+
+    @Test func fittedAnnotationUsesAvailableHeightBeforeScrolling() async throws {
+        let document = try FixtureArticle.samples[0].document()
+        let selection = try ReaderLayout(document: document).selection(NSRange(location: 0, length: 4), document: document, textID: TextID(rawValue: "fit"))
+        let definition = Definition(lemma: "word", definition: String(repeating: "One compact line.\n", count: 16))
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }, window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: DefinitionView(item: DefinitionPresentation(source: .article(selection), definition: definition), client: nil, language: "English", isPopover: true)
+            .frame(width: 400, height: 720, alignment: .top))
+        window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(200)); host.view.layoutIfNeeded()
+        func scrolling(in view: UIView) -> [UIScrollView] {
+            (view as? UIScrollView).map { $0.isScrollEnabled ? [$0] : [] } ?? view.subviews.flatMap { scrolling(in: $0) }
+        }
+        #expect(scrolling(in: host.view).isEmpty)
+    }
+
+    @Test(arguments: [180.0, 650.0]) func nativeAnnotationChoosesTheSideThatFitsWithoutScrolling(anchorY: Double) async throws {
+        let document = try FixtureArticle.samples[0].document()
+        let selection = try ReaderLayout(document: document).selection(NSRange(location: 0, length: 4), document: document, textID: TextID(rawValue: "fit"))
+        let definition = Definition(lemma: "word", definition: String(repeating: "One compact line.\n", count: 12))
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }, window = UIWindow(windowScene: scene)
+        let host = UIViewController()
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844); window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        host.view.layoutIfNeeded()
+        let controller = AnnotationPopoverController(rootView: AnyView(EmptyView()))
+        controller.setContent(AnyView(DefinitionView(item: DefinitionPresentation(source: .article(selection), definition: definition), client: nil, language: "English", isPopover: true)),
+                              sourceView: host.view, sourceRect: CGRect(x: 170, y: anchorY, width: 40, height: 22))
+        host.present(controller, animated: false)
+        try await Task.sleep(for: .milliseconds(200)); controller.view.layoutIfNeeded()
+        let popover = try #require(controller.popoverPresentationController)
+        #expect(popover.arrowDirection == (anchorY < 400 ? .up : .down))
+        func scrolling(in view: UIView) -> [UIScrollView] {
+            (view as? UIScrollView).map { $0.isScrollEnabled ? [$0] : [] } ?? view.subviews.flatMap { scrolling(in: $0) }
+        }
+        #expect(scrolling(in: controller.view).isEmpty)
+        controller.dismiss(animated: false)
+    }
+
     @Test func metadataEditsRefreshTheExistingReaderHeader() async throws {
         let document = try FixtureArticle.samples[0].document()
         let original = FixtureArticle(id: TextID(rawValue: "metadata-test"), title: "Original title", subtitle: "", resource: "reader", topics: ["Before"], coverEmoji: "🌿")

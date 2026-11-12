@@ -1176,9 +1176,7 @@ final class ReaderUITests: XCTestCase {
         } else if app.buttons["关闭释义"].exists {
             app.buttons["关闭释义"].tap()
         } else {
-            let origin = app.coordinate(withNormalizedOffset: .zero)
-            origin.withOffset(CGVector(dx: tray.frame.midX, dy: tray.frame.minY + 10))
-                .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.99, dy: 0.75)).tap()
         }
         XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: tray)], timeout: 5) == .completed)
     }
