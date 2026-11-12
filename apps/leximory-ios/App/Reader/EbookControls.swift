@@ -305,7 +305,7 @@ final class EbookPDFPreannotation: PDFAnnotation {
     init(bounds: CGRect, prepared: PreparedEbookAnnotation) {
         self.prepared = prepared
         super.init(bounds: bounds, forType: .ink, withProperties: nil)
-        color = UIColor(red: 0.35, green: 0.47, blue: 0.31, alpha: 0.27)
+        color = UIColor.black.withAlphaComponent(0.22)
         let border = PDFBorder(); border.lineWidth = 1.8; self.border = border
         let path = UIBezierPath(); path.lineCapStyle = .round
         path.move(to: CGPoint(x: 1, y: 1.5)); path.addLine(to: CGPoint(x: max(2, bounds.width - 1), y: 1.5))
@@ -324,7 +324,7 @@ final class EbookPDFPreannotation: PDFAnnotation {
         entranceLayer = stroke
         surface.layer.addSublayer(stroke)
         let entrance = CABasicAnimation(keyPath: "opacity")
-        entrance.fromValue = 0; entrance.toValue = 1; entrance.duration = 0.16
+        entrance.fromValue = 0.35; entrance.toValue = 1; entrance.duration = 0.16
         entrance.timingFunction = CAMediaTimingFunction(controlPoints: 0.23, 1, 0.32, 1)
         stroke.add(entrance, forKey: "entrance")
         entranceTask = Task { @MainActor in
@@ -449,6 +449,7 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
 @MainActor final class EbookGestures: NSObject, UIGestureRecognizerDelegate {
     let reader: EbookReaderState
     private var pdfSelectionActiveAtTouchDown = false
+    private var annotationTouchStarted: CFTimeInterval = 0
     init(reader: EbookReaderState) { self.reader = reader }
     @discardableResult func install(on view: UIView, centerTap: Bool) -> UIScreenEdgePanGestureRecognizer {
         if centerTap {
@@ -497,15 +498,18 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
     }
     @objc private func annotationPressed(_ gesture: UILongPressGestureRecognizer) {
         guard let pdf = gesture.view as? LearningPDFView else { return }
-        if gesture.state == .began { pdf.pressPreannotation(at: gesture.location(in: pdf)) }
+        if gesture.state == .began { annotationTouchStarted = CACurrentMediaTime(); pdf.pressPreannotation(at: gesture.location(in: pdf)) }
+        else if gesture.state == .ended, CACurrentMediaTime() - annotationTouchStarted < 0.35 { _ = pdf.presentPreannotation(at: gesture.location(in: pdf)) }
         else if gesture.state != .changed { pdf.clearPressedPreannotation() }
     }
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         if reader.drawingEnabled { return false }
         if let pdf = gestureRecognizer.view as? LearningPDFView {
-            if gestureRecognizer is UILongPressGestureRecognizer { return pdf.preannotation(at: touch.location(in: pdf)) != nil }
-            pdfSelectionActiveAtTouchDown = pdf.currentSelection != nil || reader.selection != nil || reader.menuSelection != nil
             pdf.highlightAtTouchDown = pdf.highlight(at: touch.location(in: pdf))
+            let annotation = pdf.highlightAtTouchDown == nil && pdf.preannotation(at: touch.location(in: pdf)) != nil
+            if gestureRecognizer is UILongPressGestureRecognizer { return annotation }
+            if annotation { return false }
+            pdfSelectionActiveAtTouchDown = pdf.currentSelection != nil || reader.selection != nil || reader.menuSelection != nil
             gestureRecognizer.cancelsTouchesInView = pdf.highlightAtTouchDown != nil
         }
         return true

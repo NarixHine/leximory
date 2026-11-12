@@ -6,8 +6,9 @@ import { MockLanguageModelV4, MockProviderV4 } from 'ai/test'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@repo/supabase/types'
 import { mobileSubjectSchema } from '@repo/schema/mobile'
+import { commentSyntaxRegex, parseWord } from '@repo/utils/comment'
 import type { CatalogStore } from '../server/mobile/catalog'
-import type { DefinitionServices } from '../server/mobile/definitions'
+import { parseGeneratedDefinition, type DefinitionServices } from '../server/mobile/definitions'
 import { createEbookAnnotationStore } from '../server/mobile/ebook-annotation-store'
 import {
     createEbookAnnotationOperations,
@@ -16,7 +17,8 @@ import {
     type GeneratedEbookAnnotation,
 } from '../server/mobile/ebook-annotations'
 import { testMobileHandler } from './helpers/mobile'
-import { streamEbookAnnotations } from '../server/mobile/ebook-annotation-generation'
+import { streamEbookAnnotations, type EbookAnnotationDebugEvent } from '../server/mobile/ebook-annotation-generation'
+import { annotationPrompt } from '../server/ai/annotation-prompt'
 
 const subject = mobileSubjectSchema.parse({ userId: 'reader' })
 const definition = { lemma: 'bank', definition: 'n. 河岸', etymology: null, cognates: null }
@@ -356,6 +358,7 @@ test('the real text-stream SDK rejects an unfinished annotation instead of compl
             language: 'en',
             accent: '',
             signal: new AbortController().signal,
+            debug: () => {},
         })
     const result = await frames(await f.handler(f.request()))
     assert.equal(result.at(-1).kind, 'failed')
@@ -419,8 +422,18 @@ test(
             globalThis.AI_SDK_DEFAULT_PROVIDER = previousProvider
         })
         const f = fixture()
+        const debug: EbookAnnotationDebugEvent[] = []
         f.dependencies.generator.generate = (text, language, accent, signal) =>
-            streamEbookAnnotations({ text, language, accent, signal })
+            streamEbookAnnotations({
+                text,
+                language,
+                accent,
+                signal,
+                requestId: 'stream-test',
+                debug: (event) => {
+                    debug.push(event)
+                },
+            })
         const handler = testMobileHandler(createEbookAnnotationOperations(f.dependencies), async () => ({
             kind: 'authenticated',
             subject,
@@ -459,10 +472,52 @@ test(
             ['shore', 'reeds'],
         )
         assert.equal(rest.at(-1).kind, 'complete')
-        assert.equal(model.doStreamCalls[0]?.reasoning, 'medium')
+        assert.equal(model.doStreamCalls[0]?.reasoning, 'low')
         assert.equal(model.doStreamCalls[0]?.providerOptions?.google, undefined)
         const system = model.doStreamCalls[0]?.prompt.find((message) => message.role === 'system')
-        assert.ok(system?.content.includes('注解格式为 {{原文形式||原形||释义||'))
-        assert.ok(system?.content.includes('必须完整保留原文的内容和格式'))
+        assert.ok(system?.content.includes('{{原文形式||原形||原形释义||'))
+        assert.ok(system?.content.includes('逐字保留原文、空白与标点'))
+        assert.ok(system?.content.includes('输入：It transpires that the apparent error was deliberate.'))
+        assert.ok(system?.content.includes('输出：It {{transpires||transpire||'))
+        assert.ok(system?.content.includes('to {{bridge the gap||bridge the gap||'))
+        assert.ok(!system?.content.includes('Birding Quiz lets you practice'))
+        assert.deepEqual(
+            debug.map((event) => [event.kind, event.requestId]),
+            [
+                ['prompt', 'stream-test'],
+                ['generation', 'stream-test'],
+            ],
+        )
+        const generated = debug.find((event) => event.kind === 'generation')
+        assert.equal(generated?.status, 'complete')
+        assert.ok(generated?.output.includes('**n. 河岸** `bæŋk`'))
+        assert.equal(generated?.usage?.outputTokens, 10)
+        assert.ok(generated?.firstAnnotationMs != null)
     },
 )
+
+for (const lang of ['en', 'fr', 'ja', 'zh', 'nl'] as const) {
+    test(`compact ${lang} ebook prompt keeps field rules and contextual examples without full sample articles`, () => {
+        const full = annotationPrompt({ lang, input: 'passage', autoTrim: false })
+        const compact = annotationPrompt({ lang, input: 'passage', autoTrim: false, compact: true })
+        assert.ok(compact.instructions.includes('{{原文形式||'))
+        assert.ok(compact.instructions.includes('释义'))
+        assert.ok(!/示例(?:输入|文本)/.test(compact.instructions))
+        const count = { en: 4, fr: 2, ja: 3, zh: 2, nl: 3 }[lang]
+        assert.equal(compact.instructions.match(/^输入：/gm)?.length, count)
+        assert.equal(compact.instructions.match(/^输出：/gm)?.length, count)
+        assert.ok(!/只输出一行|不输出原句|任何注解外文字/.test(compact.instructions))
+        for (const pair of compact.instructions.matchAll(/^输入：([^\n]*)\n输出：([^\n]*)/gm)) {
+            const output = pair[2] ?? ''
+            const annotations = [...output.matchAll(commentSyntaxRegex)]
+            assert.ok(annotations.length > 0)
+            for (const annotation of annotations) parseGeneratedDefinition(annotation[0])
+            assert.equal(
+                output.replace(commentSyntaxRegex, (annotation) => parseWord(annotation)[0] ?? ''),
+                pair[1],
+            )
+        }
+        assert.ok(compact.instructions.length < full.instructions.length * 0.8)
+        assert.equal(compact.prompt, 'passage')
+    })
+}

@@ -24,6 +24,9 @@ struct EbookAnnotationSelection: Identifiable {
     private var windowRevision = UUID()
     private var quotaBlocked = false
     private var loaded = Set<String>()
+    private var windowOrigin: String?
+    private var settled = false
+    private let settleDelay: Duration
     private struct Preparation {
         let id: UUID
         let task: Task<Void, Never>
@@ -33,9 +36,11 @@ struct EbookAnnotationSelection: Identifiable {
     @ObservationIgnored private let client: MobileClient
     @ObservationIgnored private var preparations: [String: Preparation] = [:]
     @ObservationIgnored private var loading: Task<Void, Never>?
+    @ObservationIgnored private var settling: Task<Void, Never>?
 
-    init(textID: String, sourceVersion: String, client: MobileClient) {
+    init(textID: String, sourceVersion: String, client: MobileClient, settleDelay: Duration = .seconds(3)) {
         self.textID = textID; self.sourceVersion = sourceVersion; self.client = client
+        self.settleDelay = settleDelay
     }
     var annotations: [PreparedEbookAnnotation] {
         guard enabled else { return [] }
@@ -51,12 +56,15 @@ struct EbookAnnotationSelection: Identifiable {
     func setEnabled(_ enabled: Bool) {
         self.enabled = enabled; revision += 1; failed.removeAll(); quotaBlocked = false
         Task { await client.setEbookPreannotationEnabled(enabled) }
+        resetDwell()
         if enabled { units = [] } else { cancelPreparations(); loading?.cancel() }
     }
-    func setWindow(_ values: [EbookAnnotationUnit]) {
+    func setWindow(_ values: [EbookAnnotationUnit], origin: String? = nil) {
         var ids = Set<String>()
         let window = values.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && ids.insert($0.id).inserted }
         guard enabled else { units = window; return }
+        let origin = origin ?? window.first?.location
+        if origin != windowOrigin { windowOrigin = origin; resetDwell() }
         units = window; revision += 1
         for id in preparations.keys where !ids.contains(id) {
             preparations.removeValue(forKey: id)?.task.cancel()
@@ -79,11 +87,14 @@ struct EbookAnnotationSelection: Identifiable {
     func resume(online: Bool, active: Bool) {
         let recovering = (!self.online && online) || (!self.active && active)
         self.online = online; self.active = active
-        if !active || !online { cancelPreparations(); return }
+        if !active || !online { cancelPreparations(); resetDwell(); return }
         if recovering { failed.removeAll(); quotaBlocked = false }
         start()
     }
-    func stop() { active = false; cancelPreparations(); loading?.cancel() }
+    func stop() { active = false; cancelPreparations(); loading?.cancel(); resetDwell() }
+    private func resetDwell() {
+        settling?.cancel(); settling = nil; settled = false
+    }
     private func cancelPreparations() {
         let pending = preparations.values
         preparations.removeAll()
@@ -91,6 +102,15 @@ struct EbookAnnotationSelection: Identifiable {
     }
     private func start() {
         guard enabled, active, online, !quotaBlocked else { return }
+        guard settled else {
+            guard settling == nil, !units.isEmpty else { return }
+            settling = Task {
+                do { try await Task.sleep(for: settleDelay) } catch { return }
+                guard !Task.isCancelled else { return }
+                settling = nil; settled = true; start()
+            }
+            return
+        }
         for unit in units where preparations.count < 6 && loaded.contains(unit.id) &&
             pages[unit.id]?.complete != true && !failed.contains(unit.id) && preparations[unit.id] == nil {
             let runID = UUID()

@@ -34,7 +34,7 @@ struct EbookBookmarkColorRequest: Equatable {
         if !neighbor || annotationOrigin != origin { annotationUnits = []; annotationOrigin = origin }
         let existing = Set(annotationUnits.map(\.id))
         annotationUnits.append(contentsOf: units.filter { !existing.contains($0.id) })
-        preannotations?.setWindow(annotationUnits)
+        preannotations?.setWindow(annotationUnits, origin: origin)
     }
     var positionSaver: EbookPositionSaver?
     var bookmarks: [EbookBookmark] = []
@@ -225,7 +225,7 @@ struct EbookScreen: View {
             DefinitionView(item: item, client: client, language: language, isPopover: sizeClass == .regular)
                 .id(item.id)
                 .presentationCompactAdaptation(.sheet)
-                .presentationBackground(.clear)
+                .presentationBackground { DefinitionGlassBackground() }
                 .presentationDragIndicator(.visible)
         }
         .sensoryFeedback(.success, trigger: reader.bookmarkConfirmation) { _, _ in scenePhase == .active }
@@ -276,7 +276,10 @@ struct EbookScreen: View {
         .onChange(of: reader.annotationSelection?.id) { _, _ in
             guard let tap = reader.annotationSelection else { return }
             annotationRect = tap.rect
-            definition = DefinitionPresentation(source: .ebookAnnotation(textID: article.id.rawValue, unitID: tap.prepared.unitID, annotation: tap.prepared.annotation), definition: tap.prepared.annotation.definition, sourceTitle: article.title)
+            var transaction = Transaction(); transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                definition = DefinitionPresentation(source: .ebookAnnotation(textID: article.id.rawValue, unitID: tap.prepared.unitID, annotation: tap.prepared.annotation), definition: tap.prepared.annotation.definition, sourceTitle: article.title)
+            }
         }
         .onChange(of: reader.selectionAction?.id) { _, _ in handleSelectionAction() }
         .onChange(of: reader.bookmarkColorRequest) { _, request in
@@ -733,6 +736,7 @@ private struct NativeEPUBReader: UIViewRepresentable {
         #endif
         web.isOpaque = false; web.backgroundColor = LeximoryPalette.paperUI
         web.scrollView.bounces = false
+        web.scrollView.delaysContentTouches = false
         web.scrollView.contentInsetAdjustmentBehavior = .never
         guard let url = Bundle.main.url(forResource: "ebook-reader", withExtension: "html") else { return web }
         web.loadFileURL(url, allowingReadAccessTo: Bundle.main.bundleURL)

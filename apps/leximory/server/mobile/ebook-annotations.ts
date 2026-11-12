@@ -35,7 +35,13 @@ export interface EbookAnnotationStore {
 export interface EbookAnnotationGenerator {
     lock(id: string): Promise<(() => Promise<void>) | null>
     charge(userId: string, limit: number, unitId: string, cost: number): Promise<boolean>
-    generate(text: string, language: Lang, accent: string, signal: AbortSignal): AsyncIterable<GeneratedEbookAnnotation>
+    generate(
+        text: string,
+        language: Lang,
+        accent: string,
+        signal: AbortSignal,
+        unitId?: string,
+    ): AsyncIterable<GeneratedEbookAnnotation>
 }
 const hash = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex')
 
@@ -129,7 +135,13 @@ export function createEbookAnnotationOperations(dependencies: {
                             if (!(await generator.charge(unit.userId, limit, quotaReceipt, cost)))
                                 throw new MobileError('quota_exceeded')
                             let count = 0
-                            for await (const output of generator.generate(input.text, library.lang, accent, signal)) {
+                            for await (const output of generator.generate(
+                                input.text,
+                                library.lang,
+                                accent,
+                                signal,
+                                id,
+                            )) {
                                 signal.throwIfAborted()
                                 if (++count > 48) throw new MobileError('service_unavailable')
                                 const value = checkedResponse(generatedEbookAnnotationSchema, output)

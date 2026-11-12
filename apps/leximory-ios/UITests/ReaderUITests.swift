@@ -1026,6 +1026,7 @@ final class ReaderUITests: XCTestCase {
     }
     @MainActor func testMarkedWordOpensDefinition() throws {
         let app = XCUIApplication()
+        defer { app.terminate(); app.launchArguments = []; app.launch() }
         if !app.launchArguments.contains("--fixtures") { app.launchArguments.append("--fixtures") }
         app.launch()
         openArticle(app)
@@ -1042,7 +1043,9 @@ final class ReaderUITests: XCTestCase {
         guard UIDevice.current.userInterfaceIdiom == .phone else { throw XCTSkip("iPhone fixture coordinate") }
         paragraph.coordinate(withNormalizedOffset: CGVector(dx: 0.065, dy: 0.75)).tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["The land beside a river."].exists)
+        let meaning = app.textViews.matching(NSPredicate(format: "value == %@", "The land beside a river.")).firstMatch
+        XCTAssertTrue(meaning.waitForExistence(timeout: 3), app.debugDescription)
+        XCTAssertTrue(meaning.isHittable)
         capture(app, name: "Embedded definition")
         dismissDefinitionTray(app)
         XCTAssertTrue(paragraph.exists)

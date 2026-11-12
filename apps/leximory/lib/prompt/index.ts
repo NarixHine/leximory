@@ -1,5 +1,6 @@
 import 'server-only'
 import { EN_ANNOTATION_PROMPT } from '@repo/service/prompts'
+import { commentSyntaxRegex, parseWord } from '@repo/utils/comment'
 import { Lang } from '@repo/env/config'
 import { NOT_LISTED_PROMPT } from './nl.prompt'
 import { NOT_LISTED_MOBILE_WORD_PROMPT } from './nl-word.prompt'
@@ -18,6 +19,50 @@ export const instruction: {
     fr: FRENCH_PROMPT,
     ja: JAPANESE_PROMPT,
     zh: CHINESE_PROMPT,
+}
+
+const PASSAGE_REFERENCE_WORDS = {
+    en: ['transpires', 'obsessed', 'bridge the gap', 'capable'],
+    fr: ['illusoire', 'se prévaloir de'],
+    ja: ['可哀想', '逃げだし', '怒り狂う'],
+    zh: ['乘', '秋'],
+    nl: ['beschönigte', 'çekincelerinden', 'ذرائع'],
+} satisfies Record<Lang, string[]>
+
+/** Reuse the definition rules and references; the caller owns page selection and output. */
+export function passageAnnotationGuide(lang: Lang): string {
+    const guide = MOBILE_WORD_GUIDES[lang]
+    const examplesAt = guide.indexOf('## 示例')
+    const rules = guide
+        .slice(0, examplesAt)
+        .split(/\n\s*\n/u)
+        .slice(2)
+        .join('\n\n')
+        .split('\n')
+        .filter((line) => !/^- 只注解确定后的目标/u.test(line))
+        .map((line) => (/^只输出一行/u.test(line) ? (line.includes('{{') ? line.slice(line.indexOf('{{')) : '') : line))
+        .join('\n')
+        .replace(/或任何注解外文字|或其他文字/gu, '')
+        .replace(/\n{3,}/gu, '\n\n')
+        .trim()
+    const paired = Array.from(guide.slice(examplesAt).matchAll(/([^\n]*\[\[([^\]]+)\]\][^\n]*)\n(\{\{[^{}]+\}\})/gu))
+    const references = PASSAGE_REFERENCE_WORDS[lang].map((word) => {
+        const pair = paired.find((match) => match[2] === word)
+        if (pair) {
+            const context = (pair[1] ?? '').replace(/ 的输出示例[：:]$/u, '')
+            return `输入：${context.replace('[[', '').replace(']]', '')}\n输出：${context.replace(`[[${word}]]`, pair[3] ?? '')}`
+        }
+        // This canonical phrase reference is standalone; supply a short context for page output.
+        if (lang === 'en' && word === 'bridge the gap') {
+            const annotation = Array.from(guide.matchAll(commentSyntaxRegex)).find(
+                (match) => parseWord(match[0])[0] === word,
+            )?.[0]
+            if (annotation)
+                return `输入：We need better schools to bridge the gap.\n输出：We need better schools to ${annotation}.`
+        }
+        throw new Error(`Missing ${lang} annotation reference: ${word}`)
+    })
+    return `${rules}\n\n# 格式与语境示例\n${references.join('\n\n')}`
 }
 
 /** Example that teaches the model to annotate a whole chunk, not just its head. */

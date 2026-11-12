@@ -38,8 +38,8 @@ const operations = createEbookAnnotationOperations({
                 requestId: `ebook-annotation-${unitId}`,
                 durableReceipt: true,
             }),
-        async *generate(text, language, accent, signal) {
-            yield* streamEbookAnnotations({ text, language, accent, signal })
+        async *generate(text, language, accent, signal, unitId) {
+            yield* streamEbookAnnotations({ text, language, accent, signal, requestId: unitId })
         },
     },
 })

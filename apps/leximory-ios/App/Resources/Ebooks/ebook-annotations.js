@@ -2,6 +2,12 @@
 ;(() => {
     let marks = []
     let entering = new Set()
+    let lastActivation = { id: null, time: 0 }
+    function openAnnotation(mark, rect, frame) {
+        lastActivation = { id: mark.id, time: performance.now() }
+        send('annotationTapped', { id: mark.id, rect: { x: rect.left + frame.left, y: rect.top + frame.top, width: rect.width, height: rect.height } })
+        return true
+    }
     const layers = new WeakMap()
     const surface = document.createElement('div')
     surface.style.cssText = 'position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:2;'
@@ -150,14 +156,30 @@
                             event.clientY >= hit.rect.top &&
                             event.clientY <= hit.rect.bottom,
                     )
-                    if (hit) hit.stroke.style.filter = 'brightness(.55)'
+                    if (hit) {
+                        state.pressed = { hit, x: event.clientX, y: event.clientY, time: performance.now() }
+                        const feedback = document.createElement('div')
+                        const currentFrame = view.iframe.getBoundingClientRect()
+                        feedback.dataset.leximoryPress = 'true'
+                        feedback.style.cssText = `position:absolute;pointer-events:none;border-radius:4px;left:${hit.rect.left + currentFrame.left}px;top:${hit.rect.top + currentFrame.top}px;width:${hit.rect.width}px;height:${hit.rect.height}px;background:rgba(128,128,128,.14)`
+                        state.feedback = feedback
+                        state.layer.appendChild(feedback)
+                    }
                 },
                 { passive: true },
             )
             const release = () => {
-                for (const hit of state.hits) hit.stroke.style.filter = ''
+                state.feedback?.remove(); state.feedback = null; state.pressed = null
             }
-            doc.addEventListener('pointerup', release, { passive: true })
+            doc.addEventListener('pointermove', event => {
+                if (state.pressed && Math.hypot(event.clientX - state.pressed.x, event.clientY - state.pressed.y) > 8) release()
+            }, { passive: true })
+            doc.addEventListener('pointerup', event => {
+                const pressed = state.pressed
+                release()
+                if (pressed && performance.now() - pressed.time < 350 && contents.window.getSelection()?.isCollapsed !== false)
+                    openAnnotation(pressed.hit.mark, pressed.hit.rect, view.iframe.getBoundingClientRect())
+            }, { passive: true })
             doc.addEventListener('pointercancel', release, { passive: true })
         }
         surface.appendChild(state.layer)
@@ -195,7 +217,7 @@
                 const key = `${mark.id}:${index}`
                 const stroke = previous.get(key) ?? document.createElement('div')
                 stroke.setAttribute('aria-hidden', 'true')
-                stroke.style.cssText = `position:absolute;pointer-events:none;border-radius:999px;background:${isDarkTheme(currentTheme) ? 'rgba(174,198,160,.32)' : 'rgba(90,121,79,.25)'};`
+                stroke.style.cssText = `position:absolute;pointer-events:none;border-radius:999px;background:${isDarkTheme(currentTheme) ? 'rgba(255,255,255,.24)' : 'rgba(0,0,0,.22)'};`
                 const x = rect.left + frame.left,
                     y = rect.top + frame.top
                 Object.assign(
@@ -217,7 +239,7 @@
                 state.layer.appendChild(stroke)
                 state.strokes.set(key, stroke)
                 if (!previous.has(key) && entering.has(mark.id) && !matchMedia('(prefers-reduced-motion: reduce)').matches)
-                    stroke.animate([{opacity:0},{opacity:1}], {duration:160,easing:'cubic-bezier(0.23,1,0.32,1)'})
+                    stroke.animate([{opacity:0.35},{opacity:1}], {duration:160,easing:'cubic-bezier(0.23,1,0.32,1)'})
                 state.hits.push({ rect, mark, stroke })
             }
             const anchor = rectangles[0]
@@ -226,17 +248,7 @@
                 action.type = 'button'
                 action.setAttribute('aria-label', `${mark.quote}，查看释义`)
                 action.style.cssText = `appearance:none;position:absolute;left:${anchor.left + frame.left}px;top:${anchor.top + frame.top}px;width:${anchor.width}px;height:${anchor.height}px;border:0;padding:0;margin:0;background:transparent;pointer-events:none;`
-                action.addEventListener('click', () =>
-                    send('annotationTapped', {
-                        id: mark.id,
-                        rect: {
-                            x: anchor.left + frame.left,
-                            y: anchor.top + frame.top,
-                            width: anchor.width,
-                            height: anchor.height,
-                        },
-                    }),
-                )
+                action.addEventListener('click', () => openAnnotation(mark, anchor, frame))
                 state.layer.appendChild(action)
             }
         }
@@ -270,15 +282,8 @@
                     y <= hit.rect.bottom + frame.top,
             )
             if (!hit) continue
-            send('annotationTapped', {
-                id: hit.mark.id,
-                rect: {
-                    x: hit.rect.left + frame.left,
-                    y: hit.rect.top + frame.top,
-                    width: hit.rect.width,
-                    height: hit.rect.height,
-                },
-            })
+            if (lastActivation.id === hit.mark.id && performance.now() - lastActivation.time < 500) return true
+            openAnnotation(hit.mark, hit.rect, frame)
             return true
         }
         return false

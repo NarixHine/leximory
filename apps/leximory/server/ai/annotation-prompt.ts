@@ -1,6 +1,6 @@
 import 'server-only'
 import type { Lang } from '@repo/env/config'
-import { instruction } from '@/lib/prompt'
+import { instruction, passageAnnotationGuide } from '@/lib/prompt'
 
 export function annotationPrompt({
     lang,
@@ -8,13 +8,21 @@ export function annotationPrompt({
     onlyComments = false,
     autoTrim = true,
     accentPrompt = '',
+    compact = false,
 }: {
     lang: Lang
     input: string
     onlyComments?: boolean
     autoTrim?: boolean
     accentPrompt?: string
+    compact?: boolean
 }) {
+    if (compact)
+        return {
+            instructions: `为中文学习者充分注解有学习价值的词语与完整搭配；避免重复和重叠。${lang === 'zh' ? '包括古汉语实词、虚词和古今异义。' : '跳过初级词。'}${lang === 'en' ? '也包括中文读者可能不熟悉的专有名词。' : ''}\n\n${passageAnnotationGuide(lang)}\n按原文顺序添加注释，本次最多48条。逐字保留原文、空白与标点，只输出嵌入注释后的原文，不加前言、总结或代码围栏。`,
+            prompt: accentPrompt ? `${accentPrompt}\n\n${input}` : input,
+            maxOutputTokens: 12000,
+        }
     return {
         instructions: `
         生成文本注解（形如 [[vocabulary]] 双重中括号内的词以及形如<must>vocabulary</must>的词必须注解，除此以外***尽可能多***地挑选。

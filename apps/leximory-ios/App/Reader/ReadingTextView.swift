@@ -258,7 +258,7 @@ struct ReadingTextView: UIViewRepresentable {
                 .id(item.id)
                 .environment(\.nativeSync, parent.sync)
                 .environment(\.browserWorkspace, parent.workspace)
-            controller.rootView = AnyView(content)
+            controller.rootView = AnyView(content.background { DefinitionGlassBackground() })
             controller.onDismiss = { [weak self, weak controller, weak view] in
                 guard self?.popover === controller else { return }
                 self?.popover = nil
@@ -273,8 +273,9 @@ struct ReadingTextView: UIViewRepresentable {
             controller.popoverPresentationController?.passthroughViews = [view]
             controller.popoverPresentationController?.permittedArrowDirections = [.up, .down]
             controller.popoverPresentationController?.backgroundColor = .clear
+            controller.popoverPresentationController?.popoverBackgroundViewClass = AnnotationPopoverBackground.self
             popover = controller
-            if existing == nil { presenter.present(controller, animated: true) }
+            if existing == nil { presenter.present(controller, animated: false) }
         }
         func loadImages(in view: RubyTextView) {
             let revision = parent.document.revision
@@ -676,22 +677,48 @@ struct ReadingTextView: UIViewRepresentable {
 
 }
 
-@MainActor final class AnnotationTapRecognizer: UITapGestureRecognizer {
+@MainActor final class AnnotationTapRecognizer: UIGestureRecognizer {
     weak var reader: RubyTextView?
+    private var origin = CGPoint.zero
+    private var point = CGPoint.zero
+    private var started: TimeInterval = 0
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard numberOfTouches <= 1 else { state = .failed; reader?.highlightAnnotation(nil); return }
         if let reader, let touch = touches.first {
+            origin = touch.location(in: reader); started = touch.timestamp
+            point = origin
             reader.highlightAnnotation(reader.annotation(at: touch.location(in: reader))?.occurrence.tag)
         }
-        super.touchesBegan(touches, with: event)
     }
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
-        super.touchesMoved(touches, with: event)
-        if state == .failed || state == .cancelled { reader?.highlightAnnotation(nil) }
+        guard let reader, let touch = touches.first else { return }
+        let point = touch.location(in: reader)
+        if hypot(point.x - origin.x, point.y - origin.y) > 8 { state = .failed; reader.highlightAnnotation(nil) }
     }
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard state == .possible, let touch = touches.first, touch.timestamp - started < 0.35 else {
+            state = .failed; reader?.highlightAnnotation(nil); return
+        }
+        if let reader { point = touch.location(in: reader) }
+        state = .ended
+    }
+    override func location(in view: UIView?) -> CGPoint { reader?.convert(point, to: view) ?? point }
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
         reader?.highlightAnnotation(nil)
-        super.touchesCancelled(touches, with: event)
+        state = .failed
     }
+    override func reset() { super.reset(); reader?.highlightAnnotation(nil) }
+}
+
+@MainActor final class AnnotationPopoverBackground: UIPopoverBackgroundView {
+    private var direction: UIPopoverArrowDirection = .unknown
+    private var offset: CGFloat = 0
+    override var arrowDirection: UIPopoverArrowDirection { get { direction } set { direction = newValue } }
+    override var arrowOffset: CGFloat { get { offset } set { offset = newValue } }
+    override class func arrowBase() -> CGFloat { 0 }
+    override class func arrowHeight() -> CGFloat { 0 }
+    override class func contentViewInsets() -> UIEdgeInsets { .zero }
+    override class var wantsDefaultContentAppearance: Bool { false }
 }
 
 @MainActor final class AnnotationPopoverController: UIHostingController<AnyView> {

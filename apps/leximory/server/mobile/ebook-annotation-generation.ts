@@ -1,5 +1,6 @@
 import 'server-only'
-import { streamText, type LanguageModel } from 'ai'
+import { randomUUID } from 'node:crypto'
+import { streamText, type LanguageModel, type LanguageModelUsage } from 'ai'
 import type { Lang } from '@repo/schema/library'
 import { commentSyntaxRegex, parseWord } from '@repo/utils/comment'
 import { annotationPrompt } from '../ai/annotation-prompt'
@@ -8,37 +9,78 @@ import { MobileError } from './errors'
 import type { GeneratedEbookAnnotation } from './ebook-annotations'
 import { mobileNanoAI } from './ai-config'
 
+export type EbookAnnotationDebugEvent = { requestId: string } & (
+    | { kind: 'prompt'; model: string; reasoning: 'low'; instructions: string; prompt: string }
+    | {
+          kind: 'generation'
+          status: 'complete' | 'failed' | 'cancelled'
+          output: string
+          elapsedMs: number
+          firstTextMs: number | null
+          firstAnnotationMs: number | null
+          usage: LanguageModelUsage | null
+      }
+)
+
 export async function* streamEbookAnnotations(input: {
     model?: LanguageModel
     text: string
     language: Lang
     accent: string
     signal: AbortSignal
+    requestId?: string
+    debug?: (event: EbookAnnotationDebugEvent) => void
 }): AsyncGenerator<GeneratedEbookAnnotation> {
+    const requestId = input.requestId ?? randomUUID(),
+        started = performance.now()
+    const debug =
+        input.debug ??
+        ((event: EbookAnnotationDebugEvent) => console.info(JSON.stringify({ event: 'ebook.annotation', ...event })))
+    const log = (event: EbookAnnotationDebugEvent) => {
+        try {
+            debug(event)
+        } catch {}
+    }
     const config = annotationPrompt({
         lang: input.language,
         input: input.text,
         autoTrim: false,
+        compact: true,
         accentPrompt:
             input.language === 'en' ? `用户偏好：${input.accent}。请使用${input.accent}拼写、发音和语汇。` : '',
     })
     const abort = new AbortController()
-    const result = streamText({
-        ...config,
-        ...mobileNanoAI,
-        ...(input.model ? { model: input.model } : {}),
-        abortSignal: AbortSignal.any([input.signal, abort.signal]),
+    log({
+        kind: 'prompt',
+        requestId,
+        model: mobileNanoAI.model,
+        reasoning: 'low',
+        instructions: config.instructions,
+        prompt: config.prompt,
     })
     let pending = '',
         sourceOffset = 0,
         received = 0
+    let output = '',
+        firstTextMs: number | null = null,
+        firstAnnotationMs: number | null = null
+    let status: 'complete' | 'failed' | 'cancelled' = 'cancelled'
+    let usage: LanguageModelUsage | null = null
     const syntax = new RegExp(commentSyntaxRegex)
     try {
+        const result = streamText({
+            ...config,
+            ...mobileNanoAI,
+            ...(input.model ? { model: input.model } : {}),
+            abortSignal: AbortSignal.any([input.signal, abort.signal]),
+        })
         for await (const delta of result.textStream) {
             input.signal.throwIfAborted()
             received += delta.length
             if (received > 512000) throw new MobileError('service_unavailable')
             pending += delta
+            output += delta
+            firstTextMs ??= performance.now() - started
             while (true) {
                 const match = pending.matchAll(syntax).next().value
                 if (!match) break
@@ -58,6 +100,7 @@ export async function* streamEbookAnnotations(input: {
                         occurrence++
                     } while (offset < start)
                     sourceOffset = start + quote.length
+                    firstAnnotationMs ??= performance.now() - started
                     yield { quote, occurrence, definition }
                 }
                 pending = pending.slice(match.index + match[0].length)
@@ -65,7 +108,22 @@ export async function* streamEbookAnnotations(input: {
         }
         if (pending.includes('{{') || (await result.finishReason) !== 'stop')
             throw new MobileError('service_unavailable')
+        usage = await result.totalUsage
+        status = 'complete'
+    } catch (error) {
+        status = input.signal.aborted ? 'cancelled' : 'failed'
+        throw error
     } finally {
         abort.abort()
+        log({
+            kind: 'generation',
+            requestId,
+            status,
+            output,
+            elapsedMs: performance.now() - started,
+            firstTextMs,
+            firstAnnotationMs,
+            usage,
+        })
     }
 }

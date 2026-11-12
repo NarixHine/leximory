@@ -21,7 +21,7 @@ import LeximoryCore
         let store = try LocalReadingStore(root: root, origin: origin, accountID: "reader")
         let transport = AnnotationTransport()
         let client = MobileClient(baseURL: origin, transport: transport, token: { _ in "test" }, localStore: store)
-        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client)
+        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client, settleDelay: .zero)
         await model.restorePreference()
         #expect(model.enabled == true)
         await client.setEbookPreannotationEnabled(false)
@@ -37,7 +37,7 @@ import LeximoryCore
         model.stop()
         await client.setEbookPreannotationEnabled(true)
         await store.setOnline(false)
-        let reopened = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client)
+        let reopened = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client, settleDelay: .zero)
         reopened.resume(online: false, active: true)
         await reopened.restorePreference()
         reopened.setWindow(units)
@@ -56,7 +56,7 @@ import LeximoryCore
         let text = try #require(page.string)
         let transport = AnnotationTransport()
         let client = MobileClient(baseURL: URL(string: "https://annotation.example")!, transport: transport, token: { _ in "test" })
-        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client)
+        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client, settleDelay: .zero)
         let reader = EbookReaderState(); reader.preannotations = model
         model.setEnabled(true); model.setWindow(EbookAnnotationUnit.pdfPage(1, text: text))
         try await wait { model.annotations.count == 1 }
@@ -116,11 +116,18 @@ import LeximoryCore
             readerAnnotationMarks([{id:'word',location:unit.location,start,length:quote.length,quote}]);
             const stableStroke = stroke === layer.firstElementChild;
             const rect = stroke.getBoundingClientRect(), frame = rendition.manager.views.first().iframe.getBoundingClientRect();
-            const tapped = readerTapAnnotation((rect.x+(japanese ? 5 : rect.width/2))/innerWidth,
-              (rect.y+(japanese ? rect.height/2 : -3))/innerHeight);
+            const x = rect.x+(japanese ? 5 : rect.width/2), y = rect.y+(japanese ? rect.height/2 : -3);
+            const event = type => new contents.window.PointerEvent(type, {bubbles:true,clientX:x-frame.left,clientY:y-frame.top});
+            contents.document.dispatchEvent(event('pointerdown'));
+            const immediateFeedback = !!document.querySelector('[data-leximory-press]');
+            contents.document.dispatchEvent(event('pointerup'));
+            const tapped = readerTapAnnotation(x/innerWidth,y/innerHeight);
+            const color = getComputedStyle(stroke).backgroundColor.match(/[0-9.]+/g).map(Number);
             return {units:units.length,strokes:layer.children.length,ruby:body.querySelectorAll('ruby').length,
               clean:!unit.text.includes('とうきょう'),position:JSON.stringify(origin)===JSON.stringify(readerPreloadState()),
-              text:unit.text,tapped,stableStroke,characters:units.reduce((sum, unit)=>sum+unit.text.length,0)};
+              text:unit.text,tapped,stableStroke,immediateFeedback,neutral:color[0]===color[1]&&color[1]===color[2]&&color[3]>0&&color[3]<0.4,
+              visible:rect.right>0&&rect.left<innerWidth&&rect.bottom>0&&rect.top<innerHeight,
+              characters:units.reduce((sum, unit)=>sum+unit.text.length,0)};
             """, arguments: ["bytes": try Data(contentsOf: fixture).base64EncodedString(), "japanese": japanese, "longParagraph":longParagraph,
                 "theme": ["paper":"#ffffff","ink":"#192024","size":"20","leading":"1.6","weight":"400","writing":japanese ? "vertical-rl" : "horizontal-tb"]], in: nil, contentWorld: .page) as? [String: Any])
         #expect(result["units"] as? Int == 1, "One page is one request, including a page containing several paragraphs.")
@@ -128,30 +135,20 @@ import LeximoryCore
         #expect(result["clean"] as? Bool == true)
         #expect(result["position"] as? Bool == true)
         #expect(result["tapped"] as? Bool == true)
+        #expect(result["immediateFeedback"] as? Bool == true)
+        #expect(result["neutral"] as? Bool == true)
+        #expect(result["visible"] as? Bool == true)
+        try await wait { probe.annotationTaps > 0 }
+        #expect(probe.annotationTaps == 1, "Pointer release opens immediately; the native fallback must not open it twice.")
         #expect(result["stableStroke"] as? Bool == true, "Later updates must preserve existing strokes and their in-flight fades.")
         #expect(result["ruby"] as? Int == (japanese ? (longParagraph ? 1200 : 2) : 0))
         #expect((result["characters"] as? Int ?? 24000) < 1600, "Only the visible page should be submitted, including within a long paragraph.")
-        _ = try await web.callAsyncJavaScript("await painted()", arguments: [:], in: nil, contentWorld: .page)
-        let snapshot = WKSnapshotConfiguration(); snapshot.afterScreenUpdates = true
-        let image = try await web.takeSnapshot(configuration: snapshot)
-        Attachment.record(try #require(image.pngData()), named: "ebook-underlines-\(japanese ? "vertical" : "horizontal")-\(longParagraph).png")
-        let bitmap = try #require(image.cgImage)
-        var pixels = [UInt8](repeating: 0, count: bitmap.width * bitmap.height * 4)
-        pixels.withUnsafeMutableBytes { storage in
-            let context = CGContext(data: storage.baseAddress, width: bitmap.width, height: bitmap.height,
-                bitsPerComponent: 8, bytesPerRow: bitmap.width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
-            context?.draw(bitmap, in: CGRect(x: 0, y: 0, width: bitmap.width, height: bitmap.height))
-        }
-        let visibleStrokes = stride(from: 0, to: pixels.count, by: 4).filter {
-            Int(pixels[$0 + 1]) > Int(pixels[$0]) + 4 && Int(pixels[$0 + 1]) > Int(pixels[$0 + 2]) + 4 && pixels[$0] > 100
-        }.count
-        #expect(visibleStrokes > 20, "The underline must be painted in the visible page, including in fragmented columns.")
     }
 
     @Test func leavingAPageCancelsItsStreamBeforePreparingTheNewWindow() async throws {
         let transport = AnnotationTransport(holdFirst: true)
         let client = MobileClient(baseURL: URL(string: "https://annotation.example")!, transport: transport, token: { _ in "test" })
-        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client)
+        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client, settleDelay: .zero)
         model.setEnabled(true)
         model.setWindow([EbookAnnotationUnit(location: "pdf:1:0", text: "The bank.")])
         let deadline = ContinuousClock.now.advanced(by: .seconds(5))
@@ -166,7 +163,7 @@ import LeximoryCore
     @Test func neighboringPagesFinishWhileTheCurrentPageIsStillStreaming() async throws {
         let transport = AnnotationTransport(holdFirst: true)
         let client = MobileClient(baseURL: URL(string: "https://annotation.example")!, transport: transport, token: { _ in "test" })
-        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client)
+        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client, settleDelay: .zero)
         defer { model.stop() }
         let units = (1...3).map { EbookAnnotationUnit(location: "pdf:\($0):0", text: "The bank.") }
         model.setEnabled(true); model.setWindow(units)
@@ -178,6 +175,24 @@ import LeximoryCore
         #expect(await transport.count == 4)
     }
 
+    @Test func flippingPagesBeforeDwellNeverStartsPaidPreparation() async throws {
+        let transport = AnnotationTransport()
+        let client = MobileClient(baseURL: URL(string: "https://annotation.example")!, transport: transport, token: { _ in "test" })
+        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client, settleDelay: .milliseconds(180))
+        model.setWindow([EbookAnnotationUnit(location: "pdf:1:0", text: "The bank.")], origin: "page-1")
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(await transport.count == 0)
+        model.setWindow([EbookAnnotationUnit(location: "pdf:2:0", text: "Another bank.")], origin: "page-2")
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(await transport.count == 0)
+        try await wait { model.annotations.count == 1 }
+        #expect(await transport.locations == ["pdf:2:0"])
+        model.setWindow([EbookAnnotationUnit(location: "pdf:3:0", text: "A bank.")], origin: "page-3")
+        model.stop()
+        try await Task.sleep(for: .milliseconds(220))
+        #expect(await transport.count == 1)
+    }
+
     @Test func pdfDrawsEachWordBeforeTheStreamCompletes() async throws {
         let bytes = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 612, height: 792)).pdfData { context in
             context.beginPage()
@@ -185,7 +200,7 @@ import LeximoryCore
         }
         let transport = AnnotationTransport(holdFirst: true)
         let client = MobileClient(baseURL: URL(string: "https://annotation.example")!, transport: transport, token: { _ in "test" })
-        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client)
+        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client, settleDelay: .zero)
         let reader = EbookReaderState(); reader.preannotations = model
         model.setEnabled(true)
         let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -207,7 +222,7 @@ import LeximoryCore
 
     @Test func settingsStayOneSwitchAndOnByDefault() async throws {
         let client = MobileClient(baseURL: URL(string: "https://annotation.example")!, transport: AnnotationTransport(), token: { _ in "test" })
-        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client)
+        let model = EbookPreannotationModel(textID: "book", sourceVersion: "v1", client: client, settleDelay: .zero)
         let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first { $0.isKeyWindow }, window = UIWindow(windowScene: scene)
         window.frame = CGRect(x: 0, y: 0, width: 390, height: 400)
@@ -270,6 +285,7 @@ private struct StreamingPDFHost: View {
 }
 
 @MainActor private final class AnnotationWebProbe: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+    var annotationTaps = 0
     private var continuation: CheckedContinuation<Void, any Error>?
     func load(_ web: WKWebView, url: URL) async throws {
         try await withCheckedThrowingContinuation { continuation = $0; web.loadFileURL(url, allowingReadAccessTo: Bundle.main.bundleURL) }
@@ -277,5 +293,7 @@ private struct StreamingPDFHost: View {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { continuation?.resume(); continuation = nil }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) { continuation?.resume(throwing: error); continuation = nil }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { continuation?.resume(throwing: error); continuation = nil }
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {}
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        if let body = message.body as? [String: Any], body["kind"] as? String == "annotationTapped" { annotationTaps += 1 }
+    }
 }
