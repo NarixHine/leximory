@@ -272,7 +272,7 @@ struct ReadingTextView: UIViewRepresentable {
             }
             controller.popoverPresentationController?.passthroughViews = [view]
             popover = controller
-            if existing == nil { presenter.present(controller, animated: false) }
+            if existing == nil { controller.show(from: presenter) }
         }
         func loadImages(in view: RubyTextView) {
             let revision = parent.document.revision
@@ -386,6 +386,27 @@ struct ReadingTextView: UIViewRepresentable {
 }
 
 @MainActor final class RubyTextView: UITextView {
+    override init(frame: CGRect, textContainer: NSTextContainer?) {
+        super.init(frame: frame, textContainer: textContainer)
+        observeAnnotationAppearance()
+    }
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        observeAnnotationAppearance()
+    }
+    private func observeAnnotationAppearance() {
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (view: RubyTextView, _) in
+            view.updateAnnotationColors()
+        }
+    }
+    private func updateAnnotationColors() {
+        let highlight = LeximoryPalette.wordHighlightUI.resolvedColor(with: traitCollection).cgColor
+        CATransaction.begin(); CATransaction.setDisableActions(true)
+        markerLayer.fillColor = highlight
+        revealLayers.forEach { $0.fillColor = highlight }
+        pressedAnnotationLayer.fillColor = LeximoryPalette.annotationPressUI.resolvedColor(with: traitCollection).cgColor
+        CATransaction.commit()
+    }
     var learningReadOnly = false
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
@@ -515,6 +536,7 @@ struct ReadingTextView: UIViewRepresentable {
         let visible = NSRange(location: start, length: end - start)
         guard markerViewport != visible else { return }
         markerViewport = visible
+        updateAnnotationColors()
         if markerLayer.superlayer == nil { layer.insertSublayer(markerLayer, at: 0) }
         let path = UIBezierPath()
         var visibleTags = Set<String>()
@@ -534,7 +556,6 @@ struct ReadingTextView: UIViewRepresentable {
         }
         annotationSegments = annotationSegments.filter { visibleTags.contains($0.key) }
         CATransaction.begin(); CATransaction.setDisableActions(true)
-        markerLayer.fillColor = LeximoryPalette.wordHighlightUI.cgColor
         markerLayer.path = path.cgPath
         CATransaction.commit()
     }
@@ -562,7 +583,7 @@ struct ReadingTextView: UIViewRepresentable {
             marker.bounds = CGRect(origin: .zero, size: band.size)
             marker.anchorPoint = .zero; marker.position = band.origin
             marker.path = UIBezierPath(roundedRect: marker.bounds, cornerRadius: height * 0.18).cgPath
-            marker.fillColor = LeximoryPalette.wordHighlightUI.cgColor
+            marker.fillColor = markerLayer.fillColor
             layer.insertSublayer(marker, at: 0); revealLayers.append(marker)
             let animation = CABasicAnimation(keyPath: "transform.scale.x")
             animation.fromValue = 0; animation.toValue = 1; animation.duration = 0.24
@@ -603,6 +624,7 @@ struct ReadingTextView: UIViewRepresentable {
         openAnnotation?(hit.occurrence, hit.rect)
     }
     func highlightAnnotation(_ tag: String?) {
+        updateAnnotationColors()
         if pressedAnnotationLayer.superlayer == nil { layer.insertSublayer(pressedAnnotationLayer, at: 0) }
         let path = UIBezierPath()
         if let tag {
@@ -611,7 +633,6 @@ struct ReadingTextView: UIViewRepresentable {
             }
         }
         CATransaction.begin(); CATransaction.setDisableActions(true)
-        pressedAnnotationLayer.fillColor = UIColor(LeximoryPalette.sage).withAlphaComponent(0.15).cgColor
         pressedAnnotationLayer.path = path.cgPath
         CATransaction.commit()
     }
@@ -712,6 +733,18 @@ struct ReadingTextView: UIViewRepresentable {
     var afterDismiss: (() -> Void)?
     private(set) var isClosing = false
     private var dismissalFinished = false
+    private var isOpening = false
+    private var pendingDismissal: (animated: Bool, completion: (() -> Void)?)?
+    func show(from presenter: UIViewController) {
+        isOpening = true
+        presenter.present(self, animated: !UIAccessibility.isReduceMotionEnabled) { [self] in
+            isOpening = false
+            if let pending = pendingDismissal {
+                pendingDismissal = nil
+                dismiss(animated: pending.animated, completion: pending.completion)
+            }
+        }
+    }
     func setContent(_ content: AnyView, sourceView: UIView, sourceRect: CGRect) {
         modalPresentationStyle = .popover
         sizingOptions = .preferredContentSize
@@ -731,8 +764,12 @@ struct ReadingTextView: UIViewRepresentable {
             (.right, CGSize(width: anchor.minX - available.minX - clearance, height: available.height))
         ]
         rootView = content
-        var heights: [CGFloat: CGFloat] = [:]
-        let candidates = spaces.filter { $0.1.width >= 240 && $0.1.height > 0 }.map { direction, space in
+        let eligible = spaces.filter { $0.1.width >= 240 && $0.1.height > 0 }
+        let widest = min(400, available.width)
+        let naturalHeight = sizeThatFits(in: CGSize(width: widest, height: .greatestFiniteMagnitude)).height
+        let wideFits = eligible.filter { min(400, $0.1.width) == widest && naturalHeight <= $0.1.height }
+        var heights: [CGFloat: CGFloat] = [widest: naturalHeight]
+        let candidates = (wideFits.isEmpty ? eligible : wideFits).map { direction, space in
             let width = min(400, space.width)
             let height = heights[width] ?? sizeThatFits(in: CGSize(width: width, height: .greatestFiniteMagnitude)).height
             heights[width] = height
@@ -753,6 +790,10 @@ struct ReadingTextView: UIViewRepresentable {
     override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
         guard presentedViewController == nil else { super.dismiss(animated: flag, completion: completion); return }
         isClosing = true
+        if isOpening {
+            pendingDismissal = (flag, completion)
+            return
+        }
         super.dismiss(animated: flag) { [self] in
             finishDismissal()
             completion?()
@@ -834,7 +875,7 @@ struct AnnotationPopover: UIViewControllerRepresentable {
                 if self.parent.item?.requestID == item.requestID { self.parent.item = nil }
             }
             popover = controller
-            if existing == nil { host.present(controller, animated: false) }
+            if existing == nil { controller.show(from: host) }
         }
     }
 }

@@ -60,8 +60,7 @@ struct ReaderScreen: View {
                 ReadingTextView(document: document, article: currentArticle, language: language, textID: article.id, jumpToEnd: jumpToEnd,
                     bottomObstruction: browserChromeHeight + (playback.textID == article.id ? playbackHeight + 24 : 0), localStore: client?.localStore, client: client, sync: sync, readOnly: sync?.online == false, annotationReveal: annotationReveal, articleAudio: articleAudioButton(document: document),
                     onTitleVisibilityChange: { titlePastViewport = !$0 }, onDefine: { selection, embedded, _ in
-                        var transaction = Transaction(); transaction.disablesAnimations = embedded != nil
-                        withTransaction(transaction) { definition = DefinitionPresentation(source: .article(selection), definition: embedded, sourceTitle: article.title) }
+                        definition = DefinitionPresentation(source: .article(selection), definition: embedded, sourceTitle: article.title)
                     })
                 .background(LeximoryPalette.paper)
                 .ignoresSafeArea(.container, edges: [.top, .bottom])

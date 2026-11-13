@@ -12,6 +12,10 @@
     const surface = document.createElement('div')
     surface.style.cssText = 'position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:2;'
     document.body.appendChild(surface)
+    window.readerAnnotationTheme = theme => {
+        surface.style.setProperty('--annotation-underline', theme.annotationUnderline)
+        surface.style.setProperty('--annotation-press', theme.annotationPress)
+    }
     const excluded = 'rt,rp,script,style,svg,nav,[data-leximory-annotation-layer]'
     function textNodes(doc) {
         const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT)
@@ -161,7 +165,7 @@
                         const feedback = document.createElement('div')
                         const currentFrame = view.iframe.getBoundingClientRect()
                         feedback.dataset.leximoryPress = 'true'
-                        feedback.style.cssText = `position:absolute;pointer-events:none;border-radius:4px;left:${hit.rect.left + currentFrame.left}px;top:${hit.rect.top + currentFrame.top}px;width:${hit.rect.width}px;height:${hit.rect.height}px;background:rgba(128,128,128,.14)`
+                        feedback.style.cssText = `position:absolute;pointer-events:none;border-radius:4px;left:${hit.rect.left + currentFrame.left}px;top:${hit.rect.top + currentFrame.top}px;width:${hit.rect.width}px;height:${hit.rect.height}px;background:var(--annotation-press)`
                         state.feedback = feedback
                         state.layer.appendChild(feedback)
                     }
@@ -217,7 +221,7 @@
                 const key = `${mark.id}:${index}`
                 const stroke = previous.get(key) ?? document.createElement('div')
                 stroke.setAttribute('aria-hidden', 'true')
-                stroke.style.cssText = `position:absolute;pointer-events:none;border-radius:999px;background:${isDarkTheme(currentTheme) ? 'rgba(255,255,255,.24)' : 'rgba(0,0,0,.22)'};`
+                stroke.style.cssText = 'position:absolute;pointer-events:none;border-radius:999px;background:var(--annotation-underline);'
                 const x = rect.left + frame.left,
                     y = rect.top + frame.top
                 Object.assign(

@@ -103,7 +103,17 @@ import LeximoryCore
             for color in EbookHighlightColor.allCases {
                 reader.bookmarks = [EbookBookmark(id: 7, quote: quote, chapter: nil, location: "1", color: color)]
                 try await Task.sleep(for: .milliseconds(100))
-                let colored = try markerPixels(snapshot())
+                let image = try snapshot()
+                let colored = try markerPixels(image)
+                if dark {
+                    let point = pdf.convert(pdf.convert(CGPoint(x: 300, y: 300), from: page), to: host.view)
+                    let paper = try pixel(image, x: Int(point.x), y: image.height - Int(point.y) - 1)
+                    #expect(paper.prefix(3).allSatisfy { $0 < 20 }, "The rendered PDF background is black")
+                    for marker in colored {
+                        #expect((pixelLuminance(marker) + 0.05) / (pixelLuminance(paper) + 0.05) >= 3,
+                                "\(color) must remain visible over the rendered black page: \(marker)")
+                    }
+                }
                 reader.bookmarks = [EbookBookmark(id: 8, quote: quote, chapter: nil, location: "1"),
                     EbookBookmark(id: 7, quote: quote, chapter: nil, location: "1", color: color)]
                 try await Task.sleep(for: .milliseconds(100))
@@ -233,6 +243,13 @@ import LeximoryCore
         #expect(try pixel(image, x: 130, y: 40) == [255, 255, 255, 255])
     }
 
+    private func pixelLuminance(_ pixel: [UInt8]) -> Double {
+        let channels = pixel.prefix(3).map { byte in
+            let value = Double(byte) / 255
+            return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+        }
+        return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
+    }
     private func pixel(_ image: CGImage, x: Int, y: Int) throws -> [UInt8] {
         var bytes = [UInt8](repeating: 0, count: 4)
         try bytes.withUnsafeMutableBytes { storage in
@@ -320,6 +337,24 @@ import LeximoryCore
         #expect(reader.menuSelection == nil)
         #expect(view.currentPage === currentPage)
         #expect(!view.dismissSelection())
+    }
+
+    @Test(arguments: EbookAppearance.allCases)
+    func annotationUnderlinesRemainVisibleAcrossDarkPapers(theme: EbookAppearance) throws {
+        let rgb = try #require(UInt32(theme.colors(dark: true).paper.dropFirst(), radix: 16))
+        let paper = UIColor(red: CGFloat((rgb >> 16) & 255) / 255, green: CGFloat((rgb >> 8) & 255) / 255,
+                            blue: CGFloat(rgb & 255) / 255, alpha: 1)
+        let underline = LeximoryPalette.annotationUnderlineUI.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.preferredRange = .standard
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 8, height: 8), format: format).image { context in
+            context.cgContext.setFillColor(paper.cgColor)
+            context.cgContext.fill(CGRect(x: 0, y: 0, width: 8, height: 8))
+            context.cgContext.setFillColor(underline.cgColor)
+            context.cgContext.fill(CGRect(x: 0, y: 0, width: 4, height: 8))
+        }
+        let cgImage = try #require(image.cgImage)
+        let mark = try pixel(cgImage, x: 1, y: 1), background = try pixel(cgImage, x: 6, y: 1)
+        #expect((pixelLuminance(mark) + 0.05) / (pixelLuminance(background) + 0.05) >= 3)
     }
 
     @Test(arguments: EbookAppearance.allCases)

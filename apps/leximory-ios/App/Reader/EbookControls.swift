@@ -238,6 +238,7 @@ final class LearningWebView: WKWebView, @MainActor UIEditMenuInteractionDelegate
 }
 
 extension EbookHighlightColor {
+    static func opacity(dark: Bool) -> CGFloat { dark ? 0.65 : 0.45 }
     var title: String {
         switch self {
         case .sage: "鼠尾草绿"
@@ -258,9 +259,19 @@ extension EbookHighlightColor {
         case .purple: 0xBD9BEB
         }
         return UIColor(red: CGFloat((rgb >> 16) & 255) / 255, green: CGFloat((rgb >> 8) & 255) / 255,
-                       blue: CGFloat(rgb & 255) / 255, alpha: 0.45)
+                       blue: CGFloat(rgb & 255) / 255, alpha: Self.opacity(dark: false))
     }
-    func swatch(selected: Bool = false) -> UIImage? {
+    func pdfInk(dark: Bool) -> UIColor {
+        guard dark else { return ink }
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        ink.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        // Undo the page's inversion and 180-degree hue rotation before PDFKit draws the highlight.
+        let opacity = Self.opacity(dark: true)
+        let offset = 1 - 2 * opacity * (0.213 * red + 0.715 * green + 0.072 * blue)
+        return UIColor(red: red * opacity + offset, green: green * opacity + offset,
+                       blue: blue * opacity + offset, alpha: 1)
+    }
+    @MainActor func swatch(selected: Bool = false) -> UIImage? {
         let image = UIImage(systemName: selected ? "circle.inset.filled" : "circle.fill")?
             .withTintColor(ink.withAlphaComponent(1), renderingMode: .alwaysOriginal)
         image?.accessibilityLabel = title
@@ -270,7 +281,7 @@ extension EbookHighlightColor {
 
 final class EbookPDFHighlight: PDFAnnotation {
     let bookmarkID: Int
-    init(bounds: CGRect, bookmarkID: Int, color: EbookHighlightColor = .sage, excluding: [CGRect] = []) {
+    init(bounds: CGRect, bookmarkID: Int, color: EbookHighlightColor = .sage, excluding: [CGRect] = [], dark: Bool = false) {
         self.bookmarkID = bookmarkID
         super.init(bounds: bounds, forType: .highlight, withProperties: nil)
         var regions = [bounds]
@@ -287,13 +298,15 @@ final class EbookPDFHighlight: PDFAnnotation {
             }
         }
         // PDFKit's live renderer uses native quads rather than our draw override.
-        quadrilateralPoints = regions.flatMap { region in
-            [CGPoint(x: region.minX, y: region.maxY), CGPoint(x: region.maxX, y: region.maxY),
-             CGPoint(x: region.minX, y: region.minY), CGPoint(x: region.maxX, y: region.minY)]
-                .map { NSValue(cgPoint: CGPoint(x: $0.x - bounds.minX, y: $0.y - bounds.minY)) }
+        if !regions.isEmpty {
+            quadrilateralPoints = regions.flatMap { region in
+                [CGPoint(x: region.minX, y: region.maxY), CGPoint(x: region.maxX, y: region.maxY),
+                 CGPoint(x: region.minX, y: region.minY), CGPoint(x: region.maxX, y: region.minY)]
+                    .map { NSValue(cgPoint: CGPoint(x: $0.x - bounds.minX, y: $0.y - bounds.minY)) }
+            }
         }
         shouldDisplay = !regions.isEmpty
-        self.color = color.ink
+        self.color = color.pdfInk(dark: dark)
     }
     required init?(coder: NSCoder) { return nil }
 }
@@ -329,6 +342,8 @@ final class EbookPDFPreannotation: PDFAnnotation {
         path.move(to: CGPoint(x: start.x - frame.minX, y: start.y - frame.minY))
         path.addLine(to: CGPoint(x: end.x - frame.minX, y: end.y - frame.minY))
         let stroke = underline ?? CAShapeLayer()
+        // PDF's dark-mode filter inverts the page and these strokes together.
+        color = UIColor.black.withAlphaComponent(LeximoryPalette.annotationUnderlineUI.resolvedColor(with: view.traitCollection).cgColor.alpha)
         let origin = surface.convert(CGPoint.zero, to: view)
         let unit = surface.convert(CGPoint(x: 1, y: 0), to: view)
         CATransaction.begin(); CATransaction.setDisableActions(true)
@@ -355,7 +370,7 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
         clearPressedPreannotation()
         guard let stroke = preannotation(at: point), let page = stroke.page else { return }
         let feedback = UIView(frame: convert(stroke.bounds, from: page).insetBy(dx: -1, dy: -1))
-        feedback.backgroundColor = UIColor.label.withAlphaComponent(0.1)
+        feedback.backgroundColor = UIColor.black.withAlphaComponent(LeximoryPalette.annotationPressUI.resolvedColor(with: traitCollection).cgColor.alpha)
         feedback.layer.cornerRadius = 4; feedback.isUserInteractionEnabled = false
         addSubview(feedback); pressedAnnotation = feedback
     }

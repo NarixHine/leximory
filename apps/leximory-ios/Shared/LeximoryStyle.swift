@@ -16,7 +16,9 @@ enum LeximoryPalette {
     static let annotationSurface = Color(uiColor: adaptive(light: 0xFAFAFA, dark: 0x18181B))
     static let illustration = Color(uiColor: adaptive(light: 0x9CAEA1, dark: 0x878580))
 
-    static let wordHighlightUI = adaptive(light: 0xBDD981, dark: 0x878580).withAlphaComponent(0.45)
+    static let wordHighlightUI = adaptive(light: 0xBDD981, dark: 0xA1A1AA, lightAlpha: 0.45, darkAlpha: 0.65)
+    static let annotationUnderlineUI = adaptive(light: 0x000000, dark: 0xFFFFFF, lightAlpha: 0.22, darkAlpha: 0.42)
+    static let annotationPressUI = adaptive(light: 0x5A715A, dark: 0xA1A1AA, lightAlpha: 0.15, darkAlpha: 0.24)
     static let evaluationPraiseUI = adaptive(light: 0xE0EADC, dark: 0x344238)
     static let evaluationCorrectionUI = adaptive(light: 0xF0E5C5, dark: 0x4B4330)
 
@@ -31,12 +33,21 @@ enum LeximoryPalette {
         return UIFontMetrics(forTextStyle: style).scaledFont(for: LeximoryTypography.editorialUI(size))
     }
 
-    private static func adaptive(light: UInt32, dark: UInt32) -> UIColor {
+    static func ebookAnnotationTheme(dark: Bool) -> [String: String] {
+        let traits = UITraitCollection(userInterfaceStyle: dark ? .dark : .light)
+        return ["annotationUnderline": annotationUnderlineUI, "annotationPress": annotationPressUI].mapValues { color in
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+            color.resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            return "rgba(\(Int((red * 255).rounded())),\(Int((green * 255).rounded())),\(Int((blue * 255).rounded())),\(alpha))"
+        }
+    }
+
+    private static func adaptive(light: UInt32, dark: UInt32, lightAlpha: CGFloat = 1, darkAlpha: CGFloat = 1) -> UIColor {
         UIColor { traits in
             let value = traits.userInterfaceStyle == .dark ? dark : light
             return UIColor(red: CGFloat((value >> 16) & 255) / 255,
                            green: CGFloat((value >> 8) & 255) / 255,
-                           blue: CGFloat(value & 255) / 255, alpha: 1)
+                           blue: CGFloat(value & 255) / 255, alpha: traits.userInterfaceStyle == .dark ? darkAlpha : lightAlpha)
         }
     }
 }

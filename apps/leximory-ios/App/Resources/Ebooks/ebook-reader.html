@@ -152,7 +152,9 @@ function selectionContext(range) {
 }
 // The web highlights text in the iframe DOM; SVG overlays lose their anchor on reflow.
 function highlightColor(mark) {
-  return ({sage:'#BDD98173', yellow:'#FFE06673', green:'#73D99B73', blue:'#80BFFF73', pink:'#FF99BF73', purple:'#BD9BEB73'})[mark?.color || 'sage'];
+  const rgb = ({sage:'#BDD981', yellow:'#FFE066', green:'#73D99B', blue:'#80BFFF', pink:'#FF99BF', purple:'#BD9BEB'})[mark?.color || 'sage'];
+  const alpha = Math.round(Number(currentTheme.highlightOpacity ?? .45) * 255).toString(16).padStart(2, '0');
+  return rgb + alpha;
 }
 const normalizeQuote = quote => quote.replace(/\s+/g, ' ').trim();
 const bookmarkKey = entry => typeof entry === 'string' ? entry : entry.id != null ? String(entry.id) : normalizeQuote(entry.quote) + (entry.location || '');
@@ -284,6 +286,7 @@ window.readerTheme = async theme => {
     resizeAnchor ||= anchorPosition();
   }
   currentTheme=theme; document.body.style.background=theme.paper; document.body.dataset.writing=theme.writing;
+  window.readerAnnotationTheme?.(theme);
   if (theme.top) document.body.style.paddingTop=theme.top+'px';
   if (theme.bottom) document.body.style.paddingBottom=theme.bottom+'px';
   if (!rendition) return;
@@ -300,6 +303,7 @@ window.openBook = async (base64, location, fonts, theme, bookmarks) => {
   preloadConfiguration = {base64, location, fonts, theme, bookmarks};
   try {
     currentTheme=theme;document.body.style.background=theme.paper;document.body.dataset.writing=theme.writing;
+    window.readerAnnotationTheme?.(theme);
     if (theme.top) document.body.style.paddingTop=theme.top+'px';
     if (theme.bottom) document.body.style.paddingBottom=theme.bottom+'px';
     const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));

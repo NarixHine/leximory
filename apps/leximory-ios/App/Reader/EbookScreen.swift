@@ -277,10 +277,7 @@ struct EbookScreen: View {
                 return
             }
             annotationRect = tap.rect
-            var transaction = Transaction(); transaction.disablesAnimations = true
-            withTransaction(transaction) {
-                definition = DefinitionPresentation(source: .ebookAnnotation(textID: article.id.rawValue, unitID: tap.prepared.unitID, annotation: tap.prepared.annotation), definition: tap.prepared.annotation.definition, sourceTitle: article.title, requestID: tap.id)
-            }
+            definition = DefinitionPresentation(source: .ebookAnnotation(textID: article.id.rawValue, unitID: tap.prepared.unitID, annotation: tap.prepared.annotation), definition: tap.prepared.annotation.definition, sourceTitle: article.title, requestID: tap.id)
         }
         .onChange(of: reader.selectionAction?.id) { _, _ in handleSelectionAction() }
         .onChange(of: reader.bookmarkColorRequest) { _, request in
@@ -828,7 +825,8 @@ private struct NativeEPUBReader: UIViewRepresentable {
             Task { _ = try? await web.callAsyncJavaScript("window.readerAnnotationMarks(marks)", arguments: ["marks": marks], in: nil, contentWorld: .page) }
         }
         func theme(_ web: WKWebView) -> [String: String] {
-            let colors = parent.appearance.colors(dark: parent.scheme == .dark, softerInk: parent.language == "Chinese" || parent.language == "Japanese")
+            let dark = parent.scheme == .dark
+            let colors = parent.appearance.colors(dark: dark, softerInk: parent.language == "Chinese" || parent.language == "Japanese")
             if let rgb = UInt32(colors.paper.dropFirst(), radix: 16) {
                 web.backgroundColor = UIColor(red: CGFloat((rgb >> 16) & 255) / 255,
                                               green: CGFloat((rgb >> 8) & 255) / 255,
@@ -839,7 +837,15 @@ private struct NativeEPUBReader: UIViewRepresentable {
             // bottom margins clear of the controls and address bar.
             let safeTop = web.window?.safeAreaInsets.top ?? 0
             let safeBottom = (web.window?.safeAreaInsets.bottom ?? 0) + parent.bottomChromeHeight
-            return ["paper": colors.paper, "ink": colors.ink, "mode": parent.scheme == .dark ? "dark" : "light", "size": String(Double(size)), "leading": String(parent.lineHeight), "weight": "400", "writing": parent.language == "Japanese" ? "vertical-rl" : "horizontal-tb", "top": String(Double(safeTop) + 52), "bottom": String(Double(safeBottom) + 12)]
+            var theme = LeximoryPalette.ebookAnnotationTheme(dark: dark)
+            theme.merge([
+                "paper": colors.paper, "ink": colors.ink, "mode": dark ? "dark" : "light",
+                "size": String(Double(size)), "leading": String(parent.lineHeight), "weight": "400",
+                "writing": parent.language == "Japanese" ? "vertical-rl" : "horizontal-tb",
+                "top": String(Double(safeTop) + 52), "bottom": String(Double(safeBottom) + 12),
+                "highlightOpacity": String(Double(EbookHighlightColor.opacity(dark: dark)))
+            ]) { _, value in value }
+            return theme
         }
         func webView(_ web: WKWebView, didFinish navigation: WKNavigation!) {
             let cjk = parent.language == "Chinese" || parent.language == "Japanese"
@@ -1100,12 +1106,12 @@ struct PDFReaderView: UIViewRepresentable {
                 }
             }
         }
-        func updateBookmarks(in view: PDFView) {
+        func updateBookmarks(in view: PDFView, force: Bool = false) {
             let menuChanged = reader.bookmarks != appliedBookmarks
             if menuChanged {
                 (view as? LearningPDFView)?.refreshHighlightMenu()
             }
-            guard reader.bookmarks != appliedBookmarks, let document = view.document else { return }
+            guard force || reader.bookmarks != appliedBookmarks, let document = view.document else { return }
             appliedBookmarks = reader.bookmarks
             for (page, annotation) in bookmarkAnnotations { page.removeAnnotation(annotation) }
             bookmarkAnnotations.removeAll()
@@ -1118,7 +1124,8 @@ struct PDFReaderView: UIViewRepresentable {
                         let covering = bookmarkAnnotations.compactMap { entry in
                             entry.0 === page ? entry.1.bounds : nil
                         }
-                        let annotation = EbookPDFHighlight(bounds: line.bounds(for: page), bookmarkID: bookmark.id, color: bookmark.color, excluding: covering)
+                        let annotation = EbookPDFHighlight(bounds: line.bounds(for: page), bookmarkID: bookmark.id, color: bookmark.color, excluding: covering,
+                                                          dark: view.traitCollection.userInterfaceStyle == .dark)
                         bookmarkAnnotations.append((page, annotation))
                     }
                 }
@@ -1131,6 +1138,10 @@ struct PDFReaderView: UIViewRepresentable {
         init(reader: EbookReaderState) { self.reader = reader; gestures = EbookGestures(reader: reader) }
         func observe(_ view: PDFView) {
             self.view = view
+            view.registerForTraitChanges([UITraitUserInterfaceStyle.self]) { [weak self] (view: PDFView, _) in
+                self?.updateBookmarks(in: view, force: true)
+                self?.updateUnderlines()
+            }
             (view as? LearningPDFView)?.onAnnotationLayout = { [weak self] in self?.updateUnderlines() }
             NotificationCenter.default.addObserver(self, selector: #selector(pageChanged), name: .PDFViewPageChanged, object: view)
             NotificationCenter.default.addObserver(self, selector: #selector(selectionChanged), name: .PDFViewSelectionChanged, object: view)

@@ -82,6 +82,12 @@ import LeximoryCore
         #expect(!line.shouldRasterize)
         #expect(line.contentsScale >= view.traitCollection.displayScale)
         #expect(line.lineCap == .round)
+        window.overrideUserInterfaceStyle = .dark
+        try await wait { (line.strokeColor?.alpha ?? 0) > 0.4 }
+        #expect(abs((line.strokeColor?.alpha ?? 0) - 0.42) < 0.001)
+        #expect(line.superlayer === surface.layer)
+        window.overrideUserInterfaceStyle = .light
+        try await wait { abs((line.strokeColor?.alpha ?? 0) - 0.22) < 0.001 }
         let format = UIGraphicsImageRendererFormat(); format.scale = 3; format.preferredRange = .standard
         let image = UIGraphicsImageRenderer(size: line.bounds.size, format: format).image { context in
             line.render(in: context.cgContext)
@@ -144,13 +150,23 @@ import LeximoryCore
             contents.document.dispatchEvent(event('pointerup'));
             const tapped = readerTapAnnotation(x/innerWidth,y/innerHeight);
             const color = getComputedStyle(stroke).backgroundColor.match(/[0-9.]+/g).map(Number);
+            await readerTheme({...theme,...darkColors,mode:'dark',paper:'#100f0f',ink:'#cecdc3'});
+            const darkColor = getComputedStyle(stroke).backgroundColor.match(/[0-9.]+/g).map(Number);
+            contents.document.dispatchEvent(event('pointerdown'));
+            const darkPress = getComputedStyle(document.querySelector('[data-leximory-press]')).backgroundColor.match(/[0-9.]+/g).map(Number);
+            contents.document.dispatchEvent(event('pointercancel'));
+            await readerTheme(theme);
             return {units:units.length,strokes:layer.children.length,ruby:body.querySelectorAll('ruby').length,
               clean:!unit.text.includes('とうきょう'),position:JSON.stringify(origin)===JSON.stringify(readerPreloadState()),
               text:unit.text,tapped,stableStroke,immediateFeedback,neutral:color[0]===color[1]&&color[1]===color[2]&&color[3]>0&&color[3]<0.4,
+              darkColor,darkPress,appearancePreservesStroke:stroke===layer.firstElementChild,
+              restoredColor:getComputedStyle(stroke).backgroundColor.match(/[0-9.]+/g).map(Number),
               visible:rect.right>0&&rect.left<innerWidth&&rect.bottom>0&&rect.top<innerHeight,
               characters:units.reduce((sum, unit)=>sum+unit.text.length,0)};
             """, arguments: ["bytes": try Data(contentsOf: fixture).base64EncodedString(), "japanese": japanese, "longParagraph":longParagraph,
-                "theme": ["paper":"#ffffff","ink":"#192024","size":"20","leading":"1.6","weight":"400","writing":japanese ? "vertical-rl" : "horizontal-tb"]], in: nil, contentWorld: .page) as? [String: Any])
+                "darkColors": LeximoryPalette.ebookAnnotationTheme(dark: true),
+                "theme": ["paper":"#ffffff","ink":"#192024","size":"20","leading":"1.6","weight":"400","writing":japanese ? "vertical-rl" : "horizontal-tb"]
+                    .merging(LeximoryPalette.ebookAnnotationTheme(dark: false)) { _, value in value }], in: nil, contentWorld: .page) as? [String: Any])
         #expect(result["units"] as? Int == 1, "One page is one request, including a page containing several paragraphs.")
         #expect((result["strokes"] as? Int ?? 0) > 0)
         #expect(result["clean"] as? Bool == true)
@@ -158,6 +174,10 @@ import LeximoryCore
         #expect(result["tapped"] as? Bool == true)
         #expect(result["immediateFeedback"] as? Bool == true)
         #expect(result["neutral"] as? Bool == true)
+        #expect(result["darkColor"] as? [Double] == [255, 255, 255, 0.42])
+        #expect(result["darkPress"] as? [Double] == [161, 161, 170, 0.24])
+        #expect(result["restoredColor"] as? [Double] == [0, 0, 0, 0.22])
+        #expect(result["appearancePreservesStroke"] as? Bool == true)
         #expect(result["visible"] as? Bool == true)
         try await wait { probe.annotationTaps > 0 }
         #expect(probe.annotationTaps == 1, "Pointer release opens immediately; the native fallback must not open it twice.")

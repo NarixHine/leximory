@@ -15,6 +15,31 @@ import LeximoryCore
         while !predicate(), ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }
         #expect(predicate())
     }
+    @Test func nativeEntranceStartsImmediatelyAndAcceptsDismissalWhileOpening() async throws {
+        let article = FixtureArticle.samples[0], document = try article.document()
+        let selection = try ReaderLayout(document: document).selection(NSRange(location: 0, length: 4), document: document, textID: article.id)
+        let meaning = Definition(lemma: "word", definition: "The saved meaning")
+        let state = AnnotationPopoverProbe(item: DefinitionPresentation(source: .article(selection), definition: meaning))
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }, window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: AnnotationPopoverProbeView(state: state))
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844); window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        try await wait { host.presentedViewController?.view.window === window }
+        let opening = try #require(host.presentedViewController as? AnnotationPopoverController)
+        if !UIAccessibility.isReduceMotionEnabled {
+            #expect(opening.isBeingPresented)
+            #expect(opening.transitionCoordinator?.isAnimated == true)
+        }
+        var dismissed = false
+        opening.dismiss(animated: true) { dismissed = true }
+        state.item = DefinitionPresentation(source: .article(selection), definition: meaning)
+        try await wait { dismissed }
+        try await wait { host.presentedViewController !== opening && host.presentedViewController?.view.window === window }
+        #expect(state.item != nil)
+        host.presentedViewController?.dismiss(animated: false)
+    }
     @Test(arguments: [false, true]) func articleTapDuringDismissalOpensTheLatestWord(sameWord: Bool) async throws {
         let article = FixtureArticle.samples[0], document = try article.document()
         let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -31,6 +56,7 @@ import LeximoryCore
         let target = try #require(view.segments(for: next.range).first)
         view.activateAnnotation(at: CGPoint(x: initial.midX, y: initial.midY))
         try await Task.sleep(for: .milliseconds(100))
+        try await wait { host.presentedViewController?.isBeingPresented == false }
         let closing = try #require(host.presentedViewController as? AnnotationPopoverController)
         var dismissed = false
         closing.dismiss(animated: true) { dismissed = true }
@@ -59,6 +85,7 @@ import LeximoryCore
         window.frame = CGRect(x: 0, y: 0, width: 390, height: 844); window.rootViewController = host; window.makeKeyAndVisible()
         defer { window.isHidden = true; previous?.makeKey() }
         try await Task.sleep(for: .milliseconds(200))
+        try await wait { host.presentedViewController?.isBeingPresented == false }
         let closing = try #require(host.presentedViewController as? AnnotationPopoverController)
         var dismissed = false
         closing.dismiss(animated: true) { dismissed = true }
@@ -212,6 +239,40 @@ private struct AnnotationPopoverProbeView: View {
 }
 
 @MainActor struct ReaderNativeTests {
+    @Test func articleMarksRefreshForDarkAppearanceWithoutScrolling() async throws {
+        let article = FixtureArticle.samples[0], document = try article.document()
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }, window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: ReadingTextView(document: document, textID: article.id, jumpToEnd: false, onDefine: { _, _, _ in }))
+        window.overrideUserInterfaceStyle = .light
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844); window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        try await Task.sleep(for: .milliseconds(150)); host.view.layoutIfNeeded()
+        func reader(in view: UIView) -> RubyTextView? { (view as? RubyTextView) ?? view.subviews.lazy.compactMap { reader(in: $0) }.first }
+        let view = try #require(reader(in: host.view))
+        let marker = try #require(view.layer.sublayers?.compactMap { $0 as? CAShapeLayer }.first { $0.path != nil })
+        let light = try #require(marker.fillColor), path = marker.path?.boundingBox, offset = view.contentOffset
+        window.overrideUserInterfaceStyle = .dark
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while marker.fillColor == light, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }
+        let dark = UIColor(cgColor: try #require(marker.fillColor))
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        #expect(dark.getRed(&red, green: &green, blue: &blue, alpha: &alpha))
+        #expect(abs(red - 161.0 / 255) < 0.001)
+        #expect(abs(green - 161.0 / 255) < 0.001)
+        #expect(abs(blue - 170.0 / 255) < 0.001)
+        #expect(abs(alpha - 0.65) < 0.001)
+        #expect(marker.path?.boundingBox == path)
+        #expect(view.contentOffset == offset)
+        let word = try #require(view.annotations.first)
+        view.highlightAnnotation(word.tag)
+        let press = view.layer.sublayers?.compactMap { $0 as? CAShapeLayer }.first { $0 !== marker && $0.path != nil }
+        #expect(abs((press?.fillColor?.alpha ?? 0) - 0.24) < 0.001)
+        window.overrideUserInterfaceStyle = .light
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(marker.fillColor == light)
+    }
+
     @Test func staticAnnotationUsesNativeAnchoredPopoverOnPhone() async throws {
         let article = FixtureArticle.samples[0], document = try article.document()
         let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
@@ -228,6 +289,8 @@ private struct AnnotationPopoverProbeView: View {
         let segment = try #require(view.segments(for: occurrence.range).first)
         view.scrollRectToVisible(segment.insetBy(dx: 0, dy: -100), animated: false)
         view.activateAnnotation(at: CGPoint(x: segment.midX, y: segment.midY))
+        let opening = try #require(host.presentedViewController as? AnnotationPopoverController)
+        if !UIAccessibility.isReduceMotionEnabled { #expect(opening.transitionCoordinator?.isAnimated == true) }
         try await Task.sleep(for: .milliseconds(250))
         let controller = try #require(host.presentedViewController as? AnnotationPopoverController)
         let popover = try #require(controller.popoverPresentationController)
