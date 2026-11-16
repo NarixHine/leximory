@@ -7,12 +7,13 @@ import HTTPTypes
 
 struct BrowserWorkspacePreview: View {
     let playback: PlaybackController
+    var incomingEbooks: IncomingEbookInbox? = nil
     @State private var client: MobileClient?
     @State private var workspace: BrowserWorkspaceModel?
     @State private var pendingText: TextID?
     var body: some View {
         Group {
-            if let client, let workspace { BrowserWorkspaceView(client: client, namespace: "workspace-fixture", playback: playback, pendingText: $pendingText, initialWorkspace: workspace) }
+            if let client, let workspace { BrowserWorkspaceView(client: client, namespace: "workspace-fixture", playback: playback, pendingText: $pendingText, incomingEbooks: incomingEbooks, initialWorkspace: workspace) }
             else { ProgressView() }
         }.onChange(of: workspace?.ebookReader?.ready) { _, ready in
             guard ready == true, ProcessInfo.processInfo.environment["LEXIMORY_FIXTURE_PDF_ACTIVE_CANVAS"] == "1" else { return }

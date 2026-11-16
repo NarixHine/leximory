@@ -1,5 +1,9 @@
 # Leximory on Apple platforms
 
+## Import from the iOS share sheet
+
+Share a PDF or EPUB from Files or another app, then tap Leximory in the app row (under More if needed). Leximory opens the existing book review with an editable title and folder. Signed-out readers open the file locally, as with the in-app picker. The 4.5 MB limit applies. Incoming files wait through account restoration and an open import draft, preserving the original filename and contents.
+
 ## Save a word with Shortcuts
 
 In Apple's Shortcuts app, open Leximory and choose 保存词汇. Run it to enter a word. Jev identifies its supported language, Leximory generates the definition, and the word is saved to that language's personal vocabulary warehouse. The action reports progress to Shortcuts; iOS controls whether a running indicator appears. The result displays the annotation with Markdown formatting, including available etymology and cognates. The snippet uses system fonts for all languages and leaves its background to iOS. The annotation comes back in the save response without a second API request. The action also returns Markdown text for subsequent shortcut actions. You can pass text into 词语 from another action.

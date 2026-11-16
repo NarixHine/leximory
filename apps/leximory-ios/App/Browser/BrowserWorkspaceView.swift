@@ -10,6 +10,7 @@ struct BrowserWorkspaceView: View {
     var guest: GuestSession?
     @Binding var pendingText: TextID?
     @Binding var pendingHome: Bool
+    let incomingEbooks: IncomingEbookInbox?
     @State private var workspace: BrowserWorkspaceModel
     @State private var wallpapers: HomeWallpaperStore
     @State private var editingWallpaper = false
@@ -20,6 +21,7 @@ struct BrowserWorkspaceView: View {
     @State private var editingAddress = false
     @State private var addressEditor = BrowserAddressEditor()
     @State private var choosingFile = false
+    @State private var readingFile = false
     @State private var importRequest: BrowserImportRequest?
     @State private var importedText: (CatalogText, Bool)?
     @State private var extracting = false
@@ -45,12 +47,20 @@ struct BrowserWorkspaceView: View {
     @Environment(\.displayScale) private var displayScale
     @Namespace private var chromeNamespace
 
-    init(client: MobileClient, namespace: String, playback: PlaybackController, session: AccountSession? = nil, guest: GuestSession? = nil, pendingText: Binding<TextID?>, pendingHome: Binding<Bool> = .constant(false), initialWorkspace: BrowserWorkspaceModel? = nil) {
+    init(client: MobileClient, namespace: String, playback: PlaybackController, session: AccountSession? = nil, guest: GuestSession? = nil, pendingText: Binding<TextID?>, pendingHome: Binding<Bool> = .constant(false), incomingEbooks: IncomingEbookInbox? = nil, initialWorkspace: BrowserWorkspaceModel? = nil) {
         self.client = client; self.playback = playback; self.session = session; self.guest = guest; _pendingText = pendingText; _pendingHome = pendingHome
+        self.incomingEbooks = incomingEbooks
         _workspace = State(initialValue: initialWorkspace ?? BrowserWorkspaceModel(client: client, namespace: namespace, localOnly: guest != nil))
         _wallpapers = State(initialValue: HomeWallpaperStore(namespace: namespace))
     }
     private var webBookmarkID: String? { if case .web(let page) = workspace.current.resource { page.bookmarkID } else { nil } }
+    private var incomingFileID: UUID? {
+        guard importRequest == nil, !choosingFile, !readingFile, editingText == nil, editingPin == nil,
+              !activitySheet, !ebookAnnotationSheet, !adBlockingSettings, !editingWallpaper,
+              !confirmingClear, !clearingData, externalURL == nil, workspace.error == nil,
+              session?.entry == nil, session?.deletion.presented != true else { return nil }
+        return incomingEbooks?.nextID
+    }
     private var motion: Animation? { reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.86) }
     private func handleKeyboardHidden() {
         if editingAddress, addressEditor.field?.isFirstResponder != true { finishEditing() }
@@ -165,14 +175,12 @@ struct BrowserWorkspaceView: View {
         }
         .task { await wallpapers.load() }
         .fileImporter(isPresented: $choosingFile, allowedContentTypes: [.epub, .pdf]) { result in
+            readingFile = true
             Task {
+                defer { readingFile = false }
                 do {
                     let file = try await BrowserEbookFile.read(result.get())
-                    if let guest {
-                        let input = try guest.openFile(file)
-                        workspace.recordDocument(input.document)
-                        workspace.visit(.document(input.document))
-                    } else { importRequest = BrowserImportRequest(source: .ebook(file)) }
+                    try openFile(file)
                 }
                 catch {
                     if (error as NSError).code == NSUserCancelledError { return }
@@ -227,6 +235,11 @@ struct BrowserWorkspaceView: View {
     }
     private var workspaceRequests: some View {
         workspaceCaching
+        .task(id: incomingFileID) {
+            guard incomingFileID != nil, let result = incomingEbooks?.takeNext() else { return }
+            do { try openFile(result.get()) }
+            catch { workspace.error = .openFile(oversized: (error as? URLError)?.code == .dataLengthExceedsMaximum) }
+        }
         .task(id: sync?.revision) { await workspace.refresh(online: sync == nil) }
         .task(id: editingAddress ? workspace.addressSearchFolders.map(\.id) + [sync?.online == false ? "offline" : "online"] : []) {
             guard editingAddress else { return }
@@ -255,6 +268,14 @@ struct BrowserWorkspaceView: View {
             workspace.visit(.home)
             pendingHome = false
         }
+    }
+    private func openFile(_ file: BrowserEbookFile) throws {
+        finishEditing()
+        if let guest {
+            let input = try guest.openFile(file)
+            workspace.recordDocument(input.document)
+            workspace.visit(.document(input.document))
+        } else { importRequest = BrowserImportRequest(source: .ebook(file)) }
     }
     private var workspaceFind: some View {
         workspaceRequests

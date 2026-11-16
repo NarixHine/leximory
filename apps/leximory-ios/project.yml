@@ -42,6 +42,16 @@ targets:
             path: Info.plist
             properties:
                 CFBundleDisplayName: Leximory
+                CFBundleDocumentTypes:
+                    - CFBundleTypeName: PDF document
+                      CFBundleTypeRole: Viewer
+                      LSHandlerRank: Alternate
+                      LSItemContentTypes: [com.adobe.pdf]
+                    - CFBundleTypeName: EPUB book
+                      CFBundleTypeRole: Viewer
+                      LSHandlerRank: Alternate
+                      LSItemContentTypes: [org.idpf.epub-container]
+                LSSupportsOpeningDocumentsInPlace: true
                 CFBundleURLTypes:
                     - CFBundleURLName: com.leximory.reader
                       CFBundleURLSchemes: [leximory]

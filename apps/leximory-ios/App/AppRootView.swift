@@ -10,6 +10,9 @@ struct AppRootView: View {
     @State private var session: AccountSession?
     @State private var livePlayback: PlaybackController?
     @State private var fixtureTab = 0
+    @State private var incomingEbooks = IncomingEbookInbox()
+    @State private var pendingText: TextID?
+    @State private var pendingHome = false
     private var fixtureClient: MobileClient? = nil
     init(fixturePlayback: PlaybackController) {
         self.fixturePlayback = fixturePlayback
@@ -62,15 +65,15 @@ struct AppRootView: View {
                 if ProcessInfo.processInfo.arguments.contains("--onboarding") {
                     WelcomeGate(session: session)
                 } else {
-                    AccountRoot(session: session, playback: livePlayback)
+                    AccountRoot(session: session, playback: livePlayback, incomingEbooks: incomingEbooks, pendingText: $pendingText, pendingHome: $pendingHome)
                 }
                 #else
-                AccountRoot(session: session, playback: livePlayback)
+                AccountRoot(session: session, playback: livePlayback, incomingEbooks: incomingEbooks, pendingText: $pendingText, pendingHome: $pendingHome)
                 #endif
             } else {
                 #if DEBUG && targetEnvironment(simulator)
                 if ProcessInfo.processInfo.arguments.contains("--browser-workspace-fixtures") {
-                    BrowserWorkspacePreview(playback: fixturePlayback)
+                    BrowserWorkspacePreview(playback: fixturePlayback, incomingEbooks: incomingEbooks)
                 } else if ProcessInfo.processInfo.arguments.contains("--account-fixtures") {
                     AccountPreview(playback: fixturePlayback)
                 } else if ProcessInfo.processInfo.arguments.contains("--authoring-fixtures") {
@@ -93,6 +96,17 @@ struct AppRootView: View {
                 LeximoryUnavailableView("暂时无法连接", systemImage: "wifi.exclamationmark", message: "请稍后重试。")
                 #endif
             }
+        }
+        .onOpenURL { url in
+            if url.isFileURL { incomingEbooks.receive(url); return }
+            guard let session else { return }
+            if url.scheme == "leximory", url.host == "auth", url.path == "/callback" {
+                Task {
+                    do { try await session.handleAuthCallback(url) }
+                    catch { session.callbackFailure = "链接可能已失效，请重新发送确认邮件或重设密码邮件。" }
+                }
+            } else if SavedWordsWidgetLink.opensHome(url) { pendingHome = true }
+            else { pendingText = TextLink.textID(from: url, webURL: session.client.webURL) }
         }
     }
     #if DEBUG && targetEnvironment(simulator)
@@ -132,8 +146,9 @@ private struct AccountPresentationSizing: PresentationSizing {
 private struct AccountRoot: View {
     let session: AccountSession
     let playback: PlaybackController
-    @State private var pendingText: TextID?
-    @State private var pendingHome = false
+    let incomingEbooks: IncomingEbookInbox
+    @Binding var pendingText: TextID?
+    @Binding var pendingHome: Bool
     @Environment(\.scenePhase) private var scenePhase
     private var sheet: Binding<AccountRootSheet?> {
         Binding(get: {
@@ -149,10 +164,10 @@ private struct AccountRoot: View {
             case .restoring: ReadingLoadingIndicator("正在打开文库").frame(maxWidth: .infinity, maxHeight: .infinity)
             case .signedOut, .expired:
                 BrowserWorkspaceView(client: session.client, namespace: "local-guest", playback: playback,
-                    session: session, guest: session.guest, pendingText: $pendingText, pendingHome: $pendingHome)
+                    session: session, guest: session.guest, pendingText: $pendingText, pendingHome: $pendingHome, incomingEbooks: incomingEbooks)
                     .environment(\.guestSession, session.guest)
                     .id("local-guest/\(session.generation)")
-            case .signedIn: BrowserWorkspaceView(client: session.client, namespace: session.state.accountID ?? "", playback: playback, session: session, pendingText: $pendingText, pendingHome: $pendingHome).id(session.generation)
+            case .signedIn: BrowserWorkspaceView(client: session.client, namespace: session.state.accountID ?? "", playback: playback, session: session, pendingText: $pendingText, pendingHome: $pendingHome, incomingEbooks: incomingEbooks).id(session.generation)
             case .unavailable(let message):
                 LeximoryUnavailableView("暂时无法连接", systemImage: "wifi.exclamationmark", message: message) {
                     Button("重试") { Task { await session.restore() } }
@@ -201,15 +216,6 @@ private struct AccountRoot: View {
             await SavedWordsWidgetSync.refresh(client: session.client)
         }
         .onChange(of: session.generation) { _, _ in playback.stop(); pendingText = nil }
-        .onOpenURL { url in
-            if url.scheme == "leximory", url.host == "auth", url.path == "/callback" {
-                Task {
-                    do { try await session.handleAuthCallback(url) }
-                    catch { session.callbackFailure = "链接可能已失效，请重新发送确认邮件或重设密码邮件。" }
-                }
-            } else if SavedWordsWidgetLink.opensHome(url) { pendingHome = true }
-            else { pendingText = TextLink.textID(from: url, webURL: session.client.webURL) }
-        }
     }
     private var signInNotice: String? {
         if case .expired = session.state { return "登录已过期，请重新登录。" }
