@@ -26,6 +26,10 @@ struct EbookBookmarkColorRequest: Equatable {
     var pdfOutline: PDFOutlineModel?
     var preannotations: EbookPreannotationModel?
     var annotationSelection: EbookAnnotationSelection?
+    func toggleAnnotation(_ prepared: PreparedEbookAnnotation, rect: CGRect) {
+        if annotationSelection?.prepared.id == prepared.id { annotationSelection = nil }
+        else { annotationSelection = EbookAnnotationSelection(prepared: prepared, rect: rect) }
+    }
     @ObservationIgnored weak var annotationView: UIView?
     @ObservationIgnored var requestPreannotations: (() -> Void)?
     private var annotationUnits: [EbookAnnotationUnit] = []
@@ -459,9 +463,11 @@ struct EbookScreen: View {
             Button { tray = .bookmarks } label: { readerActionIcon("highlighter") }
                 .accessibilityLabel("荧光笔").accessibilityIdentifier("ebook-bookmarks").disabled(!reader.ready)
                 .popover(isPresented: trayBinding(.bookmarks)) { bookmarksTray }
-            Button { tray = .settings } label: { readerActionIcon("slider.horizontal.3") }
-                .accessibilityLabel("阅读选项").accessibilityIdentifier("ebook-settings").disabled(!reader.ready)
-                .popover(isPresented: trayBinding(.settings)) { readingSettings.presentationCompactAdaptation(.sheet) }
+            if format == "epub" {
+                Button { tray = .settings } label: { readerActionIcon("slider.horizontal.3") }
+                    .accessibilityLabel("阅读选项").accessibilityIdentifier("ebook-settings").disabled(!reader.ready)
+                    .popover(isPresented: trayBinding(.settings)) { readingSettings.presentationCompactAdaptation(.sheet) }
+            }
         }
     }
     private var progressControl: some View {
@@ -500,27 +506,12 @@ struct EbookScreen: View {
                         EbookThemePicker(selection: $appearance)
                         VStack(alignment: .leading, spacing: 12) { Text("字号"); Slider(value: proseSize, in: 16...30, step: 1).accessibilityLabel("字号") }
                         VStack(alignment: .leading, spacing: 12) { Text("行距"); Slider(value: proseLeading, in: language == "Japanese" ? 1.5...2.2 : 1.3...2.2, step: language == "Japanese" ? 0.1 : 0.05).accessibilityLabel("行距") }
-                    } else {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("缩放").interfaceFont(14).foregroundStyle(LeximoryPalette.muted)
-                            Button { reader.navigate("fit"); tray = nil } label: {
-                                Label("适合页面", systemImage: "arrow.up.left.and.arrow.down.right")
-                                    .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-                                    .contentShape(Rectangle())
-                            }
-                            Divider()
-                            Button { reader.navigate("width"); tray = nil } label: {
-                                Label("适合宽度", systemImage: "arrow.left.and.right")
-                                    .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-                                    .contentShape(Rectangle())
-                            }
-                        }.buttonStyle(.plain).tint(LeximoryPalette.ink)
                     }
                 }.interfaceFont(17).foregroundStyle(LeximoryPalette.ink)
                     .padding(24).frame(maxWidth: .infinity, alignment: .leading)
             }.background(LeximoryPalette.paper)
                 .navigationTitle("阅读选项").navigationBarTitleDisplayMode(.inline)
-        }.frame(minWidth: sizeClass == .regular ? 340 : nil, idealHeight: format == "epub" ? 400 : 260)
+        }.frame(minWidth: sizeClass == .regular ? 340 : nil, idealHeight: 400)
             .presentationDetents(typeSize.isAccessibilitySize || verticalSizeClass == .compact ? [.large] : [.medium, .large])
             .presentationDragIndicator(.visible)
             .presentationBackground(LeximoryPalette.paper).tint(LeximoryPalette.ink)
@@ -909,7 +900,8 @@ private struct NativeEPUBReader: UIViewRepresentable {
                       let prepared = parent.reader.preannotations?.annotations.first(where: { $0.id == id }),
                       let anchor = body["rect"] as? [String: Double], let web else { return }
                 let rect = web.convert(CGRect(x: anchor["x"] ?? 0, y: anchor["y"] ?? 0, width: anchor["width"] ?? 1, height: anchor["height"] ?? 1), to: nil)
-                parent.reader.annotationSelection = EbookAnnotationSelection(prepared: prepared, rect: rect)
+                (web as? LearningWebView)?.dismissHighlightMenu()
+                parent.reader.toggleAnnotation(prepared, rect: rect)
             case "failed": parent.reader.loadFailure = "电子书未能加载，请重试。"
             case "contents":
                 parent.reader.chapters = (body["items"] as? [[String: Any]] ?? []).compactMap { item in

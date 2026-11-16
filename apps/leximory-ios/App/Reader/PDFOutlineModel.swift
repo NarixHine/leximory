@@ -55,6 +55,7 @@ import LeximoryCore
         if !online { return "连接网络后可生成目录。" }
         if document?.isLocked != false || document?.allowsDocumentChanges != true { return "这份 PDF 不允许修改目录。" }
         if document?.isEncrypted == true { return "加密 PDF 暂不支持生成目录。" }
+        if (document?.pageCount ?? 0) > 40 { return "暂不支持为超过 40 页的 PDF 生成目录" }
         if quotaBlocked { return "本期词点额度已用完。" }
         guard let allowance else { return nil }
         if allowance.limit - allowance.used < 1 { return "本期词点额度已用完。" }
@@ -64,7 +65,8 @@ import LeximoryCore
     var hasPendingSave: Bool { pending != nil }
     var canGenerate: Bool {
         guard !busy, writable, online, document?.isLocked == false,
-              document?.allowsDocumentChanges == true, document?.isEncrypted == false else { return false }
+              document?.allowsDocumentChanges == true, document?.isEncrypted == false,
+              (document?.pageCount ?? 0) <= 40 else { return false }
         return pending != nil || (allowance != nil && !exhausted)
     }
     var canRestore: Bool { !busy && pending == nil && writable && online && document?.allowsDocumentChanges == true }

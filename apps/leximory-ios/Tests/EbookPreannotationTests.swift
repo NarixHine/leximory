@@ -68,6 +68,8 @@ import LeximoryCore
         view.autoScales = true; view.document = document; view.layoutDocumentView()
         let coordinator = PDFReaderView(data: bytes, reader: reader, command: nil).makeCoordinator()
         coordinator.observe(view)
+        reader.bookmarks = [EbookBookmark(id: 42, quote: text.trimmingCharacters(in: .whitespacesAndNewlines), chapter: nil, location: "1")]
+        coordinator.updateBookmarks(in: view)
         coordinator.updateAnnotations(in: view)
         let stroke = try #require(page.annotations.compactMap { $0 as? EbookPDFPreannotation }.first)
         let second = (text as NSString).range(of: "bank", options: .backwards)
@@ -102,10 +104,26 @@ import LeximoryCore
         #expect(line.frame != original)
         #expect(line.superlayer === surface.layer)
         let point = view.convert(CGPoint(x: stroke.bounds.midX, y: stroke.bounds.midY), from: page)
-        #expect(view.presentPreannotation(at: point))
+        #expect(view.highlight(at: point)?.bookmarkID == 42)
+        #expect(view.activateMarkedText(at: point))
         #expect(reader.annotationSelection?.prepared.annotation.definition.lemma == "bank")
+        #expect(reader.menuSelection == nil)
+        #expect(view.activateMarkedText(at: point))
+        #expect(reader.annotationSelection == nil)
+        #expect(view.activateMarkedText(at: point))
+        #expect(reader.annotationSelection?.prepared.annotation.definition.lemma == "bank")
+        let first = try #require(page.selection(for: (text as NSString).range(of: "bank")))
+        let firstBounds = first.bounds(for: page)
+        let unannotated = view.convert(CGPoint(x: firstBounds.midX, y: firstBounds.midY), from: page)
+        #expect(view.activateMarkedText(at: unannotated))
+        #expect(reader.annotationSelection == nil)
+        #expect(reader.menuSelection?.bookmarkID == 42)
+        #expect(view.activateMarkedText(at: point))
+        #expect(reader.annotationSelection?.prepared.annotation.definition.lemma == "bank")
+        #expect(reader.menuSelection == nil)
         model.setEnabled(false); coordinator.updateAnnotations(in: view)
-        #expect(page.annotations.isEmpty)
+        #expect(page.annotations.compactMap { $0 as? EbookPDFPreannotation }.isEmpty)
+        #expect(page.annotations.compactMap { $0 as? EbookPDFHighlight }.count == 1)
         #expect(line.superlayer == nil)
         model.stop()
     }
@@ -128,12 +146,13 @@ import LeximoryCore
             const sentence = japanese ? '<ruby>東京<rt>とうきょう</rt></ruby>の庭。<ruby>東京<rt>とうきょう</rt></ruby>の川。' : 'The bank. Another bank. ';
             doc.body.innerHTML = longParagraph ? '<p>' + sentence.repeat(600) + '</p>' : japanese ? '<p>'+sentence+'</p>' : '<ul><li>Before<p>The bank.</p>Another <em>bank</em>.</li></ul>';
             archive.file(entry.name, new XMLSerializer().serializeToString(doc));
-            await openBook(await archive.generateAsync({type:'base64'}), '', {}, theme, []);
+            const bookmark = {id:42,quote:textWithoutRuby(doc.body),color:'sage'};
+            await openBook(await archive.generateAsync({type:'base64'}), '', {}, theme, [bookmark]);
             await navigationIdle(); await chapterPainted();
-            const origin = readerPreloadState();
             const units = readerAnnotationViewport();
             const unit = units.filter(u => u.text.includes(japanese ? '東京' : 'bank')).at(-1);
             if (!unit) throw Error('No visible annotation passage');
+            const origin = readerPreloadState();
             const quote = japanese ? '東京' : 'bank', start = unit.text.lastIndexOf(quote);
             readerAnnotationMarks([{id:'word',location:unit.location,start,length:quote.length,quote}]);
             const contents = rendition.getContents()[0], body = contents.document.body;
@@ -148,7 +167,17 @@ import LeximoryCore
             contents.document.dispatchEvent(event('pointerdown'));
             const immediateFeedback = !!document.querySelector('[data-leximory-press]');
             contents.document.dispatchEvent(event('pointerup'));
-            const tapped = readerTapAnnotation(x/innerWidth,y/innerHeight);
+            const tapped = readerTapMarkedText(x/innerWidth,y/innerHeight);
+            const saved = contents.document.querySelector('[data-leximory-bookmark]');
+            if (!saved) throw Error('No overlapping highlight');
+            const walker = contents.document.createTreeWalker(saved, NodeFilter.SHOW_TEXT);
+            let node;
+            while ((node=walker.nextNode())) {
+                if (!node.parentElement.closest('rt,rp') && node.textContent.trim()) break;
+            }
+            const outside = contents.document.createRange(); outside.setStart(node,0); outside.setEnd(node,1);
+            const plain = outside.getClientRects()[0];
+            const highlightTapped = readerTapMarkedText((plain.left+plain.width/2+frame.left)/innerWidth,(plain.top+plain.height/2+frame.top)/innerHeight);
             const color = getComputedStyle(stroke).backgroundColor.match(/[0-9.]+/g).map(Number);
             await readerTheme({...theme,...darkColors,mode:'dark',paper:'#100f0f',ink:'#cecdc3'});
             const darkColor = getComputedStyle(stroke).backgroundColor.match(/[0-9.]+/g).map(Number);
@@ -156,10 +185,15 @@ import LeximoryCore
             const darkPress = getComputedStyle(document.querySelector('[data-leximory-press]')).backgroundColor.match(/[0-9.]+/g).map(Number);
             contents.document.dispatchEvent(event('pointercancel'));
             await readerTheme(theme);
+            readerBookmarks([]); await painted();
+            readerAnnotationMarks([{id:'word',location:unit.location,start,length:quote.length,quote}]);
+            const survivesHighlightRemoval = layer.firstElementChild === stroke;
+            readerBookmarks([bookmark]); await painted();
+            readerAnnotationMarks([{id:'word',location:unit.location,start,length:quote.length,quote}]);
             return {units:units.length,strokes:layer.children.length,ruby:body.querySelectorAll('ruby').length,
               clean:!unit.text.includes('とうきょう'),position:JSON.stringify(origin)===JSON.stringify(readerPreloadState()),
-              text:unit.text,tapped,stableStroke,immediateFeedback,neutral:color[0]===color[1]&&color[1]===color[2]&&color[3]>0&&color[3]<0.4,
-              darkColor,darkPress,appearancePreservesStroke:stroke===layer.firstElementChild,
+              text:unit.text,tapped,highlightTapped,stableStroke,immediateFeedback,neutral:color[0]===color[1]&&color[1]===color[2]&&color[3]>0&&color[3]<0.4,
+              darkColor,darkPress,survivesHighlightRemoval,appearancePreservesStroke:stroke===layer.firstElementChild,
               restoredColor:getComputedStyle(stroke).backgroundColor.match(/[0-9.]+/g).map(Number),
               visible:rect.right>0&&rect.left<innerWidth&&rect.bottom>0&&rect.top<innerHeight,
               characters:units.reduce((sum, unit)=>sum+unit.text.length,0)};
@@ -172,15 +206,18 @@ import LeximoryCore
         #expect(result["clean"] as? Bool == true)
         #expect(result["position"] as? Bool == true)
         #expect(result["tapped"] as? Bool == true)
+        #expect(result["highlightTapped"] as? Bool == true)
         #expect(result["immediateFeedback"] as? Bool == true)
         #expect(result["neutral"] as? Bool == true)
         #expect(result["darkColor"] as? [Double] == [255, 255, 255, 0.42])
         #expect(result["darkPress"] as? [Double] == [161, 161, 170, 0.24])
         #expect(result["restoredColor"] as? [Double] == [0, 0, 0, 0.22])
         #expect(result["appearancePreservesStroke"] as? Bool == true)
+        #expect(result["survivesHighlightRemoval"] as? Bool == true)
         #expect(result["visible"] as? Bool == true)
-        try await wait { probe.annotationTaps > 0 }
+        try await wait { probe.annotationTaps > 0 && probe.highlightTaps > 0 }
         #expect(probe.annotationTaps == 1, "Pointer release opens immediately; the native fallback must not open it twice.")
+        #expect(probe.highlightTaps == 1, "Only the unannotated part of a highlight opens its editing menu.")
         #expect(result["stableStroke"] as? Bool == true, "Later updates must preserve existing strokes and their in-flight fades.")
         #expect(result["ruby"] as? Int == (japanese ? (longParagraph ? 1200 : 2) : 0))
         #expect((result["characters"] as? Int ?? 24000) < 1600, "Only the visible page should be submitted, including within a long paragraph.")
@@ -327,6 +364,7 @@ private struct StreamingPDFHost: View {
 
 @MainActor private final class AnnotationWebProbe: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
     var annotationTaps = 0
+    var highlightTaps = 0
     private var continuation: CheckedContinuation<Void, any Error>?
     func load(_ web: WKWebView, url: URL) async throws {
         try await withCheckedThrowingContinuation { continuation = $0; web.loadFileURL(url, allowingReadAccessTo: Bundle.main.bundleURL) }
@@ -335,6 +373,8 @@ private struct StreamingPDFHost: View {
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) { continuation?.resume(throwing: error); continuation = nil }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: any Error) { continuation?.resume(throwing: error); continuation = nil }
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        if let body = message.body as? [String: Any], body["kind"] as? String == "annotationTapped" { annotationTaps += 1 }
+        guard let body = message.body as? [String: Any], let kind = body["kind"] as? String else { return }
+        if kind == "annotationTapped" { annotationTaps += 1 }
+        if kind == "highlightTapped" { highlightTaps += 1 }
     }
 }

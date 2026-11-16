@@ -850,7 +850,7 @@ struct AnnotationPopover: UIViewControllerRepresentable {
             guard let window = host.view.window else { return }
             guard let item = parent.item else {
                 popover?.afterDismiss = nil
-                if popover?.isClosing == false { popover?.dismiss(animated: false) }
+                if popover?.isClosing == false { popover?.dismiss(animated: !UIAccessibility.isReduceMotionEnabled) }
                 return
             }
             if let closing = popover, closing.isClosing {

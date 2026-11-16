@@ -193,6 +193,7 @@ final class LearningWebView: WKWebView, @MainActor UIEditMenuInteractionDelegate
     }
     func presentHighlightMenu(selection: EbookSelection) {
         guard let reader, EbookLearningMenu.bookmark(reader: reader, selection: selection) != nil else { return }
+        reader.annotationSelection = nil
         ReadingGlassMenu.dismiss(from: self)
         reader.selection = nil; reader.menuSelection = selection
         let rect = convert(selection.rect, from: nil), id = UUID()
@@ -378,8 +379,12 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
     @discardableResult func presentPreannotation(at point: CGPoint) -> Bool {
         clearPressedPreannotation()
         guard let stroke = preannotation(at: point), let page = stroke.page else { return false }
-        reader?.annotationSelection = EbookAnnotationSelection(prepared: stroke.prepared, rect: convert(convert(stroke.bounds, from: page), to: nil))
+        dismissSelection()
+        reader?.toggleAnnotation(stroke.prepared, rect: convert(convert(stroke.bounds, from: page), to: nil))
         return true
+    }
+    @discardableResult func activateMarkedText(at point: CGPoint) -> Bool {
+        presentPreannotation(at: point) || presentHighlightMenu(at: point)
     }
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
         guard let hit = super.hitTest(point, with: event) else { return nil }
@@ -397,6 +402,7 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
     @discardableResult func presentHighlightMenu(at point: CGPoint) -> Bool {
         guard let highlight = highlight(at: point) ?? highlightAtTouchDown, let page = highlight.page,
               let reader, let bookmark = reader.bookmarks.first(where: { $0.id == highlight.bookmarkID }) else { return false }
+        reader.annotationSelection = nil
         dismissSelection()
         let text = (page.string ?? bookmark.quote) as NSString
         let range = text.range(of: bookmark.quote)
@@ -404,7 +410,7 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
         let end = range.location == NSNotFound ? 0 : min(text.length, NSMaxRange(range) + 1400)
         let selection = EbookSelection(quote: bookmark.quote,
             context: range.location == NSNotFound ? bookmark.quote : text.substring(with: NSRange(location: start, length: end - start)),
-            offset: range.location == NSNotFound ? 0 : range.location - start, location: bookmark.location)
+            offset: range.location == NSNotFound ? 0 : range.location - start, location: bookmark.location, bookmarkID: bookmark.id)
         let menuID = UUID()
         activeHighlight = (menuID, selection, page, highlight.bounds)
         reader.menuSelection = selection
@@ -497,7 +503,7 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
             let point = gesture.location(in: web)
             Task { [weak self, weak web] in
                 guard let self, let web else { return }
-                let handled = try? await web.callAsyncJavaScript("return window.readerTapAnnotation?.(x,y) || window.readerTapHighlight(x,y)",
+                let handled = try? await web.callAsyncJavaScript("return window.readerTapMarkedText(x,y)",
                     arguments: ["x":point.x / max(1, web.bounds.width), "y":point.y / max(1, web.bounds.height)], in: nil, contentWorld: .page) as? Bool
                 guard handled != true, reader.selection == nil else { return }
                 if reader.annotationSelection != nil { reader.annotationSelection = nil; return }
@@ -506,7 +512,7 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
             }
             return
         }
-        if let pdf = view as? LearningPDFView, pdf.presentHighlightMenu(at: gesture.location(in: view)) || pdf.presentPreannotation(at: gesture.location(in: view)) { return }
+        if let pdf = view as? LearningPDFView, pdf.activateMarkedText(at: gesture.location(in: view)) { return }
         if reader.annotationSelection != nil { reader.annotationSelection = nil; return }
         if pdfSelectionActiveAtTouchDown, let pdf = view as? LearningPDFView, pdf.dismissSelection() { return }
         guard reader.selection == nil else { return }
@@ -527,8 +533,9 @@ final class LearningPDFView: PDFView, @MainActor UIEditMenuInteractionDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         if reader.drawingEnabled { return false }
         if let pdf = gestureRecognizer.view as? LearningPDFView {
-            pdf.highlightAtTouchDown = pdf.highlight(at: touch.location(in: pdf))
-            let annotation = pdf.highlightAtTouchDown == nil && pdf.preannotation(at: touch.location(in: pdf)) != nil
+            let point = touch.location(in: pdf)
+            let annotation = pdf.preannotation(at: point) != nil
+            pdf.highlightAtTouchDown = annotation ? nil : pdf.highlight(at: point)
             if gestureRecognizer is UILongPressGestureRecognizer { return annotation }
             if annotation { return false }
             pdfSelectionActiveAtTouchDown = pdf.currentSelection != nil || reader.selection != nil || reader.menuSelection != nil

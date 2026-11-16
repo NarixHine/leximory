@@ -268,6 +268,8 @@ window.readerTapHighlight = (fractionX, fractionY) => {
   }
   return false;
 };
+window.readerTapMarkedText = (fractionX, fractionY) =>
+  window.readerTapAnnotation?.(fractionX, fractionY) || window.readerTapHighlight(fractionX, fractionY);
 function pageKey(event) {
   if (!ready || pageTurn || event.defaultPrevented || event.repeat || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
   if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;

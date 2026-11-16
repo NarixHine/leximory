@@ -9,6 +9,7 @@
         return true
     }
     const layers = new WeakMap()
+    const passageAnchors = new WeakMap()
     const surface = document.createElement('div')
     surface.style.cssText = 'position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:2;'
     document.body.appendChild(surface)
@@ -111,7 +112,11 @@
             if (!doc?.body) continue
             const frame = view.iframe.getBoundingClientRect()
             const visible = []
+            const offsets = new Map(), anchors = new Map()
+            let sourceOffset = 0
+            passageAnchors.set(doc, anchors)
             for (const node of textNodes(doc)) {
+                offsets.set(node, sourceOffset); sourceOffset += node.length
                 const style = contents.window.getComputedStyle(node.parentElement)
                 if (style.visibility === 'hidden' || style.display === 'none') continue
                 for (const [start, end] of visibleRanges(doc, node, viewport, frame))
@@ -122,6 +127,7 @@
             range.setStart(visible[0].node, visible[0].start)
             range.setEnd(visible.at(-1).node, visible.at(-1).end)
             const mapped = mapRange(contents, range)
+            const passageOffset = offsets.get(visible[0].node) + visible[0].start
             const boundaries = [...new Intl.Segmenter(undefined, {granularity:'grapheme'}).segment(mapped.text)].map(part => part.index)
             boundaries.push(mapped.text.length)
             let start = 0
@@ -130,7 +136,11 @@
                 if (end === undefined) break
                 const text = mapped.text.slice(start, end)
                 const passage = sourceRange(doc, mapped.runs, start, end - start)
-                if (passage && text.trim()) result.push({ location: contents.cfiFromRange(passage, bookmarkIgnoreClass), text })
+                if (passage && text.trim()) {
+                    const location = contents.cfiFromRange(passage, bookmarkIgnoreClass)
+                    anchors.set(location, { start: passageOffset + start, length: end - start })
+                    result.push({ location, text })
+                }
                 start = end
             }
         }
@@ -193,13 +203,26 @@
         state.hits = []
         const vertical = currentTheme?.writing === 'vertical-rl'
         const passages = new Map()
+        let source
         for (const mark of marks) {
             let mapped
             try {
                 if (book.spine.get(mark.location)?.index !== contents.sectionIndex) continue
                 mapped = passages.get(mark.location)
                 if (!mapped) {
-                    mapped = mapRange(contents, contents.range(mark.location, bookmarkIgnoreClass))
+                    // CFIs can collapse ranges inside highlights containing publisher markup or ruby.
+                    const anchor = passageAnchors.get(doc)?.get(mark.location)
+                    let range
+                    if (anchor) {
+                        if (!source) {
+                            const body = doc.createRange(); body.selectNodeContents(doc.body)
+                            source = mapRange(contents, body)
+                        }
+                        range = sourceRange(doc, source.runs, anchor.start, anchor.length)
+                    } else {
+                        range = contents.range(mark.location, bookmarkIgnoreClass)
+                    }
+                    mapped = mapRange(contents, range)
                     passages.set(mark.location, mapped)
                 }
                 if (mapped.text.slice(mark.start, mark.start + mark.length) !== mark.quote) continue

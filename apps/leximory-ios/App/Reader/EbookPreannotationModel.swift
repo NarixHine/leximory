@@ -176,7 +176,7 @@ struct EbookPreannotationSheet: View {
                         .disabled(model == nil)
                         .accessibilityIdentifier("ebook-preannotation-enabled")
                 } footer: {
-                    Text(model == nil ? "登录并保存电子书后可开启" : "轻点带下划线的词语，查看释义")
+                    Text(model == nil ? "登录并保存电子书后可开启" : "提前注释将要阅读的部分，已注释语块会显示下划线")
                         .interfaceFont(13, style: .footnote)
                 }
             }

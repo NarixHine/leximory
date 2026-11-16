@@ -91,6 +91,21 @@ import SwiftUI
                 })
         }
     }
+    @Test(arguments: [40, 41]) func generationStopsAboveFortyPages(pageCount: Int) async throws {
+        let bytes = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 400, height: 600)).pdfData { context in
+            for _ in 0..<pageCount { context.beginPage() }
+        }
+        let service = Service(), model = service.model(bytes)
+        let attached = try attach(model, data: bytes)
+        defer { withExtendedLifetime(attached) {} }
+        await model.refreshAllowance()
+        #expect(model.canGenerate == (pageCount == 40))
+        if pageCount > 40 {
+            #expect(model.start() == nil)
+            #expect(service.generated == 0)
+            #expect(service.used == 0)
+        }
+    }
     private func attach(_ model: PDFOutlineModel, data: Data) throws -> (EbookReaderState, PDFDocument) {
         let reader = EbookReaderState(), document = try #require(PDFDocument(data: data))
         reader.pdfOutline = model; model.attach(document, reader: reader)

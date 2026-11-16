@@ -10,6 +10,24 @@ import LeximoryCore
 @testable import Leximory
 
 @MainActor @Suite(.serialized) struct AnnotationPopoverInteractionTests {
+    @Test func clearingEbookSelectionAnimatesTheDismissal() async throws {
+        let article = FixtureArticle.samples[0], document = try article.document()
+        let selection = try ReaderLayout(document: document).selection(NSRange(location: 0, length: 4), document: document, textID: article.id)
+        let state = AnnotationPopoverProbe(item: DefinitionPresentation(source: .article(selection), definition: Definition(lemma: "word", definition: "Saved meaning")))
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }, window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: AnnotationPopoverProbeView(state: state))
+        window.rootViewController = host; window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        try await wait { host.presentedViewController?.isBeingPresented == false }
+        let closing = try #require(host.presentedViewController as? AnnotationPopoverController)
+        state.item = nil
+        if !UIAccessibility.isReduceMotionEnabled {
+            try await wait { closing.isBeingDismissed }
+            #expect(closing.transitionCoordinator?.isAnimated == true)
+        }
+        try await wait { host.presentedViewController == nil }
+    }
     private func wait(_ predicate: () -> Bool) async throws {
         let deadline = ContinuousClock.now.advanced(by: .seconds(4))
         while !predicate(), ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }

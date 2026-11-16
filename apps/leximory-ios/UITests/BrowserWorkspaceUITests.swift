@@ -35,6 +35,8 @@ final class BrowserWorkspaceUITests: XCTestCase {
         let tray = app.descendants(matching: .any).matching(identifier: "definition-tray").firstMatch
         let position = reader.value as? String
         word.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        XCTAssertTrue(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: tray)], timeout: 5) == .completed)
+        word.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         XCTAssertTrue(tray.waitForExistence(timeout: 5), app.debugDescription)
         for _ in 0..<2 {
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.99, dy: 0.75)).tap()
@@ -83,6 +85,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
         pdf.tap()
         let passage = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "The river. We walked")).firstMatch
         XCTAssertTrue(passage.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertFalse(app.buttons["ebook-settings"].exists)
         let before = XCTAttachment(screenshot: app.screenshot())
         before.name = "PDF before first selection"; before.lifetime = .keepAlways; add(before)
         passage.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5)).press(forDuration: 1.2)
