@@ -31,17 +31,15 @@ struct ArticleAudioButton: View {
                             ProgressView().controlSize(.small).accessibilityHidden(true)
                         } else {
                             Image(systemName: fullAudioID == nil ? "waveform.badge.plus" : "play.fill")
+                                .foregroundStyle(online ? LeximoryPalette.sage : Color.secondary)
                                 .accessibilityHidden(true)
                         }
                         Text(fullAudioID != nil ? "朗读全文" : generating ? "正在生成全文录音" : "生成全文录音")
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .interfaceFont(15, style: .subheadline)
-                    .foregroundStyle(.primary)
-                    .frame(minHeight: 44)
-                    .contentShape(.rect)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(ArticleAudioActionStyle())
                 .disabled(generating || !online)
                 .accessibilityIdentifier(fullAudioID == nil ? "generate-article-audio" : "play-article-audio")
                 if let failure {
@@ -68,5 +66,23 @@ struct ArticleAudioButton: View {
                 requestID = nil; generating = false; failure = nil
             }
         }
+    }
+}
+
+private struct ArticleAudioActionStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(isEnabled ? Color.primary : Color.secondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .frame(minHeight: 44)
+            .background(LeximoryPalette.cover, in: .capsule)
+            .overlay {
+                Capsule().strokeBorder(isEnabled ? LeximoryPalette.sage : LeximoryPalette.secondaryBorder, lineWidth: 1)
+            }
+            .contentShape(.rect)
+            .opacity(configuration.isPressed ? 0.78 : 1)
     }
 }

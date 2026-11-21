@@ -422,7 +422,7 @@ struct BrowserWorkspaceView: View {
                 addressControl.glassEffect(chromeGlass, in: .capsule)
                     .glassEffectID("workspace-address", in: chromeNamespace)
                 if !editingAddress {
-                    if !isHome { chromeButton("首页", symbol: "house") { withAnimation(motion) { workspace.visit(.home) } } }
+                    if !isHome { chromeButton("首页", symbol: "house") { workspace.visit(.home) } }
                     if workspace.current.isWeb {
                         Button { Task { await extract() } } label: {
                             Image(systemName: "bookmark.fill").font(.system(size: 17, weight: .medium))
@@ -443,7 +443,7 @@ struct BrowserWorkspaceView: View {
                 annotationBadge.allowsHitTesting(false).accessibilityHidden(true)
             }
         }.frame(maxWidth: 720).tint(.primary)
-            .animation(motion, value: editingAddress).animation(motion, value: workspace.current.id)
+            .animation(motion, value: editingAddress)
     }
     private var addressControl: some View {
         HStack(spacing: 8) {
