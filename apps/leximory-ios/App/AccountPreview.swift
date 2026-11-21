@@ -14,6 +14,11 @@ struct AccountPreview: View {
     private func previewDetails(_ data: Data) throws -> AccountSettings {
         var value = try JSONSerialization.jsonObject(with: data) as! [String: Any]
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("--account-quota-reset"), var definitions = value["definitions"] as? [String: Any] {
+            definitions["used"] = 0
+            definitions["resetsIn"] = -2
+            value["definitions"] = definitions
+        }
         if arguments.contains("--membership-active") || arguments.contains("--membership-cancelled") || arguments.contains("--membership-grace") || arguments.contains("--membership-retry") {
             value["plan"] = "bilingual"
             value["planLabel"] = "Bilingual—双语者"

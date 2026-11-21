@@ -12,9 +12,8 @@ struct WelcomeGate: View {
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
-                                Button("取消", role: .cancel) { showingSignIn = false }
-                                    .buttonStyle(.plain).foregroundStyle(LeximoryPalette.muted)
-                            }.sharedBackgroundVisibility(.hidden)
+                                LeximorySheetCloseButton("取消") { showingSignIn = false }.tint(.primary)
+                            }
                         }
                 }
                 .presentationDetents([.large])

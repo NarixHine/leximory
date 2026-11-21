@@ -89,13 +89,13 @@ struct BrowserAdBlockingSettings: View {
             .navigationTitle("广告拦截").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { application?.cancel(); dismiss() }
+                    LeximorySheetCloseButton("取消") { application?.cancel(); dismiss() }
                         .accessibilityIdentifier("ad-blocking-cancel")
                 }
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(action: apply) {
                         if applying { ProgressView().accessibilityLabel("正在应用") }
-                        else { Text(reloadsPage ? "应用并重新载入" : "应用") }
+                        else { Label(reloadsPage ? "应用并重新载入" : "应用", systemImage: "checkmark").labelStyle(.iconOnly) }
                     }.disabled(applying || (!changed && !blocker.unavailable))
                         .accessibilityIdentifier("ad-blocking-confirm")
                 }

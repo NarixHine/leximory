@@ -2,7 +2,7 @@ import SwiftUI
 
 enum CoverBackground { case varied, newspaper }
 
-/// Identity-derived OKLCH colors shared by the cover paper and its emoji ink.
+/// Identity-derived OKLCH colors for cover paper and artwork.
 enum CoverPalette {
     static func seed(_ identity: String) -> UInt64 {
         let hash = identity.utf16.reduce(UInt32(0)) { (($0 &<< 5) &- $0) &+ UInt32($1) }
@@ -11,12 +11,14 @@ enum CoverPalette {
 
     static func hue(_ seed: UInt64) -> Double { 120 + Double(seed % 55) }
 
-    /// The emoji shares the cover's hue so every cover stays in one chromatic family,
-    /// while keeping the web's `default-400` lightness and chroma. Dark covers stay neutral.
+    static func paperLightness(_ seed: UInt64, dark: Bool) -> Double {
+        light(dark ? 0.20 : 0.968, seed, span: dark ? 0.04 : 0.012)
+    }
+
     static func emojiInk(identity: String, dark: Bool) -> Color {
         let seed = seed(identity)
         let lightness = light(dark ? 0.53 : 0.70, seed, span: dark ? 0.05 : 0.06)
-        let chroma = 0.023 + Double((seed >> 8) % 10) / 10 * 0.008
+        let chroma = 0.042 + Double((seed >> 8) % 10) / 10 * 0.008
         return oklch(lightness, dark ? 0 : chroma, hue(seed))
     }
 
@@ -125,18 +127,18 @@ private struct CoverTexture: View {
         Canvas { context, size in
             let dark = colorScheme == .dark
             let hue = CoverPalette.hue(seed)
-            let chroma = 0.003 + Double((seed >> 8) % 10) / 10 * 0.005
-            let lightness = dark ? 0.18 + Double((seed >> 16) % 10) / 10 * 0.06 : 0.975 + Double((seed >> 16) % 10) / 10 * 0.02
-            let paper = CoverPalette.oklch(lightness, dark ? 0 : chroma, hue)
+            let lightness = CoverPalette.paperLightness(seed, dark: dark)
+            let paper = CoverPalette.oklch(lightness, dark ? 0.014 : 0.012, hue)
             let canvas = Path(CGRect(origin: .zero, size: size))
             context.fill(canvas, with: .color(paper))
             let phase = time / 18 + Double(seed % 100)
             let color = LeximoryPalette.illustration
             let center = CGPoint(x: size.width * (0.5 + 0.22 * sin(phase)), y: size.height * (0.5 + 0.2 * cos(phase * 0.8)))
-            let wash = CoverPalette.oklch(dark ? lightness + 0.04 : 0.975, dark ? 0 : chroma * 2, hue + 18 * sin(phase * 0.3))
-            context.fill(canvas, with: .radialGradient(Gradient(colors: [wash.opacity(0.7), wash.opacity(0)]), center: center, startRadius: 0, endRadius: max(size.width, size.height) * 0.8))
-            let light = dark ? CoverPalette.oklch(lightness + 0.035, 0, hue) : Color.white
-            context.fill(canvas, with: .radialGradient(Gradient(colors: [light.opacity(0.75), light.opacity(0)]), center: CGPoint(x: size.width - center.x, y: size.height - center.y), startRadius: 0, endRadius: max(size.width, size.height) * 0.7))
+            let washLightness = lightness + (dark ? 0.016 : 0.004)
+            let coolWash = CoverPalette.oklch(washLightness, dark ? 0.027 : 0.024, hue + 36)
+            let warmWash = CoverPalette.oklch(washLightness, dark ? 0.027 : 0.026, hue - 38)
+            context.fill(canvas, with: .radialGradient(Gradient(colors: [coolWash.opacity(0.7), coolWash.opacity(0)]), center: center, startRadius: 0, endRadius: max(size.width, size.height) * 0.8))
+            context.fill(canvas, with: .radialGradient(Gradient(colors: [warmWash.opacity(0.75), warmWash.opacity(0)]), center: CGPoint(x: size.width - center.x, y: size.height - center.y), startRadius: 0, endRadius: max(size.width, size.height) * 0.7))
             switch background == .newspaper ? 4 : seed % 4 {
             case 4:
                 var grid = Path()

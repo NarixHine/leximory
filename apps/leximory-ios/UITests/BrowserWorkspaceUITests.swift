@@ -521,7 +521,7 @@ final class BrowserWorkspaceUITests: XCTestCase {
         save.tap()
         XCTAssertTrue(app.navigationBars["保存 PDF"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts["River pages.pdf"].exists)
-        XCTAssertTrue(app.buttons["编辑标题"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["ebook-import-title"].firstMatch.exists)
         XCTAssertFalse(app.staticTexts["保存方式"].exists)
         XCTAssertFalse(app.staticTexts["全文预览"].exists)
         XCTAssertEqual(app.buttons["browser-import-submit"].label, "保存")
@@ -863,10 +863,29 @@ final class BrowserWorkspaceUITests: XCTestCase {
     @MainActor func testInlineFoldersAndArticleHistory() {
         let app = launch(); defer { restore(app) }
         app.buttons["我的书签"].tap()
+        let addFolder = app.buttons["新建文件夹"]
+        XCTAssertTrue(addFolder.waitForExistence(timeout: 5))
+        addFolder.tap()
+        let name = app.textFields["名称"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["创建"].isEnabled)
+        name.tap()
+        name.typeText("Test folder")
+        XCTAssertTrue(app.buttons["创建"].isEnabled)
+        let folderToolbar = XCTAttachment(screenshot: app.screenshot())
+        folderToolbar.name = "Folder editor toolbar"
+        folderToolbar.lifetime = .keepAlways
+        add(folderToolbar)
+        app.buttons["取消"].tap()
         let folder = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Field notes")).firstMatch.firstMatch
         XCTAssertTrue(folder.waitForExistence(timeout: 10)); folder.tap()
         let article = app.buttons["browser-resource-fixture-reader"].firstMatch
-        XCTAssertTrue(article.waitForExistence(timeout: 10)); article.tap()
+        XCTAssertTrue(article.waitForExistence(timeout: 10))
+        let bookmarks = XCTAttachment(screenshot: app.screenshot())
+        bookmarks.name = "My Bookmarks with expanded folder"
+        bookmarks.lifetime = .keepAlways
+        add(bookmarks)
+        article.tap()
         XCTAssertTrue(app.textViews["reading-document"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["browser-address"].isHittable)
         app.buttons["后退"].tap()

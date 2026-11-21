@@ -21,18 +21,19 @@ final class AccountUITests: XCTestCase {
         app.launchArguments = ["--account-fixtures"]
         app.launch()
         XCTAssertTrue(app.staticTexts["猫忆读者"].waitForExistence(timeout: 10))
-        let summary = app.staticTexts["account-quota-summary-definitions"]
-        XCTAssertTrue(summary.exists)
-        XCTAssertTrue(summary.label.contains("3 / 20"))
-        XCTAssertTrue(app.staticTexts["account-quota-summary-audio"].label.contains("1 / 3"))
-        capture("Original circular quota cards retained")
-        let action = app.descendants(matching: .any)["account-action-cost-pdf-outline"].firstMatch
-        for _ in 0..<8 where !action.isHittable { app.swipeUp() }
-        XCTAssertTrue(action.waitForExistence(timeout: 5))
-        assertActionCosts(app)
-        XCTAssertLessThan(summary.frame.minY, action.frame.minY)
-        XCTAssertGreaterThan(action.frame.minY, app.buttons["退出登录"].frame.maxY)
-        capture("Action costs at the bottom of the account page")
+        let definitions = quotaCard("definitions", in: app)
+        let audio = quotaCard("audio", in: app)
+        XCTAssertTrue(definitions.exists)
+        XCTAssertTrue(definitions.label.contains("AI 注解可用额度"))
+        XCTAssertTrue(definitions.label.contains("81%"))
+        XCTAssertTrue(definitions.label.contains("1天内重置"))
+        XCTAssertFalse(definitions.label.contains("3 / 20"))
+        XCTAssertTrue(audio.label.contains("AI 朗读可用额度"))
+        XCTAssertTrue(audio.label.contains("50%"))
+        XCTAssertFalse(audio.label.contains("1 / 3"))
+        XCTAssertEqual(definitions.frame.midY, audio.frame.midY, accuracy: 1)
+        XCTAssertFalse(app.staticTexts["操作额度消耗"].exists)
+        capture("Available quota cards")
         let subscription = app.buttons["account-subscription"]
         for _ in 0..<8 where !subscription.isHittable { app.swipeDown() }
         XCTAssertTrue(subscription.isHittable)
@@ -49,6 +50,8 @@ final class AccountUITests: XCTestCase {
         XCTAssertTrue(username.waitForExistence(timeout: 5)); username.tap()
         XCTAssertTrue(app.textFields["你的用户名"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.textFields["你的用户名"].value as? String, "猫忆读者")
+        XCTAssertTrue(app.buttons["保存"].isEnabled)
+        capture("Account editor toolbar")
         app.buttons["取消"].tap()
         let signOut = app.buttons["退出登录"]
         for _ in 0..<5 where !signOut.isHittable || signOut.frame.maxY > app.frame.maxY - 80 { app.swipeUp() }
@@ -56,60 +59,43 @@ final class AccountUITests: XCTestCase {
         signOut.tap()
         XCTAssertTrue(app.buttons["取消"].waitForExistence(timeout: 5))
         app.buttons["取消"].tap()
+        capture("Account management and actions")
     }
 
-    @MainActor func testActionCostsAtAccessibilitySize() throws {
+    @MainActor func testResetQuotaAtAccessibilitySize() {
         let app = XCUIApplication()
         defer { app.terminate(); app.launchArguments = []; app.launch() }
-        app.launchArguments = ["--account-fixtures", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launchArguments = ["--account-fixtures", "--account-quota-reset", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
-        let row = app.descendants(matching: .any)["account-action-cost-pdf-outline"].firstMatch
-        for _ in 0..<8 where !row.isHittable { app.swipeUp() }
-        XCTAssertTrue(row.waitForExistence(timeout: 5))
-        XCTAssertTrue(row.label.contains("PDF 目录生成"))
-        assertActionCosts(app)
-        XCTAssertTrue(row.label.contains("每次消耗 1 词点"))
-        XCTAssertLessThanOrEqual(row.frame.maxX, app.frame.maxX)
-        capture("Accessible action quota costs")
+        let definitions = quotaCard("definitions", in: app)
+        let audio = quotaCard("audio", in: app)
+        XCTAssertTrue(definitions.waitForExistence(timeout: 10))
+        XCTAssertTrue(definitions.label.contains("100%"))
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.48))
+        for _ in 0..<5 where !audio.isHittable { start.press(forDuration: 0.05, thenDragTo: end) }
+        XCTAssertTrue(audio.isHittable)
+        XCTAssertTrue(audio.label.contains("50%"))
+        XCTAssertLessThanOrEqual(definitions.frame.maxY, audio.frame.minY)
+        XCTAssertEqual(definitions.frame.midX, audio.frame.midX, accuracy: 1)
+        XCTAssertLessThanOrEqual(audio.frame.maxX, app.frame.maxX)
+        capture("Accessible available quota cards")
     }
 
-    @MainActor func testActionCostsAndVisualizationsInDarkAppearance() {
+    @MainActor func testAvailableQuotaInDarkAppearance() {
         let app = XCUIApplication()
         defer { app.terminate(); app.launchArguments = []; app.launch() }
         app.launchArguments = ["--account-fixtures", "--dark-appearance"]
         app.launch()
-        let summary = app.staticTexts["account-quota-summary-definitions"]
-        XCTAssertTrue(summary.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["account-quota-summary-audio"].exists)
-        capture("Original quota visualization in dark appearance")
-        let row = app.descendants(matching: .any)["account-action-cost-pdf-outline"].firstMatch
-        for _ in 0..<8 where !row.isHittable { app.swipeUp() }
-        XCTAssertTrue(row.exists)
-        XCTAssertTrue(row.label.contains("每次消耗 1 词点"))
-        XCTAssertLessThanOrEqual(row.frame.maxX, app.frame.maxX)
-        capture("Action costs in dark appearance")
+        let definitions = quotaCard("definitions", in: app)
+        XCTAssertTrue(definitions.waitForExistence(timeout: 10))
+        XCTAssertTrue(definitions.label.contains("81%"))
+        XCTAssertTrue(quotaCard("audio", in: app).label.contains("50%"))
+        capture("Available quota in dark appearance")
     }
 
-    @MainActor private func assertActionCosts(_ app: XCUIApplication) {
-        for (id, action, cost) in [
-            ("article-annotation", "文章预注释", "1 词点"),
-            ("word-annotation", "🐈 猫忆查", "0.25 词点"),
-            ("ebook-icon", "电子书图标生成", "0.01 词点"),
-            ("pdf-outline", "PDF 目录生成", "1 词点"),
-            ("review-translation", "翻译练习反馈", "0.01 词点"),
-            ("review-conversation", "对话练习反馈", "0.01 词点"),
-            ("language-detection", "语言识别", "0.01 词点"),
-            ("bookmark-icon", "书签图标生成", "0.01 词点"),
-            ("article-audio", "文章朗读生成", "1 语点"),
-        ] {
-            let row = app.descendants(matching: .any)["account-action-cost-\(id)"].firstMatch
-            XCTAssertTrue(row.exists)
-            XCTAssertTrue(row.label.contains(action))
-            XCTAssertTrue(row.label.contains("每次消耗 " + cost))
-            XCTAssertFalse(row.label.contains("总额"))
-            XCTAssertFalse(row.label.contains("已用"))
-            XCTAssertFalse(row.label.contains("剩余"))
-        }
+    @MainActor private func quotaCard(_ name: String, in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any)["account-quota-summary-\(name)"].firstMatch
     }
 
     @MainActor func testActivePlanLeadsWithoutRoutineStatus() throws {

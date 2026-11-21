@@ -90,9 +90,8 @@ struct ContentImportView: View {
                 .navigationTitle(kind == 1 ? "导入电子书" : "创建文章").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("取消", role: .cancel) { dismiss() }.buttonStyle(.plain)
-                            .foregroundStyle(LeximoryPalette.muted).disabled(busy)
-                    }.sharedBackgroundVisibility(.hidden)
+                        LeximorySheetCloseButton("取消") { dismiss() }.tint(.primary).disabled(busy)
+                    }
                 }
                 .interactiveDismissDisabled(busy)
                 .fileImporter(isPresented: $choosingFile, allowedContentTypes: kind != 1 ? [.plainText, UTType(filenameExtension: "md") ?? .plainText] : [.epub, .pdf]) { result in

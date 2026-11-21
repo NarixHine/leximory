@@ -34,6 +34,7 @@ struct AccountView: View {
     #endif
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.scenePhase) private var scenePhase
+    @ScaledMetric(relativeTo: .body) private var rowIconWidth = AccountSettingsRow.baseIconWidth
 
     private var editingUnavailable: Bool { busy || session.sync?.online == false }
 
@@ -53,7 +54,6 @@ struct AccountView: View {
                         preferences
                         management(details)
                         accountActions(details)
-                        AccountActionCostTable()
                     } else if loading {
                         ProgressView("正在打开账号").frame(maxWidth: .infinity).padding(.top, 80)
                     } else {
@@ -165,12 +165,13 @@ struct AccountView: View {
         .accessibilityIdentifier("account-subscription")
     }
     private func stats(_ value: AccountSettings) -> some View {
-        VStack(spacing: 12) {
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 12)) : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+        return VStack(spacing: 12) {
             subscriptionCard(value)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: typeSize.isAccessibilitySize ? 1 : 2), spacing: 12) {
-                AccountQuotaCard(title: "AI 词点额度", allowance: value.definitions, tint: LeximoryPalette.quotaDefinitions)
+            layout {
+                AccountQuotaCard(title: "AI 注解可用额度", allowance: value.definitions, tint: LeximoryPalette.quotaDefinitions)
                     .accessibilityIdentifier("account-quota-summary-definitions")
-                AccountQuotaCard(title: "AI 语点额度", allowance: value.audio, tint: LeximoryPalette.quotaAudio)
+                AccountQuotaCard(title: "AI 朗读可用额度", allowance: value.audio, tint: LeximoryPalette.quotaAudio)
                     .accessibilityIdentifier("account-quota-summary-audio")
             }
         }
@@ -190,10 +191,10 @@ struct AccountView: View {
         VStack(alignment: .leading, spacing: 0) {
             AccountCardTitle("账号管理")
                 .padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 8)
-            editRow("用户名", value: value.username, symbol: "person", field: .username)
+            editRow("用户名", value: value.username, symbol: "person.text.rectangle", field: .username)
             accountRowDivider
             PhotosPicker(selection: $photo, matching: .images) {
-                AccountSettingsRow("头像", symbol: "photo")
+                AccountSettingsRow("头像", symbol: "person.crop.circle", showsDisclosure: false)
             }.buttonStyle(.plain).disabled(editingUnavailable)
             accountRowDivider
             editRow("邮箱", value: value.email, symbol: "envelope", field: .email)
@@ -206,24 +207,20 @@ struct AccountView: View {
         }.background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
     }
     private var accountRowDivider: some View {
-        Divider().padding(.leading, 48).padding(.trailing, 16)
+        Divider().padding(.leading, 28 + rowIconWidth).padding(.trailing, 16)
     }
     private func accountActions(_ value: AccountSettings) -> some View {
         VStack(spacing: 0) {
             Button(role: .destructive) { confirmsSignOut = true } label: {
-                Text("退出登录")
-                    .padding(.vertical, 14).frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-                    .padding(.horizontal, 16).contentShape(.rect)
-            }.disabled(busy)
-            Divider().padding(.horizontal, 16)
+                AccountSettingsRow("退出登录", symbol: "rectangle.portrait.and.arrow.right", showsDisclosure: false, destructive: true)
+            }.buttonStyle(.plain).disabled(busy)
+            accountRowDivider
             Button(role: .destructive) {
                 session.deletion.prepare(userID: value.userId)
                 session.deletion.presented = true
             } label: {
-                Text("删除账号")
-                    .padding(.vertical, 14).frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-                    .padding(.horizontal, 16).contentShape(.rect)
-            }.disabled(editingUnavailable)
+                AccountSettingsRow("删除账号", symbol: "trash", showsDisclosure: false, destructive: true)
+            }.buttonStyle(.plain).disabled(editingUnavailable)
         }.background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
     }
     private func editRow(_ title: String, value: String?, symbol: String, field: AccountEditor.Field) -> some View {
@@ -279,35 +276,43 @@ private struct AccountCardTitle: View {
 }
 
 private struct AccountSettingsRow: View {
+    nonisolated static let baseIconWidth: CGFloat = 24
     let title: String
     let symbol: String
     let value: String?
     let showsDisclosure: Bool
+    let destructive: Bool
     @Environment(\.dynamicTypeSize) private var typeSize
+    @ScaledMetric(relativeTo: .body) private var iconWidth = baseIconWidth
 
-    nonisolated init(_ title: String, symbol: String, value: String? = nil, showsDisclosure: Bool = true) {
+    nonisolated init(_ title: String, symbol: String, value: String? = nil, showsDisclosure: Bool = true, destructive: Bool = false) {
         self.title = title
         self.symbol = symbol
         self.value = value
         self.showsDisclosure = showsDisclosure
+        self.destructive = destructive
     }
 
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: symbol)
-                .frame(width: 20).foregroundStyle(.secondary).accessibilityHidden(true)
+                .font(.body)
+                .frame(width: iconWidth)
+                .foregroundStyle(destructive ? Color.red : Color.primary)
+                .accessibilityHidden(true)
             LabeledContent {
                 if let value {
                     Text(value).foregroundStyle(.secondary)
                         .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
                 }
             } label: {
-                Text(title).foregroundStyle(.primary)
+                Text(title).foregroundStyle(destructive ? Color.red : Color.primary)
             }
             if showsDisclosure {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.tertiary).accessibilityHidden(true)
+                Image(systemName: "chevron.forward")
+                    .font(.footnote.weight(.semibold))
+                    .imageScale(.small)
+                    .foregroundStyle(.secondary).accessibilityHidden(true)
             }
         }
         .interfaceFont(17)
@@ -399,7 +404,7 @@ private struct MembershipEntryLabel: View {
         HStack(spacing: 12) {
             Text(actionTitle).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
-            Image(systemName: "chevron.right").accessibilityHidden(true)
+            Image(systemName: "chevron.forward").accessibilityHidden(true)
         }
         .interfaceFont(15, style: .subheadline)
         .foregroundStyle(.primary)
@@ -425,110 +430,47 @@ private struct AccountQuotaCard: View {
     let allowance: Account.Allowance
     let tint: Color
     @ScaledMetric(relativeTo: .body) private var ringSize: CGFloat = 88
-    private var fraction: Double { allowance.limit > 0 ? min(max(allowance.used / allowance.limit, 0), 1) : 0 }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            AccountCardTitle(title)
-            ring.frame(maxWidth: .infinity)
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                usage.lineLimit(1).minimumScaleFactor(0.65)
-                Spacer(minLength: 0)
-                if allowance.resetsIn > 0 {
-                    Text(allowance.resetsIn >= 86_400
-                         ? "\((allowance.resetsIn - 1) / 86_400 + 1)天后重置"
-                         : "1天内重置")
-                        .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
-                        .fixedSize()
-                }
-            }
-        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).padding(16)
-            .background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
-            .accessibilityElement(children: .combine)
+    private var availableFraction: Double {
+        guard allowance.limit > 0 else { return 0 }
+        return min(max(1 - allowance.used / allowance.limit, 0), 1)
     }
 
-    private var usage: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
-            Text("\(Int(allowance.used))").interfaceFont(34, style: .largeTitle)
-            Text("/ \(Int(allowance.limit))").interfaceFont(17).foregroundStyle(.secondary)
+    var body: some View {
+        VStack(spacing: 12) {
+            AccountCardTitle(title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            ring
+            if allowance.resetsIn > 0 {
+                Text(allowance.resetsIn >= 86_400
+                     ? "\((allowance.resetsIn - 1) / 86_400 + 1)天后重置"
+                     : "1天内重置")
+                    .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
         }
-        .monospacedDigit()
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(Int(allowance.used)) / \(Int(allowance.limit))")
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(16)
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
+        .accessibilityElement(children: .combine)
     }
 
     private var ring: some View {
         ZStack {
-            Circle().stroke(tint.opacity(0.14), lineWidth: 8)
-            if fraction > 0 {
-                Circle().trim(from: 0, to: fraction)
-                    .stroke(tint, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
+            ZStack {
+                Circle().stroke(tint.opacity(0.14), lineWidth: 8)
+                if availableFraction > 0 {
+                    Circle().trim(from: 0, to: availableFraction)
+                        .stroke(tint, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                }
             }
-            Text("\(Int(fraction * 100))%")
-                .interfaceFont(17).foregroundStyle(.primary)
+            .padding(4)
+            .accessibilityHidden(true)
+            Text(availableFraction, format: .percent.precision(.fractionLength(0)))
+                .interfaceFont(17).monospacedDigit().foregroundStyle(.primary)
                 .lineLimit(1).minimumScaleFactor(0.5).padding(12)
         }
         .frame(width: min(ringSize, 120), height: min(ringSize, 120))
-        .accessibilityHidden(true)
-    }
-}
-
-private struct AccountActionCostTable: View {
-    @Environment(\.dynamicTypeSize) private var typeSize
-    private struct Row: Identifiable {
-        let id: String
-        let action: String
-        let cost: String
-    }
-    private let rows = [
-        Row(id: "article-annotation", action: "文章预注释", cost: "1 词点"),
-        Row(id: "ebook-annotation", action: "电子书预注释（每千字）", cost: "0.25 词点"),
-        Row(id: "word-annotation", action: "🐈 猫忆查", cost: "0.25 词点"),
-        Row(id: "ebook-icon", action: "电子书图标生成", cost: "0.01 词点"),
-        Row(id: "pdf-outline", action: "PDF 目录生成", cost: "1 词点"),
-        Row(id: "review-translation", action: "翻译练习反馈", cost: "0.01 词点"),
-        Row(id: "review-conversation", action: "对话练习反馈", cost: "0.01 词点"),
-        Row(id: "language-detection", action: "语言识别", cost: "0.01 词点"),
-        Row(id: "bookmark-icon", action: "书签图标生成", cost: "0.01 词点"),
-        Row(id: "article-audio", action: "文章朗读生成", cost: "1 语点"),
-    ]
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            AccountCardTitle("操作额度消耗")
-            if typeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 16) {
-                    ForEach(rows) { row in
-                        if row.id != rows.first?.id { Divider() }
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(row.action)
-                            Text("每次消耗 \(row.cost)").foregroundStyle(.secondary)
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityIdentifier("account-action-cost-\(row.id)")
-                    }
-                }
-            } else {
-                Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 12) {
-                    GridRow {
-                        Text("操作").frame(maxWidth: .infinity, alignment: .leading)
-                        Text("每次消耗").gridColumnAlignment(.trailing)
-                    }.interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                    Divider().gridCellUnsizedAxes(.horizontal)
-                    ForEach(rows) { row in
-                        GridRow {
-                            Text(row.action).frame(maxWidth: .infinity, alignment: .leading)
-                                .accessibilityLabel("\(row.action)，每次消耗 \(row.cost)")
-                                .accessibilityIdentifier("account-action-cost-\(row.id)")
-                            Text(row.cost).monospacedDigit().fixedSize().accessibilityHidden(true)
-                        }
-                    }
-                }
-            }
-        }
-        .interfaceFont(15, style: .subheadline)
-        .padding(16).background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 24))
     }
 }
 
@@ -570,9 +512,13 @@ private struct AccountEditor: View {
             }
             .interfaceFont(17).navigationTitle(field.title).navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() }.disabled(saving) }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") { save() }.disabled(saving || session.sync?.online == false || value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || (field == .password && value != confirmation))
+                ToolbarItem(placement: .cancellationAction) {
+                    LeximorySheetCloseButton("取消") { dismiss() }.disabled(saving)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("保存", systemImage: "checkmark", action: save)
+                        .labelStyle(.iconOnly)
+                        .disabled(saving || session.sync?.online == false || value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || (field == .password && value != confirmation))
                 }
             }
             .interactiveDismissDisabled(saving)

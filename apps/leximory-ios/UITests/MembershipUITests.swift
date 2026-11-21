@@ -9,8 +9,14 @@ final class MembershipUITests: XCTestCase {
         let purchase = app.buttons["membership-purchase"]
         XCTAssertTrue(purchase.waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["membership-purchase"].label.contains("US$4.49"))
+        XCTAssertTrue(app.staticTexts["相较免费方案"].exists)
+        assertAllowance("AI 注解每月额度", multiplier: "5 倍", in: app)
+        assertAllowance("AI 朗读每月额度", multiplier: "约 3.3 倍", in: app)
+        XCTAssertFalse(app.buttons["额度何时恢复？"].exists)
         app.buttons["membership-plan-polyglot"].tap()
         XCTAssertTrue(app.buttons["membership-purchase"].label.contains("US$6.00"))
+        assertAllowance("AI 注解每月额度", multiplier: "15 倍", in: app)
+        assertAllowance("AI 朗读每月额度", multiplier: "约 6.7 倍", in: app)
         purchase.tap()
         XCTAssertTrue(app.staticTexts["membership-success"].waitForExistence(timeout: 5))
     }
@@ -111,6 +117,11 @@ final class MembershipUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.buttons["membership-purchase"].waitForExistence(timeout: 15))
         capture(app, name: "Membership dark")
+    }
+
+    @MainActor private func assertAllowance(_ label: String, multiplier: String, in app: XCUIApplication) {
+        let predicate = NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", label, multiplier)
+        XCTAssertTrue(app.staticTexts.matching(predicate).firstMatch.exists)
     }
 
     @MainActor private func capture(_ app: XCUIApplication, name: String) {

@@ -184,14 +184,18 @@ struct BrowserImportSheet: View {
             .disabled(busy || uncertain)
             .navigationTitle(request.title).navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() }.disabled(busy) }
+                ToolbarItem(placement: .cancellationAction) {
+                    LeximorySheetCloseButton("取消") { dismiss() }.disabled(busy)
+                }
                 if path.isEmpty {
-                    ToolbarItem(placement: .confirmationAction) {
+                    ToolbarItem(placement: .topBarTrailing) {
                         Button {
                             if uncertain { dismiss(); workspace.visit(.bookmarks) }
                             else { confirmImport() }
                         } label: {
-                            if busy { ProgressView() } else { Text(uncertain ? "查看我的书签" : file == nil && fullText ? "导入" : request.confirmation) }
+                            if busy { ProgressView().accessibilityLabel("正在保存") }
+                            else if uncertain { Text("查看我的书签") }
+                            else { Label(file == nil && fullText ? "导入" : request.confirmation, systemImage: "checkmark").labelStyle(.iconOnly) }
                         }.disabled(!uncertain && (!valid || busy || extracting || (file == nil && fullText && !editor.ready) || sync?.online == false))
                             .accessibilityIdentifier("browser-import-submit")
                     }

@@ -61,12 +61,6 @@ struct MembershipView: View {
                 VStack(spacing: 20) {
                     planPicker
                     allowances
-                    DisclosureGroup("额度如何使用？") {
-                        Text("AI 词点用于词语注解，AI 语点用于朗读，分别从首次使用起每 30 天重置。升级会提高额度，已用额度不会清零。")
-                            .foregroundStyle(LeximoryPalette.muted)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, 10)
-                    }.interfaceFont(13, style: .footnote)
                 }
                 if scrollsPurchaseAction { purchaseFooter }
             }
@@ -127,20 +121,32 @@ struct MembershipView: View {
         }
     }
 
-    private var allowances: some View {
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16)) : AnyLayout(HStackLayout(alignment: .top, spacing: 8))
-        let plan = details.subscriptionPlans.first { $0.id == selection.rawValue }
-        return layout {
-            allowance(plan.map { String(Int($0.definitions)) } ?? "—", label: "AI 词点 / 30 天")
-            allowance(plan.map { String(Int($0.audio)) } ?? "—", label: "AI 语点 / 30 天")
-        }.padding(.top, 2)
+    @ViewBuilder private var allowances: some View {
+        if let plan = details.subscriptionPlans.first(where: { $0.id == selection.rawValue }),
+           let free = details.subscriptionPlans.first(where: { $0.id == "beginner" }),
+           free.definitions > 0, free.audio > 0 {
+            let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 16)) : AnyLayout(HStackLayout(alignment: .top, spacing: 8))
+            VStack(spacing: 8) {
+                Text("相较免费方案")
+                    .interfaceFont(13, style: .footnote).foregroundStyle(LeximoryPalette.muted)
+                    .accessibilityAddTraits(.isHeader)
+                layout {
+                    allowance(plan.definitions / free.definitions, label: "AI 注解每月额度")
+                    allowance(plan.audio / free.audio, label: "AI 朗读每月额度")
+                }
+            }
+            .padding(.top, 2)
+        }
     }
 
-    private func allowance(_ value: String, label: String) -> some View {
-        VStack(spacing: 4) {
-            Text(value).editorialFont(27, relativeTo: .title2, language: "English").monospacedDigit()
+    private func allowance(_ ratio: Double, label: String) -> some View {
+        let rounded = (ratio * 10).rounded() / 10
+        let value = rounded.formatted(.number.precision(.fractionLength(0...1)))
+        return VStack(spacing: 4) {
+            Text(rounded == ratio ? "\(value) 倍" : "约 \(value) 倍")
+                .editorialFont(27, relativeTo: .title2, language: "Chinese").monospacedDigit()
             Text(label).interfaceFont(11, style: .caption1).foregroundStyle(LeximoryPalette.muted)
-        }.frame(maxWidth: .infinity).accessibilityElement(children: .combine)
+        }.multilineTextAlignment(.center).frame(maxWidth: .infinity).accessibilityElement(children: .combine)
     }
 
     private var purchaseFooter: some View {
@@ -162,11 +168,15 @@ struct MembershipView: View {
                     if let price = store.prices[selection] {
                         Text(price + " / 月").accessibilityIdentifier("membership-price")
                     }
-                }.interfaceFont(17).frame(maxWidth: .infinity, minHeight: 52)
+                }.interfaceFont(17).frame(maxWidth: .infinity, minHeight: 36)
                     .foregroundStyle(LeximoryPalette.paper)
-                    .background(LeximoryPalette.ink, in: .capsule)
-            }.buttonStyle(.plain).disabled(!store.canPurchase)
-                .opacity(store.canPurchase ? 1 : 0.45).accessibilityIdentifier("membership-purchase")
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .controlSize(.large)
+            .tint(LeximoryPalette.sage)
+            .disabled(!store.canPurchase)
+            .accessibilityIdentifier("membership-purchase")
             Text("按月自动续订，可随时取消。")
                 .padding(.top, 8)
                 .accessibilityIdentifier("membership-renewal")

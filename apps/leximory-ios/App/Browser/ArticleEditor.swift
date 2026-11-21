@@ -35,15 +35,16 @@ struct ArticleEditorPage: View {
                 if controller.failed {
                     ToolbarItem(placement: .cancellationAction) { Button("返回") { dismiss() } }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("应用") {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("应用", systemImage: "checkmark") {
                         committing = true
                         Task {
                             defer { committing = false }
                             do { content = try await controller.markdown(); dismiss() }
                             catch { self.error = "修改未能保存，请重试。" }
                         }
-                    }.disabled(!controller.ready || committing).accessibilityIdentifier("article-editor-done")
+                    }.labelStyle(.iconOnly).disabled(!controller.ready || committing)
+                        .accessibilityIdentifier("article-editor-done")
                 }
             }
             .navigationBarBackButtonHidden()

@@ -26,25 +26,23 @@ struct ArticleAudioButton: View {
                         failure = nil; generating = true; requestID = UUID()
                     }
                 } label: {
-                    HStack(spacing: 10) {
-                        Group {
-                            if generating { ProgressView() }
-                            else { Image(systemName: fullAudioID == nil ? "waveform.badge.plus" : "play.fill").font(.system(size: 13, weight: .medium)) }
+                    HStack(spacing: 8) {
+                        if generating {
+                            ProgressView().controlSize(.small).accessibilityHidden(true)
+                        } else {
+                            Image(systemName: fullAudioID == nil ? "waveform.badge.plus" : "play.fill")
+                                .accessibilityHidden(true)
                         }
-                        .frame(width: 32, height: 32)
-                        .background(LeximoryPalette.paper, in: Circle())
                         Text(fullAudioID != nil ? "朗读全文" : generating ? "正在生成全文录音" : "生成全文录音")
-                            .interfaceFont(15)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .padding(.leading, 6).padding(.trailing, 16).padding(.vertical, 6)
+                    .interfaceFont(15, style: .subheadline)
+                    .foregroundStyle(.primary)
                     .frame(minHeight: 44)
-                    .background(LeximoryPalette.cover, in: Capsule())
-                    .overlay(Capsule().strokeBorder(LeximoryPalette.border, lineWidth: 0.5))
-                    .foregroundStyle(LeximoryPalette.ink)
-                    .contentShape(Capsule())
+                    .contentShape(.rect)
                 }
-                .buttonStyle(.plain).disabled(generating || !online)
+                .buttonStyle(.plain)
+                .disabled(generating || !online)
                 .accessibilityIdentifier(fullAudioID == nil ? "generate-article-audio" : "play-article-audio")
                 if let failure {
                     Text(failure).interfaceFont(14).foregroundStyle(.secondary)
@@ -62,7 +60,7 @@ struct ArticleAudioButton: View {
                 } catch {
                     guard !Task.isCancelled else { return }
                     if let error = MobileClient.cause(of: error) as? MobileFailure {
-                        failure = error.error.code == "quota_exceeded" ? "本期语点额度已用完。" : error.error.message
+                        failure = error.error.code == "quota_exceeded" ? "本期 AI 朗读额度不足。" : error.error.message
                     } else { failure = "全文录音暂未生成，请重试。" }
                 }
             }

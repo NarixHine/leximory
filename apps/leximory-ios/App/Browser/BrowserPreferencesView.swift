@@ -53,9 +53,12 @@ struct BrowserPreferencesView: View {
             }
             .navigationTitle("词汇收藏设置").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("完成") { Task { await save() } }.disabled(busy || !loaded)
+                ToolbarItem(placement: .cancellationAction) {
+                    LeximorySheetCloseButton("取消") { dismiss() }.tint(.primary)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("完成", systemImage: "checkmark") { Task { await save() } }
+                        .labelStyle(.iconOnly).tint(.primary).disabled(busy || !loaded)
                 }
             }
             .task { await load() }
@@ -142,7 +145,11 @@ struct BrowserBookmarkSheet: View {
                 if loading || busy { ProgressView() }
                 if let error { Text(error).foregroundStyle(.secondary) }
             }.navigationTitle("存为书签").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() }.disabled(busy) } }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        LeximorySheetCloseButton("取消") { dismiss() }.tint(.primary).disabled(busy)
+                    }
+                }
                 .interactiveDismissDisabled(busy)
                 .task {
                     defer { loading = false }

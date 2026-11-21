@@ -508,9 +508,9 @@ struct BrowserPinEditor: View {
             .interfaceFont(17, style: .body)
             .navigationTitle("主页快捷方式").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
+                ToolbarItem(placement: .cancellationAction) { LeximorySheetCloseButton("取消") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("保存", systemImage: "checkmark") {
                         var updated = pin
                         updated.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
                         if case .webpage(let originalURL, let bookmarkID) = pin.destination,
@@ -520,7 +520,7 @@ struct BrowserPinEditor: View {
                         }
                         save(updated)
                         dismiss()
-                    }.disabled(!valid)
+                    }.labelStyle(.iconOnly).disabled(!valid)
                 }
             }
         }.leximorySheetStyle().presentationDetents([.height(sectionHeight * (isWebpage ? 2 : 1) + 88), .large])

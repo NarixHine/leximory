@@ -93,10 +93,13 @@ struct TextManagementSheet: View {
             .navigationTitle("编辑").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if path.isEmpty {
-                    ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() }.disabled(busy) }
-                    ToolbarItem(placement: .confirmationAction) {
+                    ToolbarItem(placement: .cancellationAction) {
+                        LeximorySheetCloseButton("取消") { dismiss() }.disabled(busy)
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
                         Button { Task { await save() } } label: {
-                            if busy { ProgressView() } else { Text("保存") }
+                            if busy { ProgressView().accessibilityLabel("正在保存") }
+                            else { Label("保存", systemImage: "checkmark").labelStyle(.iconOnly) }
                         }.disabled(!valid || source == nil || unavailable || saveIssue?.requiresReload == true)
                             .accessibilityIdentifier("text-edit-save")
                     }

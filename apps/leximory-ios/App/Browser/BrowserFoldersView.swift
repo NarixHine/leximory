@@ -21,8 +21,12 @@ struct BrowserFoldersView: View {
                 HStack {
                     Text("我的书签").displayFont(30, relativeTo: .largeTitle)
                     Spacer()
-                    Button("新建文件夹", systemImage: "folder.badge.plus") { editor = FolderEditorRequest() }
-                        .labelStyle(.iconOnly).disabled(sync?.online == false)
+                    Button { editor = FolderEditorRequest() } label: {
+                        Label("新建文件夹", systemImage: "plus")
+                            .labelStyle(.iconOnly).font(.body.weight(.semibold))
+                            .frame(width: 44, height: 44).contentShape(.rect)
+                    }
+                    .buttonStyle(.borderless).disabled(sync?.online == false)
                 }.listRowBackground(Color.clear)
             }
             Group {
@@ -31,8 +35,10 @@ struct BrowserFoldersView: View {
                 }
                 if folders.contains(where: \.archived) {
                     Section {
-                        DisclosureGroup("已归档", isExpanded: $archiveExpanded) {
+                        DisclosureGroup(isExpanded: $archiveExpanded) {
                             ForEach(folders.filter(\.archived)) { library in folder(library) }
+                        } label: {
+                            Label { Text("已归档") } icon: { BrowserFolderIcon(symbol: "archivebox") }
                         }.foregroundStyle(.primary)
                     }
                 }
@@ -94,7 +100,9 @@ struct BrowserFoldersView: View {
                     if library.owned {
                         Button("重新命名", systemImage: "pencil") { editor = FolderEditorRequest(library: library) }.disabled(sync?.online == false)
                     }
-                    Button(library.archived ? "取消归档" : "归档", systemImage: "archivebox") { Task { await workspace.setArchived(library) } }.disabled(sync?.online == false || workspace.archivingLibraries.contains(library.id))
+                    Button(library.archived ? "取消归档" : "归档", systemImage: library.archived ? "tray.and.arrow.up" : "archivebox") {
+                        Task { await workspace.setArchived(library) }
+                    }.disabled(sync?.online == false || workspace.archivingLibraries.contains(library.id))
                 }
         }
     }
@@ -139,8 +147,18 @@ struct BrowserFolderLabel: View {
                 Text(library.name).editorialFont(17, relativeTo: .body, language: library.preview.language).foregroundStyle(.primary)
                 Text(library.preview.localizedLanguage).interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
             }
-        } icon: { Image(systemName: "folder").foregroundStyle(.secondary) }
+        } icon: { BrowserFolderIcon(symbol: "folder") }
         .padding(.vertical, 4)
+    }
+}
+
+private struct BrowserFolderIcon: View {
+    let symbol: String
+    @ScaledMetric(relativeTo: .body) private var width: CGFloat = 24
+
+    var body: some View {
+        Image(systemName: symbol).font(.body).frame(width: width)
+            .foregroundStyle(.primary).accessibilityHidden(true)
     }
 }
 
@@ -159,7 +177,7 @@ struct BrowserResourceRow: View {
                     }
                 }
             } icon: {
-                BrowserTextIcon(text: text).foregroundStyle(.secondary)
+                BrowserTextIcon(text: text).font(.body).foregroundStyle(.primary)
             }
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .contentShape(Rectangle())
@@ -181,7 +199,7 @@ struct BrowserFolderPicker: View {
             if workspace.writableFolders.contains(where: \.archived) {
                 Section { DisclosureGroup("已归档", isExpanded: $archived) { ForEach(workspace.writableFolders.filter(\.archived)) { library in row(library) } } }
             }
-            Section { Button("新建文件夹", systemImage: "folder.badge.plus") { editor = FolderEditorRequest() }.disabled(sync?.online == false) }
+            Section { Button("新建文件夹", systemImage: "plus") { editor = FolderEditorRequest() }.disabled(sync?.online == false) }
         }
         .interfaceFont(17)
         .navigationTitle("选择文件夹").navigationBarTitleDisplayMode(.inline)
@@ -210,10 +228,11 @@ struct BrowserFolderPicker: View {
                     if expanded.contains(library.id) { expanded.remove(library.id) }
                     else { expanded.insert(library.id) }
                 } label: {
-                    Image(systemName: expanded.contains(library.id) ? "chevron.down" : "chevron.right")
+                    Image(systemName: expanded.contains(library.id) ? "chevron.down" : "chevron.forward")
+                        .font(.footnote.weight(.semibold)).imageScale(.small)
                         .frame(width: 44, height: 44).contentShape(.rect)
                 }
-                .buttonStyle(.borderless).foregroundStyle(.secondary)
+                .buttonStyle(.borderless).foregroundStyle(.primary)
                 .accessibilityLabel("\(expanded.contains(library.id) ? "收起" : "展开")\(library.name)的内容")
                 .accessibilityIdentifier("browser-expand-folder-\(library.id)")
             }
@@ -252,10 +271,15 @@ struct FolderEditorSheet: View {
             }
             .navigationTitle(library == nil ? "新建文件夹" : "重新命名").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() }.disabled(busy) }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button { Task { await save() } } label: { if busy { ProgressView() } else { Text(library == nil ? "创建" : "保存") } }
-                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || name.count > 128 || busy)
+                ToolbarItem(placement: .cancellationAction) {
+                    LeximorySheetCloseButton("取消") { dismiss() }.disabled(busy)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { Task { await save() } } label: {
+                        if busy { ProgressView().accessibilityLabel("正在保存") }
+                        else { Label(library == nil ? "创建" : "保存", systemImage: "checkmark").labelStyle(.iconOnly) }
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || name.count > 128 || busy)
                 }
             }
             .onAppear { if let library { name = library.name; language = library.language } }

@@ -63,6 +63,11 @@ final class ArticleAudioUITests: XCTestCase {
         open("fixture-forest", in: app)
         let generate = app.buttons["generate-article-audio"]
         XCTAssertTrue(generate.waitForExistence(timeout: 10))
+        XCTAssertGreaterThanOrEqual(generate.frame.height, 44)
+        let header = XCTAttachment(screenshot: app.screenshot())
+        header.name = "Article cover and audio generation button"
+        header.lifetime = .keepAlways
+        add(header)
         generate.tap()
         XCTAssertTrue(app.buttons["暂停"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["play-article-audio"].exists)
