@@ -661,6 +661,10 @@ struct EbookBookmarkCard: View {
     let isPDF: Bool
 
     var body: some View {
+        let quote = isPDF
+            ? PDFHighlightExcerpt.reflow(bookmark.quote, language: language)
+            : bookmark.quote
+
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "bookmark.fill").font(.system(size: 14))
@@ -675,7 +679,7 @@ struct EbookBookmarkCard: View {
                 Image(systemName: "chevron.right").font(.system(size: 12, weight: .medium))
                     .foregroundStyle(LeximoryPalette.muted).accessibilityHidden(true)
             }
-            Text(bookmark.quote).font(LeximoryTypography.prose(17, language: language))
+            Text(quote).font(LeximoryTypography.prose(17, language: language))
                 .lineSpacing(5).lineLimit(7).frame(maxWidth: .infinity, alignment: .leading)
             if isPDF, let page = bookmark.location, bookmark.chapter?.isEmpty == false {
                 Text("第\(page)页").interfaceFont(13, style: .footnote).foregroundStyle(LeximoryPalette.muted)
