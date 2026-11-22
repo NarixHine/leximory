@@ -1,12 +1,13 @@
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import { editableTextSchema, resourceID, textEditSchema, textSchema } from '@repo/api'
-import { MAX_FILE_SIZE, maxArticleLength } from '@repo/env/content'
+import { maxArticleLength } from '@repo/env/content'
 import { canWriteLibrary } from '@repo/service/access'
 import { createCatalog, summarizeText, type CatalogStore, type TextRow } from './catalog'
 import type { AuthoringStore } from './authoring'
 import { MobileError } from './errors'
-import { bodyBytes, checkedResponse, jsonBody, query, type MobileContext, type MobileOperation } from './http'
+import { checkedResponse, jsonBody, query, type MobileContext, type MobileOperation } from './http'
+import { readEbookUpload } from './ebook-upload'
 
 export interface ManagementStore {
     edit(text: TextRow, fields: z.infer<typeof textEditSchema>): Promise<TextRow>
@@ -39,13 +40,12 @@ export function createManagementOperations(dependencies: {
     const catalog = createCatalog(dependencies.catalog)
     const store = dependencies.management
     async function writableText(context: MobileContext) {
-        const result = await catalog.authorizedText(
+        const result = await catalog.authorizedContentText(
             context.subject,
             resourceID.parse(context.params.textId),
             context.signal,
         )
-        if (!canWriteLibrary(context.subject, result.library) || result.library.shadow || result.text.bookmark_url)
-            throw new MobileError('inaccessible')
+        if (result.text.bookmark_url) throw new MobileError('inaccessible')
         return result
     }
     const editableText: MobileOperation = async (context) => {
@@ -88,8 +88,7 @@ export function createManagementOperations(dependencies: {
             .object({ libraryId: resourceID })
             .strict()
             .parse(await jsonBody(context.request, 1024, context.signal))
-        const library = await catalog.authorizedLibrary(context.subject, libraryId, context.signal)
-        if (!canWriteLibrary(context.subject, library) || library.shadow) throw new MobileError('inaccessible')
+        const library = await catalog.authorizedContentLibrary(context.subject, libraryId, context.signal)
         const id = resourceID.parse(context.params.textId)
         const text = await dependencies.catalog.text(id, context.signal)
         if (!text) return { removed: true }
@@ -106,18 +105,8 @@ export function createManagementOperations(dependencies: {
             .min(1)
             .max(512)
             .parse(query(context.request, ['filename']).filename)
-        const extension = filename.split('.').at(-1)?.toLowerCase()
-        if (extension !== 'pdf' && extension !== 'epub') throw new MobileError('unsupported_format')
-        const bytes = await bodyBytes(context.request, MAX_FILE_SIZE, context.signal)
-        const valid =
-            extension === 'pdf'
-                ? new TextDecoder().decode(bytes.subarray(0, 5)) === '%PDF-'
-                : bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 3 && bytes[3] === 4
-        if (!valid) throw new MobileError('unsupported_format')
-        await store.replaceEbook(
-            text,
-            new File([bytes], filename, { type: extension === 'pdf' ? 'application/pdf' : 'application/epub+zip' }),
-        )
+        const { file } = await readEbookUpload(context, filename)
+        await store.replaceEbook(text, file)
         return checkedResponse(textSchema, summarizeText({ ...text, has_ebook: true }))
     }
     const removeEbook: MobileOperation = async (context) => {

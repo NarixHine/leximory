@@ -12032,6 +12032,7 @@
             "required": true,
             "schema": {
               "type": "string",
+              "minLength": 1,
               "maxLength": 512
             }
           },
@@ -12041,7 +12042,17 @@
             "required": true,
             "schema": {
               "type": "string",
+              "minLength": 1,
               "maxLength": 512
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{1,128}$"
             }
           }
         ],

@@ -33,12 +33,13 @@ export async function* streamEbookAnnotations(input: {
 }): AsyncGenerator<GeneratedEbookAnnotation> {
     const requestId = input.requestId ?? randomUUID(),
         started = performance.now()
-    const debug =
-        input.debug ??
-        ((event: EbookAnnotationDebugEvent) => console.info(JSON.stringify({ event: 'ebook.annotation', ...event })))
     const log = (event: EbookAnnotationDebugEvent) => {
         try {
-            debug(event)
+            if (input.debug) input.debug(event)
+            else if (event.kind === 'generation') {
+                const { output: _, ...metrics } = event
+                console.info('ebook.annotation', metrics)
+            }
         } catch {}
     }
     const config = annotationPrompt({
@@ -79,7 +80,7 @@ export async function* streamEbookAnnotations(input: {
             received += delta.length
             if (received > 512000) throw new MobileError('service_unavailable')
             pending += delta
-            output += delta
+            if (input.debug) output += delta
             firstTextMs ??= performance.now() - started
             while (true) {
                 const match = pending.matchAll(syntax).next().value

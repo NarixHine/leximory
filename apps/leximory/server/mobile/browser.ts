@@ -111,8 +111,7 @@ export function createBrowserOperations(dependencies: {
             return { saved: true }
         },
         createBookmark: async ({ request, subject, signal, params }) => {
-            const library = await catalog.authorizedLibrary(subject, resourceID.parse(params.libraryId), signal)
-            if (!canWriteLibrary(subject, library) || library.shadow) throw new MobileError('inaccessible')
+            const library = await catalog.authorizedContentLibrary(subject, resourceID.parse(params.libraryId), signal)
             const input = bookmarkInputSchema.parse(await jsonBody(request, 8192, signal))
             browserURL(input.url)
             return checkedResponse(textSchema, await store.bookmark(subject, library, input))

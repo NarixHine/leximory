@@ -17,6 +17,7 @@ export async function startBackendFixture() {
     const texts = new Map<string, z.infer<typeof row>>()
     const folders = new Map<string, z.infer<typeof folderRow> & { starred_by: null }>()
     const words = new Map<string, string>()
+    const homePins = new Map<string, unknown>()
     const values = new Map<string, unknown>()
     values.set(
         `review:${userId}:2026-10-12:en`,
@@ -122,6 +123,22 @@ export async function startBackendFixture() {
             }
             if (url.pathname === '/supabase/rest/v1/apple_subscriptions') {
                 json([])
+                return
+            }
+            if (url.pathname === '/supabase/rest/v1/browser_home_pins') {
+                if (request.method === 'POST') {
+                    const pin = z.looseObject({ id: z.uuid(), user_id: z.literal(userId) }).parse(body)
+                    if (homePins.has(pin.id)) {
+                        json({ code: '23505', message: 'Duplicate home pin' }, 409)
+                        return
+                    }
+                    homePins.set(pin.id, pin)
+                    json(pin, 201)
+                    return
+                }
+                if (url.searchParams.get('user_id') !== 'eq.' + userId) throw new Error('Unscoped home pin read')
+                const id = url.searchParams.get('id')?.slice(3)
+                json(id ? [homePins.get(id)].filter(Boolean) : [...homePins.values()])
                 return
             }
             if (url.pathname === '/supabase/rest/v1/texts') {

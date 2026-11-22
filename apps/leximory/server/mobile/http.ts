@@ -132,18 +132,30 @@ export async function jsonBody(request: Request, maxBytes = 8192, signal = reque
     }
 }
 
-export function query(request: Request, allowed: string[]): Record<string, string> {
+export function query(request: Request, allowed?: string[]): Record<string, string> {
     const parameters = new URL(request.url).searchParams
-    const entries: Record<string, string> = {}
+    const entries = new Map<string, string>()
     for (const [key, value] of parameters) {
-        if (!allowed.includes(key) || Object.hasOwn(entries, key)) throw new MobileError('invalid_input')
-        entries[key] = value
+        if ((allowed && !allowed.includes(key)) || entries.has(key)) throw new MobileError('invalid_input')
+        entries.set(key, value)
     }
-    return entries
+    return Object.fromEntries(entries)
 }
 
 export function checkedResponse<T>(schema: z.ZodType<T>, value: unknown): T {
     const parsed = schema.safeParse(value)
     if (!parsed.success) throw new MobileError('service_unavailable', { cause: parsed.error })
     return parsed.data
+}
+
+export function jsonOperation<Input, Output>(
+    contract: { input: z.ZodType<Input>; output: z.ZodType<Output>; bodyLimit?: number },
+    run: (input: Input, context: Pick<MobileContext, 'subject' | 'signal'>) => Promise<Output>,
+): MobileOperation {
+    return async ({ request, params, signal, subject }) => {
+        const search = query(request)
+        const body = contract.bodyLimit === undefined ? undefined : await jsonBody(request, contract.bodyLimit, signal)
+        const input = contract.input.parse({ params, query: search, body })
+        return checkedResponse(contract.output, await run(input, { subject, signal }))
+    }
 }

@@ -83,6 +83,19 @@ export const homePinsPageSchema = z
         nextCursor: z.uuid().nullable(),
     })
     .strict()
+export const homePinsRequest = z.object({
+    query: z.strictObject({ cursor: z.uuid().toLowerCase().optional() }),
+})
+export const homePinSaveRequest = z.object({
+    params: z.strictObject({ pinId: z.uuid().toLowerCase() }),
+    query: z.strictObject({}),
+    body: homePinSaveSchema,
+})
+export const ebookUploadQuerySchema = z.strictObject({
+    title: z.string().trim().min(1).max(512),
+    filename: z.string().min(1).max(512),
+    requestId: resourceID.optional(),
+})
 export const textEditSchema = z
     .object({
         title: z.string().trim().min(1).max(512),
@@ -475,12 +488,12 @@ export const ebookImportSuggestionSchema = z
 
 export const mobileContract = {
     homePins: oc
-        .route({ method: 'GET', path: '/browser/home-pins' })
-        .input(z.object({ cursor: z.uuid().optional() }).strict())
+        .route({ method: 'GET', path: '/browser/home-pins', inputStructure: 'detailed' })
+        .input(homePinsRequest)
         .output(homePinsPageSchema),
     saveHomePin: oc
-        .route({ method: 'POST', path: '/browser/home-pins/{pinId}' })
-        .input(homePinSaveSchema.extend({ pinId: z.uuid() }))
+        .route({ method: 'POST', path: '/browser/home-pins/{pinId}', inputStructure: 'detailed' })
+        .input(homePinSaveRequest)
         .output(homePinSchema),
     guestSession: oc
         .route({ method: 'POST', path: '/guest/session', spec: (spec) => ({ ...spec, security: [] }) })

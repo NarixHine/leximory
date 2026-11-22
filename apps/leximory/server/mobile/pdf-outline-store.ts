@@ -2,7 +2,8 @@ import { assertUserActive } from '@repo/supabase/user'
 import 'server-only'
 import { outlinePointerKey, readPDFOutlinePointer } from './pdf-outline-storage'
 import { publishPDFOutlineScript } from './pdf-outline-publication'
-import { createHash, randomUUID } from 'node:crypto'
+import { createHash } from 'node:crypto'
+import { withMutationLease } from './mutation-lease'
 import { generateText, Output } from 'ai'
 import { embedPDFOutline } from './pdf-outline-document'
 import { z } from 'zod'
@@ -23,20 +24,6 @@ const savedFileSchema = z.object({ path: z.string(), digest: z.string() }).stric
 const historySchema = z.object({ before: savedFileSchema, after: savedFileSchema }).strict()
 const generatedSchema = z.object({ fingerprint: z.string(), result: pdfOutlineResultSchema }).strict()
 
-async function locked<T>(key: string, work: () => Promise<T>): Promise<T> {
-    const token = randomUUID()
-    if (!(await redis.set(key, token, { nx: true, ex: 180 }))) throw new MobileError('service_unavailable')
-    try {
-        return await work()
-    } finally {
-        await redis.eval(
-            "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) end return 0",
-            [key],
-            [token],
-        )
-    }
-}
-
 const uploadPath = (scope: OutlineScope, requestId: string, digest: string) =>
     `pdf-outlines/${scope.textId}/${mobileMutationID(scope.sourceVersion)}/${requestId}-${digest}.pdf`
 async function signedResult(scope: OutlineScope, revision: string, path: string) {
@@ -50,7 +37,7 @@ export const pdfOutlineStore: PDFOutlineStore = {
     async generate(scope, input, signal) {
         const key = generationKey(scope, input.requestId)
         const fingerprint = createHash('sha256').update(JSON.stringify(input.pages)).digest('hex')
-        return locked(key + ':lock', async () => {
+        return withMutationLease(redis, key + ':lock', 180, async () => {
             const cached = await redis.get(key)
             if (cached) {
                 const existing = checkedResponse(generatedSchema, cached)
@@ -74,7 +61,7 @@ export const pdfOutlineStore: PDFOutlineStore = {
     async save(scope, input, signal) {
         const receiptKey = `mobile:pdf-outline-receipt:${mobileMutationID(scope.userId, scope.textId, scope.sourceVersion, input.requestId)}`
         const fingerprint = createHash('sha256').update(JSON.stringify(input)).digest('hex')
-        return locked(`mobile:text-mutation:${scope.textId}`, async () => {
+        return withMutationLease(redis, `mobile:text-mutation:${scope.textId}`, 180, async () => {
             const receipt = await redis.get(receiptKey)
             if (receipt) {
                 const saved = checkedResponse(

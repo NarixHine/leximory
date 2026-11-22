@@ -13,7 +13,7 @@ const failures = {
     inaccessible: { status: 404, message: '此内容暂不可用。', retryable: false },
     invalid_input: { status: 400, message: '请求无效，请重试。', retryable: false },
     stale_revision: { status: 409, message: '文章已更新，请重新打开。', retryable: false },
-    quota_exceeded: { status: 429, message: '本期词点额度已用完。', retryable: false },
+    quota_exceeded: { status: 429, message: '本月词点额度已用完。', retryable: false },
     unsupported_format: { status: 422, message: 'iOS 版暂不支持此格式。', retryable: false },
     language_unresolved: {
         status: 422,
@@ -45,6 +45,9 @@ type MobileDependencyStep =
     | 'article.lookup'
     | 'article.persist'
     | 'article.confirm'
+    | 'ebook.lookup'
+    | 'ebook.upload'
+    | 'ebook.publish'
     | 'annotation.quota'
     | 'annotation.enqueue'
 export class MobileDependencyError extends MobileError {

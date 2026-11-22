@@ -1,11 +1,11 @@
 import { assertUserActive } from '@repo/supabase/user'
 import 'server-only'
-import { randomUUID } from 'node:crypto'
 import { getMembership } from '@repo/user/membership'
 import { redis } from '@repo/kv/redis'
 import { supabase } from '@repo/supabase'
 import { PLAN_AUDIO_QUOTA } from '@repo/env/config'
 import { invalidateMutationCaches } from './mutation-effects'
+import { withMutationLease } from './mutation-lease'
 import { speak } from '@/server/ai/speak'
 import { uploadAudio } from '@/server/db/audio'
 import { MobileError } from './errors'
@@ -22,10 +22,7 @@ async function exists(id: string) {
 export const articleAudioStore: ArticleAudioStore = {
     async generate({ id, text, lang, userId, signal }) {
         if (await exists(id)) return
-        const lock = `mobile:article-audio:${id}`
-        const lease = randomUUID()
-        if (!(await redis.set(lock, lease, { nx: true, ex: 600 }))) throw new MobileError('service_unavailable')
-        try {
+        await withMutationLease(redis, `mobile:article-audio:${id}`, 600, async () => {
             if (await exists(id)) return
             signal.throwIfAborted()
             const { plan } = await getMembership(userId, signal)
@@ -47,12 +44,6 @@ export const articleAudioStore: ArticleAudioStore = {
             signal.throwIfAborted()
             await assertUserActive(userId)
             await uploadAudio({ id, audio })
-        } finally {
-            await redis.eval(
-                "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) end return 0",
-                [lock],
-                [lease],
-            )
-        }
+        })
     },
 }

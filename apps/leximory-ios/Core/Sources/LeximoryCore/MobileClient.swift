@@ -495,9 +495,11 @@ public struct MobileClient: Sendable {
         await localStore?.upsertText(text)
         return text
     }
-    public func uploadEbook(libraryID: String, title: String, filename: String, data: Data) async throws -> CatalogText {
+    public func uploadEbook(libraryID: String, title: String, filename: String, data: Data, requestID: String = UUID().uuidString) async throws -> CatalogText {
         guard !data.isEmpty, data.count <= 4_718_592 else { throw URLError(.dataLengthExceedsMaximum) }
-        let text = try mapped(try await client.uploadEbook(path: .init(libraryId: libraryID), query: .init(title: title, filename: filename), body: .binary(HTTPBody(data))).ok.body.json, to: CatalogText.self)
+        let text = try await MutationRetry.run {
+            try mapped(try await client.uploadEbook(path: .init(libraryId: libraryID), query: .init(title: title, filename: filename, requestId: requestID), body: .binary(HTTPBody(data))).ok.body.json, to: CatalogText.self)
+        }
         await localStore?.upsertText(text)
         return text
     }

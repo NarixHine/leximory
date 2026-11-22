@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { resourceID, type MobileLibrary, type MobileText } from '@repo/api'
 import { LangSchema } from '@repo/schema/library'
 import type { MobileSubject } from '@repo/schema/mobile'
-import { canReadLibrary } from '@repo/service/access'
+import { canReadLibrary, canWriteLibrary } from '@repo/service/access'
 import { MobileError } from './errors'
 import { renderDocument } from './render-document'
 import { articleAudioID, articleSpeech, existingFullArticleAudioID } from './article-speech'
@@ -97,7 +97,20 @@ export function createCatalog(store: CatalogStore) {
         const library = await authorizedLibrary(subject, text.lib, signal)
         return { text, library }
     }
+    function requireContentLibraryOwner(subject: MobileSubject, library: LibraryRow) {
+        if (!canWriteLibrary(subject, library) || library.shadow) throw new MobileError('inaccessible')
+    }
     return {
+        async authorizedContentLibrary(subject: MobileSubject, id: string, signal: AbortSignal) {
+            const library = await authorizedLibrary(subject, id, signal)
+            requireContentLibraryOwner(subject, library)
+            return library
+        },
+        async authorizedContentText(subject: MobileSubject, id: string, signal: AbortSignal) {
+            const result = await authorizedText(subject, id, signal)
+            requireContentLibraryOwner(subject, result.library)
+            return result
+        },
         async libraries(subject: MobileSubject, cursor: string | undefined, signal: AbortSignal) {
             if (cursor && !resourceID.safeParse(cursor).success) throw new MobileError('invalid_input')
             const [rows, archived] = await Promise.all([

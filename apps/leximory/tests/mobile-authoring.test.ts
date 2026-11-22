@@ -7,6 +7,11 @@ import { mobileSubjectSchema } from '@repo/schema/mobile'
 import { createAuthoringOperations, type AuthoringStore } from '../server/mobile/authoring'
 import type { CatalogStore } from '../server/mobile/catalog'
 import { MobileError } from '../server/mobile/errors'
+import { createClient } from '@supabase/supabase-js'
+import { Redis } from '@upstash/redis'
+import type { Database } from '@repo/supabase/types'
+import { createEbookImporter } from '../server/mobile/ebook-import-persistence'
+import { textRowSchema, type TextRow } from '../server/mobile/catalog'
 const subject = mobileSubjectSchema.parse({ userId: 'reader' })
 const fields = { original: 'banks', lemma: 'bank', definition: '河岸', etymology: '古英语', cognates: 'embankment' }
 const word = { id: 'word', libraryId: 'library', fields }
@@ -46,16 +51,19 @@ function harness(store: Partial<AuthoringStore> = {}, owner = catalog) {
                 format: 'article',
             }
         },
-        ebook: async (library, title, file) => {
+        ebook: async (library, { title, upload: { file } }) => {
             writes.push({ title, type: file.type, size: file.size })
             return {
-                id: 'ebook',
-                libraryId: library.id,
-                title,
-                topics: [],
-                emoji: null,
-                createdAt: null,
-                format: 'ebook',
+                created: true,
+                text: {
+                    id: 'ebook',
+                    libraryId: library.id,
+                    title,
+                    topics: [],
+                    emoji: null,
+                    createdAt: null,
+                    format: 'ebook',
+                },
             }
         },
         chooseEbookEmoji: async () => '🪐',
@@ -77,14 +85,72 @@ function request(path: string, body?: unknown) {
         body: body === undefined ? undefined : JSON.stringify(body),
     })
 }
-function ebookUpload(filename: string, bytes: Uint8Array<ArrayBuffer> | string, title = 'Book') {
+function ebookUpload(filename: string, bytes: Uint8Array<ArrayBuffer> | string, title = 'Book', requestId?: string) {
     const parameters = new URLSearchParams({ title, filename })
+    if (requestId) parameters.set('requestId', requestId)
     return new Request(`https://example.com/api/mobile/v1/libraries/library/ebooks?${parameters}`, {
         method: 'POST',
         headers: { authorization: 'Bearer test', 'content-type': 'application/octet-stream' },
         body: bytes,
     })
 }
+test('ebook upload replays a lost publication response without another text or file', async (t) => {
+    const rows = new Map<string, TextRow>()
+    const uploaded: string[] = []
+    const database = createClient<Database>('https://database.test', 'fixture', {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: {
+            fetch: async (input, init) => {
+                const url = new URL(String(input))
+                if (url.pathname.startsWith('/storage/v1/object/user-files/ebooks/')) {
+                    assert.equal(init?.method, 'POST')
+                    assert.ok(init?.body instanceof FormData)
+                    const file = init.body.get('')
+                    assert.ok(file instanceof Blob)
+                    assert.equal(await file.text(), '%PDF-new')
+                    uploaded.push(url.pathname.split('/').at(-1)!)
+                    return Response.json({ Key: url.pathname })
+                }
+                assert.equal(url.pathname, '/rest/v1/texts')
+                if (init?.method === 'POST') {
+                    const saved = textRowSchema.parse({
+                        topics: [],
+                        emoji: null,
+                        created_at: null,
+                        updated_at: null,
+                        no: null,
+                        ...JSON.parse(String(init.body)),
+                    })
+                    rows.set(saved.id, saved)
+                    throw new TypeError('Lost committed ebook response')
+                }
+                assert.equal(init?.method, 'GET')
+                const row = rows.get(url.searchParams.get('id')?.slice(3) ?? '')
+                return Response.json(row ? [row] : [])
+            },
+        },
+    })
+    const lease = new Redis({
+        url: 'https://lease.fixture.invalid',
+        token: 'fixture',
+        enableAutoPipelining: false,
+        retry: { retries: 0 },
+    })
+    t.mock.method(globalThis, 'fetch', async (_input: unknown, init?: RequestInit) => {
+        const [command] = JSON.parse(String(init?.body))
+        return Response.json({ result: command.toUpperCase() === 'SET' ? 'OK' : 1 })
+    })
+    const { handler } = harness({ ebook: createEbookImporter({ database, lease }) })
+    const upload = () => ebookUpload('book.pdf', '%PDF-new', 'Book', 'same-upload')
+    assert.equal((await handler(upload())).status, 503)
+    const replay = await handler(upload())
+    assert.equal(replay.status, 200)
+    const book = await replay.json()
+    assert.equal(book.title, 'Book')
+    assert.equal(book.format, 'ebook')
+    assert.deepEqual([...rows.keys()], [book.id])
+    assert.deepEqual(uploaded, [book.id + '.pdf'])
+})
 test('saved words load, edit the canonical fields, and preserve the destination library', async () => {
     const { handler, writes } = harness()
     assert.deepEqual(await (await handler(request('vocabulary/word'))).json(), word)

@@ -517,7 +517,7 @@ test('article edits pass through an HTTP server with an 8 KB request-header limi
     }
 })
 
-function persistenceFixture(t: import('node:test').TestContext, failure = '') {
+function persistenceFixture(t: import('node:test').TestContext, failure = '', beforePublication?: () => Promise<void>) {
     const reads = [
         { id: 1, location: 'page:12' },
         { id: 2, location: null },
@@ -544,6 +544,7 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '') {
     let deleted = false
     let stored = { ...article, has_ebook: true }
     let failed = false
+    let locked = false
     const database = createClient<Database>('https://database.test', 'test-key', {
         auth: { persistSession: false, autoRefreshToken: false },
         global: {
@@ -606,7 +607,8 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '') {
                     assert.equal(outlines.size, 0, 'Derived files must be removed before ownership')
                     assert.deepEqual([...publication.keys()], ['mobile:pdf-outline:other'])
                     deleted = true
-                    return new Response(null, { status: 204 })
+                    if (failure === 'lost-delete-response') throw new TypeError('Lost committed response')
+                    return Response.json({ id: article.id })
                 }
                 if (init?.method === 'PATCH') {
                     if (!failed && (failure === table || (failure === 'texts+release' && table === 'texts'))) {
@@ -617,7 +619,13 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '') {
                     if (table === 'texts') {
                         assert.equal(url.searchParams.get('lib'), 'eq.folder')
                         assert.equal(url.searchParams.get('bookmark_url'), 'is.null')
+                        if (!failed && failure === 'lost-update-request') {
+                            failed = true
+                            throw new TypeError('Publication request did not reach Postgres')
+                        }
+                        await beforePublication?.()
                         stored = { ...stored, ...body }
+                        if (failure === 'lost-update-response') throw new TypeError('Lost committed response')
                         return Response.json(stored)
                     }
                     const rows = table === 'reads' ? reads : bookmarks
@@ -636,6 +644,7 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '') {
                     return new Response(null, { status: 204 })
                 }
                 assert.equal(init?.method, 'GET')
+                if (table === 'texts') return Response.json(deleted ? [] : [stored])
                 const rows = table === 'reads' ? reads : bookmarks
                 return Response.json(
                     rows.filter(
@@ -655,6 +664,8 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '') {
         const command = JSON.parse(String(init?.body))
         if (command[0].toUpperCase() === 'SET') {
             assert.ok(command.includes(120))
+            if (locked) return Response.json({ result: null })
+            locked = true
             return Response.json({ result: 'OK' })
         }
         const name = command[0].toUpperCase()
@@ -679,6 +690,7 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '') {
         assert.equal(name, 'EVAL')
         if (failure === 'release' || failure === 'texts+release')
             return Response.json({ error: 'Redis unavailable' }, { status: 503 })
+        locked = false
         return Response.json({ result: 1 })
     })
     return {
@@ -765,6 +777,62 @@ test('successful ebook replacement and removal clear locations and retain excerp
             assert.equal(f.files.has('pdf'), operation === 'replace')
         })
     }
+})
+
+test('lost ebook publication responses preserve committed files and positions', async (t) => {
+    await t.test('replacement', async (t) => {
+        const f = persistenceFixture(t, 'lost-update-response')
+        await f.store.replaceEbook(
+            { ...article, has_ebook: true },
+            new File(['%PDF-new'], 'book.pdf', { type: 'application/pdf' }),
+        )
+        assert.equal(await f.files.get('pdf')?.text(), '%PDF-new')
+        assert.equal(f.files.has('epub'), false)
+        assert.ok([...f.reads, ...f.bookmarks].every((row) => row.location === null))
+    })
+    await t.test('detachment', async (t) => {
+        const f = persistenceFixture(t, 'lost-update-response')
+        await f.store.removeEbook({ ...article, has_ebook: true })
+        assert.equal(f.stored().has_ebook, false)
+        assert.equal(f.files.size, 0)
+        assert.ok([...f.reads, ...f.bookmarks].every((row) => row.location === null))
+    })
+    await t.test('deletion', async (t) => {
+        const f = persistenceFixture(t, 'lost-delete-response')
+        await f.store.remove({ ...article, has_ebook: true })
+        assert.equal(f.deleted(), true)
+        assert.equal(f.files.size, 0)
+    })
+})
+
+test('ebook detachment retries a publication that never reached the database', async (t) => {
+    const f = persistenceFixture(t, 'lost-update-request')
+    await f.store.removeEbook({ ...article, has_ebook: true })
+    assert.equal(f.stored().has_ebook, false)
+    assert.equal(f.files.size, 0)
+    assert.ok([...f.reads, ...f.bookmarks].every((row) => row.location === null))
+})
+
+test('overlapping ebook replacements cannot modify the same file', async (t) => {
+    const publishing = Promise.withResolvers<void>()
+    const finish = Promise.withResolvers<void>()
+    const f = persistenceFixture(t, '', () => {
+        publishing.resolve()
+        return finish.promise
+    })
+    const book = { ...article, has_ebook: true }
+    const winner = f.store.replaceEbook(book, new File(['%PDF-winner'], 'book.pdf', { type: 'application/pdf' }))
+    try {
+        await publishing.promise
+        await assert.rejects(
+            f.store.replaceEbook(book, new File(['%PDF-other'], 'book.pdf', { type: 'application/pdf' })),
+            { code: 'service_unavailable' },
+        )
+    } finally {
+        finish.resolve()
+        await winner
+    }
+    assert.equal(await f.files.get('pdf')?.text(), '%PDF-winner')
 })
 
 test('text deletion removes derived PDFs and publication state before ownership through the production SDKs', async (t) => {

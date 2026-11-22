@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { pdfOutlineGenerationSchema, pdfOutlineSaveSchema, pdfOutlineResultSchema, resourceID } from '@repo/api'
-import { canWriteLibrary } from '@repo/service/access'
 import { createCatalog, type CatalogStore } from './catalog'
 import type { EbookStore } from './ebooks'
 import { checkedResponse, jsonBody, type MobileContext, type MobileOperation } from './http'
@@ -44,8 +43,7 @@ export function createPDFOutlineOperations(dependencies: {
     const catalog = createCatalog(dependencies.catalog)
     async function scope(context: MobileContext, version: string): Promise<OutlineScope> {
         const textId = resourceID.parse(context.params.textId)
-        const { text, library } = await catalog.authorizedText(context.subject, textId, context.signal)
-        if (!canWriteLibrary(context.subject, library) || library.shadow) throw new MobileError('inaccessible')
+        const { text } = await catalog.authorizedContentText(context.subject, textId, context.signal)
         if (!text.has_ebook) throw new MobileError('unsupported_format')
         const asset = await dependencies.ebooks.asset(textId, context.signal)
         if (!asset || asset.format !== 'pdf') throw new MobileError('unsupported_format')

@@ -1,7 +1,14 @@
 import { OpenAPIGenerator } from '@orpc/openapi'
 import { ZodToJsonSchemaConverter } from '@orpc/zod/zod4'
 import { readFile, writeFile } from 'node:fs/promises'
-import { mobileContract, mobileErrorSchema, definitionFrameSchema, ebookHighlightColorSchema } from './index'
+import {
+    mobileContract,
+    mobileErrorSchema,
+    definitionFrameSchema,
+    ebookHighlightColorSchema,
+    ebookUploadQuerySchema,
+} from './index'
+import { z } from 'zod'
 const generator = new OpenAPIGenerator({ schemaConverters: [new ZodToJsonSchemaConverter()] })
 const specification = await generator.generate(mobileContract, {
     info: { title: 'Leximory Mobile', version: '1.0.0' },
@@ -20,8 +27,12 @@ specification.paths['/libraries/{libraryId}/ebooks'] = {
         operationId: 'uploadEbook',
         parameters: [
             { name: 'libraryId', in: 'path', required: true, schema: { type: 'string' } },
-            { name: 'title', in: 'query', required: true, schema: { type: 'string', maxLength: 512 } },
-            { name: 'filename', in: 'query', required: true, schema: { type: 'string', maxLength: 512 } },
+            ...Object.entries(ebookUploadQuerySchema.shape).map(([name, schema]) => ({
+                name,
+                in: 'query' as const,
+                required: !schema.isOptional(),
+                schema: z.toJSONSchema(schema, { target: 'openapi-3.0' }),
+            })),
         ],
         requestBody: {
             required: true,

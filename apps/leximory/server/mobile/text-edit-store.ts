@@ -6,6 +6,10 @@ import { checkedResponse } from './http'
 import { MobileError } from './errors'
 import type { ManagementStore } from './management'
 
+export function nextTextTimestamp(previous: string | null): string {
+    return new Date(Math.max(Date.now(), previous ? Date.parse(previous) + 1 : 0)).toISOString()
+}
+
 export async function editTextRecord({
     database,
     text,
@@ -19,9 +23,7 @@ export async function editTextRecord({
         .from('texts')
         .update({
             ...fields,
-            updated_at: new Date(
-                Math.max(Date.now(), text.updated_at ? Date.parse(text.updated_at) + 1 : 0),
-            ).toISOString(),
+            updated_at: nextTextTimestamp(text.updated_at),
         })
         .eq('id', text.id)
         .eq('lib', text.lib!)

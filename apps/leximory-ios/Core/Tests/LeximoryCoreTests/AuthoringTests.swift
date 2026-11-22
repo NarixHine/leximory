@@ -33,6 +33,13 @@ struct AuthoringTests {
         await #expect(throws: (any Error).self) { try await client.uploadEbook(libraryID: "library", title: "书", filename: "large.pdf", data: Data(count: 4_718_593)) }
         #expect(await transport.calls == 0)
     }
+    @Test func ebookRetryResendsTheSameRequestIdentityAndFile() async throws {
+        let transport = AuthoringTransport(failFirstUpload: true)
+        let client = MobileClient(baseURL: URL(string: "https://example.com")!, transport: transport, token: { _ in "verified" })
+        let book = try await client.uploadEbook(libraryID: "library", title: "书", filename: "book.pdf", data: Data("%PDF-1.7".utf8), requestID: "same-ebook")
+        #expect(book.id == "ebook")
+        #expect(await transport.uploadIdentities == ["same-ebook", "same-ebook"])
+    }
     @Test func articleImportRecoversWithOneRequestIdentity() async throws {
         let transport = RecoveringArticleTransport()
         let client = MobileClient(baseURL: URL(string: "https://import.test")!, transport: transport, token: { _ in "verified" })
@@ -69,6 +76,9 @@ struct AuthoringTests {
     }
     private actor AuthoringTransport: ClientTransport {
         var calls = 0
+        var uploadIdentities: [String] = []
+        let failFirstUpload: Bool
+        init(failFirstUpload: Bool = false) { self.failFirstUpload = failFirstUpload }
         func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
             calls += 1
             #expect(request.headerFields[.authorization] == "Bearer verified")
@@ -91,6 +101,12 @@ struct AuthoringTests {
                 #expect(bytes == Data("%PDF-1.7".utf8))
                 #expect(request.path?.contains("filename=book.pdf") == true)
                 #expect(request.headerFields[.contentType] == "application/octet-stream")
+                let path = try #require(request.path)
+                let query = try #require(URLComponents(string: path)?.queryItems)
+                uploadIdentities.append(try #require(query.first { $0.name == "requestId" }?.value))
+                if failFirstUpload && uploadIdentities.count == 1 {
+                    return (HTTPResponse(status: .serviceUnavailable, headerFields: [.contentType: "application/json"]), HTTPBody(#"{"error":{"code":"service_unavailable","message":"temporary","retryable":true}}"#))
+                }
                 response = #"{"id":"ebook","libraryId":"library","title":"书","topics":[],"emoji":null,"createdAt":null,"format":"ebook"}"#
             default: throw URLError(.unsupportedURL)
             }

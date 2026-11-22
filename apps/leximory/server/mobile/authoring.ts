@@ -3,16 +3,18 @@ import { serializeWord } from './word-format'
 import {
     extractedArticleSchema,
     articleImportSchema,
+    ebookUploadQuerySchema,
     resourceID,
     savedWordSchema,
     textSchema,
     vocabularyEditSchema,
 } from '@repo/api'
-import { MAX_FILE_SIZE, maxArticleLength } from '@repo/env/content'
+import { maxArticleLength } from '@repo/env/content'
+import { readEbookUpload, type EbookUpload } from './ebook-upload'
 import { canWriteLibrary } from '@repo/service/access'
 import type { MobileSubject } from '@repo/schema/mobile'
 import { MobileError } from './errors'
-import { bodyBytes, checkedResponse, jsonBody, query, type MobileContext, type MobileOperation } from './http'
+import { checkedResponse, jsonBody, query, type MobileContext, type MobileOperation } from './http'
 import { createCatalog, type CatalogStore, type LibraryRow } from './catalog'
 import { isValidEmoji } from '@/lib/utils'
 
@@ -36,7 +38,10 @@ export interface AuthoringStore {
         library: LibraryRow,
         input: z.infer<typeof articleImportSchema>,
     ): Promise<z.infer<typeof textSchema>>
-    ebook(library: LibraryRow, title: string, file: File): Promise<z.infer<typeof textSchema>>
+    ebook(
+        library: LibraryRow,
+        input: { title: string; upload: EbookUpload; requestId: string | undefined },
+    ): Promise<{ text: z.infer<typeof textSchema>; created: boolean }>
     chooseEbookEmoji(
         subject: MobileSubject,
         input: { title: string; filename: string },
@@ -61,9 +66,7 @@ export function createAuthoringOperations(dependencies: { catalog: CatalogStore;
     }
 
     async function writableContentLibrary({ subject, params, signal }: MobileContext) {
-        const library = await catalog.authorizedLibrary(subject, resourceID.parse(params.libraryId), signal)
-        if (!canWriteLibrary(subject, library) || library.shadow) throw new MobileError('inaccessible')
-        return library
+        return catalog.authorizedContentLibrary(subject, resourceID.parse(params.libraryId), signal)
     }
 
     const vocabularyList: MobileOperation = async ({ request, subject, params, signal }) => {
@@ -110,21 +113,13 @@ export function createAuthoringOperations(dependencies: { catalog: CatalogStore;
 
     const uploadEbook: MobileOperation = async (context) => {
         const library = await writableContentLibrary(context)
-        const parameters = query(context.request, ['title', 'filename'])
-        const title = z.string().trim().min(1).max(512).parse(parameters.title)
-        const filename = z.string().min(1).max(512).parse(parameters.filename)
-        const extension = filename.split('.').at(-1)?.toLowerCase()
-        if (extension !== 'epub' && extension !== 'pdf') throw new MobileError('unsupported_format')
-        const bytes = await bodyBytes(context.request, MAX_FILE_SIZE, context.signal)
-        const file = new File([bytes], filename, {
-            type: extension === 'pdf' ? 'application/pdf' : 'application/epub+zip',
-        })
-        const validSignature =
-            extension === 'pdf'
-                ? new TextDecoder().decode(bytes.subarray(0, 5)) === '%PDF-'
-                : bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 3 && bytes[3] === 4
-        if (!validSignature) throw new MobileError('unsupported_format')
-        const ebook = checkedResponse(textSchema, await store.ebook(library, title, file))
+        const { title, filename, requestId } = ebookUploadQuerySchema.parse(
+            query(context.request, ['title', 'filename', 'requestId']),
+        )
+        const upload = await readEbookUpload(context, filename)
+        const { text, created } = await store.ebook(library, { title, upload, requestId })
+        const ebook = checkedResponse(textSchema, text)
+        if (!created) return ebook
         try {
             const emoji = await store.chooseEbookEmoji(
                 context.subject,

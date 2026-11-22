@@ -100,6 +100,8 @@ test(
                 'guest/definitions/[requestId]',
                 'vocabulary',
                 'review/check',
+                'browser/home-pins',
+                'browser/home-pins/[pinId]',
             ]) {
                 const destination = join(root, 'app/api/mobile/v1', path)
                 await mkdir(destination, { recursive: true })
@@ -185,6 +187,35 @@ test(
             const snapshot = await review.json()
             assert.equal(snapshot.exists, true)
             assert.equal(snapshot.storyDocument.blocks[0].displayText, 'A quiet place.')
+            const pinsURL = origin + '/api/mobile/v1/browser/home-pins'
+            const pinHeaders = { authorization: 'Bearer fixture-token', 'content-type': 'application/json' }
+            const pinId = '11111111-1111-4111-8111-111111111112'
+            const pinBody = {
+                title: ' Reading ',
+                destination: { kind: 'webpage', url: 'https://reading.example' },
+                sortOrder: 0,
+                revision: '11111111-1111-4111-8111-111111111113',
+                deleted: false,
+            }
+            const initialPins = await fetch(pinsURL, { headers: pinHeaders })
+            assert.equal(initialPins.status, 200, await initialPins.clone().text())
+            assert.deepEqual(await initialPins.json(), { items: [], nextCursor: null })
+            const savePin = (body: unknown) =>
+                fetch(pinsURL + '/' + pinId, { method: 'POST', headers: pinHeaders, body: JSON.stringify(body) })
+            const beforeInvalidPin = backend.requests.length
+            const invalidPin = await savePin({ ...pinBody, pinId })
+            assert.equal(invalidPin.status, 400)
+            assert.equal((await invalidPin.json()).error.code, 'invalid_input')
+            assert.ok(backend.requests.slice(beforeInvalidPin).every((request) => !request.startsWith('POST ')))
+            const savedPin = await savePin(pinBody)
+            assert.equal(savedPin.status, 200, await savedPin.clone().text())
+            assert.equal(savedPin.headers.get('cache-control'), 'private, no-store')
+            const pin = await savedPin.json()
+            assert.equal(pin.id, pinId)
+            assert.equal(pin.title, 'Reading')
+            assert.equal(pin.destination.url, 'https://reading.example/')
+            const listedPins = await fetch(pinsURL, { headers: pinHeaders })
+            assert.deepEqual(await listedPins.json(), { items: [pin], nextCursor: null })
             for (const method of ['GET', 'POST']) {
                 const response = await fetch(origin + '/api/static', { method, headers })
                 assert.equal(response.status, 200, output + '\n' + (await response.clone().text()))

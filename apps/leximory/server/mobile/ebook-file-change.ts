@@ -1,8 +1,16 @@
+import { MobileError } from './errors'
+
 export type EbookExtension = 'pdf' | 'epub'
 export interface EbookFiles {
     read(extension: EbookExtension): Promise<Blob | null>
     write(extension: EbookExtension, file: Blob): Promise<void>
     remove(extension: EbookExtension): Promise<void>
+}
+
+export class EbookPublicationUnconfirmed extends MobileError {
+    constructor(cause: unknown) {
+        super('service_unavailable', { cause })
+    }
 }
 
 // Storage and Postgres do not share a transaction. Retain the original bytes until
@@ -23,14 +31,19 @@ export async function changeEbookFile(
         }
         await commit()
     } catch (error) {
+        // The database may have committed, even after the request failed.
+        if (error instanceof EbookPublicationUnconfirmed) throw error
         // Attempt both restorations even if the storage provider is recovering.
-        await Promise.allSettled(
+        const restored = await Promise.allSettled(
             (['pdf', 'epub'] satisfies EbookExtension[]).map(async (extension) => {
                 const original = previous[extension]
                 if (original) await files.write(extension, original)
                 else await files.remove(extension)
             }),
         )
+        const failures = restored.flatMap((result) => (result.status === 'rejected' ? [result.reason] : []))
+        if (failures.length)
+            throw new AggregateError([error, ...failures], 'Ebook file rollback failed', { cause: error })
         throw error
     }
 }

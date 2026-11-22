@@ -8,7 +8,7 @@ import { supabase } from '@repo/supabase'
 import { redis } from '@repo/kv/redis'
 import { invalidateMutationCaches, mutationEffects } from './mutation-effects'
 import { PLAN_COMMENTARY_QUOTA, ACTION_QUOTA_COST } from '@repo/env/config'
-import { createText, deleteText, uploadEbook, updateText, setTextAnnotationProgress } from '@/server/db/text'
+import { updateText, setTextAnnotationProgress } from '@/server/db/text'
 import { emojiChoice } from '@/server/ai/emoji'
 import { runEvaluation } from '@/server/ai/evaluate'
 import { publishArticleImport } from '@/server/workflows/client'
@@ -16,6 +16,7 @@ import { MobileError } from './errors'
 import type { AuthoringStore } from './authoring'
 import { serializeWord } from './word-format'
 import { createArticleImporter } from './article-import-store'
+import { createEbookImporter } from './ebook-import-persistence'
 
 const importArticle = createArticleImporter({
     effects: mutationEffects,
@@ -32,6 +33,7 @@ const importArticle = createArticleImporter({
         await publishArticleImport(event)
     },
 })
+const importEbook = createEbookImporter({ database: supabase, lease: redis })
 
 function expireWords(library: string) {
     invalidateMutationCaches(`words:${library}`)
@@ -100,25 +102,10 @@ export const authoringStore: AuthoringStore = {
         invalidateMutationCaches(`texts:${library.id}`)
         return text
     },
-    async ebook(library, title, file) {
-        const id = await createText({ lib: library.id, title })
-        try {
-            await uploadEbook({ id, ebook: file })
-        } catch (error) {
-            await supabase.storage.from('user-files').remove([`ebooks/${id}.epub`, `ebooks/${id}.pdf`])
-            await deleteText({ id })
-            throw error
-        }
+    async ebook(library, input) {
+        const saved = await importEbook(library, input)
         invalidateMutationCaches(`texts:${library.id}`)
-        return {
-            id,
-            libraryId: library.id,
-            title,
-            topics: [],
-            emoji: null,
-            createdAt: new Date().toISOString(),
-            format: 'ebook',
-        }
+        return saved
     },
     async chooseEbookEmoji(subject, input, signal) {
         await charge(subject, ACTION_QUOTA_COST.evaluation)

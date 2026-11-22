@@ -20,9 +20,8 @@ struct ContentImportView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var busy = false
     @State private var error: String?
-    @State private var uncertain = false
     @State private var bookmarkRequestID = UUID().uuidString
-    @State private var articleRequestID = UUID().uuidString
+    @State private var importRequestID = UUID().uuidString
     @State private var savingBookmark = false
     @FocusState private var focusedField: String?
     private struct ImportedFile { let name: String; let data: Data }
@@ -44,7 +43,7 @@ struct ContentImportView: View {
                         Text("网页").tag(2)
                         Text("文本").tag(0)
                         Text("电子书").tag(1)
-                    }.pickerStyle(.segmented).disabled(busy || uncertain)
+                    }.pickerStyle(.segmented).disabled(busy)
                     if kind == 2 {
                         TextField("", text: $url, prompt: Text(verbatim: "https://theleximorytimes.com/")
                             .foregroundStyle(LeximoryPalette.muted))
@@ -85,7 +84,7 @@ struct ContentImportView: View {
                     if let error { Text(error).interfaceFont(14).foregroundStyle(LeximoryPalette.muted) }
                     importActions
                 }.padding(24).frame(maxWidth: 580).frame(maxWidth: .infinity)
-                    .disabled(busy || uncertain)
+                    .disabled(busy)
             }.scrollDismissesKeyboard(.interactively).background(LeximoryPalette.shell)
                 .navigationTitle(kind == 1 ? "导入电子书" : "创建文章").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -127,7 +126,7 @@ struct ContentImportView: View {
                 }.frame(maxWidth: .infinity, minHeight: 48)
                     .foregroundStyle(LeximoryPalette.paper).background(LeximoryPalette.ink, in: Capsule())
             }.buttonStyle(.plain).accessibilityIdentifier("content-import-submit")
-        }.disabled(!valid || busy || uncertain)
+        }.disabled(!valid || busy)
     }
     private func input(_ label: String, text: Binding<String>, lines: ClosedRange<Int>) -> some View {
         TextField(label, text: text, prompt: Text(label == "文本" ? "" : label).foregroundStyle(LeximoryPalette.muted), axis: .vertical)
@@ -137,7 +136,7 @@ struct ContentImportView: View {
             .padding(14).background(LeximoryPalette.paper, in: RoundedRectangle(cornerRadius: 18))
     }
     private func saveBookmark() async {
-        guard valid, !busy, !uncertain else { return }
+        guard valid, !busy else { return }
         focusedField = nil
         busy = true; savingBookmark = true; error = nil
         defer { busy = false; savingBookmark = false }
@@ -173,12 +172,12 @@ struct ContentImportView: View {
                 }
                 next.takeFolder()
                 ebookDraft = next
-                articleRequestID = UUID().uuidString
+                importRequestID = UUID().uuidString
                 ebook = ImportedFile(name: url.lastPathComponent, data: loaded)
                 error = nil
                 let metadata = await EbookImportMetadata.read(.init(name: url.lastPathComponent, data: loaded))
                 await next.fill(metadata: metadata, reduceMotion: reduceMotion) { _ in
-                    try await client.suggestEbookImport(requestID: articleRequestID, field: "title", filename: url.lastPathComponent,
+                    try await client.suggestEbookImport(requestID: importRequestID, field: "title", filename: url.lastPathComponent,
                         title: metadata.title, author: metadata.author, language: metadata.language,
                         sample: metadata.sample)
                 }
@@ -191,7 +190,7 @@ struct ContentImportView: View {
         }
     }
     private func submit(annotate: Bool) async {
-        guard valid, !busy, !uncertain else { return }
+        guard valid, !busy else { return }
         focusedField = nil
         if kind == 1 { ebookDraft.stop() }
         busy = true; error = nil
@@ -205,21 +204,19 @@ struct ContentImportView: View {
             }
             if kind != 1 {
                 text = try await client.importArticle(libraryID: library.id.rawValue, title: title, content: content,
-                    annotate: annotate, onlyComments: onlyComments, generateTitle: generateTitle, requestID: articleRequestID)
+                    annotate: annotate, onlyComments: onlyComments, generateTitle: generateTitle, requestID: importRequestID)
             } else {
                 guard let ebook else { return }
-                text = try await client.uploadEbook(libraryID: library.id.rawValue, title: importTitle.trimmingCharacters(in: .whitespacesAndNewlines), filename: ebook.name, data: ebook.data)
+                text = try await client.uploadEbook(libraryID: library.id.rawValue, title: importTitle.trimmingCharacters(in: .whitespacesAndNewlines), filename: ebook.name, data: ebook.data, requestID: importRequestID)
             }
             imported(text); dismiss()
         } catch {
             if let failure = MobileClient.cause(of: error) as? MobileFailure {
-                uncertain = kind == 1 && failure.error.code == "service_unavailable"
-                self.error = uncertain ? "未能确认导入结果，请先查看文库，避免重复导入。" : isText && failure.error.retryable ? "导入尚未完成，请重试。" : failure.error.message
+                self.error = failure.error.retryable ? "导入尚未完成，请重试。" : failure.error.message
             }
             else if kind == 2 && !extracted { self.error = "文章解析失败，请手动录入" }
             else {
-                uncertain = kind == 1
-                self.error = uncertain ? "未能确认导入结果，请先查看文库，避免重复导入。" : "导入尚未完成，请重试。"
+                self.error = "导入尚未完成，请重试。"
             }
         }
     }
