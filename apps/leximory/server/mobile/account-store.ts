@@ -26,6 +26,8 @@ import { checkedResponse } from './http'
 import { readAccountAllowance } from './account-allowance'
 import type { AccountScope, AccountStore } from './account'
 
+const activityWindowDays = 100
+
 const profileMetadata = z.object({ username: z.string().nullish(), avatar_url: z.string().nullish() })
 
 async function loadAccount({ subject, signal }: AccountScope) {
@@ -38,8 +40,8 @@ async function loadAccount({ subject, signal }: AccountScope) {
         .throwOnError()
     const membership = await getMembership(subject.userId, signal)
     const plan = membership.plan
-    const today = momentSH().format('YYYY-MM-DD')
-    const hasClaimed = !!user.last_daily_claim && momentSH(user.last_daily_claim).format('YYYY-MM-DD') === today
+    const today = momentSH()
+    const hasClaimed = !!user.last_daily_claim && today.isSame(momentSH(user.last_daily_claim), 'day')
     return { user, plan, today, hasClaimed, membership }
 }
 
@@ -55,7 +57,12 @@ export const accountStore: AccountStore = {
         ])
         if (profile.error || !profile.data.user) throw new MobileError('service_unavailable')
         const metadata = checkedResponse(profileMetadata, profile.data.user.user_metadata)
-        const activity = await aggrWordHistogram({ libs, size: 30 })
+        const activity = await aggrWordHistogram({
+            libs,
+            size: activityWindowDays,
+            today,
+            signal: context.signal,
+        })
         return {
             userId,
             plan,
@@ -71,7 +78,8 @@ export const accountStore: AccountStore = {
             hasClaimed,
             accent: checkedResponse(accountSettingsSchema.shape.accent, user.accent),
             activity,
-            today,
+            activityWindowDays,
+            today: today.format('YYYY-MM-DD'),
             membership:
                 membership.legacyPlan !== 'beginner'
                     ? {

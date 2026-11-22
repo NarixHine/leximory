@@ -35,37 +35,40 @@ struct SavedWordsSnapshot: Codable, Equatable, Sendable {
         return calendar
     }
 
-    init(activity: [(date: String, count: Int)], endingOn today: String) {
+    init(activity: [(date: String, count: Int)], endingOn today: String, dayCount: Int = 30) {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.calendar = Self.calendar
         formatter.timeZone = Self.calendar.timeZone
         formatter.dateFormat = "yyyy-MM-dd"
-        guard let end = formatter.date(from: today) else { days = []; return }
+        guard dayCount > 0, let end = formatter.date(from: today) else { days = []; return }
         let counts = Dictionary(activity.map { ($0.date, max(0, $0.count)) }, uniquingKeysWith: +)
-        days = (-29...0).compactMap { offset in
+        days = (1 - dayCount...0).compactMap { offset in
             guard let date = Self.calendar.date(byAdding: .day, value: offset, to: end) else { return nil }
             return Day(date: date, count: counts[formatter.string(from: date)] ?? 0)
         }
     }
 
-    static func sample(endingOn date: Date = .now) -> Self {
+    static func sample(endingOn date: Date = .now, dayCount: Int = 30) -> Self {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = calendar.timeZone
         formatter.dateFormat = "yyyy-MM-dd"
         let counts = [3, 5, 4, 0, 8, 12, 9, 6, 0, 4, 7, 16, 21, 15, 10, 7, 0, 6, 11, 18, 24, 19, 13, 8, 5, 9, 14, 22, 17, 12]
-        let activity = counts.enumerated().map { index, count in
-            (date: formatter.string(from: calendar.date(byAdding: .day, value: index - 29, to: date)!), count: count)
+        let activity = (0..<dayCount).compactMap { index -> (date: String, count: Int)? in
+            let offset = index - dayCount + 1
+            guard let day = calendar.date(byAdding: .day, value: offset, to: date) else { return nil }
+            let sampleIndex = dayCount == counts.count ? index : (index * 7 + index / 11) % counts.count
+            return (formatter.string(from: day), counts[sampleIndex])
         }
-        return Self(activity: activity, endingOn: formatter.string(from: date))
+        return Self(activity: activity, endingOn: formatter.string(from: date), dayCount: dayCount)
     }
 }
 
 struct SavedWordsWidgetStore {
     static let appGroup = "group.com.leximory.reader"
     static let kind = "LeximorySavedWords"
-    private static let key = "saved-words-widget.v1"
+    static let key = "saved-words-widget.v1"
     private let defaults: UserDefaults?
 
     struct Session: Codable, Equatable, Sendable {
@@ -84,8 +87,15 @@ struct SavedWordsWidgetStore {
 
     var session: Session? { cache?.session }
     var snapshot: SavedWordsSnapshot? { cache?.snapshot }
-    private var cache: Cache? {
-        defaults?.data(forKey: Self.key).flatMap { try? JSONDecoder().decode(Cache.self, from: $0) }
+    private var cache: Cache? { Self.decode(defaults?.data(forKey: Self.key)) }
+
+    static func snapshot(for origin: URL, accountID: String, in data: Data?) -> SavedWordsSnapshot? {
+        guard let cache = decode(data), cache.session.origin == origin, cache.session.accountID == accountID else { return nil }
+        return cache.snapshot
+    }
+
+    private static func decode(_ data: Data?) -> Cache? {
+        data.flatMap { try? JSONDecoder().decode(Cache.self, from: $0) }
     }
 
     @discardableResult func activate(origin: URL, accountID: String) -> Session {

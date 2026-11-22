@@ -188,6 +188,7 @@ private struct HomeWallpaperContext {
 private extension EnvironmentValues {
     @Entry var homeWallpaperContext: HomeWallpaperContext? = nil
 }
+
 extension EnvironmentValues {
     var hasHomeWallpaper: Bool { homeWallpaperContext != nil }
 }
@@ -221,8 +222,7 @@ struct HomeWallpaperSurface<Content: View>: View {
 
 struct HomeWallpaperGlassBackdrop: View {
     let cornerRadius: CGFloat
-    var blurRadius: CGFloat = 3
-    var showsGlassEdge = true
+    let blurRadius: CGFloat
     @Environment(\.homeWallpaperContext) private var context
 
     var body: some View {
@@ -235,20 +235,12 @@ struct HomeWallpaperGlassBackdrop: View {
                     .clipped()
                     .offset(x: context.bounds.minX - frame.minX, y: context.bounds.minY - frame.minY)
                     .blur(radius: blurRadius, opaque: true)
+                    .accessibilityHidden(true)
             } else {
                 Rectangle().fill(.ultraThinMaterial)
             }
         }
         .clipShape(.rect(cornerRadius: cornerRadius))
-        .overlay {
-            if showsGlassEdge {
-                RoundedRectangle(cornerRadius: cornerRadius).fill(.clear)
-                    .glassEffect(.clear, in: .rect(cornerRadius: cornerRadius))
-                    .mask {
-                        RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(lineWidth: 1)
-                    }
-            }
-        }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }

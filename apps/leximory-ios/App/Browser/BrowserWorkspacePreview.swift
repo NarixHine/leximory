@@ -13,8 +13,11 @@ struct BrowserWorkspacePreview: View {
     @State private var pendingText: TextID?
     var body: some View {
         Group {
-            if let client, let workspace { BrowserWorkspaceView(client: client, namespace: "workspace-fixture", playback: playback, pendingText: $pendingText, incomingEbooks: incomingEbooks, initialWorkspace: workspace) }
-            else { ProgressView() }
+            if let client, let workspace {
+                BrowserWorkspaceView(client: client, namespace: "workspace-fixture", playback: playback,
+                    pendingText: $pendingText, incomingEbooks: incomingEbooks, initialWorkspace: workspace)
+                    .environment(\.browserHomeActivityFixture, ProcessInfo.processInfo.arguments.contains("--workspace-recent-card-fixtures") ? .sample(dayCount: 100) : nil)
+            } else { ProgressView() }
         }.onChange(of: workspace?.ebookReader?.ready) { _, ready in
             guard ready == true, ProcessInfo.processInfo.environment["LEXIMORY_FIXTURE_PDF_ACTIVE_CANVAS"] == "1" else { return }
             for scene in UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }) {
@@ -75,11 +78,18 @@ struct BrowserWorkspacePreview: View {
                     if !arguments.contains("--workspace-no-pins"), let text = page.items.first {
                         workspace.savePin(BrowserHomePin(id: UUID(), title: text.title, destination: .document(text)))
                     }
-                    if arguments.contains("--workspace-multiple-pins") {
+                    let eightPins = arguments.contains("--workspace-eight-pins")
+                    if eightPins || arguments.contains("--workspace-multiple-pins") {
                         for id in ["fixture-forest", "workspace-epub"] {
                             if let text = page.items.first(where: { $0.id == id }) {
                                 workspace.savePin(BrowserHomePin(id: UUID(), title: text.title, destination: .document(text)))
                             }
+                        }
+                    }
+                    if eightPins {
+                        for (index, title) in ["Notebook", "The garden", "Field guide", "Harbor", "Voyage"].enumerated() {
+                            let url = origin.appending(path: "pin/\(index)")
+                            workspace.savePin(BrowserHomePin(id: UUID(), title: title, destination: .webpage(url)))
                         }
                     }
                     workspace.visit(.home)

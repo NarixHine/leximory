@@ -3897,6 +3897,12 @@
                         "additionalProperties": false
                       }
                     },
+                    "activityWindowDays": {
+                      "enum": [
+                        100
+                      ],
+                      "type": "integer"
+                    },
                     "today": {
                       "type": "string"
                     },

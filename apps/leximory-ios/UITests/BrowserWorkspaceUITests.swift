@@ -763,25 +763,29 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertFalse(app.buttons["browser-account"].exists)
         XCTAssertFalse(app.staticTexts["Leximory Browser"].exists)
         XCTAssertTrue(app.buttons["browser-browse"].isHittable)
+        XCTAssertFalse(app.staticTexts["browser-home-word-total"].exists)
         let address = app.buttons["browser-address"]
         XCTAssertGreaterThan(address.frame.midY, app.frame.height * 0.75)
         app.buttons["browser-address"].tap()
         XCTAssertTrue(app.textFields["browser-address-input"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["我的书签"].isHittable)
         XCTAssertTrue(app.buttons["打开电子书"].isHittable)
         app.buttons["后退"].tap()
         XCTAssertTrue(address.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
         let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = "Browser-first Home"; screenshot.lifetime = .keepAlways; add(screenshot)
     }
-    @MainActor func testHomeSavedPagesSpacingWithoutPinsOrRecents() {
+    @MainActor func testHomeBentoKeepsCellsWhenPinsOrRecentsAreEmpty() {
         let app = launch(extraArguments: ["--workspace-recent-card-fixtures", "--workspace-no-pins"])
         defer { restore(app) }
-        let saved = app.otherElements["browser-saved-pages"]
         let recents = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-resume-"))
         XCTAssertTrue(recents.firstMatch.waitForExistence(timeout: 5))
-        XCTAssertTrue(saved.exists)
-        let firstRecentY = recents.allElementsBoundByIndex.map(\.frame.minY).min() ?? 0
-        XCTAssertEqual(firstRecentY - saved.frame.minY, 24, accuracy: 2)
+        for id in ["activity", "actions", "pins", "recents"] {
+            XCTAssertTrue(app.otherElements["browser-home-" + id].exists)
+        }
+        XCTAssertTrue(app.staticTexts["browser-home-word-total"].label.hasPrefix("入库 "))
+        XCTAssertTrue(app.staticTexts["打开内容后即可固定"].exists)
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-pin-")).firstMatch.exists)
 
         app.terminate()
@@ -789,9 +793,8 @@ final class BrowserWorkspaceUITests: XCTestCase {
         app.launch()
         let pin = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-pin-")).firstMatch
         XCTAssertTrue(pin.waitForExistence(timeout: 15))
-        XCTAssertTrue(saved.exists)
+        XCTAssertTrue(app.staticTexts["浏览过的网页和读过的内容会显示在这里"].exists)
         XCTAssertFalse(recents.firstMatch.exists)
-        XCTAssertEqual(saved.frame.maxY - pin.frame.maxY, 12, accuracy: 2)
     }
 
     @MainActor func testHomeShortcutsReflowForLargeTextAndLandscape() {
@@ -812,7 +815,8 @@ final class BrowserWorkspaceUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(bookmarks.waitForExistence(timeout: 15))
         XCTAssertTrue(bookmarks.isHittable)
-        XCTAssertEqual(bookmarks.frame.width, bookmarks.frame.height, accuracy: 1)
+        XCTAssertGreaterThanOrEqual(bookmarks.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(bookmarks.frame.height, 44)
         for _ in 0..<5 where !lastCard.isHittable { app.swipeUp() }
         XCTAssertTrue(lastCard.isHittable)
         let landscape = XCTAttachment(screenshot: app.screenshot())
@@ -838,26 +842,52 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertTrue(app.buttons["browser-browse"].waitForExistence(timeout: 5))
     }
 
-    @MainActor func testIPadHomeRestoresOriginalCards() throws {
-        let app = launch(extraArguments: ["--workspace-recent-card-fixtures", "--workspace-multiple-pins"])
+    @MainActor func testIPadHomeBentoUsesTwoColumns() throws {
+        let app = launch(extraArguments: ["--workspace-recent-card-fixtures", "--workspace-eight-pins"])
         defer { restore(app) }
         try XCTSkipIf(app.frame.width < 760, "Verify this layout on iPad.")
-        let cards = ["browser-browse", "browser-bookmarks", "browser-ebook", "browser-review"].map { app.buttons[$0] }
-        for card in cards { XCTAssertTrue(card.isHittable) }
-        let frames = cards.map(\.frame)
-        XCTAssertGreaterThan(frames[0].width, 180)
-        for pair in zip(frames, frames.dropFirst()) {
-            XCTAssertLessThan(pair.1.minX, pair.0.maxX)
-            XCTAssertEqual(pair.0.midY, pair.1.midY, accuracy: 2)
+        let activity = app.otherElements["browser-home-activity"].frame
+        let actions = app.otherElements["browser-home-actions"].frame
+        let recents = app.otherElements["browser-home-recents"].frame
+        let pins = app.otherElements["browser-home-pins"].frame
+        XCTAssertLessThan(activity.maxX, recents.minX)
+        XCTAssertLessThan(pins.maxX, actions.minX)
+        XCTAssertLessThan(activity.maxY, pins.minY)
+        XCTAssertLessThan(recents.maxY, actions.minY)
+        XCTAssertGreaterThan(activity.width, recents.width)
+        XCTAssertGreaterThan(actions.width, pins.width)
+        XCTAssertTrue(app.staticTexts["近 100 天"].exists)
+        let shortcuts = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-pin-")).allElementsBoundByIndex
+        XCTAssertEqual(shortcuts.count, 8)
+        XCTAssertTrue(shortcuts.allSatisfy(\.isHittable))
+        for identifier in ["browser-browse", "browser-bookmarks", "browser-ebook", "browser-review"] {
+            let action = app.buttons[identifier]
+            XCTAssertTrue(action.isHittable)
+            XCTAssertGreaterThanOrEqual(action.frame.width, 44)
+            XCTAssertGreaterThanOrEqual(action.frame.height, 44)
         }
-        let pins = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-pin-")).allElementsBoundByIndex.sorted { $0.frame.minX < $1.frame.minX }
-        XCTAssertEqual(pins.count, 3)
-        for pair in zip(pins, pins.dropFirst()) {
-            XCTAssertEqual(pair.1.frame.midX - pair.0.frame.midX, 76, accuracy: 1)
-        }
-        XCTAssertFalse(app.staticTexts["继续浏览"].exists)
+        XCTAssertTrue(app.staticTexts["继续浏览"].exists)
         let image = XCTAttachment(screenshot: app.screenshot())
-        image.name = "iPad original Home cards"; image.lifetime = .keepAlways; add(image)
+        image.name = "iPad Home bento"; image.lifetime = .keepAlways; add(image)
+    }
+
+    @MainActor func testIPhoneHomeWrapsAllEightPins() throws {
+        let app = launch(extraArguments: ["--workspace-recent-card-fixtures", "--workspace-eight-pins"])
+        defer { restore(app) }
+        try XCTSkipIf(app.frame.width >= 650, "Verify this layout on iPhone.")
+        let shortcuts = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-pin-"))
+        XCTAssertTrue(shortcuts.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertEqual(shortcuts.count, 8)
+        XCTAssertTrue(app.staticTexts["近 30 天"].exists)
+        let pins = app.otherElements["browser-home-pins"].frame
+        let frames = shortcuts.allElementsBoundByIndex.map(\.frame)
+        XCTAssertTrue(frames.allSatisfy { frame in
+            frame.width >= 44 && frame.height >= 44 && frame.minX >= pins.minX && frame.maxX <= pins.maxX
+        })
+        XCTAssertGreaterThan(Set(frames.map { $0.midY.rounded() }).count, 1)
+        let last = shortcuts.element(boundBy: 7)
+        for _ in 0..<3 where !last.isHittable { app.swipeUp() }
+        XCTAssertTrue(last.isHittable)
     }
 
     @MainActor func testInlineFoldersAndArticleHistory() {
@@ -937,8 +967,8 @@ final class BrowserWorkspaceUITests: XCTestCase {
         app.buttons["browser-resume-fixture-forest"].press(forDuration: 1)
         app.buttons["从主页隐藏"].tap()
         let last = app.buttons["browser-resume-fixture-reader"]
-        XCTAssertEqual(last.frame.midX, app.frame.midX, accuracy: 1)
-        XCTAssertFalse(app.staticTexts["继续浏览"].exists)
+        XCTAssertEqual(last.frame.midX, app.otherElements["browser-home-recents"].frame.midX, accuracy: 1)
+        XCTAssertTrue(app.staticTexts["继续浏览"].exists)
         let centered = XCTAttachment(screenshot: app.screenshot())
         centered.name = "Recent list after hiding a resource"
         centered.lifetime = .keepAlways; add(centered)

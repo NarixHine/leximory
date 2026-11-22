@@ -146,27 +146,54 @@ export async function getWordsWithin({
     return data.map(({ word, id, lib }) => ({ word, id, lang: lib.lang as Lang, lib: lib.id }))
 }
 
-export async function aggrWordHistogram({ libs, size }: { libs: string[]; size: number }) {
-    if (libs.length === 0) {
-        return []
+export async function aggrWordHistogram({
+    libs,
+    size,
+    today,
+    signal,
+}: {
+    libs: string[]
+    size: number
+    today?: ReturnType<typeof stdMoment>
+    signal?: AbortSignal
+}) {
+    if (libs.length === 0) return []
+
+    const start = today
+        ? today
+              .clone()
+              .startOf('day')
+              .subtract(size - 1, 'days')
+        : stdMoment().subtract(size, 'days')
+    const end = today?.clone().startOf('day').add(1, 'day').toISOString()
+    const offset = today?.utcOffset()
+    const counts = new Map<string, number>()
+    const pageSize = 500
+    let after: string | undefined
+
+    while (true) {
+        let query = supabase
+            .from('lexicon')
+            .select('id,created_at')
+            .in('lib', libs)
+            .gte('created_at', start.toISOString())
+            .order('id')
+            .limit(pageSize)
+        if (end) query = query.lt('created_at', end)
+        if (after) query = query.gt('id', after)
+        if (signal) query = query.abortSignal(signal)
+        const { data } = await query.throwOnError()
+        for (const { created_at } of data) {
+            if (!created_at) continue
+            const date = stdMoment(created_at)
+            if (offset !== undefined) date.utcOffset(offset)
+            const day = date.format('YYYY-MM-DD')
+            counts.set(day, (counts.get(day) ?? 0) + 1)
+        }
+        const last = data.at(-1)
+        if (!last || data.length < pageSize) break
+        after = last.id
     }
-    const startDate = stdMoment().subtract(size, 'days').toDate()
 
-    const { data } = await supabase
-        .from('lexicon')
-        .select('created_at')
-        .in('lib', libs)
-        .gte('created_at', startDate.toISOString())
-        .throwOnError()
-
-    const histogram = data.reduce((acc: Record<string, number>, curr) => {
-        const date = stdMoment(curr.created_at).startOf('day').format('YYYY-MM-DD')
-        acc[date] = (acc[date] || 0) + 1
-        return acc
-    }, {})
-
-    return Object.entries(histogram).map(([date, count]) => ({
-        date,
-        count,
-    }))
+    return Array.from(counts, ([date, count]) => ({ date, count }))
 }

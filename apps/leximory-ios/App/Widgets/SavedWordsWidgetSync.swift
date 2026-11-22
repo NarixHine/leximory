@@ -50,8 +50,12 @@ import WidgetKit
     }
 
     private static func publish(_ settings: AccountSettings, session: SavedWordsWidgetStore.Session, store: SavedWordsWidgetStore) {
-        let snapshot = SavedWordsSnapshot(activity: settings.activity.map { ($0.date, $0.count) }, endingOn: settings.today)
-        if store.publish(snapshot, for: session) {
+        let dayCount = settings.activityWindowDays == 100 ? 100 : 30
+        let snapshot = SavedWordsSnapshot(activity: settings.activity.map { ($0.date, $0.count) },
+                                          endingOn: settings.today, dayCount: dayCount)
+        let previous = store.snapshot
+        if store.publish(snapshot, for: session),
+           previous.map({ Array($0.days.suffix(30)) }) != Array(snapshot.days.suffix(30)) {
             WidgetCenter.shared.reloadTimelines(ofKind: SavedWordsWidgetStore.kind)
         }
     }

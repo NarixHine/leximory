@@ -44,6 +44,19 @@ struct SavedWordsWidgetTests {
         #expect(snapshot.total == 5)
     }
 
+    @Test func wideHomeRetainsOlderActivityWhileTheWidgetUsesThirtyDays() throws {
+        let snapshot = SavedWordsSnapshot(activity: [
+            ("2026-07-22", 20), ("2026-07-23", 5), ("2026-10-01", 9), ("2026-10-30", 7)
+        ], endingOn: "2026-10-30", dayCount: 100)
+        #expect(snapshot.days.count == 100)
+        #expect(snapshot.days.first?.count == 5)
+        #expect(snapshot.total == 21)
+
+        let widget = snapshot.ending(on: try #require(snapshot.days.last?.date))
+        #expect(widget.days.count == 30)
+        #expect(widget.total == 16)
+    }
+
     @Test func emptyHistoryRemainsAnHonestFlatZeroAcrossMonthBoundary() {
         let snapshot = SavedWordsSnapshot(activity: [], endingOn: "2026-03-01")
         #expect(snapshot.days.count == 30)
@@ -63,6 +76,11 @@ struct SavedWordsWidgetTests {
         let snapshot = SavedWordsSnapshot(activity: [("2026-10-30", 12)], endingOn: "2026-10-30")
         #expect(store.publish(snapshot, for: first))
         #expect(SavedWordsWidgetStore(defaults: defaults).snapshot?.total == 12)
+        let cached = defaults.data(forKey: SavedWordsWidgetStore.key)
+        #expect(SavedWordsWidgetStore.snapshot(for: origin, accountID: "first", in: cached)?.total == 12)
+        #expect(SavedWordsWidgetStore.snapshot(for: origin, accountID: "second", in: cached) == nil)
+        let differentOrigin = try #require(URL(string: "https://elsewhere.test"))
+        #expect(SavedWordsWidgetStore.snapshot(for: differentOrigin, accountID: "first", in: cached) == nil)
         #expect(store.activate(origin: origin, accountID: "first") == first)
         #expect(store.snapshot?.total == 12)
         #expect(store.publish(snapshot, for: first) == false)

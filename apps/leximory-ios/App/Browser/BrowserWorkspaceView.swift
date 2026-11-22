@@ -62,9 +62,6 @@ struct BrowserWorkspaceView: View {
         return incomingEbooks?.nextID
     }
     private var motion: Animation? { reduceMotion ? nil : .spring(response: 0.42, dampingFraction: 0.86) }
-    private func handleKeyboardHidden() {
-        if editingAddress, addressEditor.field?.isFirstResponder != true { finishEditing() }
-    }
     private var pinIconTaskID: [String] {
         var values: [String] = [scenePhase == .active ? "active" : "inactive", sync?.online == false ? "offline" : "online"]
         for pin in workspace.homePins {
@@ -99,6 +96,7 @@ struct BrowserWorkspaceView: View {
                                 compact: editingAddress, recent: workspace.recentTexts, recentImages: workspace.recentImages, libraryName: workspace.recentLibraryName,
                                 browse: beginEditing, paste: openClipboard, recentWebpages: workspace.recentWebpages, openWebpage: { finishEditing(); workspace.openURL($0.url, bookmarkID: $0.bookmarkID) }, bookmarks: { finishEditing(); workspace.visit(.bookmarks) },
                                 ebook: { finishEditing(); choosingFile = true }, review: { finishEditing(); workspace.visit(.review) },
+                                activityAccount: session?.state.accountID.map { (client.webURL, $0) },
                                 addressQuery: addressQuery, addressMatches: { workspace.addressMatches($0, limit: $1) },
                                 openAddressMatch: { match in finishEditing(); Task { await workspace.openAddressMatch(match) } },
                                 resume: { text in finishEditing(); Task { await workspace.open(text) } })
@@ -141,7 +139,7 @@ struct BrowserWorkspaceView: View {
         workspaceNavigation
         .ignoresSafeArea(keepsReadingViewport ? .keyboard : [], edges: .bottom)
         .overlay(alignment: .bottom) {
-                controls.padding(.horizontal, 12).padding(.bottom, 8)
+                controls.padding(.horizontal, BrowserWorkspaceMeasure.horizontalInset).padding(.bottom, 8)
                     .opacity(finding ? 0 : 1).allowsHitTesting(!finding).accessibilityHidden(finding)
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { chromeHeight = $0 }
             }
@@ -214,9 +212,6 @@ struct BrowserWorkspaceView: View {
     }
     private var workspaceCaching: some View {
         workspacePresentation
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
-            handleKeyboardHidden()
-        }
         .task(id: pinIconTaskID) {
             guard scenePhase == .active else { return }
             await workspace.cachePinIcons()
@@ -442,7 +437,7 @@ struct BrowserWorkspaceView: View {
             if !editingAddress {
                 annotationBadge.allowsHitTesting(false).accessibilityHidden(true)
             }
-        }.frame(maxWidth: 720).tint(.primary)
+        }.frame(maxWidth: BrowserWorkspaceMeasure.maximumWidth).tint(.primary)
             .animation(motion, value: editingAddress)
     }
     private var addressControl: some View {
@@ -451,7 +446,8 @@ struct BrowserWorkspaceView: View {
                 BrowserAddressField(address: address, editor: addressEditor, submit: submitAddress, search: { query in
                     finishEditing()
                     workspace.search(query)
-                }, draftChanged: { addressQuery = $0 }).frame(height: 48)
+                }, draftChanged: { addressQuery = $0 }, editingEnded: { editingAddress = false })
+                    .frame(height: 48)
             } else {
                 Button(action: beginEditing) {
                     HStack(spacing: 6) {
@@ -605,9 +601,10 @@ struct BrowserWorkspaceView: View {
         withAnimation(motion) { editingAddress = true }
     }
     private func finishEditing() {
-        addressEditor.field?.wantsFocus = false
+        let field = addressEditor.field
+        field?.wantsFocus = false
+        field?.resignFirstResponder()
         editingAddress = false
-        addressEditor.field?.resignFirstResponder()
     }
     private func openClipboard() {
         let input = UIPasteboard.general.string ?? UIPasteboard.general.url?.absoluteString

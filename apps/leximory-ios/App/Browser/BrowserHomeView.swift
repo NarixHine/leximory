@@ -22,6 +22,7 @@ struct BrowserHomeView: View {
     let bookmarks: () -> Void
     let ebook: () -> Void
     var review: () -> Void = {}
+    var activityAccount: (origin: URL, id: String)?
     var addressQuery = ""
     var addressMatches: (String, Int) -> [BrowserAddressMatch] = { _, _ in [] }
     var openAddressMatch: (BrowserAddressMatch) -> Void = { _ in }
@@ -34,8 +35,8 @@ struct BrowserHomeView: View {
     @Environment(\.browserChromeHeight) private var chromeHeight
     @ScaledMetric(relativeTo: .body) private var recentTitleSize: CGFloat = 17
     @ScaledMetric(relativeTo: .headline) private var matchRowHeight: CGFloat = 44
-    @State private var compactCardsHeight: CGFloat = 256
     @Namespace private var cardNamespace
+    @State private var compactCardsHeight: CGFloat = 256
 
     var body: some View {
         Group {
@@ -48,7 +49,7 @@ struct BrowserHomeView: View {
                     let cardsHeight = max(0, geometry.size.height - CGFloat(matchCount) * matchRowHeight - (matchCount > 0 ? 32 : 0))
                     VStack(spacing: matchCount > 0 ? 32 : 0) {
                         ScrollView {
-                            homeCards(squares: horizontal, folded: true)
+                            compactActions(horizontal: horizontal)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { compactCardsHeight = $0 }
                                 .padding(.horizontal, 28).padding(.vertical, 12)
@@ -77,18 +78,20 @@ struct BrowserHomeView: View {
                 }
             } else {
                 GeometryReader { geometry in
-                    let squares = geometry.size.width >= 760 && UIDevice.current.userInterfaceIdiom != .phone && !typeSize.isAccessibilitySize
+                    let inset = BrowserWorkspaceMeasure.horizontalInset
                     ScrollView {
-                        VStack(spacing: 28) {
-                            homeCards(squares: squares, folded: false).frame(maxWidth: squares ? nil : 304)
-                            if !pins.isEmpty || !readingResources.isEmpty || recentWebpage != nil {
-                                savedPages.frame(maxWidth: squares ? 680 : 400)
-                            }
+                        BrowserHomeBento(width: max(0, geometry.size.width - 2 * inset), pinCount: pins.count) { layout in
+                            BrowserHomeActivityCell(account: activityAccount, layout: layout)
+                        } actions: {
+                            actionsPanel
+                        } pins: {
+                            pinsPanel
+                        } recents: {
+                            recentsPanel
                         }
-                        .padding(.horizontal, 28)
-                        .padding(.vertical, 24)
-                        .frame(maxWidth: squares ? 740 : 456, minHeight: max(0, geometry.size.height - chromeHeight))
-                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, inset)
+                        .padding(.vertical, 20)
+                        .frame(minHeight: max(0, geometry.size.height - chromeHeight), alignment: .center)
                         .padding(.bottom, chromeHeight)
                     }.scrollBounceBehavior(.basedOnSize)
                 }
@@ -98,53 +101,151 @@ struct BrowserHomeView: View {
         .tint(.primary)
     }
 
-    private var innerFill: Color {
-        colorScheme == .dark ? Color(white: 0.12) : .white
-    }
-
-    @ViewBuilder private func homeCards(squares: Bool, folded: Bool) -> some View {
-        if !squares && !folded && !typeSize.isAccessibilitySize {
-            BrowserHomeCardGrid {
-                homeCardButtons(squares: true, folded: false, grid: true)
-            }
-        } else {
-            let layout = squares ? AnyLayout(HStackLayout(spacing: folded ? 12 : -18)) : AnyLayout(VStackLayout(spacing: folded ? 8 : -6))
-            layout {
-                homeCardButtons(squares: squares, folded: folded, grid: false)
-            }.padding(.horizontal, folded ? 0 : 8)
-        }
-    }
-    private enum HomeCardTitle: String {
+    private enum HomeAction: String, CaseIterable {
         case browse = "浏览网页"
-        case clipboard = "跳转到剪贴板"
         case bookmarks = "我的书签"
         case ebook = "打开电子书"
         case review = "每日复习"
+
+        var symbol: String {
+            switch self {
+            case .browse: "globe.asia.australia.fill"
+            case .bookmarks: "bookmark.fill"
+            case .ebook: "book.closed.fill"
+            case .review: "leaf.fill"
+            }
+        }
+
+        var identifier: String {
+            switch self {
+            case .browse: "browser-browse"
+            case .bookmarks: "browser-bookmarks"
+            case .ebook: "browser-ebook"
+            case .review: "browser-review"
+            }
+        }
+
+        var baseColors: (light: UInt32, dark: UInt32) {
+            switch self {
+            case .browse: (0xE0EEDD, 0x1D2925)
+            case .bookmarks: (0xDDEFE6, 0x1D2925)
+            case .ebook: (0xDCEEF2, 0x1D2930)
+            case .review: (0xE1E9F8, 0x242B38)
+            }
+        }
+
+        func accent(dark: Bool) -> UInt32 {
+            switch self {
+            case .browse: 0x98C9A3
+            case .bookmarks: 0xBFD8BD
+            case .ebook: dark ? 0xA5D1DA : 0xB5D2D6
+            case .review: dark ? 0xB1C3E5 : 0xB2C4DB
+            }
+        }
+
+        var darkLabel: UInt32 {
+            switch self {
+            case .browse, .bookmarks: 0xDDE7C7
+            case .ebook: 0xD2E6EC
+            case .review: 0xD7E1F3
+            }
+        }
     }
 
-    @ViewBuilder private func homeCardButtons(squares: Bool, folded: Bool, grid: Bool) -> some View {
-        card(compact ? .clipboard : .browse, symbol: "globe.asia.australia.fill", color: tone(0xE0EEDD, 0x1D2925), accent: tone(0x98C9A3, 0x98C9A3), label: tone(0x2D493F, 0xDDE7C7), angle: -7, folded: folded, square: squares, grid: grid, action: compact ? paste : browse).accessibilityIdentifier("browser-browse")
-        card(.bookmarks, symbol: "bookmark.fill", color: tone(0xDDEFE6, 0x1D2925), accent: tone(0xBFD8BD, 0xBFD8BD), label: tone(0x2D493F, 0xDDE7C7), angle: 5, folded: folded, square: squares, grid: grid, action: bookmarks).accessibilityIdentifier("browser-bookmarks")
-        card(.ebook, symbol: "book.closed.fill", color: tone(0xDCEEF2, 0x1D2930), accent: tone(0xB5D2D6, 0xA5D1DA), label: tone(0x2D493F, 0xD2E6EC), angle: -4, folded: folded, square: squares, grid: grid, action: ebook).accessibilityIdentifier("browser-ebook")
-        card(.review, symbol: "leaf.fill", color: tone(0xE1E9F8, 0x242B38), accent: tone(0xB2C4DB, 0xB1C3E5), label: tone(0x2D493F, 0xD7E1F3), angle: 3, folded: folded, square: squares, grid: grid, action: review)
-            .accessibilityIdentifier("browser-review")
+    private func handler(for action: HomeAction) -> () -> Void {
+        switch action {
+        case .browse: compact ? paste : browse
+        case .bookmarks: bookmarks
+        case .ebook: ebook
+        case .review: review
+        }
     }
-    private func tone(_ light: UInt32, _ dark: UInt32) -> Color {
-        let value = colorScheme == .dark ? dark : light
-        return Color(red: Double((value >> 16) & 255) / 255, green: Double((value >> 8) & 255) / 255, blue: Double(value & 255) / 255)
+
+    private var actionsPanel: some View {
+        Group {
+            if typeSize.isAccessibilitySize {
+                VStack(spacing: 5) {
+                    ForEach(HomeAction.allCases, id: \.self) { action in
+                        homeActionTile(action)
+                    }
+                }
+            } else {
+                Grid(horizontalSpacing: 5, verticalSpacing: 5) {
+                    GridRow {
+                        homeActionTile(.browse)
+                        homeActionTile(.bookmarks)
+                    }
+                    GridRow {
+                        homeActionTile(.ebook)
+                        homeActionTile(.review)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("browser-home-actions")
     }
-    private func card(_ title: HomeCardTitle, symbol: String, color: Color, accent: Color, label: Color, angle: Double, folded: Bool, square: Bool, grid: Bool, action: @escaping () -> Void) -> some View {
-        let radius: CGFloat = folded ? 22 : grid ? 24 : 30
-        return Button(action: action) {
-            cardLabel(title, symbol: symbol,
-                iconColor: colorScheme == .dark ? accent : accent.mix(with: LeximoryPalette.ink, by: 0.55),
-                folded: folded, square: square, grid: grid)
-                .foregroundStyle(colorScheme == .light ? LeximoryPalette.ink : label)
+
+    private func homeActionTile(_ action: HomeAction) -> some View {
+        actionCard(action, title: action.rawValue, radius: 15) { iconColor in
+            VStack(alignment: .leading, spacing: 7) {
+                HStack {
+                    Image(systemName: action.symbol)
+                        .font(.system(size: 20, weight: .medium))
+                        .frame(width: 22, alignment: .leading)
+                    Spacer(minLength: 6)
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 12, weight: .medium))
+                }
+                .frame(height: 22)
+                .foregroundStyle(iconColor)
+                .accessibilityHidden(true)
+
+                Text(action.rawValue)
+                    .displayFont(17, relativeTo: .headline)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, BrowserHomePanelMetrics.inset)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, minHeight: 68, maxHeight: .infinity, alignment: .leading)
+        }
+    }
+
+    private func compactActions(horizontal: Bool) -> some View {
+        let layout = horizontal ? AnyLayout(HStackLayout(spacing: 12)) : AnyLayout(VStackLayout(spacing: 8))
+        return layout {
+            ForEach(HomeAction.allCases, id: \.self) { action in
+                let title = action == .browse ? "跳转到剪贴板" : action.rawValue
+                actionCard(action, title: title, radius: 22) { iconColor in
+                    compactActionLabel(title, symbol: action.symbol, iconColor: iconColor, horizontal: horizontal)
+                }
+            }
+        }
+    }
+
+    private func actionCard<Label: View>(_ action: HomeAction, title: String, radius: CGFloat,
+                                         @ViewBuilder label: (Color) -> Label) -> some View {
+        let dark = colorScheme == .dark
+        let base = action.baseColors
+        let color = tone(dark ? base.dark : base.light)
+        let accent = tone(action.accent(dark: dark))
+        let iconColor = dark ? accent : accent.mix(with: LeximoryPalette.ink, by: 0.55)
+        return Button(action: handler(for: action)) {
+            label(iconColor)
+                .foregroundStyle(dark ? tone(action.darkLabel) : LeximoryPalette.ink)
                 .background { cardSurface(color: color, tint: accent, radius: radius) }
-                .contentShape(RoundedRectangle(cornerRadius: radius))
-        }.buttonStyle(BrowserCardButtonStyle()).accessibilityLabel(title.rawValue)
-            .matchedGeometryEffect(id: symbol, in: cardNamespace).rotationEffect(.degrees(folded || grid || typeSize.isAccessibilitySize ? 0 : angle))
+                .contentShape(.rect(cornerRadius: radius))
+        }
+        .buttonStyle(BrowserCardButtonStyle())
+        .accessibilityLabel(title)
+        .accessibilityIdentifier(action.identifier)
+        .matchedGeometryEffect(id: action, in: cardNamespace)
     }
+
+    private func tone(_ value: UInt32) -> Color {
+        Color(red: Double((value >> 16) & 255) / 255, green: Double((value >> 8) & 255) / 255, blue: Double(value & 255) / 255)
+    }
+
     @ViewBuilder private func cardSurface(color: Color, tint: Color, radius: CGFloat) -> some View {
         let shape = RoundedRectangle(cornerRadius: radius)
         if colorScheme == .light {
@@ -175,190 +276,154 @@ struct BrowserHomeView: View {
             }
         }
     }
-    @ViewBuilder private func cardLabel(_ title: HomeCardTitle, symbol: String, iconColor: Color, folded: Bool, square: Bool, grid: Bool) -> some View {
-        if square && folded {
+    @ViewBuilder private func compactActionLabel(_ title: String, symbol: String, iconColor: Color, horizontal: Bool) -> some View {
+        if horizontal {
             VStack(spacing: 8) {
                 Image(systemName: symbol).font(.system(size: 22, weight: .medium)).foregroundStyle(iconColor)
-                Text(title.rawValue).displayFont(19, relativeTo: .headline)
+                Text(title).displayFont(19, relativeTo: .headline)
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
-            }.padding(.horizontal, 12).padding(.vertical, 12)
-                .frame(maxWidth: .infinity, minHeight: 96)
-        } else if square {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .center, spacing: 0) {
-                    Image(systemName: symbol).font(.system(size: grid ? 26 : 28, weight: .medium)).foregroundStyle(iconColor)
-                        .frame(width: 32, height: 32, alignment: .leading)
-                    Spacer(minLength: 0)
-                    Image(systemName: "arrow.up.right").font(.system(size: grid ? 15 : 17, weight: .medium)).foregroundStyle(iconColor)
-                        .frame(width: 32, height: 32, alignment: .trailing)
-                }
-                Spacer(minLength: 12)
-                Text(title.rawValue).displayFont(grid ? 21 : 26, relativeTo: grid ? .headline : .title2)
-                    .lineLimit(1).minimumScaleFactor(0.65).allowsTightening(true)
-                    .fixedSize(horizontal: false, vertical: true)
-            }.padding(grid ? 18 : 20)
-                .frame(width: grid ? nil : 180, height: grid ? nil : 180)
-                .frame(maxWidth: grid ? .infinity : nil, maxHeight: grid ? .infinity : nil, alignment: .topLeading)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, minHeight: 96)
         } else {
             HStack(spacing: 20) {
-                Image(systemName: symbol).font(.system(size: folded ? 22 : 26, weight: .medium)).foregroundStyle(iconColor).frame(width: 44)
-                Text(title.rawValue).displayFont(folded ? 19 : 22, relativeTo: folded ? .headline : .title2)
+                Image(systemName: symbol).font(.system(size: 22, weight: .medium)).foregroundStyle(iconColor).frame(width: 44)
+                Text(title).displayFont(19, relativeTo: .headline)
                 Spacer(minLength: 0)
                 Image(systemName: "arrow.up.right").font(.body.weight(.medium)).foregroundStyle(iconColor)
-            }.padding(.horizontal, 24).padding(.vertical, folded ? 12 : 22)
-                .frame(maxWidth: .infinity, minHeight: 58)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 58)
         }
     }
-    private func shortcutLabel<Icon: View>(_ title: String, isPin: Bool = false, cutout: Bool = true, background: Color = .white, @ViewBuilder icon: () -> Icon) -> some View {
-        VStack(spacing: 10) {
-            if isPin {
-                icon().frame(width: 24, height: 24)
-                    .frame(width: 40, height: 40)
-                    .background { insetBackground(cornerRadius: 20) }
-                    .clipShape(.circle)
-                    .accessibilityHidden(true)
+
+    private var pinsPanel: some View {
+        BrowserHomePanel(title: "固定", symbol: "pin", identifier: "browser-home-pins") {
+            if pins.isEmpty {
+                Text("打开内容后即可固定")
+                    .interfaceFont(13, style: .footnote)
+                    .foregroundStyle(.primary.opacity(0.70))
+                    .fixedSize(horizontal: false, vertical: true)
             } else {
-                Circle().fill(background.opacity(0.94))
-                    .overlay {
-                        icon().frame(width: 24, height: 24)
-                            .blendMode(cutout ? .destinationOut : .normal)
-                    }
-                    .compositingGroup()
-                    .frame(width: 40, height: 40)
-                    .accessibilityHidden(true)
+                BrowserHomeShortcutLayout(accessibility: typeSize.isAccessibilitySize) {
+                    ForEach(pins) { pin in pinButton(pin) }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            Text(title).interfaceFont(13, style: .footnote)
-                .homeWallpaperInk()
-                .multilineTextAlignment(.center)
-                .lineLimit(isPin || !typeSize.isAccessibilitySize ? 1 : nil).truncationMode(.tail)
-                .minimumScaleFactor(isPin ? 1 : 0.75)
-                .fixedSize(horizontal: false, vertical: true)
-        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .contentShape(.rect)
+        }
     }
 
-    private var savedPages: some View {
-        VStack(spacing: 16) {
-            if !pins.isEmpty {
-                BrowserHomeShortcutLayout(accessibility: typeSize.isAccessibilitySize) {
-                    ForEach(pins) { pin in
-                        Button { openPin(pin) } label: {
-                            shortcutLabel(pin.title, isPin: true) {
-                                Group {
-                                    if let url = pin.iconURL, let image = pinImages[url] {
-                                        Image(uiImage: image).resizable().scaledToFit()
-                                    } else if case .document(let text) = pin.destination {
-                                        BrowserTextIcon(text: text).foregroundStyle(LeximoryPalette.ink)
-                                    } else {
-                                        Image(systemName: pin.symbol).font(.system(size: 21))
-                                            .foregroundStyle(LeximoryPalette.ink)
-                                    }
-                                }.clipShape(.rect(cornerRadius: 7))
-                            }
-                        }.buttonStyle(BrowserHomeButtonStyle())
-                            .accessibilityLabel(pin.title)
-                            .accessibilityIdentifier("browser-pin-" + pin.id.uuidString)
-                            .contextMenu {
-                                Button("编辑", systemImage: "pencil") { editPin(pin) }
-                                Button(role: .destructive) { deletePin(pin) } label: {
-                                    Label {
-                                        Text("删除")
-                                    } icon: {
-                                        Image(uiImage: pinDeleteIcon)
-                                    }
-                                }.tint(.red)
-                            }
+    private func pinButton(_ pin: BrowserHomePin) -> some View {
+        Button { openPin(pin) } label: {
+            VStack(spacing: 10) {
+                Group {
+                    if let url = pin.iconURL, let image = pinImages[url] {
+                        Image(uiImage: image).resizable().scaledToFit()
+                    } else if case .document(let text) = pin.destination {
+                        BrowserTextIcon(text: text)
+                    } else {
+                        Image(systemName: pin.symbol).font(.system(size: 21))
                     }
-                }.frame(maxWidth: 400).frame(maxWidth: .infinity)
-                    .padding(.horizontal, 4).padding(.top, 8)
+                }
+                .frame(width: 24, height: 24)
+                .accessibilityHidden(true)
+
+                Text(pin.title)
+                    .interfaceFont(13, style: .footnote)
+                    .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            if !readingResources.isEmpty || recentWebpage != nil {
-                VStack(alignment: .leading, spacing: 0) {
-                    if let page = recentWebpage {
+            .frame(maxWidth: .infinity, minHeight: 44, maxHeight: .infinity, alignment: .top)
+            .contentShape(.rect)
+        }
+        .buttonStyle(BrowserHomeButtonStyle())
+        .accessibilityLabel(pin.title)
+        .accessibilityIdentifier("browser-pin-" + pin.id.uuidString)
+        .contextMenu {
+            Button("编辑", systemImage: "pencil") { editPin(pin) }
+            Button(role: .destructive) { deletePin(pin) } label: {
+                Label {
+                    Text("删除")
+                } icon: {
+                    Image(uiImage: UIImage(systemName: "trash")!.withTintColor(.systemRed, renderingMode: .alwaysOriginal))
+                }
+            }
+            .tint(.red)
+        }
+    }
+
+    private var recentsPanel: some View {
+        let resources = readingResources
+        let page = recentWebpage
+        return BrowserHomePanel(title: "继续浏览", symbol: "clock", identifier: "browser-home-recents") {
+            if resources.isEmpty && page == nil {
+                Text("浏览过的网页和读过的内容会显示在这里")
+                    .interfaceFont(13, style: .footnote)
+                    .foregroundStyle(.primary.opacity(0.70))
+                    .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
+            } else {
+                VStack(alignment: .leading, spacing: 5) {
+                    if let page {
                         Button { openWebpage(page) } label: {
                             recentRow(title: page.displayTitle, byline: page.url.host ?? "", identity: page.url.absoluteString) {
                                 if let url = page.iconURL, let image = recentImages[url] {
-                                    Image(uiImage: image).resizable().scaledToFit().clipShape(.rect(cornerRadius: 7))
+                                    Image(uiImage: image).resizable().scaledToFit()
                                 } else {
-                                    Image(systemName: "globe").font(.system(size: 20)).foregroundStyle(LeximoryPalette.ink)
+                                    Image(systemName: "globe")
                                 }
                             }
-                        }.buttonStyle(BrowserHomeButtonStyle())
-                            .accessibilityLabel("\(page.displayTitle)，网页").accessibilityValue(page.url.host ?? "")
-                            .accessibilityIdentifier("browser-recent-webpage-" + page.url.absoluteString)
-                            .contextMenu {
-                                Button("从主页隐藏", systemImage: "eye.slash") { hideRecentWebpage(page) }
-                            }
+                        }
+                        .buttonStyle(BrowserHomeButtonStyle())
+                        .accessibilityLabel("\(page.displayTitle)，网页").accessibilityValue(page.url.host ?? "")
+                        .accessibilityIdentifier("browser-recent-webpage-" + page.url.absoluteString)
+                        .contextMenu {
+                            Button("从主页隐藏", systemImage: "eye.slash") { hideRecentWebpage(page) }
+                        }
                     }
-                    ForEach(readingResources) { text in
+                    ForEach(resources) { text in
                         Button { resume(text) } label: {
                             recentRow(title: text.title, byline: libraryName(text), identity: text.id) {
-                                BrowserTextIcon(text: text).font(.system(size: 20)).foregroundStyle(LeximoryPalette.ink)
+                                BrowserTextIcon(text: text)
                             }
-                        }.buttonStyle(BrowserHomeButtonStyle())
-                            .accessibilityLabel("\(text.title)，\(text.format == "ebook" ? "电子书" : "文章")")
-                            .accessibilityValue(libraryName(text))
-                            .accessibilityIdentifier("browser-resume-" + text.id)
-                            .contextMenu {
-                                Button("从主页隐藏", systemImage: "eye.slash") { hideRecentText(text) }
-                            }
+                        }
+                        .buttonStyle(BrowserHomeButtonStyle())
+                        .accessibilityLabel("\(text.title)，\(text.format == "ebook" ? "电子书" : "文章")")
+                        .accessibilityValue(libraryName(text))
+                        .accessibilityIdentifier("browser-resume-" + text.id)
+                        .contextMenu {
+                            Button("从主页隐藏", systemImage: "eye.slash") { hideRecentText(text) }
+                        }
                     }
                 }
-                .padding(.vertical, 12)
-                .background {
-                    insetBackground(cornerRadius: 28)
-                }
             }
-        }.padding(12).modifier(BrowserHomeGlass())
-            .accessibilityIdentifier("browser-saved-pages")
-    }
-
-    @ViewBuilder private func insetBackground(cornerRadius: CGFloat) -> some View {
-        if reduceTransparency {
-            RoundedRectangle(cornerRadius: cornerRadius).fill(innerFill)
-        } else {
-            HomeWallpaperGlassBackdrop(cornerRadius: cornerRadius, blurRadius: 6, showsGlassEdge: false)
-                .overlay(innerFill.opacity(0.60))
-                .clipShape(.rect(cornerRadius: cornerRadius))
         }
-    }
-
-    private var pinDeleteIcon: UIImage {
-        UIImage(systemName: "trash")!.withTintColor(.systemRed, renderingMode: .alwaysOriginal)
     }
 
     private func recentRow<Icon: View>(title: String, byline: String, identity: String, @ViewBuilder icon: () -> Icon) -> some View {
         HStack(spacing: 10) {
-            icon().frame(width: 22, height: 22)
-                .frame(width: 36, height: 36)
-                .background(innerFill, in: .circle)
+            icon()
+                .font(.body)
+                .frame(width: 20, height: 20)
                 .accessibilityHidden(true)
-            if typeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 4) {
-                    recentTitle(title).lineLimit(3)
-                    recentByline(byline, identity: identity)
-                }.frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                recentTitle(title).lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(LeximoryTypography.scaledChineseText(title, size: recentTitleSize))
+                    .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
                 if !byline.isEmpty {
-                    recentByline(byline, identity: identity)
-                        .frame(maxWidth: 96, alignment: .trailing)
+                    Text(byline)
+                        .interfaceFont(12, style: .caption1)
+                        .foregroundStyle(.primary.opacity(0.70))
+                        .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
+                        .accessibilityIdentifier("browser-recent-byline-" + identity)
                 }
             }
-        }.padding(.horizontal, 16).padding(.vertical, 4)
-            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading).contentShape(.rect)
-    }
-
-    private func recentTitle(_ title: String) -> some View {
-        Text(LeximoryTypography.scaledChineseText(title, size: recentTitleSize))
-            .foregroundStyle(.primary).truncationMode(.tail)
-    }
-
-    private func recentByline(_ byline: String, identity: String) -> some View {
-        Text(byline).interfaceFont(12, style: .caption1)
-            .foregroundStyle(.tertiary).lineLimit(1).truncationMode(.tail)
-            .accessibilityIdentifier("browser-recent-byline-" + identity)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 4)
+        .frame(minHeight: 44)
+        .contentShape(.rect)
     }
 
     private var readingResources: [CatalogText] {
@@ -382,49 +447,12 @@ struct BrowserHomeView: View {
     }
 }
 
-private struct BrowserHomeGlass: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
-    func body(content: Content) -> some View {
-        if reduceTransparency {
-            content.background(LeximoryPalette.shell, in: .rect(cornerRadius: 36))
-        } else if #available(iOS 26, *) {
-            content.background {
-                HomeWallpaperGlassBackdrop(cornerRadius: 36)
-            }
-        } else {
-            content.background(.regularMaterial, in: .rect(cornerRadius: 36))
-        }
-    }
-}
-
 private struct BrowserHomeButtonStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.opacity(configuration.isPressed ? 0.65 : 1)
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: configuration.isPressed)
-    }
-}
-
-private struct BrowserHomeCardGrid: Layout {
-    private func side(for width: CGFloat) -> CGFloat { max(0, (width - 12) / 2) }
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let width = proposal.width ?? 304
-        return CGSize(width: width, height: side(for: width) * 2 + 12)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let side = side(for: bounds.width)
-        for index in subviews.indices {
-            let column = index % 2
-            let row = index / 2
-            let x = bounds.minX + CGFloat(column) * (side + 12)
-            let y = bounds.minY + CGFloat(row) * (side + 12)
-            subviews[index].place(at: CGPoint(x: x, y: y), anchor: .topLeading,
-                proposal: ProposedViewSize(width: side, height: side))
-        }
     }
 }
 
@@ -436,17 +464,32 @@ private struct BrowserCardButtonStyle: ButtonStyle {
     }
 }
 
-private struct BrowserHomeShortcutLayout: Layout {
+struct BrowserHomeShortcutLayout: Layout {
     var accessibility: Bool
     private let gap: CGFloat = 12
 
     private var preferredItemWidth: CGFloat { accessibility ? 112 : 64 }
-    private func columns(_ width: CGFloat) -> Int { max(1, Int((width + gap) / (preferredItemWidth + gap))) }
-    private func itemWidth(_ width: CGFloat) -> CGFloat { min(preferredItemWidth, width) }
+    func columnCapacity(for width: CGFloat) -> Int {
+        let width = max(0, width)
+        return max(1, Int((width + gap) / (itemWidth(width) + gap)))
+    }
+
+    private func columns(_ width: CGFloat, count: Int) -> Int {
+        let capacity = columnCapacity(for: width)
+        let rows = max(1, (count + capacity - 1) / capacity)
+        return max(1, (count + rows - 1) / rows)
+    }
+
+    private func itemWidth(_ width: CGFloat) -> CGFloat {
+        if !accessibility, width >= 2 * 44 + gap, width < 2 * preferredItemWidth + gap {
+            return (width - gap) / 2
+        }
+        return min(preferredItemWidth, width)
+    }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = max(0, proposal.width ?? 328)
-        let columns = columns(width)
+        let columns = columns(width, count: subviews.count)
         let itemWidth = itemWidth(width)
         let height = subviews.map { $0.sizeThatFits(.init(width: itemWidth, height: nil)).height }.max() ?? 0
         let rows = (subviews.count + columns - 1) / columns
@@ -454,7 +497,7 @@ private struct BrowserHomeShortcutLayout: Layout {
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let columns = columns(bounds.width)
+        let columns = columns(bounds.width, count: subviews.count)
         let width = itemWidth(bounds.width)
         let height = subviews.map { $0.sizeThatFits(.init(width: width, height: nil)).height }.max() ?? 0
         for index in subviews.indices {

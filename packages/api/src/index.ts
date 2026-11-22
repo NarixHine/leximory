@@ -367,6 +367,7 @@ export const accountSettingsSchema = accountSchema
         accent: z.enum(['BrE', 'AmE']),
         audio: accountSchema.shape.definitions,
         activity: z.array(z.object({ date: z.string(), count: z.int().nonnegative() }).strict()),
+        activityWindowDays: z.literal(100).optional(),
         today: z.string(),
         membership: membershipSchema.nullable().optional(),
         memberships: z.array(membershipSchema).optional(),

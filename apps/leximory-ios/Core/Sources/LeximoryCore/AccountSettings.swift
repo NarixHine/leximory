@@ -17,6 +17,7 @@ public struct AccountSettings: Codable, Sendable {
     public let definitions: Account.Allowance
     public let audio: Account.Allowance
     public let activity: [Activity]
+    public let activityWindowDays: Int?
     public struct SubscriptionPlan: Codable, Identifiable, Sendable {
         public let id: String
         public let name: String

@@ -327,6 +327,7 @@ struct BrowserAddressField: UIViewRepresentable {
     let submit: () -> Void
     var search: ((String) -> Void)? = nil
     var draftChanged: ((String) -> Void)? = nil
+    var editingEnded: (() -> Void)? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> BrowserURLTextField {
@@ -379,6 +380,10 @@ struct BrowserAddressField: UIViewRepresentable {
                 guard let field, field.isFirstResponder, field.markedTextRange == nil, field.text == initialText else { return }
                 field.selectAll(nil)
             }
+        }
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            guard let field = textField as? BrowserURLTextField, field.wantsFocus else { return }
+            parent.editingEnded?()
         }
         func textFieldShouldReturn(_ field: UITextField) -> Bool {
             parent.submit()
