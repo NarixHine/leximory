@@ -44,7 +44,7 @@ struct BrowserHomeBento<Activity: View, Actions: View, Pins: View, Recents: View
                         }
                     }
                     Grid(horizontalSpacing: gap) {
-                        GridRow {
+                        GridRow(alignment: .top) {
                             pins().frame(width: trailing)
                             actions().frame(width: leading)
                         }
@@ -54,13 +54,13 @@ struct BrowserHomeBento<Activity: View, Actions: View, Pins: View, Recents: View
                 Grid(alignment: .leading, horizontalSpacing: gap, verticalSpacing: gap) {
                     actions().frame(width: measure)
                     if paired {
-                        GridRow {
+                        GridRow(alignment: .top) {
                             activity(pairedActivityWidth).frame(width: pairedActivityWidth)
-                            pins().frame(width: pairedPinsWidth)
+                            pins().fixedSize(horizontal: false, vertical: true).frame(width: pairedPinsWidth)
                         }
                     } else {
                         activity(measure).frame(width: measure)
-                        pins().frame(width: measure)
+                        pins().fixedSize(horizontal: false, vertical: true).frame(width: measure)
                     }
                     recents().frame(width: measure)
                 }
@@ -183,11 +183,11 @@ private struct BrowserHomeActivityPanel: View {
 
         return Canvas { context, _ in
             for index in values.indices {
-                let isToday = index == values.count - 1
                 let fill = values[index].map { count in
-                    count == 0 ? Color.primary.opacity(isToday ? 0.20 : 0.10)
-                        : lowActivity.mix(with: highActivity, by: intensity(for: count))
-                } ?? .primary.opacity(0.055)
+                    guard count > 0 else { return Color.primary.opacity(0.075) }
+                    let additionalSaves = Double(count - 1)
+                    return lowActivity.mix(with: highActivity, by: additionalSaves / (additionalSaves + 9))
+                } ?? .primary.opacity(0.035)
                 let rect = grid.rect(for: index)
                 context.fill(RoundedRectangle(cornerRadius: 2).path(in: rect), with: .color(fill))
             }
@@ -203,15 +203,6 @@ private struct BrowserHomeActivityPanel: View {
                 Text(date.formatted(formatter))
                     .accessibilityValue(value.map { "\($0) 个词汇" } ?? "暂无记录")
             }
-        }
-    }
-
-    private func intensity(for count: Int) -> Double {
-        switch count {
-        case 1..<5: 0
-        case 5..<10: 0.33
-        case 10..<20: 0.67
-        default: 1
         }
     }
 }

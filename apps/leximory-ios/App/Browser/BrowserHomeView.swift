@@ -295,6 +295,7 @@ struct BrowserHomeView: View {
                 BrowserHomeShortcutLayout(accessibility: typeSize.isAccessibilitySize) {
                     ForEach(pins) { pin in pinButton(pin) }
                 }
+                .frame(maxHeight: .infinity)
             }
         }
     }
