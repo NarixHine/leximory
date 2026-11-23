@@ -763,7 +763,6 @@ final class BrowserWorkspaceUITests: XCTestCase {
         XCTAssertFalse(app.buttons["browser-account"].exists)
         XCTAssertFalse(app.staticTexts["Leximory Browser"].exists)
         XCTAssertTrue(app.buttons["browser-browse"].isHittable)
-        XCTAssertFalse(app.staticTexts["browser-home-word-total"].exists)
         let address = app.buttons["browser-address"]
         XCTAssertGreaterThan(address.frame.midY, app.frame.height * 0.75)
         app.buttons["browser-address"].tap()
@@ -784,7 +783,11 @@ final class BrowserWorkspaceUITests: XCTestCase {
         for id in ["activity", "actions", "pins", "recents"] {
             XCTAssertTrue(app.otherElements["browser-home-" + id].exists)
         }
-        XCTAssertTrue(app.staticTexts["browser-home-word-total"].label.hasPrefix("入库 "))
+        let activity = app.otherElements["browser-home-activity"]
+        XCTAssertTrue(activity.staticTexts["词汇足迹"].exists)
+        let summaries = activity.staticTexts.matching(NSPredicate(format: "label MATCHES %@",
+            #"近\s*\p{Nd}+\s*天|[\p{Nd},]+\s*词|入库\s*\p{Nd}+\s*个词汇"#))
+        XCTAssertFalse(summaries.firstMatch.exists)
         XCTAssertTrue(app.staticTexts["打开内容后即可固定"].exists)
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-pin-")).firstMatch.exists)
 
@@ -844,47 +847,87 @@ final class BrowserWorkspaceUITests: XCTestCase {
 
     @MainActor func testIPadHomeBentoUsesTwoColumns() throws {
         let app = launch(extraArguments: ["--workspace-recent-card-fixtures", "--workspace-eight-pins"])
-        defer { restore(app) }
+        defer { XCUIDevice.shared.orientation = .portrait; restore(app) }
         try XCTSkipIf(app.frame.width < 760, "Verify this layout on iPad.")
+        XCUIDevice.shared.orientation = .landscapeLeft
         let activity = app.otherElements["browser-home-activity"].frame
         let actions = app.otherElements["browser-home-actions"].frame
         let recents = app.otherElements["browser-home-recents"].frame
         let pins = app.otherElements["browser-home-pins"].frame
+        XCTAssertGreaterThan(app.frame.width, app.frame.height)
         XCTAssertLessThan(activity.maxX, recents.minX)
         XCTAssertLessThan(pins.maxX, actions.minX)
         XCTAssertLessThan(activity.maxY, pins.minY)
         XCTAssertLessThan(recents.maxY, actions.minY)
         XCTAssertGreaterThan(activity.width, recents.width)
         XCTAssertGreaterThan(actions.width, pins.width)
-        XCTAssertTrue(app.staticTexts["近 100 天"].exists)
         let shortcuts = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-pin-")).allElementsBoundByIndex
         XCTAssertEqual(shortcuts.count, 8)
         XCTAssertTrue(shortcuts.allSatisfy(\.isHittable))
+        let pinRows = Dictionary(grouping: shortcuts.map(\.frame), by: { $0.minY.rounded() })
+        XCTAssertEqual(pinRows.values.map(\.count).sorted(), [4, 4])
         for identifier in ["browser-browse", "browser-bookmarks", "browser-ebook", "browser-review"] {
             let action = app.buttons[identifier]
             XCTAssertTrue(action.isHittable)
             XCTAssertGreaterThanOrEqual(action.frame.width, 44)
             XCTAssertGreaterThanOrEqual(action.frame.height, 44)
         }
+        let browse = app.buttons["browser-browse"].frame
+        let bookmarks = app.buttons["browser-bookmarks"].frame
+        let ebook = app.buttons["browser-ebook"].frame
+        XCTAssertEqual(bookmarks.minX - browse.maxX, 12, accuracy: 1)
+        XCTAssertEqual(ebook.minY - browse.maxY, 12, accuracy: 1)
         XCTAssertTrue(app.staticTexts["继续浏览"].exists)
         let image = XCTAttachment(screenshot: app.screenshot())
-        image.name = "iPad Home bento"; image.lifetime = .keepAlways; add(image)
+        image.name = "iPad landscape Home"; image.lifetime = .keepAlways; add(image)
     }
 
-    @MainActor func testIPhoneHomeWrapsAllEightPins() throws {
-        let app = launch(extraArguments: ["--workspace-recent-card-fixtures", "--workspace-eight-pins"])
+    @MainActor func testIPhoneHomeKeepsFourPinsInOneRowAndWrapsEight() throws {
+        let app = launch(extraArguments: ["--workspace-recent-card-fixtures", "--workspace-no-pins"])
         defer { restore(app) }
         try XCTSkipIf(app.frame.width >= 650, "Verify this layout on iPhone.")
+        let activity = app.otherElements["browser-home-activity"]
+        let pairedWidth = activity.frame.width
+
+        app.terminate()
+        app.launchArguments = ["--browser-workspace-fixtures", "--workspace-recent-card-fixtures", "--workspace-pin-count=4"]
+        app.launch()
         let shortcuts = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "browser-pin-"))
         XCTAssertTrue(shortcuts.firstMatch.waitForExistence(timeout: 5))
+        let fourPins = shortcuts.allElementsBoundByIndex
+        XCTAssertEqual(fourPins.count, 4)
+        XCTAssertEqual(Set(fourPins.map { $0.frame.minY.rounded() }).count, 1)
+        XCTAssertTrue(fourPins.allSatisfy(\.isHittable))
+        let image = XCTAttachment(screenshot: app.screenshot())
+        image.name = "iPhone Home with four pins"; image.lifetime = .keepAlways; add(image)
+
+        app.terminate()
+        app.launchArguments = ["--browser-workspace-fixtures", "--workspace-recent-card-fixtures", "--workspace-eight-pins"]
+        app.launch()
+        XCTAssertTrue(shortcuts.firstMatch.waitForExistence(timeout: 5))
         XCTAssertEqual(shortcuts.count, 8)
-        XCTAssertTrue(app.staticTexts["近 30 天"].exists)
-        let pins = app.otherElements["browser-home-pins"].frame
+        XCTAssertGreaterThan(activity.frame.width, pairedWidth)
+        let pins = app.otherElements["browser-home-pins"]
+        let panel = pins.frame
         let frames = shortcuts.allElementsBoundByIndex.map(\.frame)
         XCTAssertTrue(frames.allSatisfy { frame in
-            frame.width >= 44 && frame.height >= 44 && frame.minX >= pins.minX && frame.maxX <= pins.maxX
+            frame.width >= 44 && frame.height >= 44 && frame.minX >= panel.minX && frame.maxX <= panel.maxX
         })
-        XCTAssertGreaterThan(Set(frames.map { $0.midY.rounded() }).count, 1)
+        let rows = Dictionary(grouping: frames, by: { $0.minY.rounded() }).values
+            .map { $0.reduce(CGRect.null) { $0.union($1) } }
+            .sorted { $0.minY < $1.minY }
+        XCTAssertGreaterThanOrEqual(rows.count, 2)
+        let firstRow = try XCTUnwrap(rows.first)
+        let headingGap = firstRow.minY - pins.staticTexts["固定"].frame.maxY
+        let firstRowPins = frames.filter { abs($0.minY - firstRow.minY) < 1 }.sorted { $0.minX < $1.minX }
+        for (pin, next) in zip(firstRowPins, firstRowPins.dropFirst()) {
+            XCTAssertEqual(next.minX - pin.maxX, 8, accuracy: 1)
+        }
+        for (row, next) in zip(rows, rows.dropFirst()) {
+            let rowGap = next.minY - row.maxY
+            XCTAssertEqual(rowGap, 8, accuracy: 1)
+            XCTAssertGreaterThan(headingGap, rowGap)
+        }
         let last = shortcuts.element(boundBy: 7)
         for _ in 0..<3 where !last.isHittable { app.swipeUp() }
         XCTAssertTrue(last.isHittable)

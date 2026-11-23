@@ -7,49 +7,39 @@ enum BrowserWorkspaceMeasure {
 
 enum BrowserHomePanelMetrics {
     static let inset: CGFloat = 16
-}
-
-enum BrowserHomeActivityLayout {
-    case compact, fullWidth, wide(CGFloat)
-
-    var wideWidth: CGFloat? {
-        if case .wide(let width) = self { return width }
-        return nil
-    }
-
-    var hasInlineSummary: Bool {
-        if case .fullWidth = self { return true }
-        return false
-    }
+    static let sectionSpacing: CGFloat = 12
+    static let pinSpacing: CGFloat = 8
+    static let labelSpacing: CGFloat = 6
 }
 
 struct BrowserHomeBento<Activity: View, Actions: View, Pins: View, Recents: View>: View {
     let width: CGFloat
     let pinCount: Int
-    @ViewBuilder let activity: (BrowserHomeActivityLayout) -> Activity
+    @ViewBuilder let activity: (CGFloat) -> Activity
     @ViewBuilder let actions: () -> Actions
     @ViewBuilder let pins: () -> Pins
     @ViewBuilder let recents: () -> Recents
     @Environment(\.dynamicTypeSize) private var typeSize
 
-    private let gap: CGFloat = 10
-
     var body: some View {
+        let gap = BrowserHomePanelMetrics.sectionSpacing
         let wide = width >= 650 && typeSize < .xxLarge
         let measure = min(width, BrowserWorkspaceMeasure.maximumWidth)
         let leading = ((measure - gap) * 0.58).rounded(.down)
         let trailing = measure - gap - leading
         let canPair = width >= 310 && typeSize < .xxLarge
+        let pairedActivityWidth = pinCount == 2 ? ((measure - gap) * 0.52).rounded(.down) : leading
+        let pairedPinsWidth = measure - gap - pairedActivityWidth
         let pinColumns = BrowserHomeShortcutLayout(accessibility: false)
-            .columnCapacity(for: trailing - 2 * BrowserHomePanelMetrics.inset)
-        let paired = canPair && pinCount <= 2 * pinColumns
+            .columnCapacity(for: pairedPinsWidth - 2 * BrowserHomePanelMetrics.inset)
+        let paired = canPair && pinCount <= pinColumns
 
         Group {
             if wide {
                 VStack(spacing: gap) {
                     Grid(horizontalSpacing: gap) {
                         GridRow {
-                            activity(.wide(leading)).frame(width: leading)
+                            activity(leading).frame(width: leading)
                             recents().frame(width: trailing)
                         }
                     }
@@ -65,11 +55,11 @@ struct BrowserHomeBento<Activity: View, Actions: View, Pins: View, Recents: View
                     actions().frame(width: measure)
                     if paired {
                         GridRow {
-                            activity(.compact).frame(width: leading)
-                            pins().frame(width: trailing)
+                            activity(pairedActivityWidth).frame(width: pairedActivityWidth)
+                            pins().frame(width: pairedPinsWidth)
                         }
                     } else {
-                        activity(canPair ? .fullWidth : .compact).frame(width: measure)
+                        activity(measure).frame(width: measure)
                         pins().frame(width: measure)
                     }
                     recents().frame(width: measure)
@@ -82,13 +72,14 @@ struct BrowserHomeBento<Activity: View, Actions: View, Pins: View, Recents: View
 }
 
 struct BrowserHomePanel<Content: View>: View {
-    var title: String? = nil
-    var symbol: String? = nil
+    let title: String
+    let symbol: String
     let identifier: String
     @ViewBuilder let content: () -> Content
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
+    @ScaledMetric(relativeTo: .subheadline) private var headingSymbolWidth: CGFloat = 16
 
     var body: some View {
         let dark = colorScheme == .dark
@@ -96,18 +87,15 @@ struct BrowserHomePanel<Content: View>: View {
         let tint = dark ? Color(white: 0.14) : Color(white: 0.99)
         let solid = reduceTransparency || contrast == .increased
 
-        VStack(alignment: .leading, spacing: 8) {
-            if let title, let symbol {
-                HStack(spacing: 7) {
-                    Image(systemName: symbol)
-                        .font(.footnote)
-                        .frame(width: 14, alignment: .leading)
-                        .accessibilityHidden(true)
-                    Text(title)
-                        .interfaceFont(13, style: .footnote)
-                        .accessibilityAddTraits(.isHeader)
-                }
-                .foregroundStyle(.primary.opacity(0.80))
+        VStack(alignment: .leading, spacing: BrowserHomePanelMetrics.sectionSpacing) {
+            HStack(spacing: BrowserHomePanelMetrics.labelSpacing) {
+                Image(systemName: symbol)
+                    .font(.subheadline)
+                    .frame(width: headingSymbolWidth, alignment: .leading)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .interfaceFont(15, semibold: true, style: .subheadline)
+                    .accessibilityAddTraits(.isHeader)
             }
             content()
         }
@@ -120,7 +108,7 @@ struct BrowserHomePanel<Content: View>: View {
             if !solid {
                 HomeWallpaperGlassBackdrop(cornerRadius: 20, blurRadius: 14)
             }
-            shape.fill(tint.opacity(solid ? 1 : dark ? 0.29 : 0.30))
+            shape.fill(tint.opacity(solid ? 1 : dark ? 0.29 : 0.45))
         }
     }
 }
@@ -133,7 +121,7 @@ extension EnvironmentValues {
 
 struct BrowserHomeActivityCell: View {
     let account: (origin: URL, id: String)?
-    let layout: BrowserHomeActivityLayout
+    let width: CGFloat
     @AppStorage(SavedWordsWidgetStore.key, store: UserDefaults(suiteName: SavedWordsWidgetStore.appGroup))
     private var storedActivity: Data?
 #if DEBUG && targetEnvironment(simulator)
@@ -151,7 +139,7 @@ struct BrowserHomeActivityCell: View {
 #endif
         let calendar = SavedWordsSnapshot.calendar
         TimelineView(.periodic(from: calendar.startOfDay(for: .now), by: 24 * 60 * 60)) { _ in
-            BrowserHomeActivityPanel(snapshot: snapshot, today: .now, layout: layout)
+            BrowserHomeActivityPanel(snapshot: snapshot, today: .now, width: width)
         }
     }
 }
@@ -159,108 +147,108 @@ struct BrowserHomeActivityCell: View {
 private struct BrowserHomeActivityPanel: View {
     let snapshot: SavedWordsSnapshot?
     let today: Date
-    let layout: BrowserHomeActivityLayout
-    @Environment(\.dynamicTypeSize) private var typeSize
+    let width: CGFloat
     @Environment(\.colorScheme) private var colorScheme
-
-    private var dayCount: Int { layout.wideWidth == nil ? 30 : 100 }
 
     var body: some View {
         let calendar = SavedWordsSnapshot.calendar
         let end = calendar.startOfDay(for: today)
-        let dates = (1 - dayCount...0).compactMap { calendar.date(byAdding: .day, value: $0, to: end) }
+        let weekday = (calendar.component(.weekday, from: end) + 5) % 7
         let counts = Dictionary(snapshot?.days.map { ($0.date, $0.count) } ?? [], uniquingKeysWith: +)
-        let total = dates.allSatisfy { counts[$0] != nil }
-            ? dates.reduce(0) { $0 + (counts[$1] ?? 0) }
-            : nil
+        let contentWidth = max(0, width - 2 * BrowserHomePanelMetrics.inset)
+        let idealHeight = BrowserHomeActivityGrid(width: contentWidth, height: .infinity, weekday: weekday).height
 
         BrowserHomePanel(title: "词汇足迹", symbol: "calendar", identifier: "browser-home-activity") {
-            if layout.hasInlineSummary {
-                HStack(spacing: 16) {
-                    heatmap(dates: dates, counts: counts)
-                    summary(total)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                }
-            } else {
-                heatmap(dates: dates, counts: counts)
-                summary(total)
+            GeometryReader { geometry in
+                let grid = BrowserHomeActivityGrid(width: geometry.size.width,
+                    height: geometry.size.height, weekday: weekday)
+                let dates = (1 - grid.dayCount...0).compactMap { calendar.date(byAdding: .day, value: $0, to: end) }
+                let values = dates.map { counts[$0] }
+                heatmap(grid: grid, dates: dates, values: values)
+                    .frame(height: grid.height)
             }
+            .frame(minHeight: min(56, idealHeight), idealHeight: idealHeight, maxHeight: idealHeight)
         }
     }
 
-    private func summary(_ total: Int?) -> some View {
-        let statsLayout = if layout.hasInlineSummary {
-            AnyLayout(VStackLayout(alignment: .trailing, spacing: 4))
-        } else if typeSize >= .xxLarge {
-            AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
-        } else {
-            AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 5))
-        }
-        return statsLayout {
-            if let total {
-                Text(total.formatted() + " 词")
-                    .editorialFont(layout.hasInlineSummary ? 24 : 16, relativeTo: .callout)
-                    .accessibilityLabel("入库 \(total) 个词汇")
-                    .accessibilityIdentifier("browser-home-word-total")
-            }
-
-            Text("近 \(dayCount) 天")
-                .interfaceFont(12, style: .caption1)
-                .foregroundStyle(.primary.opacity(0.75))
-                .frame(maxWidth: layout.wideWidth == nil ? nil : .infinity, alignment: .trailing)
-        }
-        .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private func heatmap(dates: [Date], counts: [Date: Int]) -> some View {
+    private func heatmap(grid: BrowserHomeActivityGrid, dates: [Date], values: [Int?]) -> some View {
         let calendar = SavedWordsSnapshot.calendar
-        let leading = (calendar.component(.weekday, from: dates.first ?? today) + 5) % 7
-        let weeks = (leading + dates.count + 6) / 7
-        let wide = layout.wideWidth != nil
-        let gap: CGFloat = 3
-        let side = layout.wideWidth.map {
-            max(1, ($0 - 2 * BrowserHomePanelMetrics.inset - CGFloat(weeks - 1) * gap) / CGFloat(weeks))
-        } ?? (layout.hasInlineSummary ? 18 : 15)
-        let columns = wide ? weeks : 7
-        let rows = wide ? 7 : weeks
-        let accent = colorScheme == .dark ? Color(red: 0.68, green: 0.82, blue: 0.57)
-            : Color(red: 0.24, green: 0.43, blue: 0.28)
+        let dark = colorScheme == .dark
+        let lowActivity = dark ? Color(red: 0.18, green: 0.36, blue: 0.29)
+            : Color(red: 0.73, green: 0.87, blue: 0.79)
+        let highActivity = dark ? Color(red: 0.51, green: 0.83, blue: 0.66)
+            : Color(red: 0.29, green: 0.65, blue: 0.46)
         let formatter = Date.FormatStyle(date: .abbreviated, time: .omitted, locale: Locale(identifier: "zh_CN"),
             calendar: calendar, timeZone: calendar.timeZone)
 
-        return VStack(spacing: gap) {
-            ForEach(0..<rows, id: \.self) { row in
-                HStack(spacing: gap) {
-                    ForEach(0..<columns, id: \.self) { column in
-                        let index = (wide ? column * 7 + row : row * 7 + column) - leading
-                        let square = RoundedRectangle(cornerRadius: 2.5)
-                        let count = dates.indices.contains(index) ? counts[dates[index]] : nil
-                        let isToday = index == dates.count - 1
-                        let fill = count.map { count in
-                            count == 0 ? Color.primary.opacity(isToday ? 0.20 : 0.10) : accent.opacity(intensity(for: count))
-                        }
-                        square.fill(dates.indices.contains(index) ? fill ?? .primary.opacity(0.035) : .clear)
-                            .frame(width: side, height: side)
-                    }
-                }
+        return Canvas { context, _ in
+            for index in values.indices {
+                let isToday = index == values.count - 1
+                let fill = values[index].map { count in
+                    count == 0 ? Color.primary.opacity(isToday ? 0.20 : 0.10)
+                        : lowActivity.mix(with: highActivity, by: intensity(for: count))
+                } ?? .primary.opacity(0.055)
+                let rect = grid.rect(for: index)
+                context.fill(RoundedRectangle(cornerRadius: 2).path(in: rect), with: .color(fill))
+            }
+            for index in values.count..<grid.slotCount {
+                let outline = RoundedRectangle(cornerRadius: 2).inset(by: 0.5).path(in: grid.rect(for: index))
+                context.stroke(outline, with: .color(.primary.opacity(0.17)), lineWidth: 1)
             }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("每日入库词汇")
         .accessibilityChildren {
-            ForEach(dates, id: \.self) { date in
+            ForEach(Array(zip(dates, values)), id: \.0) { date, value in
                 Text(date.formatted(formatter))
-                    .accessibilityValue(counts[date].map { "\($0) 个词汇" } ?? "暂无记录")
+                    .accessibilityValue(value.map { "\($0) 个词汇" } ?? "暂无记录")
             }
         }
     }
 
     private func intensity(for count: Int) -> Double {
         switch count {
-        case 1..<5: 0.34
-        case 5..<10: 0.56
-        case 10..<20: 0.78
+        case 1..<5: 0
+        case 5..<10: 0.33
+        case 10..<20: 0.67
         default: 1
         }
+    }
+}
+
+struct BrowserHomeActivityGrid {
+    private static let daysPerWeek = 7
+    private static let historyLimit = 100
+    private static let gap: CGFloat = 3
+    private let horizontalInset: CGFloat
+    private let side: CGFloat
+    let slotCount: Int
+    let dayCount: Int
+
+    var height: CGFloat { CGFloat(Self.daysPerWeek) * (side + Self.gap) - Self.gap }
+
+    init(width: CGFloat, height: CGFloat, weekday: Int) {
+        let daysPerWeek = Self.daysPerWeek
+        let gap = Self.gap
+        let preferredColumnPitch: CGFloat = 15
+        let trailing = daysPerWeek - 1 - weekday
+        let historyColumns = Self.historyLimit / daysPerWeek
+        let fittingColumns = max(1, Int((width + gap) / preferredColumnPitch))
+        let columns = min(historyColumns, fittingColumns)
+        let horizontalGaps = CGFloat(columns - 1) * gap
+        let widthPerDay = (width - horizontalGaps) / CGFloat(columns)
+        let heightPerDay = (height - CGFloat(daysPerWeek - 1) * gap) / CGFloat(daysPerWeek)
+        side = max(0, min(widthPerDay, heightPerDay))
+        horizontalInset = (width - CGFloat(columns) * side - horizontalGaps) / 2
+
+        slotCount = columns * daysPerWeek
+        dayCount = slotCount - trailing
+    }
+
+    func rect(for index: Int) -> CGRect {
+        let pitch = side + Self.gap
+        let x = horizontalInset + CGFloat(index / Self.daysPerWeek) * pitch
+        let y = CGFloat(index % Self.daysPerWeek) * pitch
+        return CGRect(x: x, y: y, width: side, height: side)
     }
 }

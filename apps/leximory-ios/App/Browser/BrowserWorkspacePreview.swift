@@ -75,22 +75,28 @@ struct BrowserWorkspacePreview: View {
                             if let text = page.items.first(where: { $0.id == id }) { await workspace.open(text) }
                         }
                     }
-                    if !arguments.contains("--workspace-no-pins"), let text = page.items.first {
+                    let countArgument = arguments.first { $0.hasPrefix("--workspace-pin-count=") }
+                    let requestedCount = countArgument.flatMap { Int($0.dropFirst("--workspace-pin-count=".count)) }
+                    let pinCount = if arguments.contains("--workspace-no-pins") {
+                        0
+                    } else if let requestedCount {
+                        min(8, max(0, requestedCount))
+                    } else if arguments.contains("--workspace-eight-pins") {
+                        8
+                    } else if arguments.contains("--workspace-multiple-pins") {
+                        3
+                    } else {
+                        1
+                    }
+                    let documents = [page.items.first, page.items.first { $0.id == "fixture-forest" },
+                        page.items.first { $0.id == "workspace-epub" }].compactMap { $0 }
+                    for text in documents.prefix(pinCount) {
                         workspace.savePin(BrowserHomePin(id: UUID(), title: text.title, destination: .document(text)))
                     }
-                    let eightPins = arguments.contains("--workspace-eight-pins")
-                    if eightPins || arguments.contains("--workspace-multiple-pins") {
-                        for id in ["fixture-forest", "workspace-epub"] {
-                            if let text = page.items.first(where: { $0.id == id }) {
-                                workspace.savePin(BrowserHomePin(id: UUID(), title: text.title, destination: .document(text)))
-                            }
-                        }
-                    }
-                    if eightPins {
-                        for (index, title) in ["Notebook", "The garden", "Field guide", "Harbor", "Voyage"].enumerated() {
-                            let url = origin.appending(path: "pin/\(index)")
-                            workspace.savePin(BrowserHomePin(id: UUID(), title: title, destination: .webpage(url)))
-                        }
+                    let webpages = ["Notebook", "The garden", "Field guide", "Harbor", "Voyage"]
+                    for (index, title) in webpages.prefix(max(0, pinCount - documents.count)).enumerated() {
+                        let url = origin.appending(path: "pin/\(index)")
+                        workspace.savePin(BrowserHomePin(id: UUID(), title: title, destination: .webpage(url)))
                     }
                     workspace.visit(.home)
                 }

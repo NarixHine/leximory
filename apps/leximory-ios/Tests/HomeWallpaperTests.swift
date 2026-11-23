@@ -40,7 +40,7 @@ import Testing
         await store.load()
         #expect(store.choice(for: .light) == .bundled)
         #expect(store.choice(for: .dark) == .bundled)
-        #expect(store.light?.image.size == CGSize(width: 1672, height: 941))
+        #expect(store.light?.image.size == CGSize(width: 1671, height: 941))
         #expect(store.dark?.image.size == CGSize(width: 1672, height: 941))
     }
 

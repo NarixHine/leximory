@@ -30,8 +30,7 @@ struct BrowserHomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.hasHomeWallpaper) private var hasWallpaper
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.browserChromeHeight) private var chromeHeight
     @ScaledMetric(relativeTo: .body) private var recentTitleSize: CGFloat = 17
     @ScaledMetric(relativeTo: .headline) private var matchRowHeight: CGFloat = 44
@@ -80,8 +79,8 @@ struct BrowserHomeView: View {
                 GeometryReader { geometry in
                     let inset = BrowserWorkspaceMeasure.horizontalInset
                     ScrollView {
-                        BrowserHomeBento(width: max(0, geometry.size.width - 2 * inset), pinCount: pins.count) { layout in
-                            BrowserHomeActivityCell(account: activityAccount, layout: layout)
+                        BrowserHomeBento(width: max(0, geometry.size.width - 2 * inset), pinCount: pins.count) { width in
+                            BrowserHomeActivityCell(account: activityAccount, width: width)
                         } actions: {
                             actionsPanel
                         } pins: {
@@ -125,12 +124,21 @@ struct BrowserHomeView: View {
             }
         }
 
-        var baseColors: (light: UInt32, dark: UInt32) {
+        var paper: (light: UInt32, dark: UInt32) {
             switch self {
-            case .browse: (0xE0EEDD, 0x1D2925)
-            case .bookmarks: (0xDDEFE6, 0x1D2925)
-            case .ebook: (0xDCEEF2, 0x1D2930)
-            case .review: (0xE1E9F8, 0x242B38)
+            case .browse: (0xE0EBDC, 0x222D26)
+            case .bookmarks: (0xDFEDE5, 0x1D2D2A)
+            case .ebook: (0xDEECEE, 0x202E35)
+            case .review: (0xE3E8F5, 0x272D3B)
+            }
+        }
+
+        var printedTone: (light: UInt32, dark: UInt32) {
+            switch self {
+            case .browse: (0xC0D6BD, 0x3B5141)
+            case .bookmarks: (0xBDD8C9, 0x365348)
+            case .ebook: (0xBED8DD, 0x3B5560)
+            case .review: (0xC9D3EC, 0x444E68)
             }
         }
 
@@ -162,15 +170,16 @@ struct BrowserHomeView: View {
     }
 
     private var actionsPanel: some View {
-        Group {
+        let spacing = BrowserHomePanelMetrics.sectionSpacing
+        return Group {
             if typeSize.isAccessibilitySize {
-                VStack(spacing: 5) {
+                VStack(spacing: spacing) {
                     ForEach(HomeAction.allCases, id: \.self) { action in
                         homeActionTile(action)
                     }
                 }
             } else {
-                Grid(horizontalSpacing: 5, verticalSpacing: 5) {
+                Grid(horizontalSpacing: spacing, verticalSpacing: spacing) {
                     GridRow {
                         homeActionTile(.browse)
                         homeActionTile(.bookmarks)
@@ -188,7 +197,7 @@ struct BrowserHomeView: View {
 
     private func homeActionTile(_ action: HomeAction) -> some View {
         actionCard(action, title: action.rawValue, radius: 15) { iconColor in
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: BrowserHomePanelMetrics.labelSpacing) {
                 HStack {
                     Image(systemName: action.symbol)
                         .font(.system(size: 20, weight: .medium))
@@ -205,8 +214,7 @@ struct BrowserHomeView: View {
                     .displayFont(17, relativeTo: .headline)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, BrowserHomePanelMetrics.inset)
-            .padding(.vertical, 10)
+            .padding(BrowserHomePanelMetrics.inset)
             .frame(maxWidth: .infinity, minHeight: 68, maxHeight: .infinity, alignment: .leading)
         }
     }
@@ -226,14 +234,22 @@ struct BrowserHomeView: View {
     private func actionCard<Label: View>(_ action: HomeAction, title: String, radius: CGFloat,
                                          @ViewBuilder label: (Color) -> Label) -> some View {
         let dark = colorScheme == .dark
-        let base = action.baseColors
-        let color = tone(dark ? base.dark : base.light)
+        let paper = tone(dark ? action.paper.dark : action.paper.light)
+        let printedTone = tone(dark ? action.printedTone.dark : action.printedTone.light)
         let accent = tone(action.accent(dark: dark))
         let iconColor = dark ? accent : accent.mix(with: LeximoryPalette.ink, by: 0.55)
         return Button(action: handler(for: action)) {
             label(iconColor)
                 .foregroundStyle(dark ? tone(action.darkLabel) : LeximoryPalette.ink)
-                .background { cardSurface(color: color, tint: accent, radius: radius) }
+                .background {
+                    let shape = RoundedRectangle(cornerRadius: radius)
+                    if contrast == .increased {
+                        shape.fill(paper)
+                    } else {
+                        BrowserHomeActionDither(paper: paper, ink: printedTone)
+                            .clipShape(shape)
+                    }
+                }
                 .contentShape(.rect(cornerRadius: radius))
         }
         .buttonStyle(BrowserCardButtonStyle())
@@ -246,36 +262,6 @@ struct BrowserHomeView: View {
         Color(red: Double((value >> 16) & 255) / 255, green: Double((value >> 8) & 255) / 255, blue: Double(value & 255) / 255)
     }
 
-    @ViewBuilder private func cardSurface(color: Color, tint: Color, radius: CGFloat) -> some View {
-        let shape = RoundedRectangle(cornerRadius: radius)
-        if colorScheme == .light {
-            let highlight = color.mix(with: .white, by: 0.25)
-            if reduceTransparency {
-                shape.fill(LinearGradient(colors: [highlight, color],
-                    startPoint: .topLeading, endPoint: .bottomTrailing))
-            } else {
-                ZStack {
-                    shape.fill(.ultraThinMaterial).opacity(0.25)
-                    shape.fill(LinearGradient(colors: [highlight.opacity(0.80), color.opacity(0.70)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing))
-                }
-            }
-        } else {
-            let opacity = reduceTransparency ? 1.0 : hasWallpaper ? 0.72 : 0.92
-            ZStack {
-                if !reduceTransparency {
-                    shape.fill(.ultraThinMaterial)
-                }
-                shape.fill(
-                    LinearGradient(stops: [
-                        .init(color: color.mix(with: tint, by: 0.18).opacity(opacity), location: 0),
-                        .init(color: color.mix(with: tint, by: 0.09).opacity(opacity), location: 0.55),
-                        .init(color: color.mix(with: tint, by: 0.04).opacity(opacity), location: 1)
-                    ], startPoint: .topLeading, endPoint: .bottomTrailing)
-                )
-            }
-        }
-    }
     @ViewBuilder private func compactActionLabel(_ title: String, symbol: String, iconColor: Color, horizontal: Bool) -> some View {
         if horizontal {
             VStack(spacing: 8) {
@@ -309,14 +295,13 @@ struct BrowserHomeView: View {
                 BrowserHomeShortcutLayout(accessibility: typeSize.isAccessibilitySize) {
                     ForEach(pins) { pin in pinButton(pin) }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
     }
 
     private func pinButton(_ pin: BrowserHomePin) -> some View {
         Button { openPin(pin) } label: {
-            VStack(spacing: 10) {
+            VStack(spacing: BrowserHomePanelMetrics.labelSpacing) {
                 Group {
                     if let url = pin.iconURL, let image = pinImages[url] {
                         Image(uiImage: image).resizable().scaledToFit()
@@ -331,7 +316,7 @@ struct BrowserHomeView: View {
 
                 Text(pin.title)
                     .interfaceFont(13, style: .footnote)
-                    .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+                    .lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -466,47 +451,58 @@ private struct BrowserCardButtonStyle: ButtonStyle {
 
 struct BrowserHomeShortcutLayout: Layout {
     var accessibility: Bool
-    private let gap: CGFloat = 12
+    private let spacing = BrowserHomePanelMetrics.pinSpacing
 
-    private var preferredItemWidth: CGFloat { accessibility ? 112 : 64 }
+    private var preferredItemWidth: CGFloat { accessibility ? 112 : 76 }
+
     func columnCapacity(for width: CGFloat) -> Int {
-        let width = max(0, width)
-        return max(1, Int((width + gap) / (itemWidth(width) + gap)))
+        let space = max(0, width) + spacing
+        let preferred = max(1, Int(space / (preferredItemWidth + spacing)))
+        guard !accessibility else { return preferred }
+        let compact = Int(space / (44 + spacing))
+        return max(preferred, min(4, compact))
     }
 
-    private func columns(_ width: CGFloat, count: Int) -> Int {
+    func rows(for width: CGFloat, count: Int) -> [Range<Int>] {
         let capacity = columnCapacity(for: width)
-        let rows = max(1, (count + capacity - 1) / capacity)
-        return max(1, (count + rows - 1) / rows)
+        let rowCount = max(1, (count + capacity - 1) / capacity)
+        let columns = max(1, (count + rowCount - 1) / rowCount)
+        return stride(from: 0, to: count, by: columns).map { $0..<min($0 + columns, count) }
     }
 
-    private func itemWidth(_ width: CGFloat) -> CGFloat {
-        if !accessibility, width >= 2 * 44 + gap, width < 2 * preferredItemWidth + gap {
-            return (width - gap) / 2
-        }
-        return min(preferredItemWidth, width)
+    private func itemWidth(_ width: CGFloat, columns: Int) -> CGFloat {
+        let space = width - CGFloat(columns - 1) * spacing
+        return min(preferredItemWidth, space / CGFloat(columns))
     }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = max(0, proposal.width ?? 328)
-        let columns = columns(width, count: subviews.count)
-        let itemWidth = itemWidth(width)
-        let height = subviews.map { $0.sizeThatFits(.init(width: itemWidth, height: nil)).height }.max() ?? 0
-        let rows = (subviews.count + columns - 1) / columns
-        return CGSize(width: width, height: CGFloat(rows) * height + CGFloat(max(0, rows - 1)) * 16)
+        let rows = rows(for: width, count: subviews.count)
+        let itemWidth = itemWidth(width, columns: rows.first?.count ?? 1)
+        let heights = rowHeights(rows, subviews: subviews, width: itemWidth)
+        let height = heights.reduce(0, +) + CGFloat(max(0, heights.count - 1)) * spacing
+        return CGSize(width: width, height: height)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let columns = columns(bounds.width, count: subviews.count)
-        let width = itemWidth(bounds.width)
-        let height = subviews.map { $0.sizeThatFits(.init(width: width, height: nil)).height }.max() ?? 0
-        for index in subviews.indices {
-            let row = index / columns
-            let rowCount = min(columns, subviews.count - row * columns)
-            let rowWidth = CGFloat(rowCount) * width + CGFloat(rowCount - 1) * gap
-            subviews[index].place(at: CGPoint(x: bounds.midX - rowWidth / 2 + CGFloat(index % columns) * (width + gap),
-                y: bounds.minY + CGFloat(row) * (height + 16)), anchor: .topLeading,
-                proposal: .init(width: width, height: height))
+        let rows = rows(for: bounds.width, count: subviews.count)
+        let width = itemWidth(bounds.width, columns: rows.first?.count ?? 1)
+        let heights = rowHeights(rows, subviews: subviews, width: width)
+        var y = bounds.minY
+        for (row, height) in zip(rows, heights) {
+            let rowWidth = CGFloat(row.count) * width + CGFloat(row.count - 1) * spacing
+            let leading = bounds.midX - rowWidth / 2
+            for (column, index) in row.enumerated() {
+                subviews[index].place(at: CGPoint(x: leading + CGFloat(column) * (width + spacing), y: y),
+                    anchor: .topLeading, proposal: .init(width: width, height: height))
+            }
+            y += height + spacing
+        }
+    }
+
+    private func rowHeights(_ rows: [Range<Int>], subviews: Subviews, width: CGFloat) -> [CGFloat] {
+        rows.map { row in
+            subviews[row].map { $0.sizeThatFits(.init(width: width, height: nil)).height }.max() ?? 0
         }
     }
 }

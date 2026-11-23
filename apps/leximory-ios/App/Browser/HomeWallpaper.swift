@@ -26,18 +26,21 @@ enum HomeWallpaperChoice: String, Codable, Sendable {
 struct HomeWallpaper: Sendable {
     let image: UIImage
     private let luminance: [Double]
+    private var horizontalCropAnchor: CGFloat = 0.5
+    private var narrowPortraitZoom: CGFloat = 1
     private static let sampleSize = 48
 
-    static let defaultLight = bundled(named: "HomeWallpaperLight")
+    static let defaultLight = bundled(named: "HomeWallpaperLight", horizontalCropAnchor: 0.067, narrowPortraitZoom: 1.20)
     static let defaultDark = bundled(named: "HomeWallpaperDark")
 
     static func defaultWallpaper(for appearance: HomeWallpaperAppearance) -> Self? {
         appearance == .light ? defaultLight : defaultDark
     }
 
-    private static func bundled(named name: String) -> Self? {
+    private static func bundled(named name: String, horizontalCropAnchor: CGFloat = 0.5, narrowPortraitZoom: CGFloat = 1) -> Self? {
         guard let image = UIImage(named: name), let cgImage = image.cgImage else { return nil }
-        return Self(image: image, luminance: samples(cgImage))
+        return Self(image: image, luminance: samples(cgImage), horizontalCropAnchor: horizontalCropAnchor,
+            narrowPortraitZoom: narrowPortraitZoom)
     }
 
     static func prepare(_ data: Data) throws -> (wallpaper: Self, jpeg: Data) {
@@ -84,19 +87,27 @@ struct HomeWallpaper: Sendable {
         }
     }
 
-    // Match the centered aspect-fill crop, including after rotation and scrolling.
+    fileprivate func imageFrame(in canvas: CGRect) -> CGRect {
+        let scale = max(canvas.width / image.size.width, canvas.height / image.size.height)
+        let aspectRatio = canvas.width / max(1, canvas.height)
+        let narrowness = min(1, max(0, (0.65 - aspectRatio) / 0.15))
+        let zoom = 1 + (narrowPortraitZoom - 1) * narrowness
+        let aspectFillHeight = image.size.height * scale
+        let width = image.size.width * scale * zoom
+        return CGRect(x: canvas.minX + (canvas.width - width) * horizontalCropAnchor,
+            y: canvas.midY - aspectFillHeight / 2, width: width, height: aspectFillHeight * zoom)
+    }
+
     func usesLightInk(in rect: CGRect, canvas: CGRect) -> Bool {
         guard canvas.width > 0, canvas.height > 0 else { return false }
-        let scale = max(canvas.width / image.size.width, canvas.height / image.size.height)
-        let width = image.size.width * scale, height = image.size.height * scale
-        let origin = CGPoint(x: canvas.midX - width / 2, y: canvas.midY - height / 2)
+        let frame = imageFrame(in: canvas)
         let visible = rect.intersection(canvas)
         guard !visible.isNull, !visible.isEmpty else { return false }
         let size = Self.sampleSize
-        let left = max(0, min(size - 1, Int((visible.minX - origin.x) / width * CGFloat(size))))
-        let right = max(left, min(size - 1, Int((visible.maxX - origin.x) / width * CGFloat(size))))
-        let top = max(0, min(size - 1, Int((visible.minY - origin.y) / height * CGFloat(size))))
-        let bottom = max(top, min(size - 1, Int((visible.maxY - origin.y) / height * CGFloat(size))))
+        let left = max(0, min(size - 1, Int((visible.minX - frame.minX) / frame.width * CGFloat(size))))
+        let right = max(left, min(size - 1, Int((visible.maxX - frame.minX) / frame.width * CGFloat(size))))
+        let top = max(0, min(size - 1, Int((visible.minY - frame.minY) / frame.height * CGFloat(size))))
+        let bottom = max(top, min(size - 1, Int((visible.maxY - frame.minY) / frame.height * CGFloat(size))))
         var sum = 0.0
         for y in top...bottom { for x in left...right { sum += luminance[y * size + x] } }
         let average = sum / Double((right - left + 1) * (bottom - top + 1))
@@ -193,6 +204,21 @@ extension EnvironmentValues {
     var hasHomeWallpaper: Bool { homeWallpaperContext != nil }
 }
 
+private struct HomeWallpaperImage: View {
+    let wallpaper: HomeWallpaper
+    let size: CGSize
+
+    var body: some View {
+        let frame = wallpaper.imageFrame(in: CGRect(origin: .zero, size: size))
+        Image(uiImage: wallpaper.image)
+            .resizable()
+            .frame(width: frame.width, height: frame.height)
+            .position(x: frame.midX, y: frame.midY)
+            .frame(width: size.width, height: size.height)
+            .clipped()
+    }
+}
+
 struct HomeWallpaperSurface<Content: View>: View {
     let wallpaper: HomeWallpaper?
     var usesSystemBackground = false
@@ -206,8 +232,7 @@ struct HomeWallpaperSurface<Content: View>: View {
             .background {
                 if let wallpaper {
                     GeometryReader { geometry in
-                        Image(uiImage: wallpaper.image).resizable().scaledToFill()
-                            .frame(width: geometry.size.width, height: geometry.size.height).clipped()
+                        HomeWallpaperImage(wallpaper: wallpaper, size: geometry.size)
                     }
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(coordinates)) } action: { bounds = $0 }
                     .ignoresSafeArea()
@@ -229,10 +254,7 @@ struct HomeWallpaperGlassBackdrop: View {
         GeometryReader { geometry in
             if let context, context.bounds.width > 0, context.bounds.height > 0 {
                 let frame = geometry.frame(in: .named(context.coordinateSpace))
-                Image(uiImage: context.wallpaper.image)
-                    .resizable().scaledToFill()
-                    .frame(width: context.bounds.width, height: context.bounds.height)
-                    .clipped()
+                HomeWallpaperImage(wallpaper: context.wallpaper, size: context.bounds.size)
                     .offset(x: context.bounds.minX - frame.minX, y: context.bounds.minY - frame.minY)
                     .blur(radius: blurRadius, opaque: true)
                     .accessibilityHidden(true)
