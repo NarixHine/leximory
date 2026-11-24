@@ -53,7 +53,7 @@ enum LeximoryLayout {
     static let textGalleryMeasure: CGFloat = 880
 }
 
-/// Uses the web's lawn artwork and three running sprite frames.
+/// Shows a watercolor lawn and three running sprite frames.
 struct ReadingLoadingIndicator: View {
     let label: String
     @Environment(\.colorScheme) private var scheme
@@ -82,9 +82,11 @@ struct ReadingLoadingIndicator: View {
         }
     }
     private var caption: some View {
-        Text(label).interfaceFont(17)
+        Text(label).displayFont(19, relativeTo: .headline)
             .foregroundStyle(LeximoryPalette.muted)
-            .fixedSize(horizontal: true, vertical: false)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, LeximoryLayout.pageInset)
     }
     private func lawn(width: CGFloat) -> some View {
         let height = width * 0.56
@@ -97,7 +99,7 @@ struct ReadingLoadingIndicator: View {
             let turn = min(1, max(0, (phase.truncatingRemainder(dividingBy: 2) - 1.8) / 0.2))
             let facing = outward ? turn * 180 : 180 - turn * 180
             ZStack {
-                Image(uiImage: UIImage(named: scheme == .dark ? "lawn-night.png" : "lawn.png") ?? UIImage())
+                Image(uiImage: UIImage(named: scheme == .dark ? "lawn-dark.png" : "lawn.png") ?? UIImage())
                     .resizable().scaledToFit()
                 if let image = CatFrames.frames[reduceMotion ? 0 : 3 + Int(time * 8) % 3] {
                     Image(uiImage: image).resizable().scaledToFit()
