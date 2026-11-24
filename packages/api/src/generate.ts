@@ -36,7 +36,8 @@ specification.paths['/libraries/{libraryId}/ebooks'] = {
             })),
         ],
         requestBody: {
-            required: true,
+            required: false,
+            description: 'Required when uploadId is absent. Omit the body when finalizing a staged upload.',
             content: { 'application/octet-stream': { schema: { type: 'string', format: 'binary' } } },
         },
         responses: {
@@ -66,7 +67,8 @@ specification.paths['/texts/{textId}/ebook-replace'] = {
             })),
         ],
         requestBody: {
-            required: true,
+            required: false,
+            description: 'Required when uploadId is absent. Omit the body when finalizing a staged upload.',
             content: { 'application/octet-stream': { schema: { type: 'string', format: 'binary' } } },
         },
         responses: {

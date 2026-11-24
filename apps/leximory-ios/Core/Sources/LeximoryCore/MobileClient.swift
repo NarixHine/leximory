@@ -500,7 +500,11 @@ public struct MobileClient: Sendable {
         guard !data.isEmpty, data.count <= EbookFileLimit.subscriberBytes else { throw URLError(.dataLengthExceedsMaximum) }
         let uploadID = try await stageEbook(kind: ._import, targetID: libraryID, title: title, filename: filename, data: data, requestID: requestID)
         let text = try await MutationRetry.run {
-            try mapped(try await client.uploadEbook(path: .init(libraryId: libraryID), query: .init(title: title, filename: filename, requestId: requestID, uploadId: uploadID), body: .binary(HTTPBody(uploadID == nil ? data : Data()))).ok.body.json, to: CatalogText.self)
+            try mapped(try await client.uploadEbook(
+                path: .init(libraryId: libraryID),
+                query: .init(title: title, filename: filename, requestId: requestID, uploadId: uploadID),
+                body: uploadID == nil ? .binary(HTTPBody(data)) : nil
+            ).ok.body.json, to: CatalogText.self)
         }
         await localStore?.upsertText(text)
         return text
@@ -541,7 +545,11 @@ public struct MobileClient: Sendable {
         guard !data.isEmpty, data.count <= EbookFileLimit.subscriberBytes else { throw URLError(.dataLengthExceedsMaximum) }
         let uploadID = try await stageEbook(kind: .replace, targetID: id, title: nil, filename: filename, data: data, requestID: requestID, requestedAt: requestedAt)
         let text = try await MutationRetry.run {
-            try mapped(try await client.replaceEbook(path: .init(textId: id), query: .init(filename: filename, uploadId: uploadID), body: .binary(HTTPBody(uploadID == nil ? data : Data()))).ok.body.json, to: CatalogText.self)
+            try mapped(try await client.replaceEbook(
+                path: .init(textId: id),
+                query: .init(filename: filename, uploadId: uploadID),
+                body: uploadID == nil ? .binary(HTTPBody(data)) : nil
+            ).ok.body.json, to: CatalogText.self)
         }
         await localStore?.removeText(id)
         await localStore?.upsertText(text)

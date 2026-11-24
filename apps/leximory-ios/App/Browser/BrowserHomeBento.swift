@@ -80,12 +80,15 @@ struct BrowserHomePanel<Content: View>: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @ScaledMetric(relativeTo: .subheadline) private var headingSymbolWidth: CGFloat = 16
+    // The visible ink of the fixed headings centers 5.3 pt above the baseline at 18 pt.
+    @ScaledMetric(relativeTo: .subheadline) private var headingInkCenterAboveBaseline: CGFloat = 5.3
 
     var body: some View {
         let dark = colorScheme == .dark
         let shape = RoundedRectangle(cornerRadius: 20)
         let tint = dark ? Color(white: 0.14) : Color(white: 0.99)
         let solid = reduceTransparency || contrast == .increased
+        let inkCenter = headingInkCenterAboveBaseline
 
         VStack(alignment: .leading, spacing: BrowserHomePanelMetrics.sectionSpacing) {
             HStack(spacing: BrowserHomePanelMetrics.labelSpacing) {
@@ -95,6 +98,9 @@ struct BrowserHomePanel<Content: View>: View {
                     .accessibilityHidden(true)
                 Text(title)
                     .font(.custom("Fontquan-XinYiJiXiangSong-Regular", size: 18, relativeTo: .subheadline))
+                    .alignmentGuide(VerticalAlignment.center) { dimensions in
+                        dimensions[.firstTextBaseline] - inkCenter
+                    }
                     .accessibilityAddTraits(.isHeader)
             }
             content()
@@ -179,6 +185,7 @@ private struct BrowserHomeActivityPanel: View {
         let highActivity = dark ? Color(red: 0.51, green: 0.83, blue: 0.66)
             : Color(red: 0.29, green: 0.65, blue: 0.46)
         let noActivity = Color.primary.opacity(0.075)
+        let cellShape = RoundedRectangle(cornerRadius: 3)
         let formatter = Date.FormatStyle(date: .abbreviated, time: .omitted, locale: Locale(identifier: "zh_CN"),
             calendar: calendar, timeZone: calendar.timeZone)
 
@@ -190,7 +197,7 @@ private struct BrowserHomeActivityPanel: View {
                     return lowActivity.mix(with: highActivity, by: additionalSaves / (additionalSaves + 9))
                 } ?? .primary.opacity(0.035)
                 let rect = grid.rect(for: index)
-                context.fill(RoundedRectangle(cornerRadius: 2).path(in: rect), with: .color(fill))
+                context.fill(cellShape.path(in: rect), with: .color(fill))
             }
             for index in values.count..<grid.slotCount {
                 let rect = grid.rect(for: index)
@@ -203,7 +210,7 @@ private struct BrowserHomeActivityPanel: View {
                     }
                 }
                 var cell = context
-                cell.clip(to: Path(rect))
+                cell.clip(to: cellShape.path(in: rect))
                 cell.stroke(stripes, with: .color(noActivity), lineWidth: rect.width * 0.18)
             }
         }
