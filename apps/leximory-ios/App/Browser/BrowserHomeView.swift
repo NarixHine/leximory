@@ -291,6 +291,7 @@ struct BrowserHomeView: View {
                     .interfaceFont(13, style: .footnote)
                     .foregroundStyle(.primary.opacity(0.70))
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxHeight: .infinity)
             } else {
                 BrowserHomeShortcutLayout(accessibility: typeSize.isAccessibilitySize) {
                     ForEach(pins) { pin in pinButton(pin) }
@@ -395,7 +396,7 @@ struct BrowserHomeView: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(LeximoryTypography.scaledChineseText(title, size: recentTitleSize))
+                Text(LeximoryTypography.recentTitle(title, size: recentTitleSize))
                     .lineLimit(typeSize.isAccessibilitySize ? 3 : 1)
                 if !byline.isEmpty {
                     Text(byline)

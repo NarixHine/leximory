@@ -1197,6 +1197,7 @@ private struct AnnotationLayoutProbeView: View {
                     Text("\(Int(size)) pt").interfaceFont(12, style: .caption1).foregroundStyle(.secondary)
                     Text("浏览网页 · 我的书签 · Leximory").displayFont(size)
                     Text(LeximoryTypography.scaledChineseText("字里行间 · 日本語の本 · Field notes", size: size))
+                    Text(LeximoryTypography.recentTitle("日本語の本 · 東京カフェ · Field notes", size: size))
                 }
             }
         }
@@ -1220,6 +1221,24 @@ private struct AnnotationLayoutProbeView: View {
             let font = try #require(text[range].font)
             #expect(font.resolve(in: context).pointSize == size)
         }
+    }
+
+    @Test(arguments: ["日本語の本", "東京カフェー", "東京ｶﾌｪ"])
+    func recentJapaneseTitlesScaleKanaToMatchKanji(title: String) throws {
+        let text = LeximoryTypography.recentTitle(title + " A 🙂", size: 20)
+        let titleRange = try #require(text.range(of: title))
+        #expect(text[titleRange].font == Font(LeximoryTypography.editorialUI(17, language: "Japanese")))
+
+        for character in ["A", "🙂"] {
+            let range = try #require(text.range(of: character))
+            let font = try #require(text[range].font)
+            #expect(font.resolve(in: EnvironmentValues().fontResolutionContext).pointSize == 20)
+        }
+    }
+
+    @Test func ChinesePunctuationDoesNotSwitchRecentTitlesToJapaneseSizing() {
+        let title = "中文、标题"
+        #expect(LeximoryTypography.recentTitle(title, size: 20) == LeximoryTypography.scaledChineseText(title, size: 20))
     }
 
     @Test func removedHandwritingFontIsNotBundledOrRegistered() {

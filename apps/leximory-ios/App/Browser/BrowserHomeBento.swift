@@ -51,12 +51,12 @@ struct BrowserHomeBento<Activity: View, Actions: View, Pins: View, Recents: View
                     }
                 }
             } else {
-                Grid(alignment: .leading, horizontalSpacing: gap, verticalSpacing: gap) {
+                VStack(spacing: gap) {
                     actions().frame(width: measure)
                     if paired {
-                        GridRow(alignment: .top) {
+                        BrowserHomePairedRow(spacing: gap) {
                             activity(pairedActivityWidth).frame(width: pairedActivityWidth)
-                            pins().fixedSize(horizontal: false, vertical: true).frame(width: pairedPinsWidth)
+                            pins().frame(width: pairedPinsWidth)
                         }
                     } else {
                         activity(measure).frame(width: measure)
@@ -68,6 +68,26 @@ struct BrowserHomeBento<Activity: View, Actions: View, Pins: View, Recents: View
         }
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity)
+    }
+}
+
+private struct BrowserHomePairedRow: Layout {
+    let spacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        return CGSize(width: sizes.map(\.width).reduce(0, +) + spacing,
+                      height: sizes.map(\.height).max() ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        for subview in subviews {
+            let width = subview.sizeThatFits(.unspecified).width
+            subview.place(at: CGPoint(x: x, y: bounds.minY), anchor: .topLeading,
+                          proposal: ProposedViewSize(width: width, height: bounds.height))
+            x += width + spacing
+        }
     }
 }
 
@@ -111,10 +131,24 @@ struct BrowserHomePanel<Content: View>: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(identifier)
         .background {
-            if !solid {
-                HomeWallpaperGlassBackdrop(cornerRadius: 20, blurRadius: 14)
+            if solid {
+                shape.fill(tint)
+            } else {
+                ZStack {
+                    GlassEffectContainer(spacing: 0) {
+                        Color.clear.glassEffect(.regular, in: shape)
+                    }
+                    ZStack {
+                        HomeWallpaperGlassBackdrop(cornerRadius: 20, blurRadius: 14)
+                        shape.fill(tint.opacity(dark ? 0.42 : 0.60))
+                    }
+                    .compositingGroup()
+                    .opacity(0.84)
+                }
+                .clipShape(shape)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
             }
-            shape.fill(tint.opacity(solid ? 1 : dark ? 0.29 : 0.45))
         }
     }
 }
@@ -155,6 +189,8 @@ private struct BrowserHomeActivityPanel: View {
     let today: Date
     let width: CGFloat
     @Environment(\.colorScheme) private var colorScheme
+    @ScaledMetric(relativeTo: .caption2) private var monthLabelSize: CGFloat = 10
+    private let monthLabelGap: CGFloat = 5
 
     var body: some View {
         let calendar = SavedWordsSnapshot.calendar
@@ -163,17 +199,19 @@ private struct BrowserHomeActivityPanel: View {
         let counts = Dictionary(snapshot?.days.map { ($0.date, $0.count) } ?? [], uniquingKeysWith: +)
         let contentWidth = max(0, width - 2 * BrowserHomePanelMetrics.inset)
         let idealHeight = BrowserHomeActivityGrid(width: contentWidth, height: .infinity, weekday: weekday).height
+        let monthFooterHeight = monthLabelGap + (monthLabelSize * 1.3).rounded(.up)
 
         BrowserHomePanel(title: "词汇足迹", symbol: "calendar", identifier: "browser-home-activity") {
             GeometryReader { geometry in
                 let grid = BrowserHomeActivityGrid(width: geometry.size.width,
-                    height: geometry.size.height, weekday: weekday)
-                let dates = (1 - grid.dayCount...0).compactMap { calendar.date(byAdding: .day, value: $0, to: end) }
-                let values = dates.map { counts[$0] }
+                    height: geometry.size.height - monthFooterHeight, weekday: weekday)
+                let dates = grid.dates(through: end, calendar: calendar)
+                let values = dates.prefix(grid.dayCount).map { counts[$0] }
                 heatmap(grid: grid, dates: dates, values: values)
-                    .frame(height: grid.height)
+                    .frame(height: grid.height + monthFooterHeight)
             }
-            .frame(minHeight: min(56, idealHeight), idealHeight: idealHeight, maxHeight: idealHeight)
+            .frame(minHeight: min(56, idealHeight) + monthFooterHeight,
+                   idealHeight: idealHeight + monthFooterHeight, maxHeight: idealHeight + monthFooterHeight)
         }
     }
 
@@ -185,19 +223,28 @@ private struct BrowserHomeActivityPanel: View {
         let highActivity = dark ? Color(red: 0.51, green: 0.83, blue: 0.66)
             : Color(red: 0.29, green: 0.65, blue: 0.46)
         let noActivity = Color.primary.opacity(0.075)
-        let cellShape = RoundedRectangle(cornerRadius: 3)
+        let cellShape = RoundedRectangle(cornerRadius: 4.5)
+        let todayIndex = grid.dayCount - 1
+        let todayStart = calendar.startOfDay(for: today)
         let formatter = Date.FormatStyle(date: .abbreviated, time: .omitted, locale: Locale(identifier: "zh_CN"),
             calendar: calendar, timeZone: calendar.timeZone)
+        let monthFormat = Date.FormatStyle(locale: Locale(identifier: "en_US"), calendar: calendar,
+                                           timeZone: calendar.timeZone).month(.abbreviated)
+        let monthStarts = grid.monthStarts(in: dates, calendar: calendar)
 
-        return Canvas { context, _ in
+        return Canvas { context, size in
             for index in values.indices {
                 let fill = values[index].map { count in
                     guard count > 0 else { return noActivity }
                     let additionalSaves = Double(count - 1)
-                    return lowActivity.mix(with: highActivity, by: additionalSaves / (additionalSaves + 9))
+                    return lowActivity.mix(with: highActivity, by: additionalSaves / (additionalSaves + 4))
                 } ?? .primary.opacity(0.035)
                 let rect = grid.rect(for: index)
                 context.fill(cellShape.path(in: rect), with: .color(fill))
+                if index == todayIndex, rect.width >= 1 {
+                    let outline = cellShape.inset(by: 0.5).path(in: rect)
+                    context.stroke(outline, with: .color(.primary.opacity(0.38)), lineWidth: 1)
+                }
             }
             for index in values.count..<grid.slotCount {
                 let rect = grid.rect(for: index)
@@ -213,12 +260,25 @@ private struct BrowserHomeActivityPanel: View {
                 cell.clip(to: cellShape.path(in: rect))
                 cell.stroke(stripes, with: .color(noActivity), lineWidth: rect.width * 0.18)
             }
+
+            let firstCell = grid.rect(for: 0)
+            let lastCell = grid.rect(for: grid.slotCount - 1)
+            let font = Font.system(size: min(monthLabelSize, grid.columnPitch * 1.4))
+            for (index, date) in monthStarts {
+                let label = context.resolve(Text(verbatim: date.formatted(monthFormat))
+                    .font(font).foregroundStyle(.secondary))
+                let labelWidth = label.measure(in: size).width
+                let trailingLimit = max(firstCell.minX, lastCell.maxX - labelWidth)
+                let x = min(grid.rect(for: index).minX, trailingLimit)
+                context.draw(label, at: CGPoint(x: x, y: grid.height + monthLabelGap), anchor: .topLeading)
+            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("每日入库词汇")
         .accessibilityChildren {
             ForEach(Array(zip(dates, values)), id: \.0) { date, value in
-                Text(date.formatted(formatter))
+                let label = date.formatted(formatter)
+                Text(date == todayStart ? "今天，\(label)" : label)
                     .accessibilityValue(value.map { "\($0) 个词汇" } ?? "暂无记录")
             }
         }
@@ -234,7 +294,8 @@ struct BrowserHomeActivityGrid {
     let slotCount: Int
     let dayCount: Int
 
-    var height: CGFloat { CGFloat(Self.daysPerWeek) * (side + Self.gap) - Self.gap }
+    var columnPitch: CGFloat { side + Self.gap }
+    var height: CGFloat { CGFloat(Self.daysPerWeek) * columnPitch - Self.gap }
 
     init(width: CGFloat, height: CGFloat, weekday: Int) {
         let daysPerWeek = Self.daysPerWeek
@@ -255,9 +316,16 @@ struct BrowserHomeActivityGrid {
     }
 
     func rect(for index: Int) -> CGRect {
-        let pitch = side + Self.gap
-        let x = horizontalInset + CGFloat(index / Self.daysPerWeek) * pitch
-        let y = CGFloat(index % Self.daysPerWeek) * pitch
+        let x = horizontalInset + CGFloat(index / Self.daysPerWeek) * columnPitch
+        let y = CGFloat(index % Self.daysPerWeek) * columnPitch
         return CGRect(x: x, y: y, width: side, height: side)
+    }
+
+    func dates(through today: Date, calendar: Calendar) -> [Date] {
+        (1 - dayCount...slotCount - dayCount).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }
+    }
+
+    func monthStarts(in dates: [Date], calendar: Calendar) -> [(offset: Int, element: Date)] {
+        dates.enumerated().filter { calendar.component(.day, from: $0.element) == 1 }
     }
 }

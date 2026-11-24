@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 import Testing
 @testable import Leximory
 
@@ -34,6 +35,20 @@ struct BrowserHomeActivityGridTests {
         #expect(abs(first.minX - (346 - last.maxX)) < 0.01)
         #expect(abs(wider.rect(for: 7).minX - first.maxX - 3) < 0.01)
         #expect(abs(wider.rect(for: 1).minY - first.maxY - 3) < 0.01)
+    }
+
+    @Test func monthStartsIncludeTheUpcomingNewYearInTheFinalWeek() throws {
+        let calendar = SavedWordsSnapshot.calendar
+        let today = try #require(calendar.date(from: DateComponents(year: 2025, month: 12, day: 30)))
+        let grid = BrowserHomeActivityGrid(width: 181, height: 96, weekday: 1)
+        let dates = grid.dates(through: today, calendar: calendar)
+        let monthStarts = grid.monthStarts(in: dates, calendar: calendar)
+
+        #expect(dates.count == 84)
+        #expect(dates[grid.dayCount - 1] == today)
+        #expect(monthStarts.map(\.offset) == [19, 49, 80])
+        #expect(monthStarts.map { calendar.component(.month, from: $0.element) } == [11, 12, 1])
+        #expect(grid.rect(for: 80).minX == grid.rect(for: 78).minX)
     }
 
     @Test(arguments: 0...6) func wideHeatmapKeepsTheSameMeasureAllWeek(weekday: Int) {

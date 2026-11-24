@@ -60,12 +60,24 @@ enum LeximoryTypography {
         UIFontMetrics(forTextStyle: .subheadline).scaledFont(for: editorialUI(addressSize))
     }
 
+    static func recentTitle(_ string: String, size: CGFloat) -> AttributedString {
+        let japanese = string.contains(#/[\p{sc=Hiragana}\p{sc=Katakana}]/#)
+        return scaledEditorialText(string, size: size, japanese: japanese)
+    }
+
     static func scaledChineseText(_ string: String, size: CGFloat) -> AttributedString {
+        scaledEditorialText(string, size: size, japanese: false)
+    }
+
+    private static func scaledEditorialText(_ string: String, size: CGFloat, japanese: Bool) -> AttributedString {
         var text = AttributedString(string)
-        text.font = Font(editorialUI(size))
-        let chinese = Font(editorialUI(size * chineseGlyphScale, language: "Chinese"))
-        for index in text.characters.indices where isChinese(text.characters[index]) {
-            text[index..<text.characters.index(after: index)].font = chinese
+        text.font = Font(editorialUI(size, language: japanese ? "Japanese" : nil))
+        let cjk = Font(editorialUI(size * chineseGlyphScale, language: japanese ? "Japanese" : "Chinese"))
+        for index in text.characters.indices {
+            let character = text.characters[index]
+            if isChinese(character) || (japanese && String(character).contains(#/[\p{scx=Hiragana}\p{scx=Katakana}]/#)) {
+                text[index..<text.characters.index(after: index)].font = cjk
+            }
         }
         return text
     }

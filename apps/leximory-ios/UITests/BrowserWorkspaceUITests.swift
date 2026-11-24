@@ -888,6 +888,8 @@ final class BrowserWorkspaceUITests: XCTestCase {
         try XCTSkipIf(app.frame.width >= 650, "Verify this layout on iPhone.")
         let activity = app.otherElements["browser-home-activity"]
         let pairedWidth = activity.frame.width
+        let today = activity.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "今天，"))
+        XCTAssertEqual(today.count, 1)
 
         app.terminate()
         app.launchArguments = ["--browser-workspace-fixtures", "--workspace-recent-card-fixtures", "--workspace-pin-count=4"]
