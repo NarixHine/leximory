@@ -444,11 +444,17 @@ test('a 15 MB staging grant requires current paid access and publishes only the 
     bytes.write('%PDF-1.7')
     let stored: Uint8Array<ArrayBuffer> | null = null
     let signedPath: string | undefined
+    let bucketMissing = false
+    let signingBlocked = false
+    const log = t.mock.method(console, 'error', (..._args: Parameters<typeof console.error>) => {})
     const database = createClient<Database>('https://project.supabase.co', 'fixture-service', {
         global: {
             fetch: async (input, init) => {
                 const path = new URL(String(input)).pathname
                 if (path === '/storage/v1/bucket/mobile-ebook-uploads') {
+                    if (bucketMissing) {
+                        return Response.json({ statusCode: '404', message: 'Bucket not found' }, { status: 400 })
+                    }
                     return Response.json({
                         public: false,
                         file_size_limit: 15_000_000,
@@ -458,6 +464,9 @@ test('a 15 MB staging grant requires current paid access and publishes only the 
                 if (path.startsWith('/storage/v1/object/upload/sign/mobile-ebook-uploads/')) {
                     assert.equal(init?.method, 'POST')
                     assert.equal(new Headers(init?.headers).get('x-upsert'), null)
+                    if (signingBlocked) {
+                        return Response.json({ statusCode: '429', message: 'Too many requests' }, { status: 429 })
+                    }
                     signedPath = path.split('/').at(-1)
                     return Response.json({ url: path.replace('/storage/v1', '') + '?token=fixture-token' })
                 }
@@ -542,6 +551,27 @@ test('a 15 MB staging grant requires current paid access and publishes only the 
         message: '电子书超过上限 15 MB',
         retryable: false,
     })
+    bucketMissing = true
+    const missing = await prepare()
+    assert.equal(missing.status, 503)
+    assert.equal((await missing.json()).error.retryable, false)
+    assert.equal(signedPath, undefined)
+    const [event, diagnostic] = log.mock.calls.at(-1)!.arguments
+    assert.equal(event, 'mobile.request.failed')
+    assert.equal(diagnostic.step, 'ebook.staging.bucket')
+    assert.equal(diagnostic.upstreamCode, 'BUCKET_NOT_FOUND')
+    assert.equal(diagnostic.upstreamStatus, 404)
+
+    bucketMissing = false
+    signingBlocked = true
+    const throttled = await prepare({ ...metadata, requestId: 'signing-throttled' })
+    assert.equal(throttled.status, 503)
+    assert.equal((await throttled.json()).error.retryable, true)
+    const [, signingDiagnostic] = log.mock.calls.at(-1)!.arguments
+    assert.equal(signingDiagnostic.step, 'ebook.staging.sign')
+    assert.equal(signingDiagnostic.upstreamStatus, 429)
+    signingBlocked = false
+
     const grant = await (await prepare()).json()
     assert.deepEqual(grant.upload, {
         url: 'https://project.storage.supabase.co/storage/v1/upload/resumable/sign',

@@ -51,6 +51,10 @@ type MobileDependencyStep =
     | 'ebook.lookup'
     | 'ebook.upload'
     | 'ebook.publish'
+    | 'ebook.staging.bucket'
+    | 'ebook.staging.stat'
+    | 'ebook.staging.sign'
+    | 'ebook.staging.download'
     | 'annotation.quota'
     | 'annotation.enqueue'
 export class MobileDependencyError extends MobileError {

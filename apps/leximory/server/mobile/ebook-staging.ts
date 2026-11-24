@@ -6,8 +6,8 @@ import type { redis as redisClient } from '@repo/kv/redis'
 import type { supabase } from '@repo/supabase'
 import type { getMembership as resolveMembership } from '@repo/user/membership'
 import { ebookFormat, ebookUploadFromBytes, type EbookStaging } from './ebook-upload'
-import { isMissingObject } from './ebook-storage'
-import { MobileError } from './errors'
+import { ebookStorageError, isMissingObject } from './ebook-storage'
+import { MobileError, mobileDependency } from './errors'
 import { checkedResponse } from './http'
 import { withMutationLease } from './mutation-lease'
 import { readEbookSource } from './ebook-source'
@@ -15,6 +15,7 @@ import {
     ebookStagingBucket,
     ebookUploadWindowKey,
     ebookStagingPrefix,
+    requireEbookStagingBucket,
     signedEbookUploadLifetime,
 } from './ebook-staging-lifecycle'
 import { z } from 'zod'
@@ -26,7 +27,6 @@ const grantSchema = ebookUploadGrantInputSchema.extend({
     base: z.string().nullable(),
 })
 const grantKey = (userId: string, id: string) => `user:${userId}:ebook-upload:${id}`
-const mimeTypes = ['application/pdf', 'application/epub+zip']
 
 function resumableURL(endpoint: string) {
     const url = new URL(endpoint)
@@ -57,12 +57,14 @@ export function createEbookStaging({
     }
 
     async function stagedSize(path: string) {
-        const { data, error } = await storage.info(path)
-        if (error) {
-            if (await isMissingObject(error)) return null
-            throw error
-        }
-        return checkedResponse(z.int().positive(), data.size)
+        return mobileDependency('ebook.staging.stat', async () => {
+            const { data, error } = await storage.info(path)
+            if (error) {
+                if (await isMissingObject(error)) return null
+                throw ebookStorageError(error)
+            }
+            return checkedResponse(z.int().positive(), data.size)
+        })
     }
 
     const staging: EbookStaging = {
@@ -85,16 +87,7 @@ export function createEbookStaging({
                     return signedGrant(userId, id, path, signal)
                 }
 
-                const { data: config, error: configError } = await database.storage.getBucket(ebookStagingBucket)
-                if (configError) throw configError
-                if (
-                    config.public ||
-                    config.file_size_limit !== MOBILE_EBOOK_MAX_BYTES ||
-                    !mimeTypes.every((mime) => config.allowed_mime_types?.includes(mime))
-                )
-                    throw new MobileError('service_unavailable', {
-                        cause: new Error('Invalid ebook upload bucket settings'),
-                    })
+                await mobileDependency('ebook.staging.bucket', () => requireEbookStagingBucket(database.storage))
 
                 const allowed = await redis.eval(
                     "local n = redis.call('INCR', KEYS[1]); if n == 1 then redis.call('EXPIRE', KEYS[1], 3600) end; return n <= 30 and 1 or 0",
@@ -126,10 +119,12 @@ export function createEbookStaging({
             if (size === null) throw new MobileError('service_unavailable')
             if (size !== grant.size || size > MOBILE_EBOOK_MAX_BYTES) throw new MobileError('invalid_input')
             signal.throwIfAborted()
-            const { data, error } = await storage.download(grant.path)
-            if (error) throw error
-            if (data.size !== size) throw new MobileError('invalid_input')
-            const bytes = new Uint8Array(await data.arrayBuffer())
+            const bytes = await mobileDependency('ebook.staging.download', async () => {
+                const { data, error } = await storage.download(grant.path)
+                if (error) throw ebookStorageError(error)
+                if (data.size !== size) throw new MobileError('invalid_input')
+                return new Uint8Array(await data.arrayBuffer())
+            })
             if (createHash('sha256').update(bytes).digest('hex') !== grant.sha256)
                 throw new MobileError('invalid_input')
             signal.throwIfAborted()
@@ -150,12 +145,12 @@ export function createEbookStaging({
         )
         if (allowed !== 1) throw new MobileError('inaccessible')
         signal.throwIfAborted()
-        const { data, error } = await storage.createSignedUploadUrl(path)
-        if (error) throw error
-        return {
-            id,
-            upload: { url: resumableURL(endpoint), token: data.token, publicKey, bucket: ebookStagingBucket, path },
-        }
+        const token = await mobileDependency('ebook.staging.sign', async () => {
+            const { data, error } = await storage.createSignedUploadUrl(path)
+            if (error) throw ebookStorageError(error, 'BUCKET_NOT_FOUND')
+            return data.token
+        })
+        return { id, upload: { url: resumableURL(endpoint), token, publicKey, bucket: ebookStagingBucket, path } }
     }
 
     async function cleanExpiredEbookUploads(cutoff: number): Promise<number> {

@@ -83,7 +83,7 @@ struct ReadingLoadingIndicator: View {
     }
     private var caption: some View {
         Text(label).displayFont(19, relativeTo: .headline)
-            .foregroundStyle(LeximoryPalette.muted)
+            .foregroundStyle(.primary)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, LeximoryLayout.pageInset)
@@ -104,6 +104,7 @@ struct ReadingLoadingIndicator: View {
                 if let image = CatFrames.frames[reduceMotion ? 0 : 3 + Int(time * 8) % 3] {
                     Image(uiImage: image).resizable().scaledToFit()
                         .frame(width: width * 0.32, height: width * 0.32 * 256 / 469)
+                        .brightness(scheme == .dark ? -0.20 : 0)
                         .rotation3DEffect(.degrees(facing), axis: (x: 0, y: 1, z: 0))
                         .position(x: width * (0.27 + distance * 0.46), y: height * 0.63)
                 }

@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { ebookVersionPrefix } from './ebook-source'
 import type { EbookFiles } from './ebook-file-change'
 import { z } from 'zod'
+import { ExternalServiceError } from '../errors/external-service'
 
 const storageFailure = z.object({
     status: z.number().optional(),
@@ -11,6 +12,18 @@ const storageFailure = z.object({
     error: z.string().optional(),
     message: z.string().optional(),
 })
+
+export function ebookStorageError(cause: unknown, missingCode = 'OBJECT_NOT_FOUND') {
+    const parsed = storageFailure.safeParse(cause)
+    const failure = parsed.success ? parsed.data : undefined
+    // The Storage SDK can report HTTP 400 with a legacy statusCode of "404" in the body.
+    const statusCode = Number(failure?.statusCode)
+    const status =
+        Number.isInteger(statusCode) && statusCode >= 400 && statusCode <= 599 ? statusCode : (failure?.status ?? null)
+    const code = status === 404 || failure?.code === 'NoSuchBucket' ? missingCode : 'STORAGE_REQUEST_FAILED'
+    const retryable = status === null || status >= 500 || status === 408 || status === 429
+    return new ExternalServiceError('supabase-storage', code, retryable, status, cause)
+}
 
 export async function isMissingObject(error: unknown): Promise<boolean> {
     // Binary downloads wrap the raw Response in StorageUnknownError.
