@@ -171,7 +171,8 @@ export async function saveEbook(id: string, form: FormData) {
     const text = await getTextWithLib(id)
     await Kilpi.texts.write(text).authorize().assert()
 
-    const url = await uploadEbook({ id, ebook })
+    const url = await uploadEbook({ text, ebook })
+    updateTag(`texts:${text.lib.id}`)
 
     const chosen = await evaluateWithQuota(emojiChoice({ title: text.title, filename: ebook.name }))
     if ('error' in chosen) return { url, emoji: null }

@@ -42,6 +42,7 @@ struct TextManagementSheet: View {
     @State private var choosingFile = false
     @State private var file: BrowserEbookFile?
     @State private var fileRequestID = UUID().uuidString
+    @State private var fileRequestDate = Date.now
     @State private var confirmingDelete = false
     @State private var confirmingReplacement = false
     @State private var replacementReady = false
@@ -120,6 +121,7 @@ struct TextManagementSheet: View {
                     do {
                         file = try await BrowserEbookFile.read(result.get())
                         fileRequestID = UUID().uuidString
+                        fileRequestDate = .now
                         upgradeMessage = nil
                         replacementReady = false
                         fileError = nil; confirmingReplacement = true
@@ -249,7 +251,7 @@ struct TextManagementSheet: View {
         await saver?.suspend()
         defer { busy = false; saver?.resume() }
         do {
-            let updated = try await workspace.client.replaceEbook(id: text.id, filename: file.name, data: file.data, requestID: fileRequestID)
+            let updated = try await workspace.client.replaceEbook(id: text.id, filename: file.name, data: file.data, requestID: fileRequestID, requestedAt: fileRequestDate)
             playback.stop()
             await workspace.contentChanged(updated)
             do {
@@ -263,6 +265,7 @@ struct TextManagementSheet: View {
             if let failure, failure.error.code == "ebook_subscription_required" {
                 upgradeMessage = failure.error.message
             } else {
+                replacementReady = failure?.error.retryable != false
                 fileError = failure?.error.retryable == false ? failure?.error.message : "文件未能替换，请重试。"
             }
         }

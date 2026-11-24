@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { createClient } from '@supabase/supabase-js'
 import { Redis } from '@upstash/redis'
 import type { Database } from '@repo/supabase/types'
+import { ebookSourceKey, ebookVersionPath } from '../server/mobile/ebook-source'
 import { createManagementStore } from '../server/mobile/management-store'
 import { mobileSubjectSchema } from '@repo/schema/mobile'
 import { createManagementOperations, textRevision, type ManagementStore } from '../server/mobile/management'
@@ -544,18 +545,29 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '', be
     let deleted = false
     let stored = { ...article, has_ebook: true }
     let failed = false
-    let locked = false
+    let locked: string | null = null
     const database = createClient<Database>('https://database.test', 'test-key', {
         auth: { persistSession: false, autoRefreshToken: false },
         global: {
             fetch: async (input, init) => {
                 const url = new URL(String(input))
                 if (url.pathname === '/storage/v1/object/list/user-files') {
-                    if (!failed && failure === 'outline-list') {
+                    if (
+                        !failed &&
+                        failure === 'outline-list' &&
+                        JSON.parse(String(init?.body)).prefix.startsWith('pdf-outlines/')
+                    ) {
                         failed = true
                         return Response.json({ message: 'listing unavailable' }, { status: 503 })
                     }
-                    const { prefix, offset, limit } = JSON.parse(String(init?.body))
+                    const { prefix, offset, limit, search } = JSON.parse(String(init?.body))
+                    if (prefix === 'ebooks')
+                        return Response.json(
+                            [...files.keys()]
+                                .filter((key) => key.startsWith(search))
+                                .slice(offset, offset + limit)
+                                .map((name) => ({ id: name, name })),
+                        )
                     const children = new Map<string, { id: string | null; name: string }>()
                     for (const path of outlines) {
                         if (!path.startsWith(prefix + '/')) continue
@@ -579,17 +591,21 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '', be
                         for (const key of paths) {
                             if (key.startsWith('pdf-outlines/')) outlines.delete(key)
                             else {
-                                const extension = key.split('.').at(-1)
+                                const extension = key.includes('--') ? key.split('/').at(-1) : key.split('.').at(-1)
                                 assert.ok(extension)
                                 files.delete(extension)
                             }
                         }
                         return Response.json([])
                     }
-                    const extension = url.pathname.split('.').at(-1)!
+                    const extension = url.pathname.includes('--')
+                        ? url.pathname.split('/').at(-1)!
+                        : url.pathname.split('.').at(-1)!
                     if (init?.method === 'POST') {
                         const file = init.body instanceof FormData ? init.body.get('') : null
                         assert.ok(file instanceof Blob)
+                        if (url.pathname.includes('--') && files.has(extension))
+                            return Response.json({ message: 'The resource already exists' }, { status: 409 })
                         files.set(extension, file)
                         return Response.json({ Key: url.pathname })
                     }
@@ -623,7 +639,6 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '', be
                             failed = true
                             throw new TypeError('Publication request did not reach Postgres')
                         }
-                        await beforePublication?.()
                         stored = { ...stored, ...body }
                         if (failure === 'lost-update-response') throw new TypeError('Lost committed response')
                         return Response.json(stored)
@@ -665,7 +680,7 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '', be
         if (command[0].toUpperCase() === 'SET') {
             assert.ok(command.includes(120))
             if (locked) return Response.json({ result: null })
-            locked = true
+            locked = command[2]
             return Response.json({ result: 'OK' })
         }
         const name = command[0].toUpperCase()
@@ -677,7 +692,9 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '', be
         }
         if (name === 'GET')
             return Response.json({
-                result: Buffer.from(JSON.stringify(publication.get(command[1]))).toString('base64'),
+                result: publication.has(command[1])
+                    ? Buffer.from(JSON.stringify(publication.get(command[1]))).toString('base64')
+                    : null,
             })
         if (name === 'DEL') {
             if (!failed && failure === 'outline-state') {
@@ -688,9 +705,26 @@ function persistenceFixture(t: import('node:test').TestContext, failure = '', be
             return Response.json({ result: 1 })
         }
         assert.equal(name, 'EVAL')
+        if (command[1].includes('cjson.decode')) {
+            await beforePublication?.()
+            const [, , , , sourceKey, token, expected, payload] = command
+            assert.equal(locked, token)
+            const current = publication.get(sourceKey) as { id: string } | undefined
+            if ((current?.id ?? '') !== expected) return Response.json({ result: -1 })
+            if (failure === 'before-pointer' && !failed) {
+                failed = true
+                return Response.json({ error: 'Redis unavailable' }, { status: 503 })
+            }
+            publication.set(sourceKey, JSON.parse(payload))
+            if (failure === 'lost-pointer-response' && !failed) {
+                failed = true
+                return Response.json({ error: 'Redis unavailable' }, { status: 503 })
+            }
+            return Response.json({ result: 1 })
+        }
         if (failure === 'release' || failure === 'texts+release')
             return Response.json({ error: 'Redis unavailable' }, { status: 503 })
-        locked = false
+        locked = null
         return Response.json({ result: 1 })
     })
     return {
@@ -725,77 +759,55 @@ test('lease release failure preserves the original mutation failure', async (t) 
     )
 })
 
-test('ebook replacement and removal restore locations and bytes when publication fails', async (t) => {
-    for (const operation of ['replace', 'remove']) {
-        for (const stage of ['reads', 'bookmarks', 'texts']) {
-            await t.test(operation + ': ' + stage, async (t) => {
-                const f = persistenceFixture(t, stage)
-                const before = structuredClone({ reads: f.reads, bookmarks: f.bookmarks })
-                await assert.rejects(
-                    operation === 'replace'
-                        ? f.store.replaceEbook(
-                              { ...article, has_ebook: true },
-                              new File(['%PDF-new'], 'book.pdf', { type: 'application/pdf' }),
-                          )
-                        : f.store.removeEbook({ ...article, has_ebook: true }),
-                    { code: 'WRITE_FAILED' },
-                )
-                assert.deepEqual(f.reads, before.reads)
-                assert.deepEqual(f.bookmarks, before.bookmarks)
-                assert.equal(await f.files.get('epub')?.text(), 'original EPUB')
-                assert.equal(f.files.has('pdf'), false)
-                assert.equal(f.stored().has_ebook, true)
-            })
-        }
-    }
+test('a failed pointer write leaves the old ebook live and adopts the uploaded version on retry', async (t) => {
+    const f = persistenceFixture(t, 'before-pointer')
+    const book = { ...article, has_ebook: true }
+    const file = new File(['%PDF-new'], 'book.pdf', { type: 'application/pdf' })
+    const intent = { id: 'a'.repeat(64), base: null }
+    await assert.rejects(f.store.replaceEbook(book, file, intent))
+    assert.equal(f.publication.has(ebookSourceKey(book.id)), false)
+    assert.equal(await f.files.get('epub')?.text(), 'original EPUB')
+    assert.equal(f.reads[0]?.location, 'page:12')
+    const source = await f.store.replaceEbook(book, file, intent)
+    const published = ebookVersionPath(book.id, source).split('/').at(-1)!
+    assert.equal(await f.files.get(published)?.text(), '%PDF-new')
+    assert.deepEqual(f.publication.get(ebookSourceKey(book.id)), source)
+    assert.equal(f.stored().updated_at, book.updated_at)
 })
 
-test('successful ebook replacement and removal clear locations and retain excerpts', async (t) => {
-    for (const operation of ['replace', 'remove']) {
-        await t.test(operation, async (t) => {
-            const f = persistenceFixture(t)
-            if (operation === 'replace')
-                await f.store.replaceEbook(
-                    { ...article, has_ebook: true },
-                    new File(['%PDF-new'], 'book.pdf', { type: 'application/pdf' }),
-                )
-            else await f.store.removeEbook({ ...article, has_ebook: true })
-            assert.deepEqual(
-                f.reads.map((row) => row.location),
-                [null, null, null],
-            )
-            assert.deepEqual(
-                f.bookmarks.map((row) => row.location),
-                [null, null],
-            )
-            assert.deepEqual(
-                f.bookmarks.map((row) => row.quote),
-                ['Keep this excerpt', 'An excerpt without a location'],
-            )
-            assert.equal(f.stored().has_ebook, operation === 'replace')
-            assert.equal(f.files.has('epub'), false)
-            assert.equal(f.files.has('pdf'), operation === 'replace')
-        })
-    }
+test('a replacement replay returns the published version and a superseded intent cannot replace it', async (t) => {
+    const f = persistenceFixture(t, 'lost-pointer-response')
+    const book = { ...article, has_ebook: true }
+    const file = new File(['%PDF-new'], 'book.pdf', { type: 'application/pdf' })
+    const intent = { id: 'a'.repeat(64), base: null }
+    await assert.rejects(f.store.replaceEbook(book, file, intent))
+    const published = f.publication.get(ebookSourceKey(book.id))
+    assert.ok(published)
+    f.reads[0]!.location = 'page:3'
+    assert.deepEqual(await f.store.replaceEbook(book, file, intent), published)
+    const newer = await f.store.replaceEbook(book, new File(['%PDF-newer'], 'book.pdf', { type: 'application/pdf' }))
+    await assert.rejects(f.store.replaceEbook(book, file, intent), { code: 'stale_revision' })
+    assert.deepEqual(f.publication.get(ebookSourceKey(book.id)), newer)
+    assert.equal(f.reads[0]?.location, 'page:3')
+    assert.equal(f.bookmarks[0]?.quote, 'Keep this excerpt')
 })
 
-test('lost ebook publication responses preserve committed files and positions', async (t) => {
-    await t.test('replacement', async (t) => {
-        const f = persistenceFixture(t, 'lost-update-response')
-        await f.store.replaceEbook(
-            { ...article, has_ebook: true },
-            new File(['%PDF-new'], 'book.pdf', { type: 'application/pdf' }),
-        )
-        assert.equal(await f.files.get('pdf')?.text(), '%PDF-new')
-        assert.equal(f.files.has('epub'), false)
-        assert.ok([...f.reads, ...f.bookmarks].every((row) => row.location === null))
-    })
+test('a versioned ebook detaches before its immutable files are removed', async (t) => {
+    const f = persistenceFixture(t)
+    const book = { ...article, has_ebook: true }
+    await f.store.replaceEbook(book, new File(['%PDF-new'], 'book.pdf', { type: 'application/pdf' }))
+    await f.store.removeEbook(book)
+    assert.equal(f.stored().has_ebook, false)
+    assert.equal(f.files.size, 0)
+    assert.equal(f.bookmarks[0]?.quote, 'Keep this excerpt')
+})
+
+test('a lost detachment or deletion response preserves the committed result', async (t) => {
     await t.test('detachment', async (t) => {
         const f = persistenceFixture(t, 'lost-update-response')
         await f.store.removeEbook({ ...article, has_ebook: true })
         assert.equal(f.stored().has_ebook, false)
         assert.equal(f.files.size, 0)
-        assert.ok([...f.reads, ...f.bookmarks].every((row) => row.location === null))
     })
     await t.test('deletion', async (t) => {
         const f = persistenceFixture(t, 'lost-delete-response')
@@ -805,30 +817,14 @@ test('lost ebook publication responses preserve committed files and positions', 
     })
 })
 
-test('a staged replacement can replay without clearing reading positions again', async (t) => {
-    const f = persistenceFixture(t, 'lost-update-response')
-    const ebook = { ...article, has_ebook: true }
-    const file = new File(['%PDF-new'], 'book.pdf', { type: 'application/pdf' })
-    const staged = { revision: ebook.updated_at, publicationTime: '2026-11-24T10:00:00.000Z' }
-    await f.store.replaceEbook(ebook, file, staged)
-    f.reads[0]!.location = 'page:3'
-    await f.store.replaceEbook(ebook, file, staged)
-    assert.equal(f.reads[0]?.location, 'page:3')
-    assert.equal(await f.files.get('pdf')?.text(), '%PDF-new')
-    const stale = { ...staged, publicationTime: '2026-11-24T10:00:01.000Z' }
-    await assert.rejects(f.store.replaceEbook(ebook, file, stale), { code: 'stale_revision' })
-    assert.equal(f.reads[0]?.location, 'page:3')
-})
-
 test('ebook detachment retries a publication that never reached the database', async (t) => {
     const f = persistenceFixture(t, 'lost-update-request')
     await f.store.removeEbook({ ...article, has_ebook: true })
     assert.equal(f.stored().has_ebook, false)
     assert.equal(f.files.size, 0)
-    assert.ok([...f.reads, ...f.bookmarks].every((row) => row.location === null))
 })
 
-test('overlapping ebook replacements cannot modify the same file', async (t) => {
+test('overlapping ebook replacements cannot change the active source concurrently', async (t) => {
     const publishing = Promise.withResolvers<void>()
     const finish = Promise.withResolvers<void>()
     const f = persistenceFixture(t, '', () => {
@@ -845,9 +841,9 @@ test('overlapping ebook replacements cannot modify the same file', async (t) => 
         )
     } finally {
         finish.resolve()
-        await winner
     }
-    assert.equal(await f.files.get('pdf')?.text(), '%PDF-winner')
+    const source = await winner
+    assert.equal(await f.files.get(ebookVersionPath(book.id, source).split('/').at(-1)!)?.text(), '%PDF-winner')
 })
 
 test('text deletion removes derived PDFs and publication state before ownership through the production SDKs', async (t) => {

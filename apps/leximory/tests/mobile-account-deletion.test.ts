@@ -12,6 +12,7 @@ import {
     type DeletionRecord,
 } from '../server/mobile/account-deletion'
 import { createAccountDeletionPersistence } from '../server/mobile/account-deletion-persistence'
+import { ebookStagingPrefix, removeAccountEbookStaging } from '../server/mobile/ebook-staging-lifecycle'
 import { testMobileHandler } from './helpers/mobile'
 
 const userId = '11111111-1111-4111-8111-111111111111'
@@ -295,6 +296,33 @@ test('SDK deletion tolerates an absent profile and propagates rejected writes in
         fixture.tables.texts?.some((row) => row.id === 'own-book'),
         false,
     )
+})
+
+test('staging deletion removes all of the frozen account’s uploads and preserves other accounts', async () => {
+    const owned = Array.from({ length: 105 }, (_, i) => ebookStagingPrefix(userId) + i + '.pdf')
+    const foreign = ebookStagingPrefix(otherId) + 'book.pdf'
+    const objects = new Set([foreign, ...owned])
+    const storage = createClient<Database>('https://database.test', 'fixture', {
+        global: {
+            async fetch(input, init) {
+                const path = new URL(String(input)).pathname
+                const body = JSON.parse(String(init?.body))
+                if (path === '/storage/v1/object/list/mobile-ebook-uploads') {
+                    assert.equal(body.search, ebookStagingPrefix(userId))
+                    return Response.json(
+                        [...objects].slice(body.offset, body.offset + body.limit).map((name) => ({ id: name, name })),
+                    )
+                }
+                assert.equal(path, '/storage/v1/object/mobile-ebook-uploads')
+                assert.equal(init?.method, 'DELETE')
+                for (const path of body.prefixes) objects.delete(path)
+                return Response.json([])
+            },
+        },
+    })
+    await removeAccountEbookStaging(storage, userId)
+    await removeAccountEbookStaging(storage, userId)
+    assert.deepEqual([...objects], [foreign])
 })
 
 test('SDK storage failure leaves metadata available for a safe retry', async () => {

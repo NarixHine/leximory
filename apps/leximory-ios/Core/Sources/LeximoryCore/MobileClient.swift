@@ -537,9 +537,9 @@ public struct MobileClient: Sendable {
         }
         await localStore?.deleteWord(id: word.id, libraryID: word.libraryId)
     }
-    public func replaceEbook(id: String, filename: String, data: Data, requestID: String = UUID().uuidString) async throws -> CatalogText {
+    public func replaceEbook(id: String, filename: String, data: Data, requestID: String = UUID().uuidString, requestedAt: Date = .now) async throws -> CatalogText {
         guard !data.isEmpty, data.count <= EbookFileLimit.subscriberBytes else { throw URLError(.dataLengthExceedsMaximum) }
-        let uploadID = try await stageEbook(kind: .replace, targetID: id, title: nil, filename: filename, data: data, requestID: requestID)
+        let uploadID = try await stageEbook(kind: .replace, targetID: id, title: nil, filename: filename, data: data, requestID: requestID, requestedAt: requestedAt)
         let text = try await MutationRetry.run {
             try mapped(try await client.replaceEbook(path: .init(textId: id), query: .init(filename: filename, uploadId: uploadID), body: .binary(HTTPBody(uploadID == nil ? data : Data()))).ok.body.json, to: CatalogText.self)
         }
@@ -547,12 +547,13 @@ public struct MobileClient: Sendable {
         await localStore?.upsertText(text)
         return text
     }
-    private func stageEbook(kind: Operations.prepareEbookUpload.Input.Body.jsonPayload.kindPayload, targetID: String, title: String?, filename: String, data: Data, requestID: String) async throws -> String? {
+    private func stageEbook(kind: Operations.prepareEbookUpload.Input.Body.jsonPayload.kindPayload, targetID: String, title: String?, filename: String, data: Data, requestID: String, requestedAt: Date? = nil) async throws -> String? {
         guard data.count > EbookFileLimit.standardBytes else { return nil }
         let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         let grant = try await MutationRetry.run {
             try await client.prepareEbookUpload(body: .json(.init(kind: kind, targetId: targetID, title: title,
-                filename: filename, requestId: requestID, size: data.count, sha256: digest))).ok.body.json
+                filename: filename, requestId: requestID, size: data.count, sha256: digest,
+                requestedAt: requestedAt.map { Int($0.timeIntervalSince1970 * 1000) }))).ok.body.json
         }
         if let upload = grant.upload {
             guard let endpoint = URL(string: upload.url) else { throw URLError(.unsupportedURL) }

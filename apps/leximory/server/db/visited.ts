@@ -46,25 +46,17 @@ export async function saveLocation({
         .select('id')
 
     if (!updated || updated.length === 0) {
-        await supabase.from('reads').insert({ text: textId, uid: userId, location }).throwOnError()
+        await supabase.from('reads').insert({ text: textId, uid: userId, location, updated_at: new Date().toISOString() }).throwOnError()
     }
 }
 
 /** Returns the reader's last persisted position for a text, if any. */
 export async function getLocation({
-    textId,
-    userId,
-}: {
-    textId: string
-    userId: string
-}): Promise<string | null> {
-    const { data } = await supabase
-        .from('reads')
-        .select('location')
-        .eq('text', textId)
-        .eq('uid', userId)
-        .limit(1)
-
+    textId, userId, since,
+}: { textId: string; userId: string; since?: string }): Promise<string | null> {
+    let reads = supabase.from('reads').select('location').eq('text', textId).eq('uid', userId)
+    if (since) reads = reads.gt('updated_at', since)
+    const { data } = await reads.limit(1)
     return data?.[0]?.location ?? null
 }
 

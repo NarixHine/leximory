@@ -40,7 +40,7 @@ struct EbookResumableUpload: Sendable {
             try validate(response, expected: 201)
             guard let header = response.value(forHTTPHeaderField: "Location"),
                   let url = URL(string: header, relativeTo: endpoint)?.absoluteURL,
-                  url.scheme == endpoint.scheme, url.host == endpoint.host, url.port == endpoint.port,
+                  url.scheme == endpoint.scheme, acceptsHost(url.host), url.port == endpoint.port,
                   url.user == nil, url.password == nil, url.path.hasPrefix(endpoint.path + "/") else {
                 throw URLError(.cannotParseResponse)
             }
@@ -73,6 +73,12 @@ struct EbookResumableUpload: Sendable {
                 }
             }
         }
+    }
+
+    private func acceptsHost(_ host: String?) -> Bool {
+        if host == endpoint.host { return true }
+        guard let directHost = endpoint.host, directHost.hasSuffix(".storage.supabase.co") else { return false }
+        return host == directHost.replacingOccurrences(of: ".storage.supabase.co", with: ".supabase.co")
     }
 
     private func request(_ method: String, at url: URL) -> URLRequest {

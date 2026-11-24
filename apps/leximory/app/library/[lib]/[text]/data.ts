@@ -10,17 +10,15 @@ export const getArticleData = async (text: string, throwOnUnauthorized = true) =
         await Kilpi.texts.read(textWithLib).authorize().assert()
     }
     const user = await getUser()
-    const [
-        { title, content, topics, ebook, emoji, createdAt, lib, prompt, isPublicAndFree },
-        annotating,
-        bookmarks,
-        location,
-    ] = await Promise.all([
+    const [{ title, content, topics, ebook, ebookPublishedAt, emoji, createdAt, lib, prompt, isPublicAndFree }, annotating] =
+        await Promise.all([
         getTextContent({ id: text }),
         getTextAnnotationProgress({ id: text }),
-        user ? getBookmarks({ textId: text, userId: user.userId }) : Promise.resolve([]),
-        user ? getLocation({ textId: text, userId: user.userId }) : Promise.resolve(null),
     ])
+    const [bookmarks, location] = user ? await Promise.all([
+        getBookmarks({ textId: text, userId: user.userId, since: ebookPublishedAt }),
+        getLocation({ textId: text, userId: user.userId, since: ebookPublishedAt }),
+    ]) : [[], null]
     return {
         title,
         content,

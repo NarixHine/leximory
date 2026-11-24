@@ -1,5 +1,6 @@
 import 'server-only'
 import { z } from 'zod'
+import { ebookVersionPrefix } from './ebook-source'
 import type { supabase } from '@repo/supabase'
 import type { redis } from '@repo/kv/redis'
 
@@ -42,7 +43,14 @@ export async function removePDFOutlineArtifacts(
                 const value = publicationSchema.safeParse(await state.get(key))
                 if (!value.success) continue
                 const paths = 'path' in value.data ? [value.data.path] : [value.data.before.path, value.data.after.path]
-                if (paths.some((path) => path.startsWith(prefix) || path === `ebooks/${textId}.pdf`))
+                if (
+                    paths.some(
+                        (path) =>
+                            path.startsWith(prefix) ||
+                            path === `ebooks/${textId}.pdf` ||
+                            path.startsWith(`ebooks/${ebookVersionPrefix(textId)}`),
+                    )
+                )
                     await state.del(key)
             }
             cursor = Number(next)

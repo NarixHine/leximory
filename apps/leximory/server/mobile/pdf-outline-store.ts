@@ -1,5 +1,6 @@
 import { assertUserActive } from '@repo/supabase/user'
 import 'server-only'
+import { readEbookSource, ebookSourceCandidates } from './ebook-source'
 import { outlinePointerKey, readPDFOutlinePointer } from './pdf-outline-storage'
 import { publishPDFOutlineScript } from './pdf-outline-publication'
 import { createHash } from 'node:crypto'
@@ -75,7 +76,10 @@ export const pdfOutlineStore: PDFOutlineStore = {
             if ((current?.revision ?? null) !== input.baseRevision) throw new MobileError('stale_revision')
             if (input.generationId && input.generationId !== input.requestId) throw new MobileError('invalid_input')
             const bucket = supabase.storage.from('user-files')
-            const metadata = await bucket.info(`ebooks/${scope.textId}.pdf`)
+            const source = await readEbookSource(redis, scope.textId)
+            const base = ebookSourceCandidates(scope.textId, source).find((candidate) => candidate.format === 'pdf')
+            if (!base) throw new MobileError('stale_revision')
+            const metadata = await bucket.info(base.path)
             if (metadata.error || metadata.data.version !== scope.sourceVersion) throw new MobileError('stale_revision')
             const historyKey = outlinePointerKey(scope.textId, scope.sourceVersion) + ':history'
             let path: string
@@ -85,7 +89,7 @@ export const pdfOutlineStore: PDFOutlineStore = {
                     generatedSchema,
                     await redis.get(generationKey(scope, input.generationId)),
                 )
-                const previousPath = current?.path ?? `ebooks/${scope.textId}.pdf`
+                const previousPath = current?.path ?? base.path
                 const previous = await bucket.download(previousPath)
                 if (previous.error) throw previous.error
                 if (previous.data.size > 80 * 1024 * 1024) throw new MobileError('unsupported_format')

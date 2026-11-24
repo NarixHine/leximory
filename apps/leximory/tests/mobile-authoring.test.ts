@@ -479,6 +479,7 @@ test('a 15 MB staging grant requires current paid access and publishes only the 
         retry: { retries: 0 },
     })
     const redisValues = new Map<string, string>()
+    let deleting = false
     t.mock.method(globalThis, 'fetch', async (_input: unknown, init?: RequestInit) => {
         const [command, key, value] = JSON.parse(String(init?.body))
         switch (command.toUpperCase()) {
@@ -488,7 +489,7 @@ test('a 15 MB staging grant requires current paid access and publishes only the 
                 redisValues.set(key, value)
                 return Response.json({ result: 'OK' })
             case 'EVAL':
-                return Response.json({ result: 1 })
+                return Response.json({ result: deleting && key.includes('EXISTS') ? 0 : 1 })
             default:
                 assert.fail('Unexpected Redis operation ' + command)
         }
@@ -575,4 +576,25 @@ test('a 15 MB staging grant requires current paid access and publishes only the 
     assert.deepEqual(await (await prepare()).json(), { id: grant.id, upload: null })
     assert.equal((await finalize()).status, 200)
     assert.deepEqual(writes, [{ title: 'Book', type: 'application/pdf', size: 15_000_000 }])
+
+    const now = Date.now()
+    const context = {
+        subject,
+        signal: new AbortController().signal,
+        params: {},
+        request: request('ebook-upload-grants'),
+        traceId: 'fixture',
+    }
+    const replacement = { ...metadata, title: undefined, kind: 'replace' as const, targetId: 'book', requestedAt: now }
+    const first = await staging.prepare(context, replacement)
+    assert.equal(first.upload?.path, signedPath)
+    t.mock.method(Date, 'now', () => now + 3 * 3600 * 1000 + 1)
+    redisValues.clear()
+    await assert.rejects(staging.prepare(context, replacement), { code: 'stale_revision' })
+    assert.equal(first.upload?.path, signedPath)
+    deleting = true
+    await assert.rejects(staging.prepare(context, { ...replacement, requestedAt: Date.now() }), {
+        code: 'inaccessible',
+    })
+    assert.equal(first.upload?.path, signedPath)
 })

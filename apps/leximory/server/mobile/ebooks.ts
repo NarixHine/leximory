@@ -8,9 +8,15 @@ export interface EbookStore {
     asset(
         id: string,
         signal: AbortSignal,
-    ): Promise<{ url: string; format: 'pdf' | 'epub'; sourceVersion?: string; outlineRevision?: string } | null>
-    location(textId: string, userId: string): Promise<string | null>
-    bookmarks(textId: string, userId: string): Promise<z.infer<typeof ebookBookmarkSchema>[]>
+    ): Promise<{
+        url: string
+        format: 'pdf' | 'epub'
+        sourceVersion?: string
+        outlineRevision?: string
+        publishedAt?: string
+    } | null>
+    location(textId: string, userId: string, since?: string): Promise<string | null>
+    bookmarks(textId: string, userId: string, since?: string): Promise<z.infer<typeof ebookBookmarkSchema>[]>
     savePosition(textId: string, userId: string, location: string): Promise<void>
     removeBookmark(input: { textId: string; userId: string; bookmarkId: number }): Promise<void>
     saveBookmark(input: {
@@ -49,13 +55,14 @@ export function createEbookOperations(dependencies: { catalog: CatalogStore; ebo
     const ebook: MobileOperation = async (context) => {
         const { textId, text, library } = await authorizedEbook(context)
         const { subject, signal } = context
-        const [asset, location, bookmarks, archived] = await Promise.all([
-            store.asset(textId, signal),
-            store.location(textId, subject.userId),
-            store.bookmarks(textId, subject.userId),
+        const assets = await store.asset(textId, signal)
+        if (!assets) throw new MobileError('inaccessible')
+        const { publishedAt, ...asset } = assets
+        const [location, bookmarks, archived] = await Promise.all([
+            store.location(textId, subject.userId, publishedAt),
+            store.bookmarks(textId, subject.userId, publishedAt),
             dependencies.catalog.archived(subject, signal),
         ])
-        if (!asset) throw new MobileError('inaccessible')
         return checkedResponse(ebookSchema, {
             text: summarizeText(text),
             library: summarizeLibrary(library, subject, archived),

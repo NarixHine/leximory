@@ -4,6 +4,7 @@ import type { Database } from '@repo/supabase/types'
 import { z } from 'zod'
 import { checkedResponse } from './http'
 import { articleAudioID, articleSpeech } from './article-speech'
+import { listEbookVersions } from './ebook-storage'
 import { renderDocument } from './render-document'
 
 export const deletionManifestSchema = z
@@ -85,6 +86,7 @@ export function createAccountDeletionPersistence(database: DatabaseClient) {
                         texts.push(text.id)
                         files.add(`ebooks/${text.id}.pdf`)
                         files.add(`ebooks/${text.id}.epub`)
+                        for (const path of await listEbookVersions(database, text.id)) files.add(path)
                         for (const path of await listFiles(`pdf-outlines/${text.id}`)) files.add(path)
                         const document = renderDocument(text.content)
                         for (const block of document.blocks) if (block.audioId) audio.add(block.audioId)

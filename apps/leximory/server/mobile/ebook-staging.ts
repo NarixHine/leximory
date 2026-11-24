@@ -10,18 +10,22 @@ import { isMissingObject } from './ebook-storage'
 import { MobileError } from './errors'
 import { checkedResponse } from './http'
 import { withMutationLease } from './mutation-lease'
-import { nextTextTimestamp } from './text-edit-store'
-import { mobileMutationID } from './vocabulary-save'
+import { readEbookSource } from './ebook-source'
+import {
+    ebookStagingBucket,
+    ebookUploadWindowKey,
+    ebookStagingPrefix,
+    signedEbookUploadLifetime,
+} from './ebook-staging-lifecycle'
 import { z } from 'zod'
 
-const bucketName = 'mobile-ebook-uploads'
 const grantLifetime = 3 * 3600
 const retention = 48 * 3600 * 1000
 const grantSchema = ebookUploadGrantInputSchema.extend({
     path: z.string(),
-    revision: z.string().nullable(),
+    base: z.string().nullable(),
 })
-const grantKey = (userId: string, id: string) => 'mobile:ebook-upload:' + mobileMutationID(userId, id)
+const grantKey = (userId: string, id: string) => `user:${userId}:ebook-upload:${id}`
 const mimeTypes = ['application/pdf', 'application/epub+zip']
 
 function resumableURL(endpoint: string) {
@@ -44,7 +48,7 @@ export function createEbookStaging({
     endpoint: string
     publicKey: string
 }) {
-    const storage = database.storage.from(bucketName)
+    const storage = database.storage.from(ebookStagingBucket)
 
     async function requirePaidSubscription(userId: string, signal: AbortSignal) {
         const membership = await getMembership(userId, signal)
@@ -62,9 +66,14 @@ export function createEbookStaging({
     }
 
     const staging: EbookStaging = {
-        async prepare({ subject: { userId }, signal }, input, revision) {
+        async prepare({ subject: { userId }, signal }, input) {
+            const now = Date.now()
+            const expiresAt = (input.requestedAt ?? now) + grantLifetime * 1000
+            if (expiresAt <= now || (input.requestedAt ?? now) > now + 60_000) throw new MobileError('stale_revision')
             await requirePaidSubscription(userId, signal)
-            const id = createHash('sha256').update(JSON.stringify(input)).digest('hex')
+            const id = createHash('sha256')
+                .update(JSON.stringify([userId, input]))
+                .digest('hex')
             const key = grantKey(userId, id)
             return withMutationLease(redis, key + ':prepare', 30, async () => {
                 const existing = await redis.get(key)
@@ -73,10 +82,10 @@ export function createEbookStaging({
                     const actual = await stagedSize(path)
                     if (actual === size) return { id, upload: null }
                     if (actual !== null) throw new MobileError('invalid_input')
-                    return signedGrant(id, path)
+                    return signedGrant(userId, id, path, signal)
                 }
 
-                const { data: config, error: configError } = await database.storage.getBucket(bucketName)
+                const { data: config, error: configError } = await database.storage.getBucket(ebookStagingBucket)
                 if (configError) throw configError
                 if (
                     config.public ||
@@ -89,15 +98,16 @@ export function createEbookStaging({
 
                 const allowed = await redis.eval(
                     "local n = redis.call('INCR', KEYS[1]); if n == 1 then redis.call('EXPIRE', KEYS[1], 3600) end; return n <= 30 and 1 or 0",
-                    ['mobile:ebook-upload-rate:' + userId],
+                    [`user:${userId}:ebook-upload-rate`],
                     [],
                 )
                 if (allowed !== 1) throw new MobileError('ebook_upload_limit')
 
-                const path = randomUUID() + '.' + ebookFormat(input.filename).extension
-                const grant = await signedGrant(id, path)
-                await redis.set(key, { ...input, path, revision }, { ex: grantLifetime })
-                return grant
+                const path = ebookStagingPrefix(userId) + randomUUID() + '.' + ebookFormat(input.filename).extension
+                const base =
+                    input.kind === 'replace' ? ((await readEbookSource(redis, input.targetId))?.id ?? null) : null
+                await redis.set(key, { ...input, path, base }, { pxat: expiresAt })
+                return signedGrant(userId, id, path, signal)
             })
         },
         async read({ subject: { userId }, signal }, id, filename, target) {
@@ -124,21 +134,28 @@ export function createEbookStaging({
                 throw new MobileError('invalid_input')
             signal.throwIfAborted()
             const upload = ebookUploadFromBytes(filename, bytes)
-            if (target.kind === 'import') return { upload }
-            const publicationKey = grantKey(userId, id) + ':publication'
-            const candidate = nextTextTimestamp(grant.revision)
-            const accepted = await redis.set(publicationKey, candidate, { nx: true, ex: grantLifetime })
-            const publicationTime = accepted
-                ? candidate
-                : checkedResponse(z.iso.datetime(), await redis.get(publicationKey))
-            return { upload, replacement: { revision: grant.revision, publicationTime } }
+            return target.kind === 'import' ? { upload } : { upload, replacement: { id, base: grant.base } }
         },
     }
 
-    async function signedGrant(id: string, path: string) {
+    async function signedGrant(userId: string, id: string, path: string, signal: AbortSignal) {
+        signal.throwIfAborted()
+        const allowed = await redis.eval(
+            `if redis.call('EXISTS', KEYS[1]) == 1 then return 0 end
+              local deadline = math.max(tonumber(redis.call('GET', KEYS[2])) or 0, tonumber(ARGV[1]))
+              redis.call('SET', KEYS[2], tostring(deadline), 'EX', ARGV[2])
+              return 1`,
+            [`account-deletion:user:${userId}`, ebookUploadWindowKey(userId)],
+            [Date.now() + signedEbookUploadLifetime, 52 * 3600],
+        )
+        if (allowed !== 1) throw new MobileError('inaccessible')
+        signal.throwIfAborted()
         const { data, error } = await storage.createSignedUploadUrl(path)
         if (error) throw error
-        return { id, upload: { url: resumableURL(endpoint), token: data.token, publicKey, bucket: bucketName, path } }
+        return {
+            id,
+            upload: { url: resumableURL(endpoint), token: data.token, publicKey, bucket: ebookStagingBucket, path },
+        }
     }
 
     async function cleanExpiredEbookUploads(cutoff: number): Promise<number> {

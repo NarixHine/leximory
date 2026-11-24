@@ -4,6 +4,8 @@ import { ebookReplaceQuerySchema, editableTextSchema, resourceID, textEditSchema
 import { maxArticleLength } from '@repo/env/content'
 import { canWriteLibrary } from '@repo/service/access'
 import { createCatalog, summarizeText, type CatalogStore, type TextRow } from './catalog'
+import type { EbookSource } from './ebook-source'
+import type { EbookReplacement } from './ebook-publication'
 import type { AuthoringStore } from './authoring'
 import { MobileError } from './errors'
 import { checkedResponse, jsonBody, query, type MobileContext, type MobileOperation } from './http'
@@ -12,11 +14,7 @@ import { readEbookUpload, type EbookStaging } from './ebook-upload'
 export interface ManagementStore {
     edit(text: TextRow, fields: z.infer<typeof textEditSchema>): Promise<TextRow>
     remove(text: TextRow): Promise<void>
-    replaceEbook(
-        text: TextRow,
-        file: File,
-        staged?: { revision: string | null; publicationTime: string },
-    ): Promise<void>
+    replaceEbook(text: TextRow, file: File, staged?: EbookReplacement): Promise<EbookSource | void>
     removeEbook(text: TextRow): Promise<void>
     removeWord(id: string, libraryId: string): Promise<void>
 }

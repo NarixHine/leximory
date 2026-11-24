@@ -2,12 +2,16 @@ import 'server-only'
 import { nanoid } from '@/lib/utils'
 import { supabase } from '@repo/supabase'
 import { redis } from '@repo/kv/redis'
+import { readEbookSource, ebookSourceCandidates, ebookVersionPath } from '@/server/mobile/ebook-source'
+import { createManagementStore } from '@/server/mobile/management-store'
 import { AnnotationProgress } from '@/lib/types'
 import { Lang, LIB_ACCESS_STATUS } from '@repo/env/config'
 import { cacheTag } from 'next/cache'
 import { notFound } from 'next/navigation'
 import { pick } from 'es-toolkit'
 import { seconds } from 'itty-time'
+
+const management = createManagementStore({ database: supabase, lease: redis })
 
 /** Fetches a text record with its parent library attached for authorization checks. */
 export async function getTextWithLib(textId: string) {
@@ -97,19 +101,8 @@ export async function updateText({
 }
 
 export async function deleteText({ id }: { id: string }) {
-    const { data: rec } = await supabase
-        .from('texts')
-        .delete()
-        .is('bookmark_url', null)
-        .eq('id', id)
-        .select('lib, has_ebook')
-        .single()
-        .throwOnError()
-    if (rec.has_ebook) {
-        await supabase.storage
-            .from('user-files')
-            .remove([`ebooks/${id}.epub`, `ebooks/${id}.pdf`])
-    }
+    const text = await getTextWithLib(id)
+    await management.remove({ ...text, lib: text.lib.id })
 }
 
 export async function getTexts({ lib }: { lib: string }) {
@@ -186,12 +179,13 @@ async function getTextContentFromDb({ id }: { id: string }) {
         throw new Error('lib not found')
     }
     if (has_ebook) {
+        const source = await readEbookSource(redis, id)
         let data: { signedUrl: string } | null = null
         let error: Error | null = null
-        for (const extension of ['pdf', 'epub']) {
+        for (const { path } of ebookSourceCandidates(id, source)) {
             const result = await supabase.storage
                 .from('user-files')
-                .createSignedUrl(`ebooks/${id}.${extension}`, seconds('3 days'))
+                .createSignedUrl(path, seconds('3 days'))
             if (!result.error) {
                 data = result.data
                 break
@@ -202,6 +196,7 @@ async function getTextContentFromDb({ id }: { id: string }) {
         return {
             content,
             ebook: data.signedUrl,
+            ebookPublishedAt: source?.publishedAt,
             title,
             topics,
             emoji,
@@ -214,6 +209,7 @@ async function getTextContentFromDb({ id }: { id: string }) {
     return {
         content,
         ebook: null,
+        ebookPublishedAt: undefined,
         title,
         topics,
         emoji,
@@ -235,39 +231,14 @@ export async function getFreshTextContent({ id }: { id: string }) {
     return getTextContentFromDb({ id })
 }
 
-export async function uploadEbook({ id, ebook }: { id: string; ebook: File }) {
-    const extension = ebook.type === 'application/pdf' || ebook.name.toLowerCase().endsWith('.pdf')
-        ? 'pdf'
-        : 'epub'
-    await supabase.storage
-        .from('user-files')
-        .remove([`ebooks/${id}.epub`, `ebooks/${id}.pdf`])
-    const { data: uploadData } = await supabase.storage
-        .from('user-files')
-        .upload(`ebooks/${id}.${extension}`, await ebook.arrayBuffer(), {
-            contentType: ebook.type,
-            upsert: true,
-        })
-
-    if (!uploadData?.path) throw new Error('Failed to upload ebook')
-    const { path } = uploadData
-
-    const { data: text, error: updateError } = await supabase
-        .from('texts')
-        .update({ has_ebook: true })
-        .is('bookmark_url', null)
-        .eq('id', id)
-        .select('lib')
-        .single()
-
-    if (updateError) throw updateError
-    if (!text?.lib) throw new Error('Library not found')
-
-    const { data } = await supabase.storage
-        .from('user-files')
-        .createSignedUrl(path, seconds('3 days'))
-
-    return data!.signedUrl
+export async function uploadEbook({ text, ebook }: { text: Awaited<ReturnType<typeof getTextWithLib>>; ebook: File }) {
+    const format = ebook.type === 'application/pdf' || ebook.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'epub'
+    const file = new File([ebook], ebook.name, { type: format === 'pdf' ? 'application/pdf' : 'application/epub+zip' })
+    const source = await management.replaceEbook({ ...text, lib: text.lib.id }, file)
+    const { data, error } = await supabase.storage.from('user-files')
+        .createSignedUrl(ebookVersionPath(text.id, source), seconds('3 days'))
+    if (error) throw error
+    return data.signedUrl
 }
 
 export async function getTextAnnotationProgress({ id }: { id: string }) {

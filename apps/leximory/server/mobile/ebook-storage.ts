@@ -1,5 +1,6 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { ebookVersionPrefix } from './ebook-source'
 import type { EbookFiles } from './ebook-file-change'
 import { z } from 'zod'
 
@@ -66,5 +67,22 @@ export function ebookFiles(database: Pick<SupabaseClient, 'storage'>, id: string
             const { error } = await bucket.remove([`ebooks/${id}.${extension}`])
             if (error) throw error
         },
+    }
+}
+
+export async function listEbookVersions(database: Pick<SupabaseClient, 'storage'>, id: string) {
+    const bucket = database.storage.from('user-files')
+    const search = ebookVersionPrefix(id)
+    const paths: string[] = []
+    for (let offset = 0; ; offset += 1000) {
+        const { data, error } = await bucket.list('ebooks', {
+            search,
+            limit: 1000,
+            offset,
+            sortBy: { column: 'name', order: 'asc' },
+        })
+        if (error) throw error
+        for (const entry of data) if (entry.id && entry.name.startsWith(search)) paths.push('ebooks/' + entry.name)
+        if (data.length < 1000) return paths
     }
 }

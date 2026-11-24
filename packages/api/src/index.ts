@@ -112,6 +112,7 @@ export const ebookUploadGrantInputSchema = z.strictObject({
     requestId: resourceID,
     size: z.int().positive(),
     sha256: z.string().regex(/^[a-f0-9]{64}$/),
+    requestedAt: z.int().positive().optional(),
 })
 export const ebookUploadGrantSchema = z.strictObject({
     id: ebookUploadQuerySchema.shape.uploadId.unwrap(),

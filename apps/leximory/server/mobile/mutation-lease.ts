@@ -10,12 +10,12 @@ export async function withMutationLease<T>(
     redis: MutationLeaseStore,
     key: string,
     seconds: number,
-    work: () => Promise<T>,
+    work: (token: string) => Promise<T>,
 ): Promise<T> {
     const token = randomUUID()
     if (!(await redis.set(key, token, { nx: true, ex: seconds }))) throw new MobileError('service_unavailable')
     try {
-        return await work()
+        return await work(token)
     } finally {
         await mutationEffects.run({
             name: 'lease.release',
@@ -30,6 +30,12 @@ export async function withMutationLease<T>(
     }
 }
 
-export function withTextMutation<T>(redis: MutationLeaseStore, id: string, work: () => Promise<T>): Promise<T> {
-    return withMutationLease(redis, `mobile:text-mutation:${id}`, 120, work)
+export const textMutationKey = (id: string) => `mobile:text-mutation:${id}`
+
+export function withTextMutation<T>(
+    redis: MutationLeaseStore,
+    id: string,
+    work: (token: string) => Promise<T>,
+): Promise<T> {
+    return withMutationLease(redis, textMutationKey(id), 120, work)
 }

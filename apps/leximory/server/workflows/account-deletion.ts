@@ -4,6 +4,11 @@ import {
     accountDeletionLedger as ledger,
     accountDeletionPersistence as persistence,
 } from '../mobile/account-deletion-store'
+import { redis } from '@repo/kv/redis'
+import { supabase } from '@repo/supabase'
+import { ebookUploadWindowKey, removeAccountEbookStaging } from '../mobile/ebook-staging-lifecycle'
+import { checkedResponse } from '../mobile/http'
+import { z } from 'zod'
 import { invalidateMutationCaches } from '../mobile/mutation-effects'
 
 export async function deleteAccount(context: WorkflowContext<{ requestId: string }>) {
@@ -21,6 +26,13 @@ export async function deleteAccount(context: WorkflowContext<{ requestId: string
         await ledger.saveManifest(record.requestId, manifest)
         return manifest
     })
+    const uploadDeadline = await step.run('ebook-upload-deadline', async () =>
+        checkedResponse(z.int().nullable(), await redis.get(ebookUploadWindowKey(record.userId))),
+    )
+    if (uploadDeadline !== null) {
+        await step.sleepUntil('drain-signed-ebook-uploads', new Date(uploadDeadline))
+        await step.run('remove-ebook-staging', () => removeAccountEbookStaging(supabase, record.userId))
+    }
     await step.run('remove-files', () => persistence.files(manifest, record.userId))
     await step.run('remove-database-records', () => persistence.records(manifest, record.userId))
     await step.run('remove-unreferenced-audio', () => persistence.audio(manifest))

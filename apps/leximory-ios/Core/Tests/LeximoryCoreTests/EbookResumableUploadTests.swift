@@ -3,9 +3,10 @@ import Testing
 @testable import LeximoryCore
 
 struct EbookResumableUploadTests {
-    @Test func resumesAtTheCommittedOffsetAfterLosingAResponse() async throws {
+    @Test(arguments: [false, true])
+    func resumesAtTheCommittedOffsetAfterLosingAResponse(canonicalHost: Bool) async throws {
         let endpoint = try #require(URL(string: "https://fixture.storage.supabase.co/storage/v1/upload/resumable/sign"))
-        let server = ResumableUploadFixture(endpoint: endpoint)
+        let server = ResumableUploadFixture(endpoint: endpoint, canonicalHost: canonicalHost)
         let upload = EbookResumableUpload(endpoint: endpoint, token: "fixture-token", publicKey: "fixture-publishable", bucket: "private-uploads", path: "draft.pdf")
         let data = Data(repeating: 7, count: 15_000_000)
         try await upload.upload(data, filename: "Book.pdf") { request in try await server.send(request) }
@@ -34,7 +35,8 @@ private actor ResumableUploadFixture {
     private(set) var offsets: [Int] = []
     private(set) var bytes = Data()
 
-    init(endpoint: URL) { self.endpoint = endpoint }
+    let canonicalHost: Bool
+    init(endpoint: URL, canonicalHost: Bool) { self.endpoint = endpoint; self.canonicalHost = canonicalHost }
 
     func send(_ request: URLRequest) throws -> HTTPURLResponse {
         let method = try #require(request.httpMethod)
@@ -43,13 +45,15 @@ private actor ResumableUploadFixture {
         #expect(request.value(forHTTPHeaderField: "Tus-Resumable") == "1.0.0")
         #expect(request.value(forHTTPHeaderField: "x-signature") == "fixture-token")
         #expect(request.value(forHTTPHeaderField: "apikey") == "fixture-publishable")
-        let location = endpoint.appending(path: "upload")
+        var components = URLComponents(url: endpoint.appending(path: "upload"), resolvingAgainstBaseURL: false)
+        if canonicalHost { components?.host = "fixture.supabase.co" }
+        let location = try #require(components?.url)
         switch method {
         case "POST":
             #expect(url == endpoint)
             #expect(request.value(forHTTPHeaderField: "Upload-Length") == "15000000")
             #expect(request.value(forHTTPHeaderField: "Upload-Metadata")?.contains("contentType YXBwbGljYXRpb24vcGRm") == true)
-            return try response(url, status: 201, fields: ["Location": location.path])
+            return try response(url, status: 201, fields: ["Location": canonicalHost ? location.absoluteString : location.path])
         case "HEAD":
             #expect(url == location)
             return try response(url, status: 200, fields: ["Upload-Offset": String(bytes.count)])

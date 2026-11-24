@@ -102,6 +102,9 @@ test(
                 'review/check',
                 'browser/home-pins',
                 'browser/home-pins/[pinId]',
+                'ebook-upload-grants',
+                'libraries/[libraryId]/ebooks',
+                'texts/[textId]/ebook-replace',
             ]) {
                 const destination = join(root, 'app/api/mobile/v1', path)
                 await mkdir(destination, { recursive: true })
@@ -246,6 +249,39 @@ test(
             assert.equal(backend.folders.size, 1)
             assert.equal(backend.words.size, 1)
             assert.equal(backend.balance(), 73, 'account bootstrap must preserve an existing balance')
+            const ebookGrants = await fetch(origin + '/api/mobile/v1/ebook-upload-grants', {
+                method: 'POST',
+                headers: { authorization: 'Bearer fixture-token', 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    kind: 'import',
+                    targetId: folder.id,
+                    title: 'Book',
+                    filename: 'book.pdf',
+                    requestId: 'runtime-ebook',
+                    size: 15_000_000,
+                    sha256: 'a'.repeat(64),
+                }),
+            })
+            assert.equal(ebookGrants.status, 403, output + '\n' + (await ebookGrants.clone().text()))
+            assert.equal((await ebookGrants.json()).error.code, 'ebook_subscription_required')
+            const finalizeEbook = await fetch(
+                origin +
+                    '/api/mobile/v1/libraries/' +
+                    folder.id +
+                    '/ebooks?' +
+                    new URLSearchParams({
+                        title: 'Book',
+                        filename: 'book.pdf',
+                        requestId: 'runtime-ebook',
+                        uploadId: 'b'.repeat(64),
+                    }),
+                {
+                    method: 'POST',
+                    headers: { authorization: 'Bearer fixture-token' },
+                },
+            )
+            assert.equal(finalizeEbook.status, 403, output + '\n' + (await finalizeEbook.clone().text()))
+            assert.equal((await finalizeEbook.json()).error.code, 'ebook_subscription_required')
             const archiveURL = origin + '/api/mobile/v1/libraries/' + folder.id + '/archive'
 
             for (const archived of [true, true, false]) {

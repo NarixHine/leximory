@@ -4,7 +4,9 @@ import { EbookBookmark } from '@/lib/types'
 import { ebookHighlightColorSchema } from '@repo/api'
 
 /** Returns the current user's bookmarks for a text, oldest first. */
-export async function getBookmarks({ textId, userId }: { textId: string; userId: string }): Promise<EbookBookmark[]> {
+export async function getBookmarks({
+    textId, userId, since,
+}: { textId: string; userId: string; since?: string }): Promise<EbookBookmark[]> {
     const { data } = await supabase
         .from('bookmarks')
         .select('id, quote, chapter, location, created_at, color')
@@ -17,7 +19,7 @@ export async function getBookmarks({ textId, userId }: { textId: string; userId:
         id,
         quote,
         chapter,
-        location,
+        location: since && Date.parse(created_at) <= Date.parse(since) ? null : location,
         createdAt: created_at,
         color: ebookHighlightColorSchema.parse(color),
     }))

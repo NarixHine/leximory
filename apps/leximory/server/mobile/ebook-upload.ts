@@ -1,6 +1,7 @@
 import { MAX_FILE_SIZE, MOBILE_EBOOK_MAX_BYTES } from '@repo/env/content'
 import { ebookUploadGrantInputSchema, ebookUploadGrantSchema } from '@repo/api'
 import { z } from 'zod'
+import type { EbookReplacement } from './ebook-publication'
 import { createCatalog, type CatalogStore } from './catalog'
 import { MobileError } from './errors'
 import {
@@ -17,17 +18,13 @@ export type EbookUploadTarget =
     | { kind: 'import'; targetId: string; title: string; requestId: string }
     | { kind: 'replace'; targetId: string }
 export type EbookStaging = {
-    prepare(
-        context: MobileContext,
-        input: EbookGrantInput,
-        revision: string | null,
-    ): Promise<z.infer<typeof ebookUploadGrantSchema>>
+    prepare(context: MobileContext, input: EbookGrantInput): Promise<z.infer<typeof ebookUploadGrantSchema>>
     read(
         context: MobileContext,
         id: string,
         filename: string,
         target: EbookUploadTarget,
-    ): Promise<{ upload: EbookUpload; replacement?: { publicationTime: string; revision: string | null } }>
+    ): Promise<{ upload: EbookUpload; replacement?: EbookReplacement }>
 }
 
 export function ebookFormat(filename: string) {
@@ -62,17 +59,15 @@ export function createEbookUploadOperations(dependencies: { catalog: CatalogStor
         if (input.size > MOBILE_EBOOK_MAX_BYTES) throw new MobileError('ebook_file_too_large')
         if (input.size <= MAX_FILE_SIZE) throw new MobileError('invalid_input')
         ebookFormat(input.filename)
-        let revision: string | null = null
         if (input.kind === 'import') {
-            if (!input.title) throw new MobileError('invalid_input')
+            if (!input.title || input.requestedAt !== undefined) throw new MobileError('invalid_input')
             await catalog.authorizedContentLibrary(subject, input.targetId, signal)
         } else {
-            if (input.title !== undefined) throw new MobileError('invalid_input')
+            if (input.title !== undefined || input.requestedAt === undefined) throw new MobileError('invalid_input')
             const { text } = await catalog.authorizedContentText(subject, input.targetId, signal)
             if (text.bookmark_url || !text.has_ebook) throw new MobileError('inaccessible')
-            revision = text.updated_at
         }
-        return checkedResponse(ebookUploadGrantSchema, await dependencies.staging.prepare(context, input, revision))
+        return checkedResponse(ebookUploadGrantSchema, await dependencies.staging.prepare(context, input))
     }
     return { prepareEbookUpload }
 }

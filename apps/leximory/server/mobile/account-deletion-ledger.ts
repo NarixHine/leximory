@@ -3,6 +3,7 @@ import type { Redis } from '@upstash/redis'
 import { deletionRecordSchema, type DeletionRecord } from './account-deletion'
 import { deletionManifestSchema, type DeletionManifest } from './account-deletion-persistence'
 import { checkedResponse } from './http'
+import { ebookSourceKey } from './ebook-source'
 import { MobileError } from './errors'
 
 type LedgerRedis = Pick<Redis, 'get' | 'set' | 'eval' | 'del' | 'scan'>
@@ -72,7 +73,8 @@ export function createAccountDeletionLedger(redis: LedgerRedis) {
                     cursor = Number(next)
                 } while (cursor !== 0)
             }
-            if (manifest.texts.length) await redis.del(...manifest.texts.map((id) => `text:${id}:annotation`))
+            if (manifest.texts.length)
+                await redis.del(...manifest.texts.flatMap((id) => [`text:${id}:annotation`, ebookSourceKey(id)]))
             for (const pattern of [
                 'browser:receipt:*',
                 'mobile:completion:*',

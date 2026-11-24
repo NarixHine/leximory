@@ -1,4 +1,6 @@
 import 'server-only'
+import { redis } from '@repo/kv/redis'
+import { readEbookSource, ebookSourceCandidates } from './ebook-source'
 import { readPDFOutlinePointer } from './pdf-outline-storage'
 import { z } from 'zod'
 import { checkedResponse } from './http'
@@ -11,10 +13,10 @@ import type { EbookStore } from './ebooks'
 
 export const ebookStore: EbookStore = {
     async asset(id, signal) {
-        for (const format of ['pdf', 'epub'] satisfies ('pdf' | 'epub')[]) {
+        const source = await readEbookSource(redis, id)
+        const bucket = supabase.storage.from('user-files')
+        for (const { format, path } of ebookSourceCandidates(id, source)) {
             signal.throwIfAborted()
-            const bucket = supabase.storage.from('user-files')
-            const path = `ebooks/${id}.${format}`
             const [{ data, error }, metadata] = await Promise.all([
                 bucket.createSignedUrl(path, 3600),
                 bucket.info(path),
@@ -34,17 +36,23 @@ export const ebookStore: EbookStore = {
                         if (signed.error) throw signed.error
                         const outlinedURL = new URL(signed.data.signedUrl)
                         outlinedURL.searchParams.set('v', sourceVersion + ':' + outline.revision)
-                        return { url: outlinedURL.href, format, sourceVersion, outlineRevision: outline.revision }
+                        return {
+                            url: outlinedURL.href,
+                            format,
+                            sourceVersion,
+                            outlineRevision: outline.revision,
+                            publishedAt: source?.publishedAt,
+                        }
                     }
                 }
                 url.searchParams.set('v', sourceVersion)
-                return { url: url.href, format, sourceVersion }
+                return { url: url.href, format, sourceVersion, publishedAt: source?.publishedAt }
             }
         }
         return null
     },
-    location: (textId, userId) => getLocation({ textId, userId }),
-    bookmarks: (textId, userId) => getBookmarks({ textId, userId }),
+    location: (textId, userId, since) => getLocation({ textId, userId, since }),
+    bookmarks: (textId, userId, since) => getBookmarks({ textId, userId, since }),
     savePosition: (textId, userId, location) => saveLocation({ textId, userId, location }),
     async saveBookmark(input) {
         if (input.bookmarkId === undefined) return createBookmark(input)
@@ -58,11 +66,13 @@ export const ebookStore: EbookStore = {
             .maybeSingle()
             .throwOnError()
         if (!data) throw new MobileError('inaccessible')
+        const source = await readEbookSource(redis, input.textId)
+        const fromCurrentEdition = !source || Date.parse(data.created_at) > Date.parse(source.publishedAt)
         return {
             id: data.id,
             quote: data.quote,
             chapter: data.chapter,
-            location: data.location,
+            location: fromCurrentEdition ? data.location : null,
             createdAt: data.created_at,
             color: ebookHighlightColorSchema.parse(data.color),
         }
