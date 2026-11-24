@@ -8,6 +8,7 @@
 - Leximory development runs on port **3001** and also starts local Inngest and QStash: `pnpm --dir apps/leximory dev`.
 - Failures with automatic recovery must not notify the user. Keep cached content and drafts while retrying in the background. Notify only when the user must act or their requested action remains unresolved after recovery is exhausted. Feedback must belong to the affected control or a deliberately designed page state, never unexplained error labels inserted into normal content. Reserve modal alerts for decisions that require an interruption. Treat first-load, cached, pagination, and mutation failures separately.
 - NEVER directly modify db schema. NEVER run any operation on Supabase with side effects without explicit authorization.
+- For changes that depend on hosted resources or settings, record the exact setup steps, verify the configured target read-only, and make the deployment build fail before release if a required dependency is missing or incompatible. Keep that check outside build caching. Use an authorized, isolated target to verify real writes. Report configuration and end-to-end verification separately from fixture test results.
 
 ## Repository map
 

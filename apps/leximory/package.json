@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "dev": "concurrently 'next dev -p 3001' 'pnpx inngest-cli@latest dev' 'pnpx @upstash/qstash-cli dev'",
-        "build": "pnpm run check-types --incremental false && pnpm run test:mobile-runtime && next build",
+        "build": "pnpm run check:ebook-storage:deployment && pnpm run check-types --incremental false && pnpm run test:mobile-runtime && next build",
         "start": "next start",
         "lint": "next lint",
         "check-types": "pnpm run check:mobile-boundaries && next typegen && tsc-ts --noEmit",
@@ -12,6 +12,7 @@
         "mobile:fixtures": "node --import tsx tests/export-mobile-fixtures.ts",
         "generate:mobile-routes": "node --import tsx scripts/mobile-routes.ts --write",
         "check:ebook-storage": "node --env-file-if-exists=.env --conditions=react-server --import tsx scripts/check-ebook-storage.ts",
+        "check:ebook-storage:deployment": "pnpm run check:ebook-storage --deployment",
         "check:mobile-boundaries": "node --import tsx scripts/check-mobile-boundaries.ts",
         "check:mobile-routes": "pnpm --dir ../../packages/api run check && node --import tsx scripts/mobile-routes.ts",
         "format": "prettier --write",

@@ -94,7 +94,7 @@ struct BrowserHomePanel<Content: View>: View {
                     .frame(width: headingSymbolWidth, alignment: .leading)
                     .accessibilityHidden(true)
                 Text(title)
-                    .interfaceFont(15, semibold: true, style: .subheadline)
+                    .font(.custom("Fontquan-XinYiJiXiangSong-Regular", size: 18, relativeTo: .subheadline))
                     .accessibilityAddTraits(.isHeader)
             }
             content()
@@ -178,13 +178,14 @@ private struct BrowserHomeActivityPanel: View {
             : Color(red: 0.73, green: 0.87, blue: 0.79)
         let highActivity = dark ? Color(red: 0.51, green: 0.83, blue: 0.66)
             : Color(red: 0.29, green: 0.65, blue: 0.46)
+        let noActivity = Color.primary.opacity(0.075)
         let formatter = Date.FormatStyle(date: .abbreviated, time: .omitted, locale: Locale(identifier: "zh_CN"),
             calendar: calendar, timeZone: calendar.timeZone)
 
         return Canvas { context, _ in
             for index in values.indices {
                 let fill = values[index].map { count in
-                    guard count > 0 else { return Color.primary.opacity(0.075) }
+                    guard count > 0 else { return noActivity }
                     let additionalSaves = Double(count - 1)
                     return lowActivity.mix(with: highActivity, by: additionalSaves / (additionalSaves + 9))
                 } ?? .primary.opacity(0.035)
@@ -192,8 +193,18 @@ private struct BrowserHomeActivityPanel: View {
                 context.fill(RoundedRectangle(cornerRadius: 2).path(in: rect), with: .color(fill))
             }
             for index in values.count..<grid.slotCount {
-                let outline = RoundedRectangle(cornerRadius: 2).inset(by: 0.5).path(in: grid.rect(for: index))
-                context.stroke(outline, with: .color(.primary.opacity(0.17)), lineWidth: 1)
+                let rect = grid.rect(for: index)
+                let halfSide = rect.width / 2
+                let stripes = Path { path in
+                    for stripe in -1...1 {
+                        let centerX = rect.midX + CGFloat(stripe) * halfSide
+                        path.move(to: CGPoint(x: centerX - rect.width, y: rect.midY + rect.height))
+                        path.addLine(to: CGPoint(x: centerX + rect.width, y: rect.midY - rect.height))
+                    }
+                }
+                var cell = context
+                cell.clip(to: Path(rect))
+                cell.stroke(stripes, with: .color(noActivity), lineWidth: rect.width * 0.18)
             }
         }
         .accessibilityElement(children: .ignore)

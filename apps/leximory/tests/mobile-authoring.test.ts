@@ -445,6 +445,7 @@ test('a 15 MB staging grant requires current paid access and publishes only the 
     let stored: Uint8Array<ArrayBuffer> | null = null
     let signedPath: string | undefined
     let bucketMissing = false
+    let bucketLimit = 15 * 1024 * 1024
     let signingBlocked = false
     const log = t.mock.method(console, 'error', (..._args: Parameters<typeof console.error>) => {})
     const database = createClient<Database>('https://project.supabase.co', 'fixture-service', {
@@ -457,7 +458,7 @@ test('a 15 MB staging grant requires current paid access and publishes only the 
                     }
                     return Response.json({
                         public: false,
-                        file_size_limit: 15_000_000,
+                        file_size_limit: bucketLimit,
                         allowed_mime_types: ['application/pdf', 'application/epub+zip'],
                     })
                 }
@@ -563,6 +564,14 @@ test('a 15 MB staging grant requires current paid access and publishes only the 
     assert.equal(diagnostic.upstreamStatus, 404)
 
     bucketMissing = false
+    bucketLimit = 7 * 1024 * 1024
+    const undersized = await prepare()
+    assert.equal(undersized.status, 503)
+    assert.equal((await undersized.json()).error.retryable, false)
+    assert.equal(signedPath, undefined)
+    assert.equal(log.mock.calls.at(-1)?.arguments[1].upstreamCode, 'INVALID_STAGING_BUCKET_SETTINGS')
+    bucketLimit = 15 * 1024 * 1024
+
     signingBlocked = true
     const throttled = await prepare({ ...metadata, requestId: 'signing-throttled' })
     assert.equal(throttled.status, 503)

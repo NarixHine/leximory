@@ -1,0 +1,12 @@
+{
+    "extends": ["//"],
+    "tasks": {
+        "build": {
+            "dependsOn": ["^build", "check:ebook-storage:deployment"]
+        },
+        "check:ebook-storage:deployment": {
+            "cache": false,
+            "passThroughEnv": ["VERCEL", "VERCEL_ENV", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
+        }
+    }
+}
