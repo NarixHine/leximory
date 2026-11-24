@@ -14,6 +14,9 @@ const failures = {
     invalid_input: { status: 400, message: '请求无效，请重试。', retryable: false },
     stale_revision: { status: 409, message: '文章已更新，请重新打开。', retryable: false },
     quota_exceeded: { status: 429, message: '本月词点额度已用完。', retryable: false },
+    ebook_subscription_required: { status: 403, message: '免费方案电子书最大 4.5 MB', retryable: false },
+    ebook_file_too_large: { status: 413, message: '电子书超过上限 15 MB', retryable: false },
+    ebook_upload_limit: { status: 429, message: '请稍后再试', retryable: false },
     unsupported_format: { status: 422, message: 'iOS 版暂不支持此格式。', retryable: false },
     language_unresolved: {
         status: 422,

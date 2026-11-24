@@ -1,4 +1,7 @@
 import 'server-only'
+import { createHash } from 'node:crypto'
+import { MobileError } from './errors'
+import { textRowSchema } from './catalog'
 import { z } from 'zod'
 import { checkedResponse } from './http'
 import type { redis } from '@repo/kv/redis'
@@ -99,11 +102,31 @@ export function createManagementStore({
             else await removeRecord()
             expireText(text.lib!)
         },
-        async replaceEbook(text, file) {
-            await changeEbookFile(
-                ebookFiles(database, text.id),
-                { extension: file.type === 'application/pdf' ? 'pdf' : 'epub', file },
-                () => publishEbook(text.id, () => publication.update(text, true)),
+        async replaceEbook(text, file, staged) {
+            if (staged) {
+                const { data } = await database.from('texts').select('*').eq('id', text.id).maybeSingle().throwOnError()
+                const current = checkedResponse(textRowSchema.nullable(), data)
+                if (!current?.has_ebook || current.bookmark_url || current.lib !== text.lib)
+                    throw new MobileError('stale_revision')
+                text = current
+            }
+            const files = ebookFiles(database, text.id)
+            const extension = file.type === 'application/pdf' ? 'pdf' : 'epub'
+            if (staged && text.updated_at !== staged.revision) {
+                if (text.updated_at && Date.parse(text.updated_at) === Date.parse(staged.publicationTime)) {
+                    const saved = await files.read(extension)
+                    if (saved?.size === file.size) {
+                        const hash = async (blob: Blob) =>
+                            createHash('sha256')
+                                .update(new Uint8Array(await blob.arrayBuffer()))
+                                .digest('hex')
+                        if ((await hash(saved)) === (await hash(file))) return
+                    }
+                }
+                throw new MobileError('stale_revision')
+            }
+            await changeEbookFile(files, { extension, file }, () =>
+                publishEbook(text.id, () => publication.update(text, true, staged?.publicationTime)),
             )
             expireText(text.lib!)
         },
@@ -123,7 +146,8 @@ export function createManagementStore({
     return {
         edit: (text, fields) => withTextMutation(lease, text.id, () => operations.edit(text, fields)),
         remove: (text) => withTextMutation(lease, text.id, () => operations.remove(text)),
-        replaceEbook: (text, file) => withTextMutation(lease, text.id, () => operations.replaceEbook(text, file)),
+        replaceEbook: (text, file, staged) =>
+            withTextMutation(lease, text.id, () => operations.replaceEbook(text, file, staged)),
         removeEbook: (text) => withTextMutation(lease, text.id, () => operations.removeEbook(text)),
         removeWord: operations.removeWord,
     }

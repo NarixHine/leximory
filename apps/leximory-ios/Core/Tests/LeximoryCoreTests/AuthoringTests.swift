@@ -30,7 +30,7 @@ struct AuthoringTests {
         let client = MobileClient(baseURL: URL(string: "https://example.com")!, transport: transport, token: { _ in "verified" })
         let invalid = VocabularyFields(original: "bank", definition: Definition(lemma: "bank", definition: "bad||value"))
         await #expect(throws: (any Error).self) { try await client.editWord(id: "word", fields: invalid) }
-        await #expect(throws: (any Error).self) { try await client.uploadEbook(libraryID: "library", title: "书", filename: "large.pdf", data: Data(count: 4_718_593)) }
+        await #expect(throws: (any Error).self) { try await client.uploadEbook(libraryID: "library", title: "书", filename: "large.pdf", data: Data(count: EbookFileLimit.subscriberBytes + 1)) }
         #expect(await transport.calls == 0)
     }
     @Test func ebookRetryResendsTheSameRequestIdentityAndFile() async throws {
@@ -39,6 +39,14 @@ struct AuthoringTests {
         let book = try await client.uploadEbook(libraryID: "library", title: "书", filename: "book.pdf", data: Data("%PDF-1.7".utf8), requestID: "same-ebook")
         #expect(book.id == "ebook")
         #expect(await transport.uploadIdentities == ["same-ebook", "same-ebook"])
+    }
+    @Test func stagedEbookFinalizationSendsOnlyTheGrantToTheAppServer() async throws {
+        let transport = AuthoringTransport(stagedEbook: true)
+        let client = MobileClient(baseURL: URL(string: "https://example.com")!, transport: transport, token: { _ in "verified" })
+        let book = try await client.uploadEbook(libraryID: "library", title: "书", filename: "book.pdf",
+            data: Data(count: 15_000_000), requestID: "large-book")
+        #expect(book.id == "ebook")
+        #expect(await transport.calls == 2)
     }
     @Test func articleImportRecoversWithOneRequestIdentity() async throws {
         let transport = RecoveringArticleTransport()
@@ -78,7 +86,11 @@ struct AuthoringTests {
         var calls = 0
         var uploadIdentities: [String] = []
         let failFirstUpload: Bool
-        init(failFirstUpload: Bool = false) { self.failFirstUpload = failFirstUpload }
+        let stagedEbook: Bool
+        init(failFirstUpload: Bool = false, stagedEbook: Bool = false) {
+            self.failFirstUpload = failFirstUpload
+            self.stagedEbook = stagedEbook
+        }
         func send(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String) async throws -> (HTTPResponse, HTTPBody?) {
             calls += 1
             #expect(request.headerFields[.authorization] == "Bearer verified")
@@ -96,9 +108,21 @@ struct AuthoringTests {
             case "importArticle":
                 #expect(request.path == "/libraries/library/articles")
                 response = #"{"id":"article","libraryId":"library","title":"文章","topics":[],"emoji":null,"createdAt":null,"format":"article"}"#
+            case "prepareEbookUpload":
+                let bytes = try await Data(collecting: #require(body), upTo: 1024)
+                let json = try #require(JSONSerialization.jsonObject(with: bytes) as? [String: Any])
+                #expect(json["size"] as? Int == 15_000_000)
+                #expect(json["requestId"] as? String == "large-book")
+                #expect(json["targetId"] as? String == "library")
+                response = #"{"id":"fixture-grant","upload":null}"#
             case "uploadEbook":
                 let bytes = try await Data(collecting: #require(body), upTo: 1024)
-                #expect(bytes == Data("%PDF-1.7".utf8))
+                if stagedEbook {
+                    #expect(bytes.isEmpty)
+                    #expect(request.path?.contains("uploadId=fixture-grant") == true)
+                } else {
+                    #expect(bytes == Data("%PDF-1.7".utf8))
+                }
                 #expect(request.path?.contains("filename=book.pdf") == true)
                 #expect(request.headerFields[.contentType] == "application/octet-stream")
                 let path = try #require(request.path)

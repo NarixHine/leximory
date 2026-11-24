@@ -11,7 +11,7 @@ const storageFailure = z.object({
     message: z.string().optional(),
 })
 
-async function isMissingObject(error: unknown): Promise<boolean> {
+export async function isMissingObject(error: unknown): Promise<boolean> {
     // Binary downloads wrap the raw Response in StorageUnknownError.
     let payload = error
     let status: number | undefined

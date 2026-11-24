@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto'
+import { createEbookStaging } from '../server/mobile/ebook-staging'
+import { createEbookUploadOperations, type EbookStaging } from '../server/mobile/ebook-upload'
 import { serializeWord } from '../server/mobile/word-format'
 import { test } from 'node:test'
 import { testMobileHandler } from './helpers/mobile'
@@ -31,7 +34,7 @@ const catalog: CatalogStore = {
     archived: async () => [],
     audio: async () => null,
 }
-function harness(store: Partial<AuthoringStore> = {}, owner = catalog) {
+function harness(store: Partial<AuthoringStore> = {}, owner = catalog, staging?: EbookStaging) {
     const writes: unknown[] = []
     const authoring: AuthoringStore = {
         word: async () => word,
@@ -72,10 +75,16 @@ function harness(store: Partial<AuthoringStore> = {}, owner = catalog) {
     }
     return {
         writes,
-        handler: testMobileHandler(createAuthoringOperations({ catalog: owner, authoring }), async () => ({
-            kind: 'authenticated',
-            subject,
-        })),
+        handler: testMobileHandler(
+            {
+                ...createAuthoringOperations({ catalog: owner, authoring, staging }),
+                ...(staging ? createEbookUploadOperations({ catalog: owner, staging }) : {}),
+            },
+            async () => ({
+                kind: 'authenticated',
+                subject,
+            }),
+        ),
     }
 }
 function request(path: string, body?: unknown) {
@@ -428,4 +437,142 @@ test('word serialization retains empty middle fields instead of moving cognates 
         serializeWord({ original: 'bank', lemma: 'bank', definition: '河岸', etymology: null, cognates: 'embankment' }),
         '{{bank||bank||河岸||||embankment}}',
     )
+})
+
+test('a 15 MB staging grant requires current paid access and publishes only the authorized bytes', async (t) => {
+    const bytes = Buffer.alloc(15_000_000)
+    bytes.write('%PDF-1.7')
+    let stored: Uint8Array<ArrayBuffer> | null = null
+    let signedPath: string | undefined
+    const database = createClient<Database>('https://project.supabase.co', 'fixture-service', {
+        global: {
+            fetch: async (input, init) => {
+                const path = new URL(String(input)).pathname
+                if (path === '/storage/v1/bucket/mobile-ebook-uploads') {
+                    return Response.json({
+                        public: false,
+                        file_size_limit: 15_000_000,
+                        allowed_mime_types: ['application/pdf', 'application/epub+zip'],
+                    })
+                }
+                if (path.startsWith('/storage/v1/object/upload/sign/mobile-ebook-uploads/')) {
+                    assert.equal(init?.method, 'POST')
+                    assert.equal(new Headers(init?.headers).get('x-upsert'), null)
+                    signedPath = path.split('/').at(-1)
+                    return Response.json({ url: path.replace('/storage/v1', '') + '?token=fixture-token' })
+                }
+                if (path === '/storage/v1/object/info/mobile-ebook-uploads/' + signedPath) {
+                    return stored
+                        ? Response.json({ size: stored.byteLength })
+                        : Response.json({ statusCode: '404', message: 'Object not found' }, { status: 404 })
+                }
+                if (path === '/storage/v1/object/mobile-ebook-uploads/' + signedPath && stored)
+                    return new Response(stored)
+                assert.fail('Unexpected Supabase path ' + path)
+            },
+        },
+    })
+    const redis = new Redis({
+        url: 'https://redis.fixture.invalid',
+        token: 'fixture',
+        enableAutoPipelining: false,
+        retry: { retries: 0 },
+    })
+    const redisValues = new Map<string, string>()
+    t.mock.method(globalThis, 'fetch', async (_input: unknown, init?: RequestInit) => {
+        const [command, key, value] = JSON.parse(String(init?.body))
+        switch (command.toUpperCase()) {
+            case 'GET':
+                return Response.json({ result: redisValues.get(key) ?? null })
+            case 'SET':
+                redisValues.set(key, value)
+                return Response.json({ result: 'OK' })
+            case 'EVAL':
+                return Response.json({ result: 1 })
+            default:
+                assert.fail('Unexpected Redis operation ' + command)
+        }
+    })
+    let status: 'active' | 'expired' = 'expired'
+    const { staging } = createEbookStaging({
+        database,
+        redis,
+        endpoint: 'https://project.supabase.co',
+        publicKey: 'fixture-public',
+        getMembership: async () => ({
+            legacyPlan: 'beginner',
+            plan: status === 'active' ? 'bilingual' : 'beginner',
+            memberships: [
+                {
+                    provider: 'appStore',
+                    status,
+                    plan: 'bilingual',
+                    autoRenews: true,
+                    expiresAt: '2026-12-01T00:00:00Z',
+                },
+            ],
+            purchaseEligible: status === 'expired',
+        }),
+    })
+    const { handler, writes } = harness({}, catalog, staging)
+    const metadata = {
+        kind: 'import',
+        targetId: 'library',
+        filename: 'book.pdf',
+        title: 'Book',
+        requestId: 'large-book',
+        size: bytes.byteLength,
+        sha256: createHash('sha256').update(bytes).digest('hex'),
+    }
+    const prepare = (input = metadata) => handler(request('ebook-upload-grants', input))
+    const unauthorized = await prepare()
+    assert.equal(unauthorized.status, 403)
+    assert.deepEqual((await unauthorized.json()).error, {
+        code: 'ebook_subscription_required',
+        message: '免费方案电子书最大 4.5 MB',
+        retryable: false,
+    })
+    assert.equal(signedPath, undefined)
+    status = 'active'
+    const oversized = await prepare({ ...metadata, size: 15_000_001 })
+    assert.equal(oversized.status, 413)
+    assert.deepEqual((await oversized.json()).error, {
+        code: 'ebook_file_too_large',
+        message: '电子书超过上限 15 MB',
+        retryable: false,
+    })
+    const grant = await (await prepare()).json()
+    assert.deepEqual(grant.upload, {
+        url: 'https://project.storage.supabase.co/storage/v1/upload/resumable/sign',
+        bucket: 'mobile-ebook-uploads',
+        path: signedPath,
+        token: 'fixture-token',
+        publicKey: 'fixture-public',
+    })
+    const finalize = (title = 'Book') =>
+        handler(
+            request(
+                'libraries/library/ebooks?' +
+                    new URLSearchParams({
+                        title,
+                        filename: 'book.pdf',
+                        requestId: 'large-book',
+                        uploadId: grant.id,
+                    }),
+                {},
+            ),
+        )
+    assert.equal((await finalize()).status, 503)
+    stored = Buffer.from(bytes)
+    stored[stored.length - 1] = 1
+    assert.equal((await finalize()).status, 400)
+    stored = bytes
+    status = 'expired'
+    assert.equal((await finalize()).status, 403)
+    status = 'active'
+    assert.equal((await finalize('Other title')).status, 400)
+    assert.deepEqual(writes, [])
+    assert.deepEqual(await (await prepare()).json(), { id: grant.id, upload: null })
+    assert.equal((await finalize()).status, 200)
+    assert.deepEqual(writes, [{ title: 'Book', type: 'application/pdf', size: 15_000_000 }])
 })

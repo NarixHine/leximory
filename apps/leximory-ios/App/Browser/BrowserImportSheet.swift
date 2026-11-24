@@ -42,6 +42,7 @@ struct BrowserImportSheet: View {
     @State private var initialRuleFolderID: String?
     @State private var busy = false
     @State private var failure: ImportFailure?
+    @State private var upgradeMessage: String?
     @State private var extractionFailed: Bool
     @State private var extracting = false
     @State private var path: [ImportStep] = []
@@ -145,6 +146,10 @@ struct BrowserImportSheet: View {
                     }.foregroundStyle(.primary)
                         .accessibilityHint(file != nil && ebookDraft.folderAutofill != nil ? "可随时选择其他文件夹" : "选择文件夹")
                     if draft != nil { Toggle("本网站总是存于此文件夹", isOn: $remember).disabled(folder == nil) }
+                } footer: {
+                    if let upgradeMessage {
+                        EbookUpgradePrompt(message: upgradeMessage) { self.upgradeMessage = nil }
+                    }
                 }
                 if file == nil && fullText {
                     Section {
@@ -279,7 +284,7 @@ struct BrowserImportSheet: View {
         guard valid, let folder, !busy else { return }
         if file != nil { ebookDraft.stop() }
         titleFocused = false
-        busy = true; failure = nil
+        busy = true; failure = nil; upgradeMessage = nil
         defer { busy = false }
         if file == nil && fullText {
             do {
@@ -308,6 +313,10 @@ struct BrowserImportSheet: View {
             imported(text, file == nil && fullText); dismiss()
         } catch {
             if let failure = MobileClient.cause(of: error) as? MobileFailure {
+                if failure.error.code == "ebook_subscription_required" {
+                    upgradeMessage = failure.error.message
+                    return
+                }
                 self.failure = .save(message: failure.error.message, retryable: failure.error.retryable)
             } else {
                 failure = .save(message: !importStarted ? "网站文件夹设置未能保存，请重试。" : "请稍后重试。", retryable: true)

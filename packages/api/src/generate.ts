@@ -7,6 +7,7 @@ import {
     definitionFrameSchema,
     ebookHighlightColorSchema,
     ebookUploadQuerySchema,
+    ebookReplaceQuerySchema,
 } from './index'
 import { z } from 'zod'
 const generator = new OpenAPIGenerator({ schemaConverters: [new ZodToJsonSchemaConverter()] })
@@ -57,7 +58,12 @@ specification.paths['/texts/{textId}/ebook-replace'] = {
         operationId: 'replaceEbook',
         parameters: [
             { name: 'textId', in: 'path', required: true, schema: { type: 'string' } },
-            { name: 'filename', in: 'query', required: true, schema: { type: 'string', maxLength: 512 } },
+            ...Object.entries(ebookReplaceQuerySchema.shape).map(([name, schema]) => ({
+                name,
+                in: 'query' as const,
+                required: !schema.isOptional(),
+                schema: z.toJSONSchema(schema, { target: 'openapi-3.0' }),
+            })),
         ],
         requestBody: {
             required: true,
@@ -81,7 +87,10 @@ for (const path of Object.values(specification.paths ?? {})) {
     for (const method of ['get', 'post'] as const) {
         const operation = path?.[method]
         if (!operation) continue
-        for (const status of ['400', '401', '404', '409', '422', '429', '503']) {
+        const fileErrors = ['prepareEbookUpload', 'uploadEbook', 'replaceEbook'].includes(operation.operationId ?? '')
+            ? ['403', '413']
+            : []
+        for (const status of [...fileErrors, '400', '401', '404', '409', '422', '429', '503']) {
             operation.responses ??= {}
             operation.responses[status] = {
                 description: 'Typed mobile failure',

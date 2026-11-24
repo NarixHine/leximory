@@ -95,6 +95,29 @@ export const ebookUploadQuerySchema = z.strictObject({
     title: z.string().trim().min(1).max(512),
     filename: z.string().min(1).max(512),
     requestId: resourceID.optional(),
+    uploadId: z
+        .string()
+        .regex(/^[a-f0-9]{64}$/)
+        .optional(),
+})
+export const ebookReplaceQuerySchema = z.strictObject({
+    filename: ebookUploadQuerySchema.shape.filename,
+    uploadId: ebookUploadQuerySchema.shape.uploadId,
+})
+export const ebookUploadGrantInputSchema = z.strictObject({
+    kind: z.enum(['import', 'replace']),
+    targetId: resourceID,
+    title: ebookUploadQuerySchema.shape.title.optional(),
+    filename: ebookUploadQuerySchema.shape.filename,
+    requestId: resourceID,
+    size: z.int().positive(),
+    sha256: z.string().regex(/^[a-f0-9]{64}$/),
+})
+export const ebookUploadGrantSchema = z.strictObject({
+    id: ebookUploadQuerySchema.shape.uploadId.unwrap(),
+    upload: z
+        .strictObject({ url: z.url(), token: z.string(), publicKey: z.string(), bucket: z.string(), path: z.string() })
+        .nullable(),
 })
 export const textEditSchema = z
     .object({
@@ -488,6 +511,10 @@ export const ebookImportSuggestionSchema = z
     .strict()
 
 export const mobileContract = {
+    prepareEbookUpload: oc
+        .route({ method: 'POST', path: '/ebook-upload-grants' })
+        .input(ebookUploadGrantInputSchema)
+        .output(ebookUploadGrantSchema),
     homePins: oc
         .route({ method: 'GET', path: '/browser/home-pins', inputStructure: 'detailed' })
         .input(homePinsRequest)

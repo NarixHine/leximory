@@ -191,7 +191,7 @@ struct BrowserWorkspaceView: View {
             case .openText(let text): Button("重试") { Task { await workspace.open(text) } }
             case .openArticle(let id): Button("重试") { pendingText = id }
             case .archiveFolder(let folder): Button("重试") { Task { await workspace.setArchived(folder) } }
-            case .openFile: Button("重新选择") { choosingFile = true }
+            case .openFile, .guestEbookTooLarge: Button("重新选择") { choosingFile = true }
             case .savePDF(false): Button("重试") { Task { await extract() } }
             case .savePDF(true): EmptyView()
             }
@@ -267,6 +267,10 @@ struct BrowserWorkspaceView: View {
     private func openFile(_ file: BrowserEbookFile) throws {
         finishEditing()
         if let guest {
+            guard file.data.count <= EbookFileLimit.standardBytes else {
+                workspace.error = .guestEbookTooLarge
+                return
+            }
             let input = try guest.openFile(file)
             workspace.recordDocument(input.document)
             workspace.visit(.document(input.document))

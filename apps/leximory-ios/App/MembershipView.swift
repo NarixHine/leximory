@@ -61,6 +61,8 @@ struct MembershipView: View {
                 VStack(spacing: 20) {
                     planPicker
                     allowances
+                    Text("电子书导入（上限 15 MB）")
+                        .interfaceFont(13, style: .footnote).foregroundStyle(LeximoryPalette.muted)
                 }
                 if scrollsPurchaseAction { purchaseFooter }
             }
@@ -260,5 +262,74 @@ private struct MembershipPrivacyView: View {
                 }
         }
         .leximorySheetStyle()
+    }
+}
+
+struct EbookUpgradePrompt: View {
+    let message: String
+    let upgraded: () -> Void
+    @Environment(\.accountSession) private var session
+    @State private var showsPlans = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(message)
+                .interfaceFont(13, style: .footnote).foregroundStyle(.secondary)
+                .accessibilityAddTraits(.updatesFrequently)
+            if let session, case .signedIn(let account) = session.state, account.plan == "beginner" {
+                Button("升级") { showsPlans = true }
+                    .interfaceFont(13, semibold: true, style: .footnote)
+                    .frame(minHeight: 44)
+                    .buttonStyle(.borderless)
+            }
+        }
+        .sheet(isPresented: $showsPlans, onDismiss: {
+            if let session, case .signedIn(let account) = session.state, account.plan != "beginner" {
+                upgraded()
+            }
+        }) {
+            if let session { EbookMembershipSheet(session: session) }
+        }
+    }
+}
+
+private struct EbookMembershipSheet: View {
+    let session: AccountSession
+    @Environment(\.dismiss) private var dismiss
+    @State private var settings: AccountSettings?
+    @State private var failed = false
+
+    var body: some View {
+        if let settings {
+            MembershipView(details: settings, session: session, store: session.membership)
+        } else {
+            NavigationStack {
+                Group {
+                    if failed {
+                        LeximoryUnavailableView("暂时无法查看", systemImage: "person.crop.circle.badge.exclamationmark") {
+                            Button("重试") { Task { await load() } }
+                        }
+                    } else {
+                        ProgressView().accessibilityLabel("正在打开会员方案")
+                    }
+                }
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) { LeximorySheetCloseButton { dismiss() } }
+                }
+            }
+            .leximorySheetStyle()
+            .presentationDetents([.large])
+            .presentationSizing(MembershipPresentationSizing())
+            .task { await load() }
+        }
+    }
+
+    private func load() async {
+        failed = false
+        do {
+            settings = try await MutationRetry.run { try await session.client.accountSettings() }
+        } catch {
+            if !Task.isCancelled { failed = true }
+        }
     }
 }

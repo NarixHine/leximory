@@ -8,7 +8,7 @@ public struct LocalEbookInput: Sendable {
 
     public init(data: Data, filename: String) throws {
         let format = (filename as NSString).pathExtension.lowercased()
-        guard data.count <= 4_718_592,
+        guard data.count <= EbookFileLimit.standardBytes,
               format == "pdf" && data.starts(with: Data("%PDF-".utf8))
                 || format == "epub" && data.starts(with: [0x50, 0x4b, 0x03, 0x04]) else { throw URLError(.cannotDecodeContentData) }
         let id = "local-" + SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()

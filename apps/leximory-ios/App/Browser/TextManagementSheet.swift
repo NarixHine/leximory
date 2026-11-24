@@ -36,12 +36,15 @@ struct TextManagementSheet: View {
     @State private var loading = true
     @State private var saveIssue: TextSaveIssue?
     @State private var fileError: String?
+    @State private var upgradeMessage: String?
     @State private var removalFailed = false
     @State private var confirmingReload = false
     @State private var choosingFile = false
     @State private var file: BrowserEbookFile?
+    @State private var fileRequestID = UUID().uuidString
     @State private var confirmingDelete = false
     @State private var confirmingReplacement = false
+    @State private var replacementReady = false
     private var unavailable: Bool { busy || sync?.online == false }
     private var valid: Bool {
         guard let draft else { return false }
@@ -116,9 +119,16 @@ struct TextManagementSheet: View {
                 Task {
                     do {
                         file = try await BrowserEbookFile.read(result.get())
+                        fileRequestID = UUID().uuidString
+                        upgradeMessage = nil
+                        replacementReady = false
                         fileError = nil; confirmingReplacement = true
                     } catch {
-                        if (error as? CocoaError)?.code != .userCancelled { fileError = "请选择不超过 4.5 MB 的 EPUB 或 PDF。" }
+                        if (error as? CocoaError)?.code != .userCancelled {
+                            upgradeMessage = nil
+                            fileError = (error as? URLError)?.code == .dataLengthExceedsMaximum
+                                ? BrowserEbookFile.oversizedMessage : BrowserEbookFile.unreadableMessage
+                        }
                     }
                 }
             }
@@ -167,9 +177,21 @@ struct TextManagementSheet: View {
         Section {
             Button("替换电子书", systemImage: "doc.badge.arrow.up") { choosingFile = true }
                 .disabled(unavailable).accessibilityIdentifier("text-replace-ebook")
-            if let file { Text(file.name).foregroundStyle(.secondary) }
+            if let file {
+                Text(file.name).foregroundStyle(.secondary)
+                if replacementReady {
+                    Button("替换") { confirmingReplacement = true }.disabled(unavailable)
+                }
+            }
         } footer: {
-            if let fileError { Text(fileError).interfaceFont(13, style: .footnote).accessibilityAddTraits(.updatesFrequently) }
+            if let upgradeMessage {
+                EbookUpgradePrompt(message: upgradeMessage) {
+                    self.upgradeMessage = nil
+                    replacementReady = true
+                }
+            } else if let fileError {
+                Text(fileError).interfaceFont(13, style: .footnote).accessibilityAddTraits(.updatesFrequently)
+            }
         }
     }
     private func saveFeedback(_ issue: TextSaveIssue) -> some View {
@@ -222,12 +244,12 @@ struct TextManagementSheet: View {
     }
     private func replaceFile() async {
         guard !unavailable, source?.text.format == "ebook", let file else { return }
-        busy = true; fileError = nil
+        busy = true; fileError = nil; upgradeMessage = nil; replacementReady = false
         let saver = workspace.ebookTextID == text.id ? workspace.ebookReader?.positionSaver : nil
         await saver?.suspend()
         defer { busy = false; saver?.resume() }
         do {
-            let updated = try await workspace.client.replaceEbook(id: text.id, filename: file.name, data: file.data)
+            let updated = try await workspace.client.replaceEbook(id: text.id, filename: file.name, data: file.data, requestID: fileRequestID)
             playback.stop()
             await workspace.contentChanged(updated)
             do {
@@ -236,7 +258,14 @@ struct TextManagementSheet: View {
                 else { source = refreshed }
             } catch { saveIssue = .fileChanged }
             self.file = nil
-        } catch { fileError = "文件未能替换，请重试。" }
+        } catch {
+            let failure = MobileClient.cause(of: error) as? MobileFailure
+            if let failure, failure.error.code == "ebook_subscription_required" {
+                upgradeMessage = failure.error.message
+            } else {
+                fileError = failure?.error.retryable == false ? failure?.error.message : "文件未能替换，请重试。"
+            }
+        }
     }
     private func remove() async {
         guard !unavailable else { return }

@@ -1,11 +1,16 @@
 import 'server-only'
+import { ebookStaging } from '../ebook-staging-store'
 import { mobileEndpoint } from '../http'
 import { verify } from './verify'
 import { createAuthoringOperations } from '../authoring'
 import { catalogStore } from '../store'
 import { authoringStore } from '../authoring-store'
 
-const operations = createAuthoringOperations({ catalog: catalogStore, authoring: authoringStore })
+const operations = createAuthoringOperations({
+    catalog: catalogStore,
+    authoring: authoringStore,
+    staging: ebookStaging,
+})
 
 export const extractArticle = mobileEndpoint(verify, operations.extractArticle, 60000)
 export const vocabularyList = mobileEndpoint(verify, operations.vocabularyList, 60000)

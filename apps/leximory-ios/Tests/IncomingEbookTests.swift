@@ -62,7 +62,8 @@ import Testing
         await inbox.receive(url)?.value
 
         let result = try #require(inbox.takeNext())
-        #expect(throws: URLError(.dataLengthExceedsMaximum)) { try result.get() }
+        let expected = size == 0 ? URLError.Code.zeroByteResource : .dataLengthExceedsMaximum
+        #expect(throws: URLError(expected)) { try result.get() }
     }
 
     @Test func unreadableFileDoesNotBlockTheNextIncomingFile() async throws {

@@ -99,6 +99,10 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
                             </div>
                             <div className='flex items-start gap-2'>
                                 <PiCheck className='text-success-500 w-4 h-4 mt-1' />
+                                <span>电子书导入（上限 15 MB）</span>
+                            </div>
+                            <div className='flex items-start gap-2'>
+                                <PiCheck className='text-success-500 w-4 h-4 mt-1' />
                                 <div className='flex flex-col'>
                                     <span>每日 LexiCoin</span>
                                     <span className='text-default-500 text-sm'>
@@ -171,6 +175,10 @@ export default function Pricing({ hideUpgradeButton }: { hideUpgradeButton?: boo
                                 <div className='flex flex-col'>
                                     <span>{PLAN_AUDIO_QUOTA.polyglot} 次朗读生成</span>
                                 </div>
+                            </div>
+                            <div className='flex items-start gap-2'>
+                                <PiCheck className='text-success-500 w-4 h-4 mt-1' />
+                                <span>电子书导入（上限 15 MB）</span>
                             </div>
                             <div className='flex items-start gap-2'>
                                 <PiCheck className='text-success-500 w-4 h-4 mt-1' />

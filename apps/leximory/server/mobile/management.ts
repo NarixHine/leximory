@@ -1,18 +1,22 @@
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
-import { editableTextSchema, resourceID, textEditSchema, textSchema } from '@repo/api'
+import { ebookReplaceQuerySchema, editableTextSchema, resourceID, textEditSchema, textSchema } from '@repo/api'
 import { maxArticleLength } from '@repo/env/content'
 import { canWriteLibrary } from '@repo/service/access'
 import { createCatalog, summarizeText, type CatalogStore, type TextRow } from './catalog'
 import type { AuthoringStore } from './authoring'
 import { MobileError } from './errors'
 import { checkedResponse, jsonBody, query, type MobileContext, type MobileOperation } from './http'
-import { readEbookUpload } from './ebook-upload'
+import { readEbookUpload, type EbookStaging } from './ebook-upload'
 
 export interface ManagementStore {
     edit(text: TextRow, fields: z.infer<typeof textEditSchema>): Promise<TextRow>
     remove(text: TextRow): Promise<void>
-    replaceEbook(text: TextRow, file: File): Promise<void>
+    replaceEbook(
+        text: TextRow,
+        file: File,
+        staged?: { revision: string | null; publicationTime: string },
+    ): Promise<void>
     removeEbook(text: TextRow): Promise<void>
     removeWord(id: string, libraryId: string): Promise<void>
 }
@@ -36,6 +40,7 @@ export function createManagementOperations(dependencies: {
     catalog: CatalogStore
     authoring: Pick<AuthoringStore, 'word'>
     management: ManagementStore
+    staging?: EbookStaging
 }) {
     const catalog = createCatalog(dependencies.catalog)
     const store = dependencies.management
@@ -100,13 +105,19 @@ export function createManagementOperations(dependencies: {
     const replaceEbook: MobileOperation = async (context) => {
         const { text } = await writableText(context)
         if (!text.has_ebook) throw new MobileError('unsupported_format')
-        const filename = z
-            .string()
-            .min(1)
-            .max(512)
-            .parse(query(context.request, ['filename']).filename)
-        const { file } = await readEbookUpload(context, filename)
-        await store.replaceEbook(text, file)
+        const { filename, uploadId } = ebookReplaceQuerySchema.parse(query(context.request, ['filename', 'uploadId']))
+        if (uploadId) {
+            if (!dependencies.staging) throw new MobileError('invalid_input')
+            const { upload, replacement } = await dependencies.staging.read(context, uploadId, filename, {
+                kind: 'replace',
+                targetId: text.id,
+            })
+            if (!replacement) throw new MobileError('service_unavailable')
+            await store.replaceEbook(text, upload.file, replacement)
+        } else {
+            const { file } = await readEbookUpload(context, filename)
+            await store.replaceEbook(text, file)
+        }
         return checkedResponse(textSchema, summarizeText({ ...text, has_ebook: true }))
     }
     const removeEbook: MobileOperation = async (context) => {

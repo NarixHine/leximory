@@ -1,4 +1,5 @@
 import 'server-only'
+import { ebookStaging } from '../ebook-staging-store'
 import { mobileEndpoint } from '../http'
 import { verify } from './verify'
 import { createManagementOperations } from '../management'
@@ -10,6 +11,7 @@ import { catalogStore } from '../store'
 
 const operations = createManagementOperations({
     catalog: catalogStore,
+    staging: ebookStaging,
     authoring: authoringStore,
     management: createManagementStore({ database: supabase, lease: redis }),
 })

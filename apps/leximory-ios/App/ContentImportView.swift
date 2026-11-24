@@ -20,6 +20,7 @@ struct ContentImportView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var busy = false
     @State private var error: String?
+    @State private var upgradeMessage: String?
     @State private var bookmarkRequestID = UUID().uuidString
     @State private var importRequestID = UUID().uuidString
     @State private var savingBookmark = false
@@ -81,7 +82,11 @@ struct ContentImportView: View {
                                 .background(LeximoryPalette.cover, in: RoundedRectangle(cornerRadius: 28))
                         }.buttonStyle(.plain).accessibilityLabel("选择 EPUB 或 PDF")
                     }
-                    if let error { Text(error).interfaceFont(14).foregroundStyle(LeximoryPalette.muted) }
+                    if kind == 1, let upgradeMessage {
+                        EbookUpgradePrompt(message: upgradeMessage) { self.upgradeMessage = nil }
+                    } else if let error {
+                        Text(error).interfaceFont(14).foregroundStyle(LeximoryPalette.muted)
+                    }
                     importActions
                 }.padding(24).frame(maxWidth: 580).frame(maxWidth: .infinity)
                     .disabled(busy)
@@ -151,15 +156,20 @@ struct ContentImportView: View {
         do {
             let url = try result.get()
             let isArticle = kind != 1
-            let loaded = try await Task.detached {
-                let access = url.startAccessingSecurityScopedResource()
-                defer { if access { url.stopAccessingSecurityScopedResource() } }
-                let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-                guard size > 0, size <= 4_718_592 else { throw ImportError.message("发生错误，文件需小于 4.5MB") }
-                let data = try Data(contentsOf: url)
-                guard data.count <= 4_718_592 else { throw ImportError.message("发生错误，文件需小于 4.5MB") }
-                return data
-            }.value
+            let loaded: Data
+            if isArticle {
+                loaded = try await Task.detached {
+                    let access = url.startAccessingSecurityScopedResource()
+                    defer { if access { url.stopAccessingSecurityScopedResource() } }
+                    let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+                    guard size > 0, size <= 4_718_592 else { throw ImportError.message("发生错误，文件需小于 4.5MB") }
+                    let data = try Data(contentsOf: url)
+                    guard data.count <= 4_718_592 else { throw ImportError.message("发生错误，文件需小于 4.5MB") }
+                    return data
+                }.value
+            } else {
+                loaded = try await BrowserEbookFile.read(url).data
+            }
             guard isArticle == (kind != 1) else { return }
             if isArticle {
                 guard let text = String(data: loaded, encoding: .utf8) ?? String(data: loaded, encoding: .utf16) else { throw ImportError.message("不支持的文本编码") }
@@ -174,6 +184,7 @@ struct ContentImportView: View {
                 ebookDraft = next
                 importRequestID = UUID().uuidString
                 ebook = ImportedFile(name: url.lastPathComponent, data: loaded)
+                upgradeMessage = nil
                 error = nil
                 let metadata = await EbookImportMetadata.read(.init(name: url.lastPathComponent, data: loaded))
                 await next.fill(metadata: metadata, reduceMotion: reduceMotion) { _ in
@@ -186,14 +197,22 @@ struct ContentImportView: View {
             if isArticle, title.isEmpty { title = url.deletingPathExtension().lastPathComponent }
             error = nil
         } catch {
-            if (error as NSError).code != NSUserCancelledError { self.error = (error as? ImportError)?.description ?? "无法读取文件，请重试。" }
+            if (error as NSError).code != NSUserCancelledError {
+                upgradeMessage = nil
+                if kind == 1 {
+                    self.error = (error as? URLError)?.code == .dataLengthExceedsMaximum
+                        ? BrowserEbookFile.oversizedMessage : BrowserEbookFile.unreadableMessage
+                } else {
+                    self.error = (error as? ImportError)?.description ?? "无法读取文件，请重试。"
+                }
+            }
         }
     }
     private func submit(annotate: Bool) async {
         guard valid, !busy else { return }
         focusedField = nil
         if kind == 1 { ebookDraft.stop() }
-        busy = true; error = nil
+        busy = true; error = nil; upgradeMessage = nil
         defer { busy = false }
         do {
             let text: CatalogText
@@ -212,7 +231,8 @@ struct ContentImportView: View {
             imported(text); dismiss()
         } catch {
             if let failure = MobileClient.cause(of: error) as? MobileFailure {
-                self.error = failure.error.retryable ? "导入尚未完成，请重试。" : failure.error.message
+                if failure.error.code == "ebook_subscription_required" { upgradeMessage = failure.error.message }
+                else { self.error = failure.error.retryable ? "导入尚未完成，请重试。" : failure.error.message }
             }
             else if kind == 2 && !extracted { self.error = "文章解析失败，请手动录入" }
             else {

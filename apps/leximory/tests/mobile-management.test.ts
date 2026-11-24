@@ -805,6 +805,21 @@ test('lost ebook publication responses preserve committed files and positions', 
     })
 })
 
+test('a staged replacement can replay without clearing reading positions again', async (t) => {
+    const f = persistenceFixture(t, 'lost-update-response')
+    const ebook = { ...article, has_ebook: true }
+    const file = new File(['%PDF-new'], 'book.pdf', { type: 'application/pdf' })
+    const staged = { revision: ebook.updated_at, publicationTime: '2026-11-24T10:00:00.000Z' }
+    await f.store.replaceEbook(ebook, file, staged)
+    f.reads[0]!.location = 'page:3'
+    await f.store.replaceEbook(ebook, file, staged)
+    assert.equal(f.reads[0]?.location, 'page:3')
+    assert.equal(await f.files.get('pdf')?.text(), '%PDF-new')
+    const stale = { ...staged, publicationTime: '2026-11-24T10:00:01.000Z' }
+    await assert.rejects(f.store.replaceEbook(ebook, file, stale), { code: 'stale_revision' })
+    assert.equal(f.reads[0]?.location, 'page:3')
+})
+
 test('ebook detachment retries a publication that never reached the database', async (t) => {
     const f = persistenceFixture(t, 'lost-update-request')
     await f.store.removeEbook({ ...article, has_ebook: true })

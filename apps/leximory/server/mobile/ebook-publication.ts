@@ -46,9 +46,8 @@ export function createEbookPublication(database: Pick<typeof supabase, 'from'>) 
     }
 
     return {
-        async update(text: TextRow, hasEbook: boolean) {
+        async update(text: TextRow, hasEbook: boolean, updatedAt = nextTextTimestamp(text.updated_at)) {
             if (!text.lib) throw new MobileError('inaccessible')
-            const updatedAt = nextTextTimestamp(text.updated_at)
             let update = database
                 .from('texts')
                 .update({ has_ebook: hasEbook, updated_at: updatedAt })

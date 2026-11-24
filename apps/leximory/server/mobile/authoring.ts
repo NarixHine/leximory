@@ -10,7 +10,7 @@ import {
     vocabularyEditSchema,
 } from '@repo/api'
 import { maxArticleLength } from '@repo/env/content'
-import { readEbookUpload, type EbookUpload } from './ebook-upload'
+import { readEbookUpload, type EbookStaging, type EbookUpload } from './ebook-upload'
 import { canWriteLibrary } from '@repo/service/access'
 import type { MobileSubject } from '@repo/schema/mobile'
 import { MobileError } from './errors'
@@ -52,7 +52,11 @@ export interface AuthoringStore {
 const vocabularyPageSchema = z.object({ items: z.array(savedWordSchema), nextCursor: z.string().nullable() }).strict()
 const articlePreviewInput = z.object({ url: z.url().max(2048) }).strict()
 
-export function createAuthoringOperations(dependencies: { catalog: CatalogStore; authoring: AuthoringStore }) {
+export function createAuthoringOperations(dependencies: {
+    catalog: CatalogStore
+    authoring: AuthoringStore
+    staging?: EbookStaging
+}) {
     const catalog = createCatalog(dependencies.catalog)
     const store = dependencies.authoring
 
@@ -113,10 +117,20 @@ export function createAuthoringOperations(dependencies: { catalog: CatalogStore;
 
     const uploadEbook: MobileOperation = async (context) => {
         const library = await writableContentLibrary(context)
-        const { title, filename, requestId } = ebookUploadQuerySchema.parse(
-            query(context.request, ['title', 'filename', 'requestId']),
+        const { title, filename, requestId, uploadId } = ebookUploadQuerySchema.parse(
+            query(context.request, ['title', 'filename', 'requestId', 'uploadId']),
         )
-        const upload = await readEbookUpload(context, filename)
+        let upload: EbookUpload
+        if (uploadId) {
+            if (!requestId || !dependencies.staging) throw new MobileError('invalid_input')
+            const staged = await dependencies.staging.read(context, uploadId, filename, {
+                kind: 'import',
+                targetId: library.id,
+                title,
+                requestId,
+            })
+            upload = staged.upload
+        } else upload = await readEbookUpload(context, filename)
         const { text, created } = await store.ebook(library, { title, upload, requestId })
         const ebook = checkedResponse(textSchema, text)
         if (!created) return ebook

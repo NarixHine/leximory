@@ -220,7 +220,8 @@ private struct BearerMiddleware: ClientMiddleware {
         }
         let noteOperation = operationID == "pdfNotes" || operationID == "savePDFNote"
         let outlineOperation = operationID == "generatePDFOutline" || operationID == "savePDFOutline"
-        if !noteOperation, !outlineOperation, [403, 404].contains(result.0.status.code), let path = request.path {
+        if !noteOperation, !outlineOperation, [403, 404].contains(result.0.status.code),
+           !(result.0.status.code == 403 && ["uploadEbook", "replaceEbook"].contains(operationID)), let path = request.path {
             let parts = path.split(separator: "?")[0].split(separator: "/")
             if parts.first == "texts", parts.count > 1 {
                 await store?.removeText(String(parts[1]))
@@ -496,9 +497,10 @@ public struct MobileClient: Sendable {
         return text
     }
     public func uploadEbook(libraryID: String, title: String, filename: String, data: Data, requestID: String = UUID().uuidString) async throws -> CatalogText {
-        guard !data.isEmpty, data.count <= 4_718_592 else { throw URLError(.dataLengthExceedsMaximum) }
+        guard !data.isEmpty, data.count <= EbookFileLimit.subscriberBytes else { throw URLError(.dataLengthExceedsMaximum) }
+        let uploadID = try await stageEbook(kind: ._import, targetID: libraryID, title: title, filename: filename, data: data, requestID: requestID)
         let text = try await MutationRetry.run {
-            try mapped(try await client.uploadEbook(path: .init(libraryId: libraryID), query: .init(title: title, filename: filename, requestId: requestID), body: .binary(HTTPBody(data))).ok.body.json, to: CatalogText.self)
+            try mapped(try await client.uploadEbook(path: .init(libraryId: libraryID), query: .init(title: title, filename: filename, requestId: requestID, uploadId: uploadID), body: .binary(HTTPBody(uploadID == nil ? data : Data()))).ok.body.json, to: CatalogText.self)
         }
         await localStore?.upsertText(text)
         return text
@@ -535,14 +537,29 @@ public struct MobileClient: Sendable {
         }
         await localStore?.deleteWord(id: word.id, libraryID: word.libraryId)
     }
-    public func replaceEbook(id: String, filename: String, data: Data) async throws -> CatalogText {
-        guard !data.isEmpty, data.count <= 4_718_592 else { throw URLError(.dataLengthExceedsMaximum) }
+    public func replaceEbook(id: String, filename: String, data: Data, requestID: String = UUID().uuidString) async throws -> CatalogText {
+        guard !data.isEmpty, data.count <= EbookFileLimit.subscriberBytes else { throw URLError(.dataLengthExceedsMaximum) }
+        let uploadID = try await stageEbook(kind: .replace, targetID: id, title: nil, filename: filename, data: data, requestID: requestID)
         let text = try await MutationRetry.run {
-            try mapped(try await client.replaceEbook(path: .init(textId: id), query: .init(filename: filename), body: .binary(HTTPBody(data))).ok.body.json, to: CatalogText.self)
+            try mapped(try await client.replaceEbook(path: .init(textId: id), query: .init(filename: filename, uploadId: uploadID), body: .binary(HTTPBody(uploadID == nil ? data : Data()))).ok.body.json, to: CatalogText.self)
         }
         await localStore?.removeText(id)
         await localStore?.upsertText(text)
         return text
+    }
+    private func stageEbook(kind: Operations.prepareEbookUpload.Input.Body.jsonPayload.kindPayload, targetID: String, title: String?, filename: String, data: Data, requestID: String) async throws -> String? {
+        guard data.count > EbookFileLimit.standardBytes else { return nil }
+        let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        let grant = try await MutationRetry.run {
+            try await client.prepareEbookUpload(body: .json(.init(kind: kind, targetId: targetID, title: title,
+                filename: filename, requestId: requestID, size: data.count, sha256: digest))).ok.body.json
+        }
+        if let upload = grant.upload {
+            guard let endpoint = URL(string: upload.url) else { throw URLError(.unsupportedURL) }
+            try await EbookResumableUpload(endpoint: endpoint, token: upload.token, publicKey: upload.publicKey, bucket: upload.bucket, path: upload.path)
+                .upload(data, filename: filename)
+        }
+        return grant.id
     }
     public func removeEbook(id: String) async throws -> CatalogText {
         let text = try await MutationRetry.run {

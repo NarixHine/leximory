@@ -36,6 +36,9 @@
                   "reauthentication_required",
                   "quota_exceeded",
                   "unsupported_format",
+                  "ebook_subscription_required",
+                  "ebook_file_too_large",
+                  "ebook_upload_limit",
                   "language_unresolved",
                   "service_unavailable",
                   "purchase_account_mismatch"
@@ -190,6 +193,9 @@
                       "reauthentication_required",
                       "quota_exceeded",
                       "unsupported_format",
+                      "ebook_subscription_required",
+                      "ebook_file_too_large",
+                      "ebook_upload_limit",
                       "language_unresolved",
                       "service_unavailable",
                       "purchase_account_mismatch"
@@ -235,6 +241,212 @@
   },
   "openapi": "3.1.1",
   "paths": {
+    "/ebook-upload-grants": {
+      "post": {
+        "operationId": "prepareEbookUpload",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "import",
+                      "replace"
+                    ],
+                    "type": "string"
+                  },
+                  "targetId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  "filename": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  "requestId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                  },
+                  "size": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991,
+                    "exclusiveMinimum": 0
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "targetId",
+                  "filename",
+                  "requestId",
+                  "size",
+                  "sha256"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "upload": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "token": {
+                          "type": "string"
+                        },
+                        "publicKey": {
+                          "type": "string"
+                        },
+                        "bucket": {
+                          "type": "string"
+                        },
+                        "path": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "url",
+                        "token",
+                        "publicKey",
+                        "bucket",
+                        "path"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "upload"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/browser/home-pins": {
       "get": {
         "operationId": "homePins",
@@ -1530,6 +1742,9 @@
                                 "reauthentication_required",
                                 "quota_exceeded",
                                 "unsupported_format",
+                                "ebook_subscription_required",
+                                "ebook_file_too_large",
+                                "ebook_upload_limit",
                                 "language_unresolved",
                                 "service_unavailable",
                                 "purchase_account_mismatch"
@@ -12060,6 +12275,15 @@
               "type": "string",
               "pattern": "^[A-Za-z0-9_-]{1,128}$"
             }
+          },
+          {
+            "name": "uploadId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
           }
         ],
         "requestBody": {
@@ -12160,6 +12384,16 @@
               }
             }
           },
+          "403": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Typed mobile failure",
             "content": {
@@ -12171,6 +12405,16 @@
             }
           },
           "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "413": {
             "description": "Typed mobile failure",
             "content": {
               "application/json": {
@@ -12236,7 +12480,17 @@
             "required": true,
             "schema": {
               "type": "string",
+              "minLength": 1,
               "maxLength": 512
+            }
+          },
+          {
+            "name": "uploadId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
             }
           }
         ],
@@ -12338,6 +12592,16 @@
               }
             }
           },
+          "403": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Typed mobile failure",
             "content": {
@@ -12349,6 +12613,16 @@
             }
           },
           "409": {
+            "description": "Typed mobile failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileError"
+                }
+              }
+            }
+          },
+          "413": {
             "description": "Typed mobile failure",
             "content": {
               "application/json": {

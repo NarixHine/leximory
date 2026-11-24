@@ -4,7 +4,7 @@ import LeximoryCore
 
 enum BrowserWorkspaceFailure {
     case openText(CatalogText), openArticle(TextID), archiveFolder(CatalogLibrary)
-    case openFile(oversized: Bool), savePDF(oversized: Bool)
+    case openFile(oversized: Bool), guestEbookTooLarge, savePDF(oversized: Bool)
     var dismissal: String { if case .savePDF(true) = self { "好" } else { "取消" } }
 
     var title: String {
@@ -12,7 +12,7 @@ enum BrowserWorkspaceFailure {
         case .openText(let text): text.format == "ebook" ? "未能打开电子书" : text.format == "bookmark" ? "未能打开书签" : "未能打开文章"
         case .openArticle: "未能打开文章"
         case .archiveFolder: "未能更新文件夹"
-        case .openFile: "未能打开电子书"
+        case .openFile, .guestEbookTooLarge: "未能打开电子书"
         case .savePDF: "未能保存 PDF"
         }
     }
@@ -20,8 +20,10 @@ enum BrowserWorkspaceFailure {
         switch self {
         case .openText, .openArticle: "请稍后重试。"
         case .archiveFolder: "更改尚未完成，请重试。"
-        case .openFile(let oversized): oversized ? "请选择小于 4.5 MB 的文件。" : "请选择有效的 EPUB 或 PDF 文件。"
-        case .savePDF(let oversized): oversized ? "PDF 超过 4.5 MB，暂时无法保存。" : "请稍后重试。"
+        case .openFile(let oversized):
+            oversized ? BrowserEbookFile.oversizedMessage : "请选择有效的 EPUB 或 PDF 文件"
+        case .guestEbookTooLarge: "电子书超过 4.5 MB，提高上限至 15 MB 请升级"
+        case .savePDF(let oversized): oversized ? BrowserEbookFile.oversizedMessage : "请稍后重试。"
         }
     }
 }
